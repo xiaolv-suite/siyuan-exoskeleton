@@ -4107,6 +4107,24 @@
         return;
       }
 
+      // office: / word: / excel: / ppt: 模式：全库本地文档极速检索与穿透
+      if (q.startsWith("office:") || q.startsWith("office：") || q.startsWith("word:") || q.startsWith("word：") || q.startsWith("excel:") || q.startsWith("excel：") || q.startsWith("ppt:") || q.startsWith("ppt：")) {
+        let subKw = q.replace(/^(office:|office：|word:|word：|excel:|excel：|ppt:|ppt：)/, "").trim();
+        let extFilter = "";
+        if (q.startsWith("word:") || q.startsWith("word：")) extFilter = "docx";
+        else if (q.startsWith("excel:") || q.startsWith("excel：")) extFilter = "xlsx";
+        else if (q.startsWith("ppt:") || q.startsWith("ppt：")) extFilter = "pptx";
+        const queryTerm = extFilter ? (subKw ? `${subKw} ${extFilter}` : extFilter) : subKw;
+
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'searchAssets', keyword: queryTerm }));
+        } else {
+          filteredItems = [];
+          renderItems();
+        }
+        return;
+      }
+
       // ws: 或 session: 模式：工作现场快照与微软虚拟桌面全景联动
       if (q.startsWith("ws:") || q.startsWith("ws：") || q.startsWith("session:") || q.startsWith("session：") || q.startsWith("workspace:") || q.startsWith("workspace：")) {
         const subKw = q.replace(/^(ws:|ws：|session:|session：|workspace:|workspace：)/, "").trim();
@@ -4476,7 +4494,7 @@
 
     function hasPrefixSearch(str) {
       if (!str) return false;
-      const prefixes = ["b:", "b：", "d:", "d：", "att:", "att：", "asset:", "asset：", "zotero:", "zotero：", "tag:", "tag：", "t:", "t：", "m:", "m：", "v:", "v：", "c:", "c：", "p:", "p：", "ev:", "ev：", "g:", "g：", "av:", "av：", "trash:", "trash：", "recycle:", "rescue:", "hist:", "ws:", "ws：", "session:", "workspace:", "voice:", "voice："];
+      const prefixes = ["b:", "b：", "d:", "d：", "att:", "att：", "asset:", "asset：", "office:", "office：", "word:", "word：", "excel:", "excel：", "ppt:", "ppt：", "zotero:", "zotero：", "tag:", "tag：", "t:", "t：", "m:", "m：", "v:", "v：", "c:", "c：", "p:", "p：", "ev:", "ev：", "g:", "g：", "av:", "av：", "trash:", "trash：", "recycle:", "rescue:", "hist:", "ws:", "ws：", "session:", "workspace:", "voice:", "voice："];
       return prefixes.some(p => str.toLowerCase().startsWith(p));
     }
 
@@ -6604,6 +6622,9 @@
         <div class="inspector-dock">
           <div class="inspector-dock-actions">
             <button class="inspector-dock-btn primary" onclick="openAssetLocalFile('${escapeQuote(d.fullPath)}')" title="调动本地默认程序独立查看此文件 (Enter)">⚡ 本地秒开</button>
+            ${d.fileName.match(/\.(docx|xlsx|pptx)$/i) ? `
+              <button class="inspector-dock-btn" style="background: rgba(99,102,241,0.22); border-color: var(--indigo-light); color: var(--indigo-light); font-weight: 700;" onclick="inspectOfficeDeep('${escapeQuote(d.fullPath)}')" title="零依赖深入透视大纲树、审阅批注、数据表或演讲备注">📖 深度透视</button>
+            ` : ''}
             <button class="inspector-dock-btn" onclick="pasteAtCursor('[${escapeQuote(d.fileName)}](${escapeQuote(d.assetRel)}')">⚡ Shift+↵ 贴链接</button>
             <button class="inspector-dock-btn" onclick="copyToClipboard('[${escapeQuote(d.fileName)}](${escapeQuote(d.assetRel)}')">📋 复制链接</button>
             <button class="inspector-dock-btn" onclick="locateInSearchTool('${escapeQuote(d.fileName)}')" title="在 ${getPreferredSearchToolName()} 中极速定位此文件 (Ctrl+E)">🔍 ${getPreferredSearchToolName()} 定位</button>
@@ -6640,6 +6661,217 @@
 
     function locateInEverything(query) {
       locateInSearchTool(query);
+    }
+
+    let currentOfficeDocSummary = null;
+    let currentOfficeTab = "outline";
+
+    function inspectOfficeDeep(filePath) {
+      if (!filePath) return;
+      showToast("⏳ 正在零依赖流式透视 Office 文件结构...");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'inspectOfficeFile', filePath: filePath }));
+      }
+    }
+
+    window.onOfficeInspectionLoaded = function(summary) {
+      if (!summary) return;
+      currentOfficeDocSummary = summary;
+      currentOfficeTab = (summary.FileType === "xlsx") ? "sheets" : ((summary.FileType === "pptx") ? "slides" : "outline");
+      renderOfficeDeepInspector();
+    };
+
+    function renderOfficeDeepInspector() {
+      const inspector = document.getElementById("search-inspector-pane");
+      const summary = currentOfficeDocSummary;
+      if (!inspector || !summary) return;
+
+      const fileType = (summary.FileType || "").toLowerCase();
+      let tabsHtml = "";
+
+      if (fileType === "docx") {
+        tabsHtml = `
+          <div class="inspector-tab-bar">
+            <button class="inspector-tab-btn ${currentOfficeTab === 'outline' ? 'active' : ''}" onclick="switchOfficeTab('outline')">📋 大纲树 (${summary.Headings ? summary.Headings.length : 0})</button>
+            <button class="inspector-tab-btn ${currentOfficeTab === 'comments' ? 'active' : ''}" onclick="switchOfficeTab('comments')">💬 审阅批注 (${summary.Comments ? summary.Comments.length : 0})</button>
+            <button class="inspector-tab-btn ${currentOfficeTab === 'text' ? 'active' : ''}" onclick="switchOfficeTab('text')">📄 正文概览</button>
+          </div>
+        `;
+      } else if (fileType === "xlsx") {
+        tabsHtml = `
+          <div class="inspector-tab-bar">
+            <button class="inspector-tab-btn ${currentOfficeTab === 'sheets' ? 'active' : ''}" onclick="switchOfficeTab('sheets')">📊 工作表 (${summary.Sheets ? summary.Sheets.length : 0})</button>
+          </div>
+        `;
+      } else if (fileType === "pptx") {
+        tabsHtml = `
+          <div class="inspector-tab-bar">
+            <button class="inspector-tab-btn ${currentOfficeTab === 'slides' ? 'active' : ''}" onclick="switchOfficeTab('slides')">🎬 幻灯片卡片 (${summary.Slides ? summary.Slides.length : 0})</button>
+          </div>
+        `;
+      }
+
+      let bodyHtml = "";
+      if (currentOfficeTab === "outline") {
+        const headings = summary.Headings || [];
+        if (headings.length > 0) {
+          bodyHtml = `
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              ${headings.map(h => {
+                const indent = Math.max(0, h.Level - 1) * 12;
+                return `
+                  <div style="padding: 4px 8px; margin-left: ${indent}px; display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.02); border-radius: 4px;">
+                    <span class="tag-badge badge-system" style="font-size: 9px; padding: 1px 4px; font-family: monospace;">H${h.Level}</span>
+                    <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(h.Title)}</span>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          `;
+        } else {
+          bodyHtml = `<div style="text-align: center; color: var(--text-muted); padding: 24px; font-size: 12px;">该文档未应用标准 H1~H6 大纲样式</div>`;
+        }
+      } else if (currentOfficeTab === "comments") {
+        const comments = summary.Comments || [];
+        if (comments.length > 0) {
+          bodyHtml = `
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              ${comments.map(c => `
+                <div style="background: rgba(99,102,241,0.08); border: 1px dashed var(--border-hairline); border-radius: 6px; padding: 8px 10px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: var(--indigo-light); margin-bottom: 4px;">
+                    <span>👤 <b>${escapeHtml(c.Author || '审阅人')}</b></span>
+                    <span>⏱️ ${c.Date ? new Date(c.Date).toLocaleDateString() : ''}</span>
+                  </div>
+                  <div style="font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">${escapeHtml(c.CommentText)}</div>
+                  ${c.AnchorQuoteText ? `<div style="font-size: 11px; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 4px 6px; border-radius: 4px;">引文: 「${escapeHtml(c.AnchorQuoteText)}」</div>` : ''}
+                </div>
+              `).join("")}
+            </div>
+          `;
+        } else {
+          bodyHtml = `<div style="text-align: center; color: var(--text-muted); padding: 24px; font-size: 12px;">该文档未发现审阅批注</div>`;
+        }
+      } else if (currentOfficeTab === "sheets") {
+        const sheets = summary.Sheets || [];
+        if (sheets.length > 0) {
+          bodyHtml = sheets.map(sh => `
+            <div style="margin-bottom: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-weight: 700; color: var(--tech-amber); font-size: 12.5px;">📊 ${escapeHtml(sh.SheetName)} (${sh.RowCount}行 × ${sh.ColCount}列)</span>
+                <button class="card-launch-btn" style="padding: 2px 6px; font-size: 10px;" onclick="copyToClipboard('${escapeQuote(sh.SampleMarkdownTable)}', '已复制工作表 Markdown 表格！')">📋 复制表格</button>
+              </div>
+              <div style="font-size: 11px; overflow-x: auto; max-height: 200px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-hairline); border-radius: 6px; padding: 8px; white-space: pre; font-family: Consolas, monospace;">${escapeHtml(sh.SampleMarkdownTable)}</div>
+            </div>
+          `).join("");
+        } else {
+          bodyHtml = `<div style="text-align: center; color: var(--text-muted); padding: 24px; font-size: 12px;">未检测到有效工作表数据</div>`;
+        }
+      } else if (currentOfficeTab === "slides") {
+        const slides = summary.Slides || [];
+        if (slides.length > 0) {
+          bodyHtml = `
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              ${slides.map(sl => `
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-hairline); border-radius: 6px; padding: 8px 10px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--cyber-purple); margin-bottom: 4px;">
+                    <span>🎬 Slide ${sl.SlideIndex}: ${escapeHtml(sl.Title)}</span>
+                    ${sl.HasNotes ? `<span class="tag-badge badge-plugin" style="font-size: 9px;">含演讲备注</span>` : ''}
+                  </div>
+                  <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap; margin-bottom: 4px;">${escapeHtml(sl.ContentPreview)}</div>
+                  ${sl.HasNotes ? `<div style="font-size: 11px; color: var(--indigo-light); background: rgba(99,102,241,0.08); padding: 4px 6px; border-radius: 4px; line-height: 1.4;">🎙️ 备注: ${escapeHtml(sl.SpeakerNotes)}</div>` : ''}
+                </div>
+              `).join("")}
+            </div>
+          `;
+        }
+      } else if (currentOfficeTab === "text") {
+        bodyHtml = `<div style="font-size: 12px; line-height: 1.6; color: var(--text-secondary); white-space: pre-wrap; max-height: 360px; overflow-y: auto;">${escapeHtml(summary.ExtractedPlainText || '无文本')}</div>`;
+      }
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">🏢 本地 Office 透视</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${escapeHtml(summary.FileType.toUpperCase())}</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${escapeHtml(summary.FileSizeFormatted)}</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div class="inspector-doc-title">📎 ${escapeHtml(summary.FileName)}</div>
+            ${tabsHtml}
+          </div>
+        </div>
+        <div class="inspector-body" style="padding: 12px; max-height: 400px; overflow-y: auto;">
+          ${bodyHtml}
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="openAssetLocalFile('${escapeQuote(summary.FilePath)}')" title="本地独立软件秒开">⚡ 本地秒开</button>
+            ${fileType === 'docx' ? `
+              <button class="inspector-dock-btn" onclick="importWordOutlineDaily()" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);" title="大纲写入今日日记">📥 大纲入日记</button>
+              <button class="inspector-dock-btn" onclick="importWordChecklistDaily()" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="提取批注为待办任务清单写入日记">📋 批注转待办</button>
+            ` : ''}
+            ${fileType === 'xlsx' ? `
+              <button class="inspector-dock-btn" onclick="importExcelTableDaily()" style="color: var(--tech-amber); border-color: rgba(245,158,11,0.4);" title="表格写入今日日记">📥 表格入日记</button>
+            ` : ''}
+            ${fileType === 'pptx' ? `
+              <button class="inspector-dock-btn" onclick="importPptCardsDaily()" style="color: var(--cyber-purple); border-color: rgba(168,85,247,0.4);" title="幻灯片与备注提取为 FSRS 闪卡写入日记">🧠 提炼闪卡库</button>
+            ` : ''}
+            <button class="inspector-dock-btn" onclick="locateInSearchTool('${escapeQuote(summary.FileName)}')" title="本地检索工具定位">🔍 定位文件</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('[${escapeQuote(summary.FileName)}](file:///${escapeQuote(summary.FilePath.replace(/\\\\/g, '/'))})', '已复制本地文件链接！')">🔗 贴外链</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function switchOfficeTab(tab) {
+      currentOfficeTab = tab;
+      renderOfficeDeepInspector();
+    }
+
+    function importWordOutlineDaily() {
+      const summary = currentOfficeDocSummary;
+      if (!summary || !summary.Headings || summary.Headings.length === 0) return;
+      const lines = summary.Headings.map(h => `${'  '.repeat(Math.max(0, h.Level - 1))}- **H${h.Level}**: ${h.Title}`);
+      const md = `### 📑 《${summary.FileName}》大纲树\n> 📍 路径: \`${summary.FilePath}\`\n\n` + lines.join("\n");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
+        showToast(`✓ 已将《${summary.FileName}》大纲树沉淀写入今日日记！`);
+      }
+    }
+
+    function importWordChecklistDaily() {
+      const summary = currentOfficeDocSummary;
+      if (!summary || !summary.Comments || summary.Comments.length === 0) return;
+      const lines = summary.Comments.map(c => `- [ ] **批注** (${c.Author || '审阅人'}): ${c.CommentText}${c.AnchorQuoteText ? `\\n  > 引文: 「${c.AnchorQuoteText}」` : ''}`);
+      const md = `### 💬 《${summary.FileName}》审阅待办清单 (${summary.Comments.length}条)\n> 📍 底稿: \`${summary.FilePath}\`\n\n` + lines.join("\n");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
+        showToast(`✓ 已将《${summary.FileName}》的 ${summary.Comments.length} 条批注生成待办清单写入今日日记！`);
+      }
+    }
+
+    function importExcelTableDaily() {
+      const summary = currentOfficeDocSummary;
+      if (!summary || !summary.Sheets || summary.Sheets.length === 0) return;
+      const sh = summary.Sheets[0];
+      const md = `### 📊 《${summary.FileName}》[${sh.SheetName}] 数据表\n> 📍 底稿: \`${summary.FilePath}\`\n\n` + sh.SampleMarkdownTable;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
+        showToast(`✓ 已将表格 [${sh.SheetName}] 结构化沉淀写入今日日记！`);
+      }
+    }
+
+    function importPptCardsDaily() {
+      const summary = currentOfficeDocSummary;
+      if (!summary || !summary.Slides || summary.Slides.length === 0) return;
+      const cards = summary.Slides.map(sl => `#### 🧠 Slide ${sl.SlideIndex}: ${sl.Title}\n\n**要点**:\n${sl.ContentPreview}\n\n${sl.HasNotes ? `**演讲备注**:\n${sl.SpeakerNotes}\n\n` : ''}{: custom-riff-decks="PPT" custom-type="flashcard" }`).join("\n\n");
+      const md = `### 🎬 《${summary.FileName}》知识卡片库\n\n` + cards;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
+        showToast(`✓ 已将 ${summary.Slides.length} 张 PPT 幻灯片提炼为 FSRS 复习闪卡！`);
+      }
     }
 
     window.onRescueSearchResults = function(resp) {

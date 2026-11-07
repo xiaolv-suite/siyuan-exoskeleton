@@ -1506,6 +1506,42 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
+                // 21.8 本地 Office (Word/Excel/PPT) 流式透视与抽取
+                if (op.Equals("inspectOfficeFile", StringComparison.OrdinalIgnoreCase))
+                {
+                    string p = JsonHelper.GetString(msg, "filePath");
+                    if (!string.IsNullOrEmpty(p) && File.Exists(p))
+                    {
+                        ThreadPool.QueueUserWorkItem(s =>
+                        {
+                            try
+                            {
+                                var summary = OfficeOpenXmlParser.InspectFile(p);
+                                Dispatcher.Invoke(() =>
+                                {
+                                    if (_webView != null && _webView.CoreWebView2 != null)
+                                    {
+                                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOfficeInspectionLoaded) window.onOfficeInspectionLoaded(" + JsonHelper.ToJson(summary) + ");");
+                                    }
+                                });
+                            }
+                            catch { }
+                        });
+                    }
+                    return;
+                }
+
+                // 21.9 跨软件 Office 深度锚点跳转 (Excel 单元格 / Word 标题)
+                if (op.Equals("openOfficeLocation", StringComparison.OrdinalIgnoreCase))
+                {
+                    string p = JsonHelper.GetString(msg, "filePath");
+                    string sheet = JsonHelper.GetString(msg, "sheet");
+                    string cell = JsonHelper.GetString(msg, "cell");
+                    string heading = JsonHelper.GetString(msg, "heading");
+                    XiaoLv.Desktop.Engine.Modules.OfficeDeepLinkMain.OpenOfficeLocation(p, sheet, cell, heading);
+                    return;
+                }
+
                 // 21.6 误删打捞与时光机安全检索 (rescue: / hist: 语法)
                 if (op.Equals("searchRescue", StringComparison.OrdinalIgnoreCase))
                 {

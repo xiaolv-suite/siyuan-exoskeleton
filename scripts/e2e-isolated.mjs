@@ -723,6 +723,55 @@ async function main() {
   const isAcadOk = acadRes.includes("True|True|True");
   logStep("Step 7.34: 学术文献引用 (DOI/arXiv)、LaTeX 数学公式与数据表格嗅探断言", isAcadOk, `嗅探断言: ${acadRes}`);
 
+  // Step 7.35: Test Native Office OpenXML Parser & Deep Linking (Word/Excel/PPT)
+  const officeScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $parser = $asm.GetType('XiaoLv.Desktop.Core.OfficeOpenXmlParser');
+    $deepLink = $asm.GetType('XiaoLv.Desktop.Engine.Modules.OfficeDeepLinkMain');
+    
+    # 构造模拟 docx 数据总结
+    $docSummaryType = $asm.GetType('XiaoLv.Desktop.Core.OfficeDocumentSummary');
+    $doc = [Activator]::CreateInstance($docSummaryType);
+    $doc.FileName = '投资尽调底稿.docx';
+    $doc.FilePath = 'D:\\项目\\投资尽调底稿.docx';
+    $doc.FileType = 'docx';
+    $doc.FileSizeFormatted = '2.4 MB';
+    
+    # 模拟 H1/H2 大纲
+    $hType = $asm.GetType('XiaoLv.Desktop.Core.OfficeHeadingItem');
+    $h1 = [Activator]::CreateInstance($hType);
+    $h1.Level = 1; $h1.Title = '一、项目概况与背景';
+    $doc.Headings.Add($h1);
+    
+    $h2 = [Activator]::CreateInstance($hType);
+    $h2.Level = 2; $h2.Title = '1.1 核心财务数据与估值';
+    $doc.Headings.Add($h2);
+    
+    # 模拟审阅批注
+    $cType = $asm.GetType('XiaoLv.Desktop.Core.OfficeCommentItem');
+    $c1 = [Activator]::CreateInstance($cType);
+    $c1.Author = '王律师';
+    $c1.CommentText = '需补充流动性压力测试情景';
+    $c1.AnchorQuoteText = '依据历史估值倍数计算';
+    $doc.Comments.Add($c1);
+    
+    # 检验大纲与审阅待办 Markdown 转化
+    $mBuildOutline = $deepLink.GetMethod('BuildWordOutlineMarkdown', [System.Reflection.BindingFlags]'Public,Static');
+    $outlineMd = $mBuildOutline.Invoke($null, @($doc));
+    
+    $mBuildChecklist = $deepLink.GetMethod('BuildWordReviewChecklistMarkdown', [System.Reflection.BindingFlags]'Public,Static');
+    $checklistMd = $mBuildChecklist.Invoke($null, @($doc));
+    
+    $hasOutline = $outlineMd.Contains('项目概况与背景') -and $outlineMd.Contains('H1') -and $outlineMd.Contains('custom-type="office-outline"');
+    $hasChecklist = $checklistMd.Contains('王律师') -and $checklistMd.Contains('- [ ]') -and $checklistMd.Contains('流动性压力测试') -and $checklistMd.Contains('custom-type="office-review-checklist"');
+    
+    Write-Output ($hasOutline.ToString() + '|' + $hasChecklist.ToString());
+  `;
+  const officeRes = runPs(officeScript);
+  const isOfficeOk = officeRes.includes("True|True");
+  logStep("Step 7.35: 本地 Office 零依赖流式解析、大纲透视与批注待办转化断言", isOfficeOk, `大纲与待办转译断言: ${officeRes}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

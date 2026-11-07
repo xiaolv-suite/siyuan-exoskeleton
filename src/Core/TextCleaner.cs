@@ -359,6 +359,11 @@ namespace XiaoLv.Desktop.Core
                         char lastChar = cur[cur.Length - 1];
                         // 句号、问号、感叹号、冒号、分号，或下一行以标题/列表项开始 -> 视为真换行
                         bool isSentenceEnd = (lastChar == '。' || lastChar == '！' || lastChar == '？' || lastChar == '.' || lastChar == '!' || lastChar == '?' || lastChar == '；' || lastChar == ';' || lastChar == '：' || lastChar == ':');
+                        // 增强学术文献与英文缩写启发式：若以点结尾但下一行首字母为小写，或当前行以常见缩写 (et al., e.g., i.e., Fig., vs., etc.) 结尾，豁免假断行
+                        if (lastChar == '.' && (char.IsLower(next[0]) || cur.EndsWith("et al.", StringComparison.OrdinalIgnoreCase) || cur.EndsWith("e.g.", StringComparison.OrdinalIgnoreCase) || cur.EndsWith("i.e.", StringComparison.OrdinalIgnoreCase) || cur.EndsWith("fig.", StringComparison.OrdinalIgnoreCase) || cur.EndsWith("vs.", StringComparison.OrdinalIgnoreCase) || cur.EndsWith("etc.", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            isSentenceEnd = false;
+                        }
                         bool nextIsHeadingOrList = next.StartsWith("#") || next.StartsWith("- ") || next.StartsWith("* ") || next.StartsWith("+ ") || Regex.IsMatch(next, @"^\d+\.\s");
 
                         if (isSentenceEnd || nextIsHeadingOrList)

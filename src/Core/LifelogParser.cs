@@ -144,6 +144,7 @@ namespace XiaoLv.Desktop.Core
                 var m = Regex.Match(raw, @"^[@＠]?(?:人脉[：:])?\s*([^\s：:,，]+)[\s：:,，]*(.*)$");
                 string person = m.Success ? m.Groups[1].Value.Trim() : "";
                 string note = m.Success ? m.Groups[2].Value.Trim() : "";
+                string safePerson = person.Replace("[", "【").Replace("]", "】");
                 entry.Category = LifelogCategory.Contact;
                 entry.DisplayIcon = "👥";
                 entry.CategoryLabel = "人脉";
@@ -153,7 +154,7 @@ namespace XiaoLv.Desktop.Core
                 entry.ThemeBorderHex = "#a855f7";
                 entry.ThemeTextHex = "#d8b4fe";
                 entry.IalAttributes = "{: custom-lifelog-type=\"contact\" custom-lifelog-person=\"" + person.Replace("\"", "") + "\" }";
-                entry.FormattedMarkdown = "- " + timeStr + " 👥 [[" + person + "]] " + note + sourceTag;
+                entry.FormattedMarkdown = "- " + timeStr + " 👥 [[" + safePerson + "]] " + note + sourceTag;
                 return entry;
             }
 

@@ -4056,6 +4056,35 @@
           }
         }
 
+        // 融合呈现用户自定义简码扩词
+        try {
+          const rawSnippets = window.__DESKTOP_SETTINGS__?.customSnippetsJson || "[]";
+          const snips = JSON.parse(rawSnippets);
+          if (Array.isArray(snips)) {
+            for (const sn of snips) {
+              const sCode = sn.Shortcode || sn.shortcode || "";
+              const sLabel = sn.Label || sn.label || "";
+              const sTpl = sn.Template || sn.template || "";
+              const fullText = (sCode + " " + sLabel + " " + sTpl).toLowerCase();
+              if (!subKw || fullText.includes(subKw) || checkPinyinMatch(sLabel, subKw)) {
+                dynamicList.push({
+                  id: `snip_${sCode}`,
+                  group: "commands",
+                  title: `${sCode} ${sLabel}`,
+                  desc: sTpl.substring(0, 50).replace(/[\r\n]+/g, " "),
+                  hotkey: "Enter",
+                  iconType: "terminal",
+                  iconColor: "var(--titanium-cyan)",
+                  badge: "自定义简码",
+                  badgeCls: "badge-native",
+                  actionType: "template-insert",
+                  templateContent: sTpl
+                });
+              }
+            }
+          }
+        } catch {}
+
         filteredItems = dynamicList;
         selectedIndex = 0;
         renderItems();

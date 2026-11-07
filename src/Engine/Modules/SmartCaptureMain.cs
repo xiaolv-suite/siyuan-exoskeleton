@@ -151,6 +151,16 @@ public static class SmartCaptureMain
             text = text.Replace("\\n", "\n");
         }
 
+        // 简码扩词与动态占位符变量自动求值展开 (如 :sig, :date, :time, {{now}}, {{clipboard}})
+        if (text.StartsWith(":") || text.StartsWith("："))
+        {
+            text = SnippetExpansionEngine.Expand(text);
+        }
+        else if (text.Contains("{{"))
+        {
+            text = SnippetExpansionEngine.ResolveVariables(text);
+        }
+
         // 智能前缀自适应归一化 (兼容中文关键字与英文缩写)
         string rawTrim = text.Trim();
         if (rawTrim.StartsWith("待办：") || rawTrim.StartsWith("待办:") || rawTrim.StartsWith("todo:", StringComparison.OrdinalIgnoreCase))

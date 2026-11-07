@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <title>思源外骨骼 · 随身划笔</title>
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem("pen_capsule_theme") || localStorage.getItem("omni_panel_theme") || "dark";
+        document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --bg-canvas: #090d16;
+      --bg-card: rgba(23, 31, 51, 0.88);
+      --bg-card-hover: rgba(30, 41, 69, 0.95);
+      --border-card: rgba(255, 255, 255, 0.12);
+      --border-card-bottom: rgba(255, 255, 255, 0.24);
+      --border-glow: rgba(16, 185, 129, 0.38);
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --preview-bg: rgba(0, 0, 0, 0.32);
+      --preview-border: rgba(16, 185, 129, 0.3);
+      --kbd-bg: rgba(255, 255, 255, 0.12);
+      --kbd-border: rgba(255, 255, 255, 0.22);
+      --footer-bg: rgba(0, 0, 0, 0.25);
+    }
+
+    [data-theme="light"] {
+      --bg-canvas: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --border-card: rgba(203, 213, 225, 0.85);
+      --border-card-bottom: #94a3b8;
+      --border-glow: rgba(16, 185, 129, 0.45);
+      --text-main: #0f172a;
+      --text-sub: #64748b;
+      --preview-bg: #f1f5f9;
+      --preview-border: rgba(16, 185, 129, 0.4);
+      --kbd-bg: #e2e8f0;
+      --kbd-border: #cbd5e1;
+      --footer-bg: #e2e8f0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 12px 16px;
+      background: var(--bg-canvas);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      user-select: none;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    /* 顶栏 */
+    .capsule-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      margin-bottom: 8px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-img {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.35));
+    }
+    .header-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+    .header-tag {
+      font-size: 10px;
+      padding: 1.5px 7px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid var(--border-glow);
+      color: #10b981;
+      font-weight: 750;
+    }
+    .theme-btn {
+      background: transparent;
+      border: 1px solid var(--border-card);
+      border-radius: 6px;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--text-sub);
+      transition: all 0.15s;
+    }
+    .theme-btn:hover {
+      border-color: #10b981;
+      color: var(--text-main);
+    }
+
+    /* 选区预览卡片 */
+    .preview-card {
+      background: var(--preview-bg);
+      border: 1px solid var(--preview-border);
+      border-left: 3.5px solid #10b981;
+      border-radius: 7px;
+      padding: 7px 10px;
+      font-size: 12px;
+      color: var(--text-main);
+      line-height: 1.45;
+      max-height: 46px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      margin-bottom: 10px;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+      position: relative;
+    }
+    .preview-count {
+      position: absolute;
+      right: 8px;
+      bottom: 4px;
+      font-size: 10px;
+      color: var(--text-sub);
+      background: var(--bg-canvas);
+      padding: 0 4px;
+      border-radius: 3px;
+    }
+
+    /* 空选区备用输入框 */
+    .input-fallback {
+      width: 100%;
+      height: 38px;
+      background: var(--preview-bg);
+      border: 1.5px solid var(--border-glow);
+      border-radius: 7px;
+      padding: 0 12px;
+      color: var(--text-main);
+      font-size: 12.5px;
+      outline: none;
+      margin-bottom: 10px;
+      display: none;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.12);
+    }
+
+    /* 6 键微拟物排版 */
+    .key-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .chiclet-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-bottom: 2.5px solid var(--border-card-bottom);
+      color: var(--text-main);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 750;
+      transition: all 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+    .chiclet-btn:hover {
+      background: var(--bg-card-hover);
+      transform: translateY(-1px);
+    }
+    .chiclet-btn:active {
+      transform: translateY(1.5px);
+      border-bottom-width: 1px;
+    }
+
+    /* 键帽专属色彩强调 */
+    .btn-1:hover { border-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+    .btn-2:hover { border-color: #a855f7; box-shadow: 0 0 10px rgba(168, 85, 247, 0.3); }
+    .btn-3:hover { border-color: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }
+    .btn-4:hover { border-color: #0ea5e9; box-shadow: 0 0 10px rgba(14, 165, 233, 0.3); }
+    .btn-5:hover { border-color: #6366f1; box-shadow: 0 0 10px rgba(99, 102, 241, 0.3); }
+    .btn-6:hover { border-color: #f43f5e; box-shadow: 0 0 10px rgba(244, 63, 94, 0.3); }
+
+    .kbd-cap {
+      background: var(--kbd-bg);
+      border: 1px solid var(--kbd-border);
+      border-bottom: 1.5px solid var(--border-card-bottom);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: Consolas, monospace;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+
+    .smart-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .badge-url { background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .badge-table { background: rgba(16, 185, 129, 0.18); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .badge-code { background: rgba(168, 85, 247, 0.18); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.4); }
+
+    /* 底栏提示 */
+    .capsule-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-sub);
+      padding-top: 4px;
+      border-top: 1px solid rgba(128, 128, 128, 0.15);
+      flex-shrink: 0;
+    }
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶栏 -->
+  <div class="capsule-header" onmousedown="startDrag(event)" style="cursor: move;">
+    <div class="header-left">
+      <img src="icons/xiaolv-pen-logo.svg" alt="随身划词笔" class="logo-img" onerror="this.outerHTML='✏️';" />
+      <span class="header-title">思源外骨骼 · 随身划笔</span>
+      <span class="header-tag">盲打分发</span>
+    </div>
+    <div style="display: flex; gap: 4px;">
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="切换亮暗主题">☀️</button>
+      <button class="theme-btn" onclick="choose('close')" title="关闭 (Esc)">✕</button>
+    </div>
+  </div>
+
+  <!-- 选区预览 / 输入备用 -->
+  <div id="preview-card" class="preview-card">
+    <span id="smart-badge" class="smart-badge" style="display: none;"></span>
+    <span id="preview-text">正在捕获选区...</span>
+    <span id="preview-count" class="preview-count"></span>
+  </div>
+  <input id="input-fallback" class="input-fallback" type="text" placeholder="未选中文本，请直接输入内容后按 1~6 分发..." />
+
+  <!-- 3D 拟物微键盘矩阵 (全新功能直达) -->
+  <div class="key-grid">
+    <div class="chiclet-btn btn-1" onclick="choose('1', event)">
+      <span class="kbd-cap" style="color: #10b981;">1</span>
+      <span>📝 结构入库</span>
+    </div>
+    <div class="chiclet-btn btn-2" onclick="choose('2', event)">
+      <span class="kbd-cap" style="color: #a855f7;">2</span>
+      <span>🧠 制闪卡</span>
+    </div>
+    <div class="chiclet-btn btn-3" onclick="choose('3', event)">
+      <span class="kbd-cap" style="color: #f59e0b;">3</span>
+      <span>📋 派任务</span>
+    </div>
+    <div class="chiclet-btn btn-4" onclick="choose('4', event)">
+      <span class="kbd-cap" style="color: #38bdf8;">4</span>
+      <span>🌐 稍后读</span>
+    </div>
+    <div class="chiclet-btn btn-5" onclick="choose('5', event)">
+      <span class="kbd-cap" style="color: #6366f1;">5</span>
+      <span>📤 净复制</span>
+    </div>
+    <div class="chiclet-btn btn-6" onclick="choose('6', event)">
+      <span class="kbd-cap" style="color: #06b6d4;">6</span>
+      <span>🔗 贴双链</span>
+    </div>
+  </div>
+
+  <!-- 底栏提示 -->
+  <div class="capsule-footer">
+    <div class="footer-left">
+      <span>敲击 <b style="color: var(--text-main);">1 ~ 6</b> 盲打分发</span>
+      <span>•</span>
+      <span><b style="color: var(--text-main);">Q</b> 携文进总控</span>
+      <span>•</span>
+      <span><b style="color: var(--text-main);">↵</b> 入日记</span>
+    </div>
+    <span><b style="color: var(--text-main);">Esc</b> 退出</span>
+  </div>
+
+  <script>
+    let currentText = "";
+    let currentTheme = localStorage.getItem("pen_capsule_theme") || "dark";
+    let activeRadarHit = null;
+
+    function startDrag(e) {
+      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+      if (e.button === 0 && window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'dragWindow' }));
+      }
+    }
+
+    window.onRadarMatch = function(info) {
+      if (!info || !info.hitId) return;
+      activeRadarHit = info;
+      const tag = document.querySelector(".header-tag");
+      if (tag) {
+        tag.innerHTML = `🔗 已收录: 《${info.docTitle || '相关笔记'}》 (Shift+↵ 贴双链)`;
+        tag.style.background = "rgba(16, 185, 129, 0.28)";
+        tag.style.borderColor = "#10b981";
+        tag.style.color = "#10b981";
+        tag.style.cursor = "pointer";
+        tag.title = "点击或按 Shift+Enter 直接在光标处贴入思源双链";
+        tag.onclick = () => pasteRadarRef();
+      }
+    };
+
+    function pasteRadarRef() {
+      if (!activeRadarHit) return;
+      const cleanTerm = (activeRadarHit.term || currentText || "引用").replace(/["\r\n]/g, " ").trim();
+      const ref = `((${activeRadarHit.hitId} "${cleanTerm}"))`;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage({ op: 'pasteAtCaret', text: ref });
+      }
+    }
+
+    function applyTheme(th) {
+      document.documentElement.setAttribute("data-theme", th);
+      document.getElementById("theme-btn").innerText = (th === "dark") ? "☀️" : "🌙";
+      localStorage.setItem("pen_capsule_theme", th);
+    }
+
+    function toggleTheme() {
+      currentTheme = (currentTheme === "dark") ? "light" : "dark";
+      applyTheme(currentTheme);
+    }
+
+    function init() {
+      applyTheme(currentTheme);
+
+      try {
+        const hash = window.location.hash ? window.location.hash.substring(1) : "";
+        if (hash) {
+          const decoded = decodeURIComponent(escape(atob(hash)));
+          currentText = decoded.trim();
+        }
+      } catch (e) {}
+
+      updateUIWithText(currentText);
+    }
+
+    function updateUIWithText(txt) {
+      currentText = (txt || "").trim();
+      const pCard = document.getElementById("preview-card");
+      const pText = document.getElementById("preview-text");
+      const pCount = document.getElementById("preview-count");
+      const sBadge = document.getElementById("smart-badge");
+      const iFallback = document.getElementById("input-fallback");
+
+      if (currentText) {
+        // 智能类型识别与徽标呈现
+        if (sBadge) {
+          if (currentText.startsWith("http://") || currentText.startsWith("https://")) {
+            sBadge.innerText = "🌐 网址链接";
+            sBadge.className = "smart-badge badge-url";
+            sBadge.style.display = "inline-flex";
+          } else if (currentText.startsWith("[") && currentText.includes("](") && (currentText.includes("http://") || currentText.includes("https://"))) {
+            sBadge.innerText = "🔗 提纯链接";
+            sBadge.className = "smart-badge badge-url";
+            sBadge.style.display = "inline-flex";
+          } else if (currentText.startsWith("|") && currentText.includes("\n|")) {
+            sBadge.innerText = "📊 Markdown表格";
+            sBadge.className = "smart-badge badge-table";
+            sBadge.style.display = "inline-flex";
+          } else if (currentText.startsWith("```")) {
+            sBadge.innerText = "💻 代码块";
+            sBadge.className = "smart-badge badge-code";
+            sBadge.style.display = "inline-flex";
+          } else {
+            sBadge.style.display = "none";
+          }
+        }
+
+        pText.innerText = '“' + currentText + '”';
+        pCount.innerText = currentText.length + " 字";
+        pCard.style.display = "block";
+        iFallback.style.display = "none";
+      } else {
+        if (sBadge) sBadge.style.display = "none";
+        pCard.style.display = "none";
+        iFallback.style.display = "block";
+        iFallback.value = "";
+        iFallback.focus();
+        iFallback.oninput = (e) => { currentText = e.target.value.trim(); };
+      }
+    }
+
+    window.updateSelectedTextFromBase64 = function(b64) {
+      let decoded = "";
+      if (b64) {
+        try {
+          decoded = decodeURIComponent(escape(atob(b64))).trim();
+        } catch (e) {
+          try { decoded = atob(b64).trim(); } catch (e2) {}
+        }
+      }
+      updateUIWithText(decoded);
+    };
+
+    function choose(op, ev) {
+      if (op === "close") {
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'close' }));
+        }
+        return;
+      }
+
+      if (ev) {
+        if (ev.shiftKey && !op.includes(":shift")) op += ":shift";
+        else if (ev.ctrlKey && !op.includes(":ctrl")) op += ":ctrl";
+      }
+
+      const iFallback = document.getElementById("input-fallback");
+      if (iFallback && iFallback.style.display !== "none" && iFallback.value.trim()) {
+        currentText = iFallback.value.trim();
+      }
+
+      if (window.chrome && window.chrome.webview) {
+        if (currentText) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'setVar', data: { name: '输入文本', value: currentText } }));
+        }
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'setVar', data: { name: '操作指令', value: op } }));
+        setTimeout(() => window.chrome.webview.postMessage(JSON.stringify({ op: 'close' })), 120);
+      } else {
+        alert("执行指令: " + op + " | 内容: " + currentText);
+      }
+    }
+
+    window.addEventListener("keydown", (e) => {
+      const isInputFocused = (document.activeElement === document.getElementById("input-fallback"));
+      if ((e.shiftKey && e.key === "Enter") || (e.key === "Tab" && activeRadarHit)) {
+        e.preventDefault();
+        pasteRadarRef();
+        return;
+      }
+      if (['1', '2', '3', '4', '5', '6'].includes(e.key) && (!isInputFocused || e.altKey || e.ctrlKey)) {
+        e.preventDefault();
+        let mod = e.shiftKey ? ":shift" : (e.ctrlKey ? ":ctrl" : "");
+        choose(e.key + mod);
+      } else if ((e.key === 'q' || e.key === 'Q') && (!isInputFocused || e.altKey || e.ctrlKey)) {
+        e.preventDefault();
+        choose('q');
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        window.chrome?.webview?.postMessage(JSON.stringify({ op: 'close' }));
+      } else if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        choose("1");
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

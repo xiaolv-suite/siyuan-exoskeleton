@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>思源外骨骼 · 快捷交互弹窗</title>
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem("omni_panel_theme") || "dark";
+        document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="icons/xiaolv-master-logo.svg" />
+  <style>
+    /* ==========================================================
+       DESIGN SYSTEM SPECIFICATION: MIST LIGHT (默认通透冷白) & MIST DARK (暗夜黑曜)
+       对齐思源小驴超级全局面板 (panel.html) 统一高保真设计语言
+       便当盒顶高光、物理微拟物键帽与超高文字识别度
+       ========================================================== */
+    :root, [data-theme="light"] {
+      --bg-base: #F8FAFC;
+      --bg-surface: rgba(255, 255, 255, 0.96);
+      --bg-surface-elevated: #FFFFFF;
+      --bg-card: #FFFFFF;
+      --bg-card-hover: #F8FAFC;
+      --bg-selected: linear-gradient(180deg, #FFFFFF 0%, #EEF2FF 100%);
+      --bg-selected-subtle: rgba(99, 102, 241, 0.08);
+
+      --border-hairline: rgba(203, 213, 225, 0.75);
+      --border-card: rgba(203, 213, 225, 0.85);
+      --border-glow: rgba(99, 102, 241, 0.45);
+      --border-selected: #6366f1;
+
+      --indigo-primary: #4f46e5;
+      --indigo-light: #6366f1;
+      --indigo-subtle: #EEF2FF;
+      --indigo-border: #C7D2FE;
+      --emerald-mint: #059669;
+      --emerald-subtle: #ECFDF5;
+      --emerald-border: #A7F3D0;
+      --cyber-purple: #7c3aed;
+      --cyber-purple-subtle: #F5F3FF;
+      --cyber-purple-border: #DDD6FE;
+      --tech-amber: #d97706;
+      --tech-amber-subtle: #FFFBEB;
+      --tech-amber-border: #FDE68A;
+      --cyber-sky: #0284c7;
+      --cyber-sky-subtle: #F0F9FF;
+      --cyber-sky-border: #BAE6FD;
+      --rose-agent: #e11d48;
+      --rose-subtle: #FFF1F2;
+      --rose-border: #FECDD3;
+
+      /* High-Contrast Typography */
+      --text-primary: #0F172A;     /* Slate 900 */
+      --text-secondary: #334155;   /* Slate 700 */
+      --text-muted: #475569;       /* Slate 600 */
+      --text-dim: #64748B;         /* Slate 500 */
+
+      /* Bento Tactile Specular Elevation */
+      --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 14px -2px rgba(15, 23, 42, 0.05), inset 0 1px 0 #FFFFFF;
+      --card-shadow-hover: 0 12px 28px -4px rgba(99, 102, 241, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.04), inset 0 1px 0 #FFFFFF;
+      --card-shadow-selected: 0 0 0 2px #6366f1, 0 10px 28px -4px rgba(99, 102, 241, 0.22), inset 0 1px 0 #FFFFFF;
+
+      /* Physical Tactile Chiclet Key */
+      --key-badge-bg: linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%);
+      --key-badge-border: #CBD5E1;
+      --key-badge-bottom: #94A3B8;
+      --key-badge-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), inset 0 1px 0 #FFFFFF;
+      --key-badge-color: #0F172A;
+
+      --input-bg: #FFFFFF;
+      --input-border: #CBD5E1;
+      --input-shadow: inset 0 1.5px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+    }
+
+    [data-theme="dark"] {
+      --bg-base: #090D16;
+      --bg-surface: rgba(18, 24, 38, 0.96);
+      --bg-surface-elevated: #161F32;
+      --bg-card: rgba(23, 31, 51, 0.85);
+      --bg-card-hover: rgba(33, 44, 73, 0.98);
+      --bg-selected: linear-gradient(180deg, rgba(30, 41, 69, 0.98) 0%, rgba(49, 46, 129, 0.45) 100%);
+      --bg-selected-subtle: rgba(99, 102, 241, 0.22);
+
+      --border-hairline: rgba(255, 255, 255, 0.10);
+      --border-card: rgba(255, 255, 255, 0.12);
+      --border-glow: rgba(99, 102, 241, 0.55);
+      --border-selected: #818cf8;
+
+      --indigo-primary: #6366f1;
+      --indigo-light: #818cf8;
+      --indigo-subtle: rgba(99, 102, 241, 0.2);
+      --indigo-border: rgba(129, 140, 248, 0.4);
+      --emerald-mint: #10b981;
+      --emerald-subtle: rgba(16, 185, 129, 0.2);
+      --emerald-border: rgba(110, 231, 183, 0.4);
+      --cyber-purple: #a855f7;
+      --cyber-purple-subtle: rgba(168, 85, 247, 0.2);
+      --cyber-purple-border: rgba(216, 180, 254, 0.4);
+      --tech-amber: #f59e0b;
+      --tech-amber-subtle: rgba(245, 158, 11, 0.2);
+      --tech-amber-border: rgba(252, 211, 77, 0.4);
+      --cyber-sky: #38bdf8;
+      --cyber-sky-subtle: rgba(56, 189, 248, 0.2);
+      --cyber-sky-border: rgba(125, 211, 252, 0.4);
+      --rose-agent: #f43f5e;
+      --rose-subtle: rgba(244, 63, 94, 0.2);
+      --rose-border: rgba(253, 164, 175, 0.4);
+
+      /* High-Contrast Typography */
+      --text-primary: #FFFFFF;     /* Pure White */
+      --text-secondary: #CBD5E1;   /* Slate 300 */
+      --text-muted: #94A3B8;       /* Slate 400 */
+      --text-dim: #64748B;         /* Slate 500 */
+
+      /* Bento Tactile Specular Elevation */
+      --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      --card-shadow-hover: 0 14px 32px -4px rgba(0, 0, 0, 0.7), 0 0 24px rgba(99, 102, 241, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+      --card-shadow-selected: 0 0 0 2px #818cf8, 0 12px 32px -4px rgba(99, 102, 241, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+
+      /* Physical Tactile Chiclet Key */
+      --key-badge-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.06) 100%);
+      --key-badge-border: rgba(255, 255, 255, 0.18);
+      --key-badge-bottom: rgba(255, 255, 255, 0.38);
+      --key-badge-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+      --key-badge-color: #FFFFFF;
+
+      --input-bg: rgba(15, 23, 42, 0.72);
+      --input-border: rgba(255, 255, 255, 0.14);
+      --input-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      text-rendering: optimizeLegibility;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Ambient Glow Background */
+    body::before {
+      content: "";
+      position: absolute;
+      top: -30%;
+      left: 10%;
+      width: 80%;
+      height: 70%;
+      background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08) 0%, rgba(56, 189, 248, 0.05) 40%, transparent 75%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    [data-theme="dark"] body::before {
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, rgba(56, 189, 248, 0.06) 50%, transparent 75%);
+    }
+
+    /* Top Modal Header */
+    .dialog-header {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border-hairline);
+      background: var(--bg-surface);
+      backdrop-filter: blur(16px);
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .brand-logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: var(--radius-md);
+      filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.45));
+    }
+    .plugin-icon-img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      border-radius: 4px;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+    }
+
+    .header-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .dialog-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dialog-subtitle {
+      font-size: 11px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge-pill {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 12px;
+      background: rgba(99, 102, 241, 0.2);
+      color: var(--indigo-light);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      font-family: monospace;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: 1px solid var(--border-hairline);
+      color: var(--text-secondary);
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.15s ease;
+    }
+    .close-btn:hover {
+      background: rgba(244, 63, 94, 0.2);
+      border-color: rgba(244, 63, 94, 0.4);
+      color: var(--rose-agent);
+    }
+
+    /* Container Body */
+    .dialog-body {
+      position: relative;
+      z-index: 5;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 20px;
+      overflow: hidden;
+      gap: 12px;
+    }
+
+    /* Telemetry Summary Bar (Optional) */
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      font-size: 12px;
+      color: var(--indigo-light);
+    }
+
+    /* Filter Bar for Select Mode */
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      color: var(--text-muted);
+      font-size: 13px;
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 40px;
+      background: var(--input-bg);
+      border: 1.5px solid var(--input-border);
+      border-radius: var(--radius-md);
+      padding: 0 14px 0 34px;
+      color: var(--text-primary);
+      font-size: 13.5px;
+      font-weight: 500;
+      box-shadow: var(--input-shadow);
+      outline: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .search-input:focus {
+      border-color: var(--indigo-light);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22), 0 2px 10px rgba(99, 102, 241, 0.15);
+    }
+    .search-input::placeholder {
+      color: var(--text-dim);
+    }
+
+    /* Bento Cards List for Select Mode */
+    .cards-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 4px;
+    }
+    .cards-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    .cards-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+
+    .bento-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 15px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card, var(--border-hairline));
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: var(--card-shadow);
+    }
+    .bento-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(99, 102, 241, 0.55);
+      transform: translateY(-1.5px);
+      box-shadow: var(--card-shadow-hover);
+    }
+    .bento-card.selected {
+      background: var(--bg-selected);
+      border-color: var(--border-selected);
+      box-shadow: var(--card-shadow-selected);
+      transform: translateY(-1.5px);
+    }
+
+    .card-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .card-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      background: var(--key-badge-bg);
+      border: 1px solid var(--key-badge-border);
+      box-shadow: var(--key-badge-shadow);
+      flex-shrink: 0;
+    }
+
+    .card-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .card-title {
+      font-size: 13.5px;
+      font-weight: 650;
+      color: var(--text-primary);
+      letter-spacing: -0.012em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-desc {
+      font-size: 12px;
+      font-weight: 450;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* Badges */
+    .badge {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+    .badge-plugin {
+      background: var(--tech-amber-subtle);
+      color: var(--tech-amber);
+      border: 1px solid var(--tech-amber-border);
+    }
+    .badge-bridge {
+      background: var(--cyber-sky-subtle);
+      color: var(--cyber-sky);
+      border: 1px solid var(--cyber-sky-border);
+    }
+    .badge-native {
+      background: var(--emerald-subtle);
+      color: var(--emerald-mint);
+      border: 1px solid var(--emerald-border);
+    }
+    .badge-system {
+      background: var(--indigo-subtle);
+      color: var(--indigo-light);
+      border: 1px solid var(--indigo-border);
+    }
+
+    .hotkey-pill {
+      font-family: ui-monospace, SFMono-Regular, "Cascadia Code", Consolas, monospace;
+      font-size: 11px;
+      font-weight: 750;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: var(--key-badge-bg);
+      border: 1px solid var(--key-badge-border);
+      border-bottom: 2.5px solid var(--key-badge-bottom);
+      box-shadow: var(--key-badge-shadow);
+      color: var(--key-badge-color);
+      min-width: 22px;
+      text-align: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.25;
+      transition: transform 0.08s, border-bottom 0.08s;
+    }
+    .hotkey-pill:active {
+      transform: translateY(1.5px);
+      border-bottom-width: 1px;
+    }
+
+    /* Input Mode Styles */
+    .input-mode-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .tag-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip-btn {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 12px;
+      background: var(--key-badge-bg);
+      border: 1px solid var(--key-badge-border);
+      color: var(--indigo-light);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .chip-btn:hover {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--indigo-primary);
+    }
+
+    .main-input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1.5px solid var(--input-border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: var(--input-shadow);
+      outline: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      font-family: inherit;
+    }
+    .main-input:focus {
+      border-color: var(--indigo-light);
+      box-shadow: 0 0 0 3.5px rgba(99, 102, 241, 0.22), 0 2px 12px rgba(99, 102, 241, 0.15);
+    }
+    .main-input::placeholder {
+      color: var(--text-dim);
+    }
+
+    textarea.main-input {
+      resize: none;
+      flex: 1;
+      line-height: 1.5;
+    }
+
+    .dialog-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 8px;
+    }
+
+    .footer-hints {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      height: 32px;
+      padding: 0 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      border: none;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4338ca, #4f46e5);
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.6);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border-hairline);
+      color: var(--text-secondary);
+    }
+    .btn-ghost:hover {
+      background: var(--key-badge-bg);
+      color: var(--text-primary);
+    }
+
+    /* ==========================================================
+       MIST LIGHT (通透冷白) 快捷弹窗细节深度优化
+       ========================================================== */
+    [data-theme="light"] .bento-card {
+      background: #FFFFFF;
+      border: 1px solid rgba(203, 213, 225, 0.85);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 3px 10px rgba(15, 23, 42, 0.03), inset 0 1px 0 #FFFFFF;
+    }
+    [data-theme="light"] .bento-card:hover {
+      background: #FFFFFF;
+      border-color: rgba(99, 102, 241, 0.55);
+      box-shadow: 0 10px 24px -4px rgba(99, 102, 241, 0.14), 0 3px 8px rgba(15, 23, 42, 0.04), inset 0 1px 0 #FFFFFF;
+    }
+    [data-theme="light"] .bento-card.selected {
+      background: linear-gradient(180deg, #FFFFFF 0%, #EEF2FF 100%);
+      border-color: #6366f1;
+      box-shadow: 0 0 0 2px #6366f1, 0 8px 20px rgba(99, 102, 241, 0.2), inset 0 1px 0 #FFFFFF;
+    }
+    [data-theme="light"] .card-desc {
+      color: #334155;
+      font-weight: 450;
+    }
+    [data-theme="light"] .search-input,
+    [data-theme="light"] .main-input {
+      background: #FFFFFF;
+      border: 1.5px solid #CBD5E1;
+      box-shadow: inset 0 1.5px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+    }
+    [data-theme="light"] .search-input:focus,
+    [data-theme="light"] .main-input:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3.5px rgba(99, 102, 241, 0.16), 0 4px 14px rgba(99, 102, 241, 0.08);
+    }
+    [data-theme="light"] .hotkey-pill {
+      background: linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%);
+      border: 1px solid #CBD5E1;
+      border-bottom: 2.5px solid #94A3B8;
+      color: #0F172A;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), inset 0 1px 0 #FFFFFF;
+      font-weight: 750;
+    }
+    [data-theme="light"] .badge-native {
+      background: #ECFDF5;
+      color: #047857;
+      border: 1px solid #A7F3D0;
+    }
+    [data-theme="light"] .badge-bridge {
+      background: #F0F9FF;
+      color: #0369A1;
+      border: 1px solid #BAE6FD;
+    }
+    [data-theme="light"] .badge-plugin {
+      background: #FFFBEB;
+      color: #92400E;
+      border: 1px solid #FDE68A;
+    }
+    [data-theme="light"] .badge-system {
+      background: #F5F3FF;
+      color: #5B21B6;
+      border: 1px solid #DDD6FE;
+    }
+    [data-theme="light"] .chip-btn {
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      color: #3730A3;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), inset 0 1px 0 #FFFFFF;
+    }
+    [data-theme="light"] .chip-btn:hover {
+      background: #EEF2FF;
+      border-color: #818CF8;
+      color: #312E81;
+    }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Modal Header -->
+  <header class="dialog-header" onmousedown="startDrag(event)" style="cursor: move;">
+    <div class="brand-wrap">
+      <div class="brand-logo" id="dialog-icon">
+        <img src="icons/xiaolv-master-logo.svg" alt="思源小驴" class="brand-logo-img" onerror="this.outerHTML='⚡';" />
+      </div>
+      <div class="header-text">
+        <div class="dialog-title">
+          <span id="dialog-title">思源小驴</span>
+          <span class="badge-pill" id="dialog-badge">快捷交互</span>
+        </div>
+        <div class="dialog-subtitle" id="dialog-subtitle">按 1~9 或上下键回车快速执行</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="close-btn" title="关闭 (Esc)" onclick="cancelDialog()">✕</button>
+    </div>
+  </header>
+
+  <!-- Modal Body -->
+  <main class="dialog-body">
+    <!-- Optional Stats Bar -->
+    <div class="stats-bar" id="dialog-stats" style="display: none;"></div>
+
+    <!-- Mode A: Selection Menu -->
+    <div id="mode-select-wrap" style="display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0;">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="search-input" placeholder="输入拼音或关键词过滤，回车确认..." />
+      </div>
+      <div class="cards-list" id="cards-container"></div>
+    </div>
+
+    <!-- Mode B: Input Prompt -->
+    <div id="mode-input-wrap" class="input-mode-wrap" style="display: none;">
+      <div class="tag-chips" id="tag-chips-container" style="display: none;"></div>
+      <div id="input-container" style="flex: 1; display: flex; flex-direction: column;"></div>
+      <div class="dialog-footer">
+        <div class="footer-hints">
+          <span>↵ 回车提交</span>
+          <span>Esc 取消</span>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-ghost" onclick="cancelDialog()">取消</button>
+          <button class="btn btn-primary" onclick="submitInput()">确认提交</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function startDrag(e) {
+      if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.button === 0 && window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ action: 'dragWindow' }));
+      }
+    }
+
+    let state = {
+      title: "思源小驴",
+      subtitle: "快捷交互",
+      badge: "小驴交互",
+      icon: "⚡",
+      mode: "select", // "select" or "input"
+      outputVar: "选中值",
+      stats: "",
+      items: [],
+      tags: [],
+      defaultValue: "",
+      multiline: false,
+      placeholder: "在此输入内容..."
+    };
+
+    let selectedIndex = 0;
+    let filteredItems = [];
+
+    function decodeBase64Utf8(str) {
+      try {
+        const binary = atob(str);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        return new TextDecoder('utf-8').decode(bytes);
+      } catch (e) {
+        return "";
+      }
+    }
+
+    // Initialize State from URL Hash or Defaults
+    function initState() {
+      if (window.location.hash && window.location.hash.length > 1) {
+        try {
+          const rawHash = window.location.hash.substring(1);
+          const jsonText = decodeBase64Utf8(rawHash);
+          if (jsonText) {
+            const parsed = JSON.parse(jsonText);
+            state = { ...state, ...parsed };
+          }
+        } catch (e) {
+          console.error("State parse error:", e);
+        }
+      }
+
+      // Render Theme
+      document.documentElement.setAttribute("data-theme", state.theme || "light");
+
+      // Render Header
+      document.getElementById("dialog-title").textContent = state.title || "思源小驴";
+      document.getElementById("dialog-subtitle").textContent = state.subtitle || "";
+      document.getElementById("dialog-badge").textContent = state.badge || "快捷交互";
+
+      const iconEl = document.getElementById("dialog-icon");
+      if (state.icon && (state.icon.includes('/') || state.icon.endsWith('.png') || state.icon.endsWith('.svg'))) {
+        iconEl.innerHTML = `<img src="${state.icon}" class="brand-logo-img" alt="" onerror="this.outerHTML='⚡';" />`;
+      } else if (state.icon) {
+        iconEl.textContent = state.icon;
+      } else {
+        iconEl.innerHTML = `<img src="icons/xiaolv-master-logo.svg" alt="思源小驴" class="brand-logo-img" onerror="this.outerHTML='⚡';" />`;
+      }
+
+      if (state.stats) {
+        const sEl = document.getElementById("dialog-stats");
+        sEl.textContent = state.stats;
+        sEl.style.display = "flex";
+      }
+
+      if (state.mode === "input") {
+        renderInputMode();
+      } else {
+        renderSelectMode();
+      }
+    }
+
+    // ==========================================
+    // RENDER: SELECT MODE
+    // ==========================================
+    function renderSelectMode() {
+      document.getElementById("mode-select-wrap").style.display = "flex";
+      document.getElementById("mode-input-wrap").style.display = "none";
+
+      filteredItems = [...(state.items || [])];
+      renderCards();
+
+      const searchInput = document.getElementById("search-input");
+      if (state.placeholder) searchInput.placeholder = state.placeholder;
+      searchInput.addEventListener("input", (e) => {
+        const val = e.target.value.trim().toLowerCase();
+        if (!val) {
+          filteredItems = [...(state.items || [])];
+        } else {
+          filteredItems = (state.items || []).filter(it => {
+            const t = (it.title || "").toLowerCase();
+            const d = (it.desc || "").toLowerCase();
+            const p = (it.pinyin || "").toLowerCase();
+            return t.includes(val) || d.includes(val) || p.includes(val);
+          });
+        }
+        selectedIndex = 0;
+        renderCards();
+      });
+
+      searchInput.focus();
+    }
+
+    function renderCards() {
+      const container = document.getElementById("cards-container");
+      if (filteredItems.length === 0) {
+        container.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">无匹配条目</div>`;
+        return;
+      }
+
+      let html = "";
+      filteredItems.forEach((it, idx) => {
+        const isSel = idx === selectedIndex;
+        let iconHtml = it.icon || "⚡";
+        if (it.icon && (it.icon.includes('/') || it.icon.endsWith('.png') || it.icon.endsWith('.svg'))) {
+          iconHtml = `<img src="${it.icon}" class="plugin-icon-img" alt="" onerror="this.outerHTML='⚡';" />`;
+        }
+        const badgeHtml = it.badge ? `<span class="badge ${it.badgeCls || 'badge-plugin'}">${it.badge}</span>` : "";
+        const hotkeyHtml = it.hotkey ? `<span class="hotkey-pill">${it.hotkey}</span>` : (idx < 9 ? `<span class="hotkey-pill">${idx + 1}</span>` : "");
+
+        html += `
+          <div class="bento-card ${isSel ? 'selected' : ''}" data-idx="${idx}" onclick="selectItemByIdx(${idx})">
+            <div class="card-left">
+              <div class="card-icon">${iconHtml}</div>
+              <div class="card-text">
+                <div class="card-title">${it.title}</div>
+                ${it.desc ? `<div class="card-desc">${it.desc}</div>` : ''}
+              </div>
+            </div>
+            <div class="card-right">
+              ${badgeHtml}
+              ${hotkeyHtml}
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function selectItemByIdx(idx) {
+      if (idx >= 0 && idx < filteredItems.length) {
+        const it = filteredItems[idx];
+        submitResult(it.id);
+      }
+    }
+
+    // ==========================================
+    // RENDER: INPUT MODE
+    // ==========================================
+    function renderInputMode() {
+      document.getElementById("mode-select-wrap").style.display = "none";
+      const inputWrap = document.getElementById("mode-input-wrap");
+      inputWrap.style.display = "flex";
+
+      // Render Tags
+      if (state.tags && state.tags.length > 0) {
+        const tagContainer = document.getElementById("tag-chips-container");
+        tagContainer.style.display = "flex";
+        tagContainer.innerHTML = state.tags.map(t => `<button class="chip-btn" onclick="insertTag('${t}')">${t}</button>`).join("");
+      }
+
+      // Render Main Input
+      const container = document.getElementById("input-container");
+      if (state.multiline) {
+        container.innerHTML = `<textarea class="main-input" id="main-text" placeholder="${state.placeholder || ''}" rows="6">${state.defaultValue || ''}</textarea>`;
+      } else {
+        container.innerHTML = `<input type="text" class="main-input" id="main-text" placeholder="${state.placeholder || ''}" value="${state.defaultValue || ''}" />`;
+      }
+
+      const inputEl = document.getElementById("main-text");
+      inputEl.focus();
+
+      inputEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          if (!state.multiline || e.ctrlKey) {
+            e.preventDefault();
+            submitInput();
+          }
+        }
+      });
+    }
+
+    function insertTag(tag) {
+      const el = document.getElementById("main-text");
+      if (!el) return;
+      el.value = tag + " " + el.value;
+      el.focus();
+    }
+
+    function submitInput() {
+      const el = document.getElementById("main-text");
+      const val = el ? el.value.trim() : "";
+      submitResult(val);
+    }
+
+    // ==========================================
+    // RESULT DISPATCH
+    // ==========================================
+    function submitResult(val) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage({
+          op: 'setVar',
+          data: { name: state.outputVar || '选中值', value: String(val) }
+        });
+        setTimeout(() => {
+          window.chrome.webview.postMessage({ op: 'close' });
+        }, 50);
+      } else {
+        console.log("Standalone mode submitted:", state.outputVar, val);
+      }
+    }
+
+    function cancelDialog() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage({ op: 'close' });
+      }
+    }
+
+    // Global Keyboard Shortcuts
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        cancelDialog();
+        return;
+      }
+
+      if (state.mode === "select") {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (filteredItems.length > 0) {
+            selectedIndex = (selectedIndex + 1) % filteredItems.length;
+            renderCards();
+            scrollSelectedIntoView();
+          }
+          return;
+        }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (filteredItems.length > 0) {
+            selectedIndex = (selectedIndex - 1 + filteredItems.length) % filteredItems.length;
+            renderCards();
+            scrollSelectedIntoView();
+          }
+          return;
+        }
+        if (e.key === "Enter") {
+          e.preventDefault();
+          selectItemByIdx(selectedIndex);
+          return;
+        }
+
+        // Number keys 1-9 direct execution if search input is empty
+        const searchInput = document.getElementById("search-input");
+        if (searchInput && !searchInput.value) {
+          const num = parseInt(e.key, 10);
+          if (num >= 1 && num <= 9 && num <= filteredItems.length) {
+            e.preventDefault();
+            selectItemByIdx(num - 1);
+            return;
+          }
+        }
+      }
+    });
+
+    function scrollSelectedIntoView() {
+      const sel = document.querySelector(".bento-card.selected");
+      if (sel) sel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+
+    window.addEventListener("DOMContentLoaded", initState);
+  </script>
+</body>
+</html>

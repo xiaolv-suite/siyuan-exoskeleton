@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="50%" stop-color="#06B6D4"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="#0B0F19"/>
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="none" stroke="rgba(16,185,129,0.3)" stroke-width="1.5"/>
+
+  <!-- Hexagonal Exoskeleton Mesh -->
+  <polygon points="64,24 96,42 96,86 64,104 32,86 32,42" fill="none" stroke="#10B981" stroke-width="2.5" stroke-dasharray="8 4"/>
+  <polygon points="64,36 86,48 86,80 64,92 42,80 42,48" fill="url(#hexGrad)" opacity="0.85"/>
+
+  <!-- Inner Radar Pulse -->
+  <circle cx="64" cy="64" r="16" fill="#064E3B" stroke="#6EE7B7" stroke-width="2"/>
+  <circle cx="64" cy="64" r="7" fill="#A7F3D0"/>
+  
+  <line x1="64" y1="24" x2="64" y2="36" stroke="#10B981" stroke-width="2"/>
+  <line x1="96" y1="42" x2="86" y2="48" stroke="#10B981" stroke-width="2"/>
+  <line x1="96" y1="86" x2="86" y2="80" stroke="#10B981" stroke-width="2"/>
+  <line x1="64" y1="104" x2="64" y2="92" stroke="#10B981" stroke-width="2"/>
+  <line x1="32" y1="86" x2="42" y2="80" stroke="#10B981" stroke-width="2"/>
+  <line x1="32" y1="42" x2="42" y2="48" stroke="#10B981" stroke-width="2"/>
+</svg>

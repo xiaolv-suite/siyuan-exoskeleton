@@ -1,0 +1,5 @@
+bin/
+obj/
+backup/
+*.WebView2/
+*.log

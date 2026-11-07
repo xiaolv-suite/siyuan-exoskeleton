@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bladeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818CF8"/>
+      <stop offset="50%" stop-color="#4F46E5"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="bladeNeon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A5B4FC"/>
+      <stop offset="100%" stop-color="#38BDF8"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="#0B0F19"/>
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="none" stroke="rgba(129,140,248,0.3)" stroke-width="1.5"/>
+
+  <!-- Twin Exoskeleton Blades Forming Lambda (Λ 动力合拢支架) -->
+  <path d="M64 20 L98 88 L80 92 L64 54 L48 92 L30 88 Z" fill="url(#bladeGrad)"/>
+  <path d="M64 20 L98 88 L80 92 L64 54 L48 92 L30 88 Z" fill="none" stroke="url(#bladeNeon)" stroke-width="2"/>
+
+  <!-- Quantum Node Block in center -->
+  <rect x="52" y="66" width="24" height="24" rx="6" fill="#1E1B4B" stroke="#6366F1" stroke-width="2"/>
+  <circle cx="64" cy="78" r="5" fill="#38BDF8"/>
+  <line x1="64" y1="20" x2="64" y2="46" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+</svg>

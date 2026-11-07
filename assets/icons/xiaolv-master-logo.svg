@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- 1. Deep Space Base (深空曜石底座渐变) -->
+    <linearGradient id="exoBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="60%" stop-color="#090D16"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+
+    <!-- 2. Exoskeleton Titanium Struts (外骨骼钛合金机械臂) -->
+    <linearGradient id="exoTitanium" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7DD3FC"/>
+      <stop offset="35%" stop-color="#0284C7"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+
+    <!-- 3. SiYuan Luminous Facet A (思源白炽冰蓝高光翼柱) -->
+    <linearGradient id="syFacetA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="30%" stop-color="#E0F2FE"/>
+      <stop offset="100%" stop-color="#38BDF8"/>
+    </linearGradient>
+
+    <!-- 4. SiYuan Metallic Facet B (思源深邃电磁青动力柱) -->
+    <linearGradient id="syFacetB" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#0284C7"/>
+      <stop offset="100%" stop-color="#0369A1"/>
+    </linearGradient>
+
+    <!-- 5. Neon Energy Plasma Core Glow (等离子反应堆光晕) -->
+    <radialGradient id="plasmaCore" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.95"/>
+      <stop offset="45%" stop-color="#06B6D4" stop-opacity="0.45"/>
+      <stop offset="80%" stop-color="#0284C7" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#0EA5E9" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Core Glow Filters -->
+    <filter id="coreGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="subtleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- 1. 外骨骼倒角底盘 (30px Chamfered Squircle Plate) -->
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="url(#exoBg)"/>
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+  <rect x="6" y="6" width="116" height="116" rx="28" fill="none" stroke="rgba(56,189,248,0.25)" stroke-width="1"/>
+
+  <!-- 2. 等离子反应堆发光体 (Plasma Core Atmosphere) -->
+  <circle cx="64" cy="64" r="42" fill="url(#plasmaCore)"/>
+
+  <!-- 3. 上下液压传动连杆 (Vertical Hydraulic Actuators) -->
+  <path d="M64 14 L73 26 L55 26 Z" fill="#38BDF8" opacity="0.95"/>
+  <path d="M64 114 L73 102 L55 102 Z" fill="#0284C7" opacity="0.95"/>
+  <line x1="64" y1="26" x2="64" y2="38" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="64" y1="90" x2="64" y2="102" stroke="#0284C7" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- 4. 左右对称机械外骨骼装甲爪 (Exoskeleton Kinetic Brackets) -->
+  <!-- 左外骨骼臂 -->
+  <path d="M42 34 L21 49 L21 79 L42 94 L35 85 L28 75 L28 53 L35 43 Z" fill="url(#exoTitanium)" filter="url(#coreGlow)"/>
+  <path d="M42 34 L21 49 L21 79 L42 94" fill="none" stroke="#7DD3FC" stroke-width="1.75" stroke-linejoin="round"/>
+  <circle cx="24" cy="64" r="2" fill="#38BDF8"/>
+
+  <!-- 右外骨骼臂 -->
+  <path d="M86 34 L107 49 L107 79 L86 94 L93 85 L100 75 L100 53 L93 43 Z" fill="url(#exoTitanium)" filter="url(#coreGlow)"/>
+  <path d="M86 34 L107 49 L107 79 L86 94" fill="none" stroke="#7DD3FC" stroke-width="1.75" stroke-linejoin="round"/>
+  <circle cx="104" cy="64" r="2" fill="#38BDF8"/>
+
+  <!-- 5. 中央反应堆切角机甲底舱 (Hexagonal Armor Housing) -->
+  <polygon points="64,38 88,51 88,77 64,90 40,77 40,51" fill="#090D16" stroke="rgba(56,189,248,0.55)" stroke-width="1.8"/>
+  <polygon points="64,42 84,53 84,75 64,86 44,75 44,53" fill="rgba(15,23,42,0.92)" stroke="rgba(2,132,199,0.35)" stroke-width="1"/>
+
+  <!-- 6. 核心标志：思源笔记 4 柱经典几何剪影与机甲深度共融 (SiYuan Note Core Silhouette) -->
+  <g id="siyuan-silhouette-core" filter="url(#subtleGlow)">
+    <!-- Column 1: Left Outer Wing (思源左外翼 · 白炽高光) -->
+    <polygon points="45.95,58.67 56.21,48.41 56.21,69.33 45.95,79.59" fill="url(#syFacetA)" stroke="#0F172A" stroke-width="1.2" stroke-linejoin="round"/>
+
+    <!-- Column 2: Inner Left Column (思源左内柱 · 钛青装甲) -->
+    <polygon points="56.21,48.41 64.00,56.21 64.00,77.12 56.21,69.33" fill="url(#syFacetB)" stroke="#0F172A" stroke-width="1.2" stroke-linejoin="round"/>
+
+    <!-- Column 3: Inner Right Column (思源右内柱 · 电离冰峰) -->
+    <polygon points="64.00,56.21 71.79,48.41 71.79,69.33 64.00,77.12" fill="url(#syFacetA)" stroke="#0F172A" stroke-width="1.2" stroke-linejoin="round"/>
+
+    <!-- Column 4: Right Outer Wing (思源右外翼 · 钛青装甲) -->
+    <polygon points="71.79,48.41 82.05,58.67 82.05,79.59 71.79,69.33" fill="url(#syFacetB)" stroke="#0F172A" stroke-width="1.2" stroke-linejoin="round"/>
+  </g>
+
+  <!-- 7. 反应堆中心聚焦点 (Central Quantum Spark) -->
+  <circle cx="64" cy="64" r="3.5" fill="#FFFFFF" filter="url(#subtleGlow)"/>
+  <circle cx="64" cy="64" r="1.8" fill="#06B6D4"/>
+
+  <!-- 8. 四角外骨骼校准铆钉点 (Precision Corner Rivets) -->
+  <circle cx="14" cy="14" r="1.5" fill="#38BDF8" opacity="0.7"/>
+  <circle cx="114" cy="14" r="1.5" fill="#38BDF8" opacity="0.7"/>
+  <circle cx="14" cy="114" r="1.5" fill="#38BDF8" opacity="0.7"/>
+  <circle cx="114" cy="114" r="1.5" fill="#38BDF8" opacity="0.7"/>
+</svg>

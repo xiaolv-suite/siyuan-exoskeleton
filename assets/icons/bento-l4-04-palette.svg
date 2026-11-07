@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#075985"/>
+      <stop offset="50%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#060911"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.88"/>
+      <stop offset="35%" stop-color="#38BDF8" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#075985" stop-opacity="0.08"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3.8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <!-- 1. Squircle Canvas -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bg)"/>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="none" stroke="url(#rim)" stroke-width="1.75"/>
+  
+  <!-- 2. Ambient Internal Neon Glow -->
+  <circle cx="64" cy="64" r="34" fill="#0EA5E9" opacity="0.3" filter="url(#glow)"/>
+
+  <!-- 3. Center Semantic Glyph -->
+  <path d="M64 36 C46 36 36 48 36 64 C36 80 48 92 64 92 C72 92 78 86 78 80 C78 74 74 72 74 68 C74 64 78 62 82 62 C88 62 92 56 92 50 C92 42 80 36 64 36 Z" fill="none" stroke="#FFFFFF" stroke-width="4.5"/>
+            <circle cx="48" cy="50" r="4.5" fill="#EF4444"/>
+            <circle cx="64" cy="46" r="4.5" fill="#FBBF24"/>
+            <circle cx="78" cy="52" r="4.5" fill="#10B981"/>
+            <circle cx="48" cy="68" r="4.5" fill="#38BDF8"/>
+
+  <!-- 4. Tier Micro Identifier Dots -->
+  <circle cx="64" cy="112" r="2" fill="#38BDF8" opacity="0.85"/>
+  <circle cx="56" cy="112" r="1.5" fill="#38BDF8" opacity="0.45"/>
+  <circle cx="72" cy="112" r="1.5" fill="#38BDF8" opacity="0.45"/>
+</svg>

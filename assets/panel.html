@@ -4804,6 +4804,10 @@
         renderTemplateInspector(item);
         return;
       }
+      if (item.isTagItem) {
+        renderTagInspector(item);
+        return;
+      }
       const targetId = item.blockId || item.docId;
       if (!targetId) return;
 
@@ -4813,6 +4817,62 @@
           window.chrome.webview.postMessage({ op: 'getBlockContext', id: targetId });
         }
       }, 50);
+    }
+
+    function renderTagInspector(item) {
+      const pane = document.getElementById("search-inspector-pane");
+      if (!pane) return;
+      const tagName = item.tagName || "标签";
+      pane.innerHTML = `
+        <div class="inspector-card">
+          <div class="inspector-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 18px;">🏷️</span>
+              <div>
+                <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">#${escapeHtml(tagName)}#</div>
+                <div style="font-size: 11px; color: var(--text-muted);">全库标签聚合穿透看板</div>
+              </div>
+            </div>
+            <span class="brand-pill">${filteredItems.length} 条关联块</span>
+          </div>
+          <div class="inspector-body" style="padding: 12px; font-size: 12.5px; line-height: 1.6; max-height: 380px; overflow-y: auto;">
+            <div style="color: var(--text-secondary); margin-bottom: 10px;">
+              <strong>当前选定笔记块：</strong><br />
+              <div style="background: var(--bg-card); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-hairline); margin-top: 4px;">
+                ${escapeHtml(item.blockContent || item.title)}
+              </div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted);">
+              ${escapeHtml(item.desc)}
+            </div>
+          </div>
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--border-hairline); flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="executeItem(filteredItems[selectedIndex])">📄 在思源中定位</button>
+            <button class="inspector-dock-btn" onclick="copyBlockRef('${item.blockId}', '${escapeQuote(item.blockContent || item.title)}')">🔗 复制双链</button>
+            <button class="inspector-dock-btn" onclick="pinAsStickyNote('#${escapeQuote(tagName)}# 标签笔记', '${escapeQuote(item.blockContent || item.title)}')">📌 钉在桌面</button>
+            <button class="inspector-dock-btn" onclick="copyAllTagBlocksAsMarkdown('${escapeQuote(tagName)}')">📋 复制全部聚合大纲</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function copyAllTagBlocksAsMarkdown(tag) {
+      const lines = filteredItems.map(it => `- [${it.blockContent || it.title}](siyuan://blocks/${it.blockId})`);
+      const md = `### 🏷️ #${tag}# 笔记聚合大纲\n\n` + lines.join("\n");
+      copyToClipboard(md, `已复制 #${tag}# 的全部 ${filteredItems.length} 条聚合清单！`);
+    }
+
+    function pinAsStickyNote(title, content) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'pinStickyNote',
+          title: title || '参考便签',
+          content: content || ''
+        }));
+        showToast('📌 已将便签钉在桌面置顶！');
+      } else {
+        showToast('📌 [模拟] 已将便签钉在桌面置顶！');
+      }
     }
 
     function renderWebClipInspector(item) {
@@ -5651,6 +5711,39 @@
         hpath: d.hpath,
         notebookName: d.notebookName
       }));
+      selectedIndex = 0;
+      renderItems();
+      if (filteredItems.length > 0) {
+        requestBlockContext(filteredItems[0]);
+      }
+    };
+
+    window.onTagSearchResults = function(resp) {
+      if (!resp || !Array.isArray(resp.data)) return;
+      const q = document.getElementById("search-input") ? document.getElementById("search-input").value.trim().toLowerCase() : "";
+      if (!q.startsWith("tag:") && !q.startsWith("tag：") && !(q.startsWith("#") && !q.includes(" "))) return;
+      const blocks = resp.data;
+      const tagName = resp.tag || q.replace(/^(tag:|tag：|#|＃)/i, "").trim();
+      filteredItems = blocks.map(b => {
+        const txt = (b.content || "").replace(/<[^>]+>/g, "").trim();
+        const cleanPath = b.hpath ? b.hpath.replace(/^\//, '') : '';
+        return {
+          id: `tag_block_${b.id}`,
+          group: "search",
+          title: txt.length > 55 ? txt.substring(0, 55) + "..." : txt,
+          desc: `${cleanPath ? `📁 ${cleanPath}` : `块ID: ${b.id}`} | #${tagName}#`,
+          hotkey: "Enter",
+          iconType: "tag",
+          iconColor: "var(--indigo-light)",
+          badge: `#${tagName}`,
+          badgeCls: "badge-native",
+          actionType: "block-jump",
+          blockId: b.id,
+          blockContent: txt,
+          isTagItem: true,
+          tagName: tagName
+        };
+      });
       selectedIndex = 0;
       renderItems();
       if (filteredItems.length > 0) {

@@ -74,6 +74,26 @@ namespace XiaoLv.Desktop.Core
             }
         }
 
+        public static List<QueuedNoteItem> GetQueueItems()
+        {
+            lock (_lock)
+            {
+                return ReadAllItems();
+            }
+        }
+
+        public static void ClearQueue()
+        {
+            lock (_lock)
+            {
+                try
+                {
+                    WriteAllItems(new List<QueuedNoteItem>());
+                }
+                catch { }
+            }
+        }
+
         private static void AppendToQueue(QueuedNoteItem item)
         {
             lock (_lock)

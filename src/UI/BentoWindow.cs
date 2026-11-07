@@ -995,27 +995,30 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
-                // 12. 今日日记记事时间轴速览
+                // 12. 今日/历史日记记事时间轴速览 (支持日期穿梭)
                 if (op.Equals("getTodayTimeline", StringComparison.OrdinalIgnoreCase))
                 {
+                    string reqDate = JsonHelper.GetString(msg, "date");
                     ThreadPool.QueueUserWorkItem(async s =>
                     {
                         try
                         {
-                            string todayStr = DateTime.Now.ToString("yyyy-MM-dd");
-                            string docSql = "SELECT id, content, hpath FROM blocks WHERE type = 'd' AND (hpath LIKE '%" + todayStr + "%' OR content LIKE '%" + todayStr + "%') ORDER BY updated DESC LIMIT 1";
+                            string targetDate = !string.IsNullOrEmpty(reqDate) ? reqDate : DateTime.Now.ToString("yyyy-MM-dd");
+                            string compactDate = targetDate.Replace("-", "");
+                            string docSql = "SELECT id, content, hpath FROM blocks WHERE type = 'd' AND (hpath LIKE '%" + targetDate + "%' OR content LIKE '%" + targetDate + "%' OR ial LIKE '%custom-dailynote-" + compactDate + "%') ORDER BY updated DESC LIMIT 1";
                             var docRows = await SiYuanClient.SqlAsync(docSql);
                             if (docRows != null && docRows.Count > 0)
                             {
-                                string todayDocId = JsonHelper.GetString(docRows[0], "id");
-                                string todayDocTitle = JsonHelper.GetString(docRows[0], "content");
-                                string blockSql = "SELECT id, parent_id, content, markdown, ial, type, subtype, created, updated FROM blocks WHERE root_id = '" + todayDocId.Replace("'", "''") + "' AND type NOT IN ('d') ORDER BY created ASC";
+                                string targetDocId = JsonHelper.GetString(docRows[0], "id");
+                                string targetDocTitle = JsonHelper.GetString(docRows[0], "content");
+                                string blockSql = "SELECT id, parent_id, content, markdown, ial, type, subtype, created, updated FROM blocks WHERE root_id = '" + targetDocId.Replace("'", "''") + "' AND type NOT IN ('d') ORDER BY created ASC";
                                 var blockRows = await SiYuanClient.SqlAsync(blockSql);
 
                                 var timelinePayload = new
                                 {
-                                    docId = todayDocId,
-                                    docTitle = todayDocTitle,
+                                    date = targetDate,
+                                    docId = targetDocId,
+                                    docTitle = targetDocTitle,
                                     blocks = blockRows
                                 };
 
@@ -1033,13 +1036,68 @@ namespace XiaoLv.Desktop.UI
                                 {
                                     if (_webView != null && _webView.CoreWebView2 != null)
                                     {
-                                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onTodayTimelineLoaded) window.onTodayTimelineLoaded({ docId: '', docTitle: '', blocks: [] });");
+                                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onTodayTimelineLoaded) window.onTodayTimelineLoaded({ date: '" + targetDate + "', docId: '', docTitle: '', blocks: [] });");
                                     }
                                 });
                             }
                         }
                         catch { }
                     });
+                    return;
+                }
+
+                // 12.5 离岸队列详情检视与手动回写
+                if (op.Equals("getOfflineQueue", StringComparison.OrdinalIgnoreCase))
+                {
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        var items = OfflineQueueManager.GetQueueItems();
+                        var payload = new
+                        {
+                            count = items.Count,
+                            items = items
+                        };
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOfflineQueueLoaded) window.onOfflineQueueLoaded(" + JsonHelper.ToJson(payload) + ");");
+                            }
+                        });
+                    });
+                    return;
+                }
+
+                if (op.Equals("flushOfflineQueue", StringComparison.OrdinalIgnoreCase))
+                {
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        string syUrl = "";
+                        string token = "";
+                        SyKernelRequest.AutoDiscoverEnv(ref syUrl, ref token, false);
+                        bool ok = OfflineQueueManager.FlushQueue(syUrl, token, (title, text) =>
+                        {
+                            if (OnNotificationRequested != null) OnNotificationRequested(title, text);
+                        });
+                        int remaining = OfflineQueueManager.GetQueueCount();
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync(string.Format("if(window.updateOfflineQueueBadge) window.updateOfflineQueueBadge({{ count: {0} }});", remaining));
+                            }
+                        });
+                    });
+                    return;
+                }
+
+                if (op.Equals("clearOfflineQueue", StringComparison.OrdinalIgnoreCase))
+                {
+                    OfflineQueueManager.ClearQueue();
+                    if (_webView != null && _webView.CoreWebView2 != null)
+                    {
+                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.updateOfflineQueueBadge) window.updateOfflineQueueBadge({ count: 0 });");
+                    }
                     return;
                 }
 
@@ -1791,7 +1849,8 @@ namespace XiaoLv.Desktop.UI
                     }
                     var s = AppSettings.Instance;
                     var storageInfo = new { dataDir = EmbeddedResourceManager.AppDataDir, isPortable = EmbeddedResourceManager.IsPortableMode };
-                    var settingsJs = "window.__DESKTOP_SETTINGS__ = " + JsonHelper.ToJson(s) + ";\nwindow.__STORAGE_INFO__ = " + JsonHelper.ToJson(storageInfo) + ";";
+                    int queueCount = OfflineQueueManager.GetQueueCount();
+                    var settingsJs = "window.__DESKTOP_SETTINGS__ = " + JsonHelper.ToJson(s) + ";\nwindow.__STORAGE_INFO__ = " + JsonHelper.ToJson(storageInfo) + ";\nwindow.__OFFLINE_QUEUE_COUNT__ = " + queueCount + ";";
                     var script = jsCode + "\n" + settingsJs + "\nif(window.initLiveTelemetry) window.initLiveTelemetry();";
 
                     Dispatcher.Invoke(() =>

@@ -2497,6 +2497,10 @@
           <span style="color: var(--cyber-purple); font-weight: 700;">🧠</span>
           <span id="telemetry-riff-text">待复习 0 张</span>
         </div>
+        <div class="t-pill" id="telemetry-queue" style="display: none; cursor: pointer; border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.12);" onclick="showOfflineQueueModal()" title="离线应急缓冲队列 (点击查看详情或立即回写)">
+          <span style="color: var(--tech-amber); font-weight: 700;">📦</span>
+          <span id="telemetry-queue-text" style="color: var(--tech-amber); font-weight: 700;">离线 0 条</span>
+        </div>
       </div>
 
       <button class="theme-toggle-btn" id="help-btn" onclick="toggleCheatsheet()" title="快捷心流与语法罗盘 (?)">⌨️</button>
@@ -3028,6 +3032,11 @@
           <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleTodayTimeline()">✕</button>
         </div>
       </div>
+      <!-- 7-Day Date Shuttle Strip (7 天日历穿梭条) -->
+      <div class="timeline-date-shuttle" id="timeline-date-shuttle" style="display: flex; gap: 6px; padding: 6px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); align-items: center; overflow-x: auto;">
+        <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; white-space: nowrap;">📅 日期穿梭:</span>
+        <div id="shuttle-buttons-wrap" style="display: flex; gap: 6px; flex-wrap: nowrap;"></div>
+      </div>
       <div class="timeline-filters" style="display: flex; gap: 6px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); overflow-x: auto;">
         <button class="cat-btn active" id="tl-filter-all" onclick="filterTimeline('all')">全部</button>
         <button class="cat-btn" id="tl-filter-todo" onclick="filterTimeline('todo')">📋 待办</button>
@@ -3037,6 +3046,32 @@
       </div>
       <div class="timeline-body" id="timeline-modal-body">
         <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在加载今日记事时间轴...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 离岸应急缓冲队列详情弹窗 -->
+  <div class="help-modal-overlay" id="offline-queue-modal" onclick="closeOfflineQueueModal(event)">
+    <div class="help-modal-box" onclick="event.stopPropagation()" style="max-width: 580px;">
+      <div class="help-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">📦</span>
+          <span style="font-weight: 700; font-size: 14px;">离岸应急缓冲队列 (Offline Queue)</span>
+          <span class="brand-pill" id="offline-queue-modal-badge" style="background: rgba(245, 158, 11, 0.2); color: var(--tech-amber);">0 条待回写</span>
+        </div>
+        <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="closeOfflineQueueModal()">✕</button>
+      </div>
+      <div class="help-body" style="gap: 12px;">
+        <div id="offline-queue-modal-body" style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px; font-size: 12px; max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+          <div style="text-align: center; color: var(--text-muted); padding: 24px;">队列为空，所有速记已成功落盘至思源。</div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-hairline); padding-top: 10px;">
+          <span style="font-size: 11px; color: var(--text-muted);">💡 当思源未运行时速记自动缓冲于此，思源启动后自动回写</span>
+          <div style="display: flex; gap: 8px;">
+            <button class="inspector-dock-btn" onclick="clearOfflineQueue()" title="清空全部离线缓冲记录">🗑️ 清空队列</button>
+            <button class="inspector-dock-btn primary" onclick="flushOfflineQueue()" title="立即将队列中的速记回写到思源今日日记">🚀 立即回写至思源</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -4802,6 +4837,9 @@
             tTxt.textContent = `待办 ${rt.uncompletedTasks} 项`;
           }
         }
+        if (typeof updateOfflineQueueBadge === "function") {
+          updateOfflineQueueBadge({ count: window.__OFFLINE_QUEUE_COUNT__ || 0 });
+        }
 
         // 智能剪贴板动态实时微流
         if (rt.latestClipboard && rt.latestClipboard.summary && rt.latestClipboard.markdown) {
@@ -5596,19 +5634,79 @@
       }
     }
 
+    let currentShuttleDate = "";
+
+    function formatLocalDate(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function renderDateShuttle(activeDateStr) {
+      const wrap = document.getElementById("shuttle-buttons-wrap");
+      if (!wrap) return;
+
+      const now = new Date();
+      const todayStr = formatLocalDate(now);
+      if (!activeDateStr) activeDateStr = currentShuttleDate || todayStr;
+      currentShuttleDate = activeDateStr;
+
+      let html = "";
+      for (let i = 0; i < 7; i++) {
+        const d = new Date();
+        d.setDate(now.getDate() - i);
+        const dStr = formatLocalDate(d);
+        const isActive = (dStr === activeDateStr);
+        let label = (i === 0) ? "今天" : (i === 1) ? "昨天" : (i === 2) ? "前天" : `${d.getMonth() + 1}/${d.getDate()}`;
+        const dayOfWeek = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][d.getDay()];
+
+        html += `
+          <button class="cat-btn ${isActive ? 'active' : ''}" style="font-size: 11px; padding: 2px 8px; white-space: nowrap; ${isActive ? 'background: var(--indigo-subtle); border-color: var(--indigo-border); color: var(--indigo-light); font-weight: 700;' : ''}" onclick="switchTimelineDate('${dStr}')" title="${dStr} (${dayOfWeek})">
+            ${label} <span style="font-size: 9.5px; opacity: 0.7;">(${d.getMonth() + 1}.${d.getDate()})</span>
+          </button>
+        `;
+      }
+      wrap.innerHTML = html;
+    }
+
+    function switchTimelineDate(dateStr) {
+      currentShuttleDate = dateStr;
+      renderDateShuttle(dateStr);
+      const container = document.getElementById("timeline-modal-body");
+      if (container) {
+        container.innerHTML = `<div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在穿梭加载 ${escapeHtml(dateStr)} 记事时间轴...</div>`;
+      }
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'getTodayTimeline', date: dateStr }));
+      }
+    }
+
     window.onTodayTimelineLoaded = function(payload) {
       if (!payload) return;
       todayTimelineData = payload;
       const blocks = payload.blocks || [];
+      const now = new Date();
+      const todayStr = formatLocalDate(now);
+      const reqDate = payload.date || currentShuttleDate || todayStr;
+      currentShuttleDate = reqDate;
+
+      renderDateShuttle(reqDate);
 
       const tCountEl = document.getElementById("telemetry-today-text");
-      if (tCountEl) tCountEl.textContent = `今日 ${blocks.length} 块`;
+      if (tCountEl && reqDate === todayStr) tCountEl.textContent = `今日 ${blocks.length} 块`;
 
       const mCountEl = document.getElementById("timeline-modal-count");
       if (mCountEl) mCountEl.textContent = `${blocks.length} 条记录`;
 
       const mTitleEl = document.getElementById("timeline-modal-title");
-      if (mTitleEl && payload.docTitle) mTitleEl.textContent = `今日记事 · ${payload.docTitle}`;
+      if (mTitleEl) {
+        if (reqDate === todayStr) {
+          mTitleEl.textContent = `今日记事 · ${payload.docTitle || '今天'}`;
+        } else {
+          mTitleEl.textContent = `历史记事 · ${reqDate} 《${payload.docTitle || '日记'}》`;
+        }
+      }
 
       renderTimelineList(payload);
     };
@@ -5699,14 +5797,95 @@
       const modal = document.getElementById("timeline-modal");
       if (!modal) return;
       const isOpen = modal.classList.toggle("open");
-      if (isOpen && window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage({ op: 'getTodayTimeline' });
+      if (isOpen) {
+        const todayStr = formatLocalDate(new Date());
+        currentShuttleDate = todayStr;
+        renderDateShuttle(todayStr);
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'getTodayTimeline', date: todayStr }));
+        }
       }
     }
 
     function closeTodayTimelineOnBg(e) {
       const modal = document.getElementById("timeline-modal");
       if (modal && e.target === modal) modal.classList.remove("open");
+    }
+
+    // ==========================================================
+    // 离岸应急缓冲队列感知与回写 (Offline Queue Management)
+    // ==========================================================
+    function updateOfflineQueueBadge(info) {
+      const count = info ? (info.count || 0) : (window.__OFFLINE_QUEUE_COUNT__ || 0);
+      const qPill = document.getElementById("telemetry-queue");
+      const qText = document.getElementById("telemetry-queue-text");
+      if (qPill && qText) {
+        if (count > 0) {
+          qPill.style.display = "inline-flex";
+          qText.textContent = `离线 ${count} 条`;
+        } else {
+          qPill.style.display = "none";
+        }
+      }
+    }
+
+    function showOfflineQueueModal() {
+      const modal = document.getElementById("offline-queue-modal");
+      if (modal) modal.classList.add("open");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'getOfflineQueue' }));
+      }
+    }
+
+    function closeOfflineQueueModal(e) {
+      const modal = document.getElementById("offline-queue-modal");
+      if (modal) modal.classList.remove("open");
+    }
+
+    window.onOfflineQueueLoaded = function(payload) {
+      const badge = document.getElementById("offline-queue-modal-badge");
+      const body = document.getElementById("offline-queue-modal-body");
+      if (!body) return;
+
+      const items = (payload && Array.isArray(payload.items)) ? payload.items : [];
+      if (badge) badge.textContent = `${items.length} 条待回写`;
+
+      if (items.length === 0) {
+        body.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 24px;">队列为空，所有速记已成功落盘至思源。</div>`;
+        updateOfflineQueueBadge({ count: 0 });
+        return;
+      }
+
+      body.innerHTML = items.map((it, idx) => `
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-hairline); border-radius: 6px; padding: 8px 10px;">
+          <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-muted); margin-bottom: 4px;">
+            <span>⏱️ 离线暂存于: ${escapeHtml(it.CreatedAt ? new Date(it.CreatedAt).toLocaleString() : '最近')}</span>
+            <span class="tag-badge badge-native" style="font-size: 9px;">${escapeHtml(it.Type || 'note')}</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-primary); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(it.Content || it.FilePath || '')}</div>
+        </div>
+      `).join("");
+
+      updateOfflineQueueBadge({ count: items.length });
+    };
+
+    function flushOfflineQueue() {
+      showToast("🚀 正在将离线队列回写至思源今日日记...");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'flushOfflineQueue' }));
+      }
+      setTimeout(() => {
+        closeOfflineQueueModal();
+      }, 500);
+    }
+
+    function clearOfflineQueue() {
+      if (!confirm("确定要清空全部离线缓冲记录吗？")) return;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'clearOfflineQueue' }));
+      }
+      closeOfflineQueueModal();
+      showToast("✓ 离线缓冲队列已清空");
     }
 
     function openTodayDailyDoc() {

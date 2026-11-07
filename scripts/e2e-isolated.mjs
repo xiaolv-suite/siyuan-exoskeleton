@@ -98,7 +98,16 @@ function stopProcess(name) {
   } catch {}
 }
 
+function killOrphanTestRunners() {
+  try {
+    const myPid = process.pid;
+    const ps = `Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Where-Object { $_.CommandLine -match 'e2e-isolated' -and $_.ProcessId -ne ${myPid} } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`;
+    execSync(`powershell.exe -NoProfile -Command "${ps}"`, { stdio: "ignore" });
+  } catch {}
+}
+
 function stopPreviousIsolatedKernel() {
+  killOrphanTestRunners();
   try {
     const ps = `Get-CimInstance Win32_Process -Filter "Name='SiYuan-Kernel.exe'" | Where-Object { $_.CommandLine -match '--port\\s+${PORT}' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`;
     execSync(`powershell.exe -NoProfile -Command "${ps}"`, { stdio: "ignore" });

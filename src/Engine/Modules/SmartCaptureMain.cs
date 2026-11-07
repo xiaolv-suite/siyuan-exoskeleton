@@ -145,6 +145,12 @@ public static class SmartCaptureMain
         var timeStr = now.ToString("HH:mm");
         var dateStr = now.ToString("yyyy-MM-dd");
 
+        // 支持反斜杠转义换行字符还原
+        if (text.Contains("\\n") && !text.Contains("\n"))
+        {
+            text = text.Replace("\\n", "\n");
+        }
+
         // 智能前缀自适应归一化 (兼容中文关键字与英文缩写)
         string rawTrim = text.Trim();
         if (rawTrim.StartsWith("待办：") || rawTrim.StartsWith("待办:") || rawTrim.StartsWith("todo:", StringComparison.OrdinalIgnoreCase))
@@ -187,6 +193,52 @@ public static class SmartCaptureMain
                 explicitTargetDoc = mDoc.Groups[1].Value.Trim();
                 text = mDoc.Groups[2].Value.Trim();
                 rawTrim = text;
+            }
+        }
+
+        // 多行草稿微舱 (Quick Scratchpad) 批量意图智能解包独立分流归档
+        if (text.Contains("\n") &&
+            !rawTrim.StartsWith("```") &&
+            !rawTrim.StartsWith("$$") &&
+            !(rawTrim.StartsWith("|") && rawTrim.Contains("\n|")) &&
+            !rawTrim.StartsWith("---") &&
+            string.IsNullOrEmpty(dynamicHeading) &&
+            string.IsNullOrEmpty(explicitTargetDoc))
+        {
+            var rawLines = text.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            if (rawLines.Length > 1)
+            {
+                bool hasIntent = false;
+                foreach (var l in rawLines)
+                {
+                    var lt = l.TrimStart();
+                    if (lt.StartsWith("!") || lt.StartsWith("！") || lt.StartsWith("?") || lt.StartsWith("？") ||
+                        lt.StartsWith("¥") || lt.StartsWith("￥") || lt.StartsWith("~") || lt.StartsWith("+") ||
+                        lt.StartsWith("@") || lt.StartsWith("＠") || lt.StartsWith("#") || lt.StartsWith("＃"))
+                    {
+                        hasIntent = true;
+                        break;
+                    }
+                }
+
+                if (hasIntent)
+                {
+                    int successLines = 0;
+                    foreach (var l in rawLines)
+                    {
+                        var lineText = l.Trim();
+                        if (string.IsNullOrEmpty(lineText)) continue;
+                        var subCtx = new DesktopStepContext("SYS", lineText);
+                        subCtx.SetVarValue("来源窗口", windowTitle);
+                        Exec(subCtx);
+                        if (SafeContext.GetBool(subCtx, "是否成功")) successLines++;
+                    }
+
+                    SafeContext.Set(context, "是否成功", successLines > 0);
+                    SafeContext.Set(context, "需要通知", true);
+                    SafeContext.Set(context, "通知反馈", "✓ 草稿微舱多行意图解包完成：已将 " + successLines + " 条记录独立分流归档！");
+                    return;
+                }
             }
         }
 

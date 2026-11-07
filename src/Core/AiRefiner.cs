@@ -132,8 +132,8 @@ namespace XiaoLv.Desktop.Core
                     sw.Stop();
                     res.LatencyMs = sw.ElapsedMilliseconds;
 
-                    // 提取 content
-                    var mContent = Regex.Match(json, "\"content\"\\s*:\\s*\"([\\s\\S]*?)\"\\s*(?:,\\s*\"refusal\"|\\})");
+                    // 提取 content（严格遵循 JSON 字符串边界规范，支持内联转义引号与多字段响应）
+                    var mContent = Regex.Match(json, "\"content\"\\s*:\\s*\"((?:\\\\[\\s\\S]|[^\"\\\\])*)\"");
                     if (mContent.Success)
                     {
                         res.Success = true;
@@ -171,10 +171,16 @@ namespace XiaoLv.Desktop.Core
         private static string JsonUnescape(string s)
         {
             if (string.IsNullOrEmpty(s)) return "";
+            try
+            {
+                s = Regex.Replace(s, @"\\u([0-9a-fA-F]{4})", m => ((char)Convert.ToInt32(m.Groups[1].Value, 16)).ToString());
+            }
+            catch {}
             return s.Replace("\\n", "\n")
                     .Replace("\\r", "\r")
                     .Replace("\\t", "\t")
                     .Replace("\\\"", "\"")
+                    .Replace("\\/", "/")
                     .Replace("\\\\", "\\");
         }
     }

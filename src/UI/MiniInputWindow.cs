@@ -866,7 +866,14 @@ namespace XiaoLv.Desktop.UI
                         {
                             try
                             {
-                                string sql = "SELECT id, content FROM blocks WHERE (content LIKE '%" + safeKw + "%' OR name LIKE '%" + safeKw + "%' OR alias LIKE '%" + safeKw + "%') AND type IN ('d', 'h', 'p') ORDER BY updated DESC LIMIT 4";
+                                string sql = "SELECT id, content FROM blocks WHERE (content LIKE '%" + safeKw + "%' OR name LIKE '%" + safeKw + "%' OR alias LIKE '%" + safeKw + "%') AND type IN ('d', 'h', 'p') " +
+                                             "ORDER BY (CASE " +
+                                             "  WHEN content = '" + safeKw + "' OR name = '" + safeKw + "' THEN 100 " +
+                                             "  WHEN content LIKE '" + safeKw + "%' OR name LIKE '" + safeKw + "%' THEN 70 " +
+                                             "  WHEN type = 'd' THEN 50 " +
+                                             "  WHEN type = 'h' THEN 30 " +
+                                             "  ELSE 10 " +
+                                             "END) DESC, updated DESC LIMIT 5";
                                 var rows = await SiYuanClient.SqlAsync(sql);
                                 if (rows != null && rows.Count > 0)
                                 {

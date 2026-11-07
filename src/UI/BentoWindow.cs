@@ -460,7 +460,15 @@ namespace XiaoLv.Desktop.UI
                             if (!string.IsNullOrEmpty(kw))
                             {
                                 string safeLike = kw.Replace("'", "''");
-                                string sql = "SELECT id, root_id, content, hpath, type, updated FROM blocks WHERE content LIKE '%" + safeLike + "%' AND type NOT IN ('d') ORDER BY updated DESC LIMIT 25";
+                                string sql = "SELECT id, root_id, content, hpath, type, updated FROM blocks " +
+                                             "WHERE content LIKE '%" + safeLike + "%' AND type NOT IN ('d') " +
+                                             "ORDER BY (CASE " +
+                                             "  WHEN content = '" + safeLike + "' THEN 100 " +
+                                             "  WHEN content LIKE '" + safeLike + "%' THEN 60 " +
+                                             "  WHEN type = 'h' THEN 40 " +
+                                             "  WHEN type = 'p' THEN 20 " +
+                                             "  ELSE 10 " +
+                                             "END) DESC, updated DESC LIMIT 30";
                                 var rows = await SiYuanClient.SqlAsync(sql);
                                 Dispatcher.Invoke(() =>
                                 {
@@ -488,7 +496,12 @@ namespace XiaoLv.Desktop.UI
                                 sql = "SELECT b.id, b.content, b.hpath, b.box, b.updated FROM blocks b " +
                                       "WHERE b.type = 'd' AND b.content != '' " +
                                       "AND (b.content LIKE '%" + safeLike + "%' OR b.hpath LIKE '%" + safeLike + "%') " +
-                                      "ORDER BY b.updated DESC LIMIT 40";
+                                      "ORDER BY (CASE " +
+                                      "  WHEN b.content = '" + safeLike + "' THEN 100 " +
+                                      "  WHEN b.content LIKE '" + safeLike + "%' THEN 70 " +
+                                      "  WHEN b.content LIKE '%" + safeLike + "%' THEN 40 " +
+                                      "  ELSE 10 " +
+                                      "END) DESC, b.updated DESC LIMIT 40";
                             }
                             else
                             {
@@ -528,6 +541,36 @@ namespace XiaoLv.Desktop.UI
                                 if (_webView != null && _webView.CoreWebView2 != null)
                                 {
                                     _webView.CoreWebView2.ExecuteScriptAsync("if(window.onDocSearchResults) window.onDocSearchResults(" + JsonHelper.ToJson(new { code = 0, data = docsList }) + ");");
+                                }
+                            });
+                        }
+                        catch { }
+                    });
+                    return;
+                }
+
+                // 3.52 块级原位编辑保存 (Update Block Inline)
+                if (op.Equals("updateBlockContent", StringComparison.OrdinalIgnoreCase))
+                {
+                    string bId = JsonHelper.GetString(msg, "id");
+                    string newContent = JsonHelper.GetString(msg, "markdown");
+                    ThreadPool.QueueUserWorkItem(async s =>
+                    {
+                        try
+                        {
+                            var res = await SiYuanClient.PostAsync("/api/block/updateBlock", new
+                            {
+                                id = bId,
+                                dataType = "markdown",
+                                data = newContent
+                            });
+                            bool ok = res != null && res.Success;
+                            if (ok) SoundPlayerHelper.PlayFeedback();
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    _webView.CoreWebView2.ExecuteScriptAsync(string.Format("if(window.onBlockUpdatedInline) window.onBlockUpdatedInline({{ success: {0}, id: '{1}' }});", ok ? "true" : "false", SafeContext.EscapeJson(bId)));
                                 }
                             });
                         }

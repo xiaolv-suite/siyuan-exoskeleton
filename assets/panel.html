@@ -5584,7 +5584,21 @@
         <div class="inspector-body" style="overflow: auto;">
           <div id="inspector-detail-view" style="display: ${currentInspectorTab === 'detail' ? 'block' : 'none'};">
             ${ialTags ? `<div class="inspector-ial-tags">${ialTags}</div>` : ""}
-            <div class="inspector-preview-card">${escapeHtml(markdownText)}</div>
+            <div style="position: relative; margin-bottom: 8px;">
+              <div id="inspector-preview-box" class="inspector-preview-card" style="display: block;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                  <div style="flex: 1; word-break: break-word;" id="inspector-preview-text">${escapeHtml(markdownText)}</div>
+                  <button class="card-launch-btn" style="padding: 2px 6px; font-size: 10.5px; flex-shrink: 0;" onclick="startBlockInlineEdit('${targetId}')" title="就地编辑此笔记块内容 (Ctrl+S保存)">✏️ 编辑</button>
+                </div>
+              </div>
+              <div id="inspector-edit-box" style="display: none; margin-bottom: 8px;">
+                <textarea id="inspector-edit-textarea" class="search-input" style="width: 100%; height: 110px; font-size: 12.5px; line-height: 1.5; padding: 8px 10px; border-radius: 6px; resize: vertical; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif;"></textarea>
+                <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px;">
+                  <button class="inspector-dock-btn" onclick="cancelBlockInlineEdit()" style="padding: 3px 8px; font-size: 11px;">✕ 取消</button>
+                  <button class="inspector-dock-btn primary" onclick="saveBlockInlineEdit('${targetId}')" style="padding: 3px 10px; font-size: 11px;">💾 保存更新 (Ctrl+S)</button>
+                </div>
+              </div>
+            </div>
             ${markdownText && markdownText.length >= 10 ? `
               <div class="inspector-ai-toolbar" style="display: flex; gap: 6px; margin: 8px 0 10px 0; flex-wrap: wrap;">
                 <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; align-self: center;">🤖 AI 提炼:</span>
@@ -5632,6 +5646,86 @@
         }
       }
     }
+
+    let currentEditingBlockId = "";
+    let currentEditingOriginalText = "";
+
+    function startBlockInlineEdit(bId) {
+      currentEditingBlockId = bId;
+      const previewBox = document.getElementById("inspector-preview-box");
+      const editBox = document.getElementById("inspector-edit-box");
+      const textarea = document.getElementById("inspector-edit-textarea");
+      const previewText = document.getElementById("inspector-preview-text");
+      if (!previewBox || !editBox || !textarea) return;
+
+      currentEditingOriginalText = previewText ? previewText.innerText : "";
+      textarea.value = currentEditingOriginalText;
+      previewBox.style.display = "none";
+      editBox.style.display = "block";
+      textarea.focus();
+
+      textarea.onkeydown = function(e) {
+        if (e.ctrlKey && e.key === "s") {
+          e.preventDefault();
+          saveBlockInlineEdit(bId);
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          cancelBlockInlineEdit();
+        }
+      };
+    }
+
+    function cancelBlockInlineEdit() {
+      const previewBox = document.getElementById("inspector-preview-box");
+      const editBox = document.getElementById("inspector-edit-box");
+      if (previewBox && editBox) {
+        previewBox.style.display = "block";
+        editBox.style.display = "none";
+      }
+    }
+
+    function saveBlockInlineEdit(bId) {
+      const textarea = document.getElementById("inspector-edit-textarea");
+      if (!textarea) return;
+      const newText = textarea.value.trim();
+      if (!newText) {
+        showToast("⚠️ 内容不能为空");
+        return;
+      }
+
+      showToast("⏳ 正在原位同步更新至思源笔记...");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'updateBlockContent',
+          id: bId,
+          markdown: newText
+        }));
+      }
+    }
+
+    window.onBlockUpdatedInline = function(res) {
+      if (res && res.success) {
+        showToast("✓ 块内容已成功原位更新至思源！");
+        const previewBox = document.getElementById("inspector-preview-box");
+        const editBox = document.getElementById("inspector-edit-box");
+        const textarea = document.getElementById("inspector-edit-textarea");
+        const previewText = document.getElementById("inspector-preview-text");
+        if (textarea && previewText) {
+          previewText.innerText = textarea.value;
+        }
+        if (previewBox && editBox) {
+          previewBox.style.display = "block";
+          editBox.style.display = "none";
+        }
+        if (filteredItems[selectedIndex]) {
+          filteredItems[selectedIndex].blockContent = textarea.value;
+          filteredItems[selectedIndex].desc = textarea.value.substring(0, 60);
+          renderItems();
+        }
+      } else {
+        showToast("❌ 原位更新失败，请确认内核连接正常");
+      }
+    };
 
     let todayTimelineData = null;
     let currentTimelineFilter = "all";

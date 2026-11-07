@@ -782,6 +782,10 @@ public static class SmartCaptureMain
                 if (!string.IsNullOrEmpty(sourceApp)) attrs["custom-source-app"] = sourceApp;
                 if (!string.IsNullOrEmpty(sourceUrl)) attrs["custom-source-url"] = sourceUrl;
                 if (!string.IsNullOrEmpty(sourceTitle)) attrs["custom-source-title"] = sourceTitle;
+                string projName = SafeContext.GetString(context, "项目名称");
+                string activeFile = SafeContext.GetString(context, "活动文件");
+                if (!string.IsNullOrEmpty(projName)) attrs["custom-project-name"] = projName;
+                if (!string.IsNullOrEmpty(activeFile)) attrs["custom-active-file"] = activeFile;
                 if (attrs.Count > 0)
                 {
                     SyKernelRequest.DoRequest(syUrl, token, "/api/attr/setBlockAttrs", JsonHelper.ToJson(new { id = createdId, attrs = attrs }));

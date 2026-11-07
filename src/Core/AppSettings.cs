@@ -114,6 +114,8 @@ namespace XiaoLv.Desktop.Core
                     s.AutoFloatEnabled = JsonHelper.GetBool(dict, "autoFloatEnabled", s.AutoFloatEnabled);
                     s.SmartClipboardEnabled = JsonHelper.GetBool(dict, "smartClipboardEnabled", s.SmartClipboardEnabled);
                     s.AutoStart = JsonHelper.GetBool(dict, "autoStart", s.AutoStart);
+                    s.SoundFeedbackEnabled = JsonHelper.GetBool(dict, "soundFeedbackEnabled", s.SoundFeedbackEnabled);
+                    s.PinnedDocsJson = JsonHelper.GetString(dict, "pinnedDocsJson", s.PinnedDocsJson);
                     s.PanelWidth = JsonHelper.GetDouble(dict, "panelWidth", s.PanelWidth);
                     s.PanelHeight = JsonHelper.GetDouble(dict, "panelHeight", s.PanelHeight);
                     s.LifelogAutoSectionEnabled = JsonHelper.GetBool(dict, "lifelogAutoSectionEnabled", s.LifelogAutoSectionEnabled);

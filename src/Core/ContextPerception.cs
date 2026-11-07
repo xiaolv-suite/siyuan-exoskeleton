@@ -10,6 +10,20 @@ using System.Windows.Automation;
 
 namespace XiaoLv.Desktop.Core
 {
+    public class IdeWorkspaceInfo
+    {
+        public string ProjectName { get; set; }
+        public string ActiveFileName { get; set; }
+        public bool Success { get; set; }
+
+        public IdeWorkspaceInfo()
+        {
+            ProjectName = "";
+            ActiveFileName = "";
+            Success = false;
+        }
+    }
+
     public class ContextSnapshot
     {
         public IntPtr Hwnd { get; set; }
@@ -18,10 +32,17 @@ namespace XiaoLv.Desktop.Core
         public string FullTitle { get; set; }
         public string CleanTitle { get; set; }
         public string Url { get; set; }
+        public string ProjectName { get; set; }
+        public string ActiveFileName { get; set; }
 
         public bool HasUrl
         {
             get { return !string.IsNullOrEmpty(Url) && (Url.StartsWith("http://") || Url.StartsWith("https://")); }
+        }
+
+        public bool IsDevWorkspace
+        {
+            get { return !string.IsNullOrEmpty(ProjectName); }
         }
 
         public string FormattedCitation
@@ -34,6 +55,14 @@ namespace XiaoLv.Desktop.Core
                 if (HasUrl)
                 {
                     return string.Format("[{0}]({1}) ({2})", title.Replace("[", "\\[").Replace("]", "\\]"), Url, AppDisplayName);
+                }
+                if (IsDevWorkspace)
+                {
+                    if (!string.IsNullOrEmpty(ActiveFileName))
+                    {
+                        return string.Format("工程【{0}】· {1} ({2})", ProjectName, ActiveFileName, AppDisplayName);
+                    }
+                    return string.Format("工程【{0}】 ({1})", ProjectName, AppDisplayName);
                 }
                 return string.Format("{0} ({1})", title, AppDisplayName);
             }
@@ -99,6 +128,11 @@ namespace XiaoLv.Desktop.Core
             " - Brave",
             " - Visual Studio Code",
             " - Cursor",
+            " - PyCharm",
+            " - IntelliJ IDEA",
+            " - WebStorm",
+            " - Rider",
+            " - Visual Studio",
             " - Obsidian",
             " - Typora",
             " - Zotero",
@@ -158,6 +192,13 @@ namespace XiaoLv.Desktop.Core
                         }
                     }
                     catch { }
+                }
+
+                var ideInfo = ExtractIdeWorkspace(snap.ProcessName, snap.CleanTitle);
+                if (ideInfo != null && ideInfo.Success)
+                {
+                    snap.ProjectName = ideInfo.ProjectName;
+                    snap.ActiveFileName = ideInfo.ActiveFileName;
                 }
             }
             catch { }
@@ -242,6 +283,56 @@ namespace XiaoLv.Desktop.Core
                 }
             }
             return title;
+        }
+
+        public static IdeWorkspaceInfo ExtractIdeWorkspace(string procName, string rawOrCleanTitle)
+        {
+            var res = new IdeWorkspaceInfo();
+            if (string.IsNullOrEmpty(procName) || string.IsNullOrEmpty(rawOrCleanTitle)) return res;
+
+            string clean = CleanWindowTitle(rawOrCleanTitle);
+            string pLower = procName.ToLowerInvariant();
+            if (pLower == "code" || pLower == "cursor")
+            {
+                // 形如 "● Program.cs - 思源小驴桌面助手" 或 "Program.cs - 思源小驴桌面助手 [WSL: Ubuntu]"
+                string title = clean.TrimStart('●', '○', ' ', '*');
+                int dashIdx = title.IndexOf(" - ");
+                if (dashIdx > 0)
+                {
+                    res.ActiveFileName = title.Substring(0, dashIdx).Trim();
+                    string rest = title.Substring(dashIdx + 3).Trim();
+                    int bracketIdx = rest.IndexOf('[');
+                    res.ProjectName = (bracketIdx > 0 ? rest.Substring(0, bracketIdx) : rest).Trim();
+                    res.Success = true;
+                }
+                else
+                {
+                    res.ProjectName = title;
+                    res.Success = true;
+                }
+            }
+            else if (pLower == "idea64" || pLower == "pycharm64" || pLower == "webstorm64" || pLower == "rider64")
+            {
+                // 形如 "main.py [my-project]" 或 "main.py [my-project] - PyCharm"
+                var m = Regex.Match(clean, @"^(.+?)\s*\[([^\]]+)\](?:\s*-\s*.*)?$");
+                if (m.Success)
+                {
+                    res.ActiveFileName = m.Groups[1].Value.Trim();
+                    res.ProjectName = m.Groups[2].Value.Trim();
+                    res.Success = true;
+                }
+                else
+                {
+                    res.ProjectName = clean;
+                    res.Success = true;
+                }
+            }
+            else if (pLower == "devenv")
+            {
+                res.ProjectName = clean;
+                res.Success = true;
+            }
+            return res;
         }
 
         /// <summary>

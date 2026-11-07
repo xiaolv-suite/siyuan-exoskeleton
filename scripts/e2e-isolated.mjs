@@ -868,6 +868,28 @@ async function main() {
   const isPdfOk = pdfRes.includes("True");
   logStep("Step 7.38: 本地学术 PDF 极速流式透视、页码锚点与研读大纲生成断言", isPdfOk, `研读大纲生成断言: ${pdfRes.trim()}`);
 
+  // Step 7.39: Test IDE & Developer Workspace Perception (ContextPerception: VS Code / Cursor / PyCharm)
+  const ideScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $cp = $asm.GetType('XiaoLv.Desktop.Core.ContextPerception');
+    
+    # 模拟 VS Code 窗口标题提取
+    $mIde = $cp.GetMethod('ExtractIdeWorkspace', [System.Reflection.BindingFlags]'Public,Static', $null, @([string], [string]), $null);
+    $infoVsCode = $mIde.Invoke($null, @('Code', '● Program.cs - 思源小驴桌面助手 - Visual Studio Code'));
+    
+    # 模拟 PyCharm 窗口标题提取
+    $infoPycharm = $mIde.Invoke($null, @('pycharm64', 'main.py [deep-learning-core] - PyCharm'));
+    
+    $okVsCode = ($null -ne $infoVsCode) -and ($infoVsCode.ProjectName -eq '思源小驴桌面助手') -and ($infoVsCode.ActiveFileName -eq 'Program.cs');
+    $okPycharm = ($null -ne $infoPycharm) -and ($infoPycharm.ProjectName -eq 'deep-learning-core') -and ($infoPycharm.ActiveFileName -eq 'main.py');
+    
+    Write-Output ($okVsCode.ToString() + '|' + $okPycharm.ToString());
+  `;
+  const ideRes = runPs(ideScript);
+  const isIdeOk = ideRes.includes("True|True");
+  logStep("Step 7.39: 开发者 IDE 工程与活动源码文件环境感知 (VS Code / PyCharm / Cursor) 断言", isIdeOk, `工程提取断言: ${ideRes.trim()}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

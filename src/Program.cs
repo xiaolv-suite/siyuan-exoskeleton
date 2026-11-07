@@ -620,6 +620,8 @@ namespace XiaoLv.Desktop
                             ctx.SetVarValue("来源应用", snapshot.AppDisplayName);
                             ctx.SetVarValue("来源标题", snapshot.CleanTitle);
                             ctx.SetVarValue("来源链接", snapshot.Url);
+                            ctx.SetVarValue("项目名称", snapshot.ProjectName);
+                            ctx.SetVarValue("活动文件", snapshot.ActiveFileName);
                         }
                         ctx.OnNotificationRequested += (t, m) => SafeNotify(t, m);
                         SmartCaptureMain.Exec(ctx);

@@ -206,7 +206,11 @@ namespace XiaoLv.Desktop.UI
 
             // 3. 右侧状态指示与高频动作按钮 (时间戳盖章 / 待办转换 / 粘滞续写 / 回车确认)
             string badgeText = "↵ 入库";
-            if (snapshot != null && !string.IsNullOrEmpty(snapshot.AppDisplayName) && snapshot.AppDisplayName != "桌面应用")
+            if (snapshot != null && snapshot.IsDevWorkspace && !string.IsNullOrEmpty(snapshot.ProjectName))
+            {
+                badgeText = "🚀 " + (snapshot.ProjectName.Length > 12 ? snapshot.ProjectName.Substring(0, 12) + "..." : snapshot.ProjectName);
+            }
+            else if (snapshot != null && !string.IsNullOrEmpty(snapshot.AppDisplayName) && snapshot.AppDisplayName != "桌面应用")
             {
                 badgeText = "↵ " + snapshot.AppDisplayName;
             }
@@ -320,6 +324,12 @@ namespace XiaoLv.Desktop.UI
             _lifelogChipsPanel.Children.Add(CreateChip("💡", "闪卡", () => SmartPrependOrFill("? ")));
             _lifelogChipsPanel.Children.Add(CreateChip("👥", "人脉", () => SmartPrependOrFill("@")));
             _lifelogChipsPanel.Children.Add(CreateChip(">>", "换轨", () => SmartPrependOrFill(">>")));
+
+            if (snapshot != null && snapshot.IsDevWorkspace && !string.IsNullOrEmpty(snapshot.ProjectName))
+            {
+                string pName = snapshot.ProjectName;
+                _lifelogChipsPanel.Children.Insert(0, CreateChip("🚀", "#" + pName, () => SmartPrependOrFill("#" + pName + " ")));
+            }
 
             var mainStack = new StackPanel();
             mainStack.Children.Add(grid);

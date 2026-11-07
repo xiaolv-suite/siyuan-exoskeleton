@@ -147,6 +147,48 @@ public static class ContextPenMain
                 targetDocId = XiaoLv.Desktop.Core.AppSettings.Instance.QuickNoteTargetDoc;
             }
 
+            // 1.1 Lifelog 语法智能多态直投 (¥记账, ~专注, +习惯)
+            if (text.StartsWith("¥") || text.StartsWith("￥") || text.StartsWith("~") || text.StartsWith("+"))
+            {
+                string category, tags;
+                string parsed = XiaoLv.Desktop.Core.LifelogParser.ParseLine(text, out category, out tags);
+                if (!string.IsNullOrEmpty(parsed))
+                {
+                    string lifelogMd = "- " + parsed;
+                    var okLife = AppendBlock(syUrl, token, targetDocId, lifelogMd);
+                    if (okLife) XiaoLv.Desktop.Core.SoundPlayerHelper.PlayFeedback();
+                    SafeContext.Set(context, "是否成功", okLife);
+                    SafeContext.Set(context, "需要通知", true);
+                    SafeContext.Set(context, "通知反馈", okLife ? ("✓ [Lifelog] " + category + " 已记入今日日记！") : "❌ 写入失败");
+                    return;
+                }
+            }
+
+            // 1.2 LaTeX 数学公式智能包裹
+            string cleanFormula;
+            if (XiaoLv.Desktop.Core.ClipboardWatcher.TryDetectLatexMath(text, out cleanFormula))
+            {
+                string mathBlock = "$$\n" + cleanFormula + "\n$$\n{: custom-type=\"math\" }";
+                var okMath = AppendBlock(syUrl, token, targetDocId, mathBlock);
+                if (okMath) XiaoLv.Desktop.Core.SoundPlayerHelper.PlayFeedback();
+                SafeContext.Set(context, "是否成功", okMath);
+                SafeContext.Set(context, "需要通知", true);
+                SafeContext.Set(context, "通知反馈", okMath ? "✓ [LaTeX公式] 已生成原生数学公式块！" : "❌ 写入失败");
+                return;
+            }
+
+            // 1.3 数据表格原生块格式化
+            if (text.TrimStart().StartsWith("|") && text.Contains("\n|"))
+            {
+                string tableBlock = text.Trim() + "\n\n{: custom-type=\"table-block\" }";
+                var okTab = AppendBlock(syUrl, token, targetDocId, tableBlock);
+                if (okTab) XiaoLv.Desktop.Core.SoundPlayerHelper.PlayFeedback();
+                SafeContext.Set(context, "是否成功", okTab);
+                SafeContext.Set(context, "需要通知", true);
+                SafeContext.Set(context, "通知反馈", okTab ? "✓ [数据表格] 已结构化写入今日日记！" : "❌ 写入失败");
+                return;
+            }
+
             // 构建大纲级嵌套列表项：正文为主列表项，出处与时间自动缩离子项
             string nestedMd = XiaoLv.Desktop.Core.TextCleaner.BuildNestedListItem(text, windowTitle, sourceUrl, windowTitle, timeStr);
             if (!string.IsNullOrEmpty(imageMd)) nestedMd += imageMd;
@@ -170,10 +212,13 @@ public static class ContextPenMain
         // 分支 2: 制闪卡 (FSRS 属性)
         if (op == "2" || op == "card")
         {
-            string q = text, a = "待补充答案";
-            if (text.Contains("//") || text.Contains("——"))
+            string cleanText = text;
+            if (cleanText.StartsWith("? ") || cleanText.StartsWith("？ ")) cleanText = cleanText.Substring(2).Trim();
+
+            string q = cleanText, a = "待补充答案";
+            if (cleanText.Contains("//") || cleanText.Contains("——"))
             {
-                var parts = Regex.Split(text, "//|——");
+                var parts = Regex.Split(cleanText, "//|——");
                 if (parts.Length > 1) { q = parts[0].Trim(); a = parts[1].Trim(); }
             }
             var cardMd = "### 🧠 " + q + "\n\n" + a + "\n\n{: custom-riff-decks=\"FSRS\" custom-type=\"flashcard\" }";
@@ -187,7 +232,10 @@ public static class ContextPenMain
         // 分支 3: 派任务 (Task Horizon 兼容)
         if (op == "3" || op == "task")
         {
-            var taskMd = "- [ ] " + text + " (P2重要不急) {: custom-task-priority=\"p2\" custom-task-horizon=\"true\" }";
+            string cleanTask = text;
+            if (cleanTask.StartsWith("! ") || cleanTask.StartsWith("！ ")) cleanTask = cleanTask.Substring(2).Trim();
+
+            var taskMd = "- [ ] " + cleanTask + " (P2重要不急) {: custom-task-priority=\"p2\" custom-task-horizon=\"true\" }";
             var ok = AppendBlock(syUrl, token, docId, taskMd);
             SafeContext.Set(context, "是否成功", ok);
             SafeContext.Set(context, "需要通知", true);
@@ -199,6 +247,19 @@ public static class ContextPenMain
         if (op == "4" || op == "glean" || op == "readlater")
         {
             string sourceUrl = SafeContext.GetString(context, "来源链接");
+            // 自动补全学术文献或纯 URL
+            if (string.IsNullOrEmpty(sourceUrl))
+            {
+                string citeType, citeId, canonicalUrl;
+                if (XiaoLv.Desktop.Core.ClipboardWatcher.TryDetectAcademicCitation(text, out citeType, out citeId, out canonicalUrl))
+                {
+                    sourceUrl = canonicalUrl;
+                }
+                else if (text.StartsWith("http://") || text.StartsWith("https://"))
+                {
+                    sourceUrl = text.Trim();
+                }
+            }
             string targetDocId = !string.IsNullOrEmpty(XiaoLv.Desktop.Core.AppSettings.Instance.QuickNoteTargetDoc) 
                 ? XiaoLv.Desktop.Core.AppSettings.Instance.QuickNoteTargetDoc 
                 : docId;

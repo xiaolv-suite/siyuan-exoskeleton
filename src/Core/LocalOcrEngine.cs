@@ -114,7 +114,23 @@ namespace XiaoLv.Desktop.Core
                 line = System.Text.RegularExpressions.Regex.Replace(line, "([\\u4e00-\\u9fa5])\\s+([\\u4e00-\\u9fa5])", "$1$2");
                 sb.AppendLine(line);
             }
-            return sb.ToString().TrimEnd();
+            string cleaned = sb.ToString().TrimEnd();
+
+            // 1. 若检测到对齐的多列数据表格，自动转为结构化 Markdown 表格
+            string mdTable;
+            int rCount, cCount;
+            if (ClipboardWatcher.TryConvertTableToMarkdown(cleaned, out mdTable, out rCount, out cCount))
+            {
+                return mdTable;
+            }
+
+            // 2. 3D PDF 连字符与断行自愈缝合
+            cleaned = TextCleaner.Unbreak3dPdfHyphens(cleaned);
+
+            // 3. 盘古中英混排空格优化
+            cleaned = TextCleaner.FormatPanguSpacing(cleaned);
+
+            return cleaned;
         }
 
         private static object AwaitWinRT(object asyncOp, Type resultType)

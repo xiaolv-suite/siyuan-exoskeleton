@@ -233,10 +233,69 @@ namespace XiaoLv.Desktop.Core
                 return item;
             }
 
-            // 2. 表格数据嗅探 (多行且含制表符 \t)
+            // 1.5. 学术文献引用嗅探 (DOI 与 arXiv 论文，自动拉取真实文献题录)
+            string citeType, citeId, canonicalUrl;
+            if (TryDetectAcademicCitation(txt, out citeType, out citeId, out canonicalUrl))
+            {
+                item.SniffedType = "academic";
+                item.Title = (citeType == "doi" ? "DOI文献: " : "arXiv论文: ") + citeId;
+                item.Summary = string.Format("学术文献 {0} ({1})", citeType.ToUpperInvariant(), citeId);
+                item.EnrichedMarkdown = string.Format("> 📖 **学术文献 ({0}: {1})**\n> 🔗 [{1}]({2})\n\n{{: custom-literature-{3}=\"{1}\" custom-type=\"literature\" }}",
+                    citeType.ToUpperInvariant(), citeId, canonicalUrl, citeType);
+
+                // 异步拉取 CrossRef 或 arXiv 真实论文题目与作者
+                ThreadPool.QueueUserWorkItem(s =>
+                {
+                    try
+                    {
+                        string paperTitle, paperAuthors, paperYear;
+                        if (FetchAcademicMetadata(citeType, citeId, out paperTitle, out paperAuthors, out paperYear))
+                        {
+                            item.Title = paperTitle;
+                            item.Summary = string.Format("文献: {0} ({1})", Truncate(paperTitle, 35), !string.IsNullOrEmpty(paperYear) ? paperYear : citeId);
+                            var sbMd = new StringBuilder();
+                            sbMd.Append("> 📖 **").Append(paperTitle).Append("**\n");
+                            if (!string.IsNullOrEmpty(paperAuthors))
+                            {
+                                sbMd.Append("> 👤 **作者**: ").Append(paperAuthors);
+                                if (!string.IsNullOrEmpty(paperYear)) sbMd.Append(" (").Append(paperYear).Append(")");
+                                sbMd.Append(" · ");
+                            }
+                            else
+                            {
+                                sbMd.Append("> ");
+                            }
+                            sbMd.Append("🔗 [").Append(citeId).Append("](").Append(canonicalUrl).Append(")\n\n");
+                            sbMd.Append("{: custom-literature-").Append(citeType).Append("=\"").Append(citeId).Append("\" ");
+                            sbMd.Append("custom-literature-title=\"").Append(paperTitle.Replace("\"", "\\\"")).Append("\" ");
+                            if (!string.IsNullOrEmpty(paperAuthors)) sbMd.Append("custom-literature-authors=\"").Append(paperAuthors.Replace("\"", "\\\"")).Append("\" ");
+                            if (!string.IsNullOrEmpty(paperYear)) sbMd.Append("custom-literature-year=\"").Append(paperYear).Append("\" ");
+                            sbMd.Append("custom-type=\"literature\" }");
+
+                            item.EnrichedMarkdown = sbMd.ToString();
+                            if (OnClipboardEnriched != null) OnClipboardEnriched(item);
+                        }
+                    }
+                    catch { }
+                });
+                return item;
+            }
+
+            // 1.8. LaTeX 数学公式嗅探 (自动包裹原生 KaTeX 块语法)
+            string cleanFormula;
+            if (TryDetectLatexMath(txt, out cleanFormula))
+            {
+                item.SniffedType = "math";
+                item.Title = "LaTeX 数学公式";
+                item.Summary = "数学公式: " + Truncate(cleanFormula.Replace("\r", " ").Replace("\n", " "), 35);
+                item.EnrichedMarkdown = "$$\n" + cleanFormula + "\n$$\n{: custom-type=\"math\" }";
+                return item;
+            }
+
+            // 2. 表格数据嗅探 (多行且含制表符 \t 或多空格对齐)
             string mdTable;
             int rows, cols;
-            if (TryConvertTsvToMarkdown(txt, out mdTable, out rows, out cols))
+            if (TryConvertTableToMarkdown(txt, out mdTable, out rows, out cols))
             {
                 item.SniffedType = "table";
                 item.Title = string.Format("表格 ({0}行×{1}列)", rows, cols);
@@ -324,6 +383,255 @@ namespace XiaoLv.Desktop.Core
             }
             catch { }
             return "";
+        }
+
+        /// <summary>
+        /// 嗅探学术文献引用标识符 (DOI 或 arXiv 预印本)
+        /// </summary>
+        public static bool TryDetectAcademicCitation(string txt, out string citeType, out string id, out string canonicalUrl)
+        {
+            citeType = "";
+            id = "";
+            canonicalUrl = "";
+            if (string.IsNullOrEmpty(txt)) return false;
+
+            string clean = txt.Trim();
+
+            // 1. DOI 探测: 10.xxxx/... 或 doi: 10.xxxx/... 或 https://doi.org/10.xxxx/...
+            var mDoi = Regex.Match(clean, @"^(?:doi:\s*|https?://(?:dx\.)?doi\.org/)?(10\.\d{4,9}/[-._;()/:A-Za-z0-9]+)$", RegexOptions.IgnoreCase);
+            if (mDoi.Success)
+            {
+                citeType = "doi";
+                id = mDoi.Groups[1].Value.TrimEnd('.', ';', ')');
+                canonicalUrl = "https://doi.org/" + id;
+                return true;
+            }
+
+            // 2. arXiv 探测: arXiv:2304.12345 或 https://arxiv.org/abs/2304.12345 或 2304.12345
+            var mArxiv = Regex.Match(clean, @"^(?:arXiv:\s*|https?://arxiv\.org/(?:abs|pdf)/)?(\d{4}\.\d{4,5}(?:v\d+)?)(?:\.pdf)?$", RegexOptions.IgnoreCase);
+            if (mArxiv.Success)
+            {
+                citeType = "arxiv";
+                id = mArxiv.Groups[1].Value;
+                canonicalUrl = "https://arxiv.org/abs/" + id;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 异步拉取 CrossRef 或 arXiv 真实论文元数据 (标题、主要作者、出版年份)
+        /// </summary>
+        public static bool FetchAcademicMetadata(string citeType, string id, out string title, out string authors, out string year)
+        {
+            title = "";
+            authors = "";
+            year = "";
+
+            try
+            {
+                if (citeType == "doi")
+                {
+                    string url = "https://api.crossref.org/works/" + Uri.EscapeDataString(id);
+                    var req = (HttpWebRequest)WebRequest.Create(url);
+                    req.Timeout = 2500;
+                    req.UserAgent = "XiaoLvDesktop/2.9.0 (https://gitee.com/xiaolv-desktop; mailto:contact@xiaolv.internal)";
+                    using (var resp = (HttpWebResponse)req.GetResponse())
+                    using (var s = resp.GetResponseStream())
+                    using (var r = new StreamReader(s, Encoding.UTF8))
+                    {
+                        string json = r.ReadToEnd();
+                        var mT = Regex.Match(json, "\"title\"\\s*:\\s*\\[\\s*\"([^\"]+)\"");
+                        if (mT.Success) title = WebUtility.HtmlDecode(mT.Groups[1].Value.Trim());
+
+                        var mAuth = Regex.Matches(json, "\"family\"\\s*:\\s*\"([^\"]+)\"");
+                        var authorList = new System.Collections.Generic.List<string>();
+                        foreach (Match ma in mAuth)
+                        {
+                            if (authorList.Count >= 3) break;
+                            string fam = ma.Groups[1].Value;
+                            if (!authorList.Contains(fam)) authorList.Add(fam);
+                        }
+                        if (authorList.Count > 0)
+                        {
+                            authors = string.Join(", ", authorList.ToArray()) + (mAuth.Count > 3 ? " 等" : "");
+                        }
+
+                        var mY = Regex.Match(json, "\"date-parts\"\\s*:\\s*\\[\\s*\\[\\s*(\\d{4})");
+                        if (mY.Success) year = mY.Groups[1].Value;
+
+                        return !string.IsNullOrEmpty(title);
+                    }
+                }
+                else if (citeType == "arxiv")
+                {
+                    string url = "https://export.arxiv.org/api/query?id_list=" + Uri.EscapeDataString(id);
+                    var req = (HttpWebRequest)WebRequest.Create(url);
+                    req.Timeout = 2500;
+                    req.UserAgent = "XiaoLvDesktop/2.9.0";
+                    using (var resp = (HttpWebResponse)req.GetResponse())
+                    using (var s = resp.GetResponseStream())
+                    using (var r = new StreamReader(s, Encoding.UTF8))
+                    {
+                        string xml = r.ReadToEnd();
+                        var mEntry = Regex.Match(xml, "<entry>[\\s\\S]*?</entry>");
+                        string entryXml = mEntry.Success ? mEntry.Value : xml;
+
+                        var mT = Regex.Match(entryXml, "<title>([\\s\\S]*?)</title>");
+                        if (mT.Success)
+                        {
+                            title = Regex.Replace(mT.Groups[1].Value.Trim(), @"\s+", " ");
+                        }
+
+                        var mAuth = Regex.Matches(entryXml, "<author>\\s*<name>([^<]+)</name>");
+                        var authorList = new System.Collections.Generic.List<string>();
+                        foreach (Match ma in mAuth)
+                        {
+                            if (authorList.Count >= 3) break;
+                            string name = ma.Groups[1].Value.Trim();
+                            if (!authorList.Contains(name)) authorList.Add(name);
+                        }
+                        if (authorList.Count > 0)
+                        {
+                            authors = string.Join(", ", authorList.ToArray()) + (mAuth.Count > 3 ? " 等" : "");
+                        }
+
+                        var mY = Regex.Match(entryXml, "<published>(\\d{4})-");
+                        if (mY.Success) year = mY.Groups[1].Value;
+
+                        return !string.IsNullOrEmpty(title);
+                    }
+                }
+            }
+            catch { }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 嗅探 LaTeX 数学公式语法特征
+        /// </summary>
+        public static bool TryDetectLatexMath(string txt, out string cleanFormula)
+        {
+            cleanFormula = "";
+            if (string.IsNullOrEmpty(txt)) return false;
+            string t = txt.Trim();
+
+            // 1. 显式 $$ ... $$ 或 $ ... $ 包裹
+            if ((t.StartsWith("$$") && t.EndsWith("$$") && t.Length > 4) ||
+                (t.StartsWith("$") && t.EndsWith("$") && t.Length > 2 && !t.Substring(1, t.Length - 2).Contains("$")))
+            {
+                cleanFormula = t.Trim('$').Trim();
+                return true;
+            }
+
+            // 2. 包含核心 LaTeX 数学宏特征
+            string[] mathKeywords = new string[]
+            {
+                @"\frac", @"\int", @"\sum", @"\prod", @"\sqrt", @"\partial",
+                @"\begin{aligned}", @"\begin{matrix}", @"\begin{cases}",
+                @"\alpha", @"\beta", @"\gamma", @"\lambda", @"\theta", @"\sigma", @"\omega",
+                @"\mathbf", @"\mathbb", @"\mathcal", @"\times", @"\approx", @"\infty", @"\nabla", @"\cdot"
+            };
+
+            int hitCount = 0;
+            foreach (var kw in mathKeywords)
+            {
+                if (t.Contains(kw)) hitCount++;
+            }
+
+            if (hitCount >= 1 && (t.Contains("\\") || t.Contains("^") || t.Contains("_")))
+            {
+                // 排除 Windows 文件路径反斜杠
+                if (Regex.IsMatch(t, @"^[A-Za-z]:\\")) return false;
+                cleanFormula = t;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 兼容 TSV 制表符及多空格对齐的多列数据表格转换
+        /// </summary>
+        public static bool TryConvertTableToMarkdown(string txt, out string md, out int rowCount, out int colCount)
+        {
+            md = "";
+            rowCount = 0;
+            colCount = 0;
+            if (string.IsNullOrEmpty(txt)) return false;
+
+            // 1. 优先尝试标准制表符 \t
+            if (txt.Contains("\t"))
+            {
+                return TryConvertTsvToMarkdown(txt, out md, out rowCount, out colCount);
+            }
+
+            var lines = txt.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            if (lines.Length < 2) return false;
+
+            // 2. 尝试多空格对齐的多列数据表格 (常见于 OCR 表格或控制台输出)
+            var rows = new System.Collections.Generic.List<string[]>();
+            int expectedCols = -1;
+            bool isUniform = true;
+
+            foreach (var l in lines)
+            {
+                var line = l.Trim();
+                if (string.IsNullOrEmpty(line)) continue;
+                var cells = Regex.Split(line, @"\s{2,}");
+                if (cells.Length < 2)
+                {
+                    isUniform = false;
+                    break;
+                }
+                if (expectedCols == -1) expectedCols = cells.Length;
+                else if (Math.Abs(cells.Length - expectedCols) > 1)
+                {
+                    isUniform = false;
+                    break;
+                }
+                rows.Add(cells);
+            }
+
+            if (isUniform && rows.Count >= 2 && expectedCols >= 2)
+            {
+                rowCount = rows.Count;
+                colCount = expectedCols;
+
+                var sb = new StringBuilder();
+                // 表头
+                sb.Append("|");
+                for (int c = 0; c < expectedCols; c++)
+                {
+                    var val = c < rows[0].Length ? rows[0][c].Trim() : "";
+                    sb.Append(" ").Append(val).Append(" |");
+                }
+                sb.AppendLine();
+
+                // 分割线
+                sb.Append("|");
+                for (int c = 0; c < expectedCols; c++) sb.Append(" --- |");
+                sb.AppendLine();
+
+                // 数据行
+                for (int i = 1; i < rows.Count; i++)
+                {
+                    sb.Append("|");
+                    for (int c = 0; c < expectedCols; c++)
+                    {
+                        var val = c < rows[i].Length ? rows[i][c].Trim() : "";
+                        sb.Append(" ").Append(val).Append(" |");
+                    }
+                    sb.AppendLine();
+                }
+
+                md = sb.ToString().TrimEnd();
+                return true;
+            }
+
+            return false;
         }
 
         public static bool TryConvertTsvToMarkdown(string txt, out string md, out int rowCount, out int colCount)

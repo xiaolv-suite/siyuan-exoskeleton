@@ -232,6 +232,11 @@
     .badge-url { background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
     .badge-table { background: rgba(16, 185, 129, 0.18); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); }
     .badge-code { background: rgba(168, 85, 247, 0.18); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.4); }
+    .badge-cite { background: rgba(99, 102, 241, 0.18); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4); }
+    .badge-math { background: rgba(244, 63, 94, 0.18); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.4); }
+    .badge-lifelog { background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-todo { background: rgba(245, 158, 11, 0.18); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-card { background: rgba(168, 85, 247, 0.18); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
 
     /* 底栏提示 */
     .capsule-footer {
@@ -385,30 +390,73 @@
       if (currentText) {
         // 智能类型识别与徽标呈现
         if (sBadge) {
-          if (currentText.startsWith("http://") || currentText.startsWith("https://")) {
+          const t = currentText.trim();
+          if (t.startsWith("http://") || t.startsWith("https://")) {
             sBadge.innerText = "🌐 网址 (点击剪藏)";
             sBadge.className = "smart-badge badge-url";
             sBadge.style.display = "inline-flex";
             sBadge.title = "点击直接存入读库收件箱";
             sBadge.onclick = (e) => { e.stopPropagation(); choose("4"); };
-          } else if (currentText.startsWith("[") && currentText.includes("](") && (currentText.includes("http://") || currentText.includes("https://"))) {
+          } else if (t.startsWith("[") && t.includes("](") && (t.includes("http://") || t.includes("https://"))) {
             sBadge.innerText = "🔗 提纯链接 (点击剪藏)";
             sBadge.className = "smart-badge badge-url";
             sBadge.style.display = "inline-flex";
             sBadge.title = "点击直接存入读库收件箱";
             sBadge.onclick = (e) => { e.stopPropagation(); choose("4"); };
-          } else if (currentText.startsWith("|") && currentText.includes("\n|")) {
+          } else if (/(?:doi:\s*|https?:\/\/(?:dx\.)?doi\.org\/)?10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+/i.test(t) || /(?:arXiv:\s*|https?:\/\/arxiv\.org\/(?:abs|pdf)\/)?\d{4}\.\d{4,5}/i.test(t)) {
+            sBadge.innerText = "📖 学术文献 (点击剪藏研读)";
+            sBadge.className = "smart-badge badge-cite";
+            sBadge.style.display = "inline-flex";
+            sBadge.title = "检测到 DOI 或 arXiv 学术论文，点击自动生成文献研读卡入库";
+            sBadge.onclick = (e) => { e.stopPropagation(); choose("4"); };
+          } else if (t.startsWith("$$") || (t.includes("\\") && (t.includes("\\frac") || t.includes("\\int") || t.includes("\\sum") || t.includes("\\sqrt") || t.includes("\\alpha") || t.includes("\\beta")))) {
+            sBadge.innerText = "📐 LaTeX公式 (点击格式化)";
+            sBadge.className = "smart-badge badge-math";
+            sBadge.style.display = "inline-flex";
+            sBadge.title = "检测到数学公式，点击以标准 KaTeX 语法写入今日日记";
+            sBadge.onclick = (e) => { e.stopPropagation(); choose("1"); };
+          } else if (t.startsWith("|") && t.includes("\n|")) {
             sBadge.innerText = "📊 Markdown表格 (点击入库)";
             sBadge.className = "smart-badge badge-table";
             sBadge.style.display = "inline-flex";
             sBadge.title = "点击将表格结构化写入今日日记";
             sBadge.onclick = (e) => { e.stopPropagation(); choose("1"); };
-          } else if (currentText.startsWith("```")) {
+          } else if (t.startsWith("```")) {
             sBadge.innerText = "💻 代码块 (点击入库)";
             sBadge.className = "smart-badge badge-code";
             sBadge.style.display = "inline-flex";
             sBadge.title = "点击将代码块安全写入今日日记";
             sBadge.onclick = (e) => { e.stopPropagation(); choose("1"); };
+          } else if (t.startsWith("¥") || t.startsWith("￥")) {
+            sBadge.innerText = "💰 记账支出 (点击入日记)";
+            sBadge.className = "smart-badge badge-lifelog";
+            sBadge.style.display = "inline-flex";
+            sBadge.title = "Lifelog 语法：点击记入今日账目";
+            sBadge.onclick = (e) => { e.stopPropagation(); choose("1"); };
+          } else if (t.startsWith("~") && /~\d+m/i.test(t)) {
+            sBadge.innerText = "⏱️ 专注时序 (点击入日记)";
+            sBadge.className = "smart-badge badge-lifelog";
+            sBadge.style.display = "inline-flex";
+            sBadge.title = "Lifelog 语法：点击倒推起止时间记入今日日记";
+            sBadge.onclick = (e) => { e.stopPropagation(); choose("1"); };
+          } else if (t.startsWith("+") && t.includes(" ")) {
+            sBadge.innerText = "💧 习惯打卡 (点击打卡)";
+            sBadge.className = "smart-badge badge-lifelog";
+            sBadge.style.display = "inline-flex";
+            sBadge.title = "Lifelog 语法：点击记录习惯打卡";
+            sBadge.onclick = (e) => { e.stopPropagation(); choose("1"); };
+          } else if (t.startsWith("! ") || t.startsWith("！ ")) {
+            sBadge.innerText = "📋 待办事项 (点击派任务)";
+            sBadge.className = "smart-badge badge-todo";
+            sBadge.style.display = "inline-flex";
+            sBadge.title = "点击直接作为待办事项分发";
+            sBadge.onclick = (e) => { e.stopPropagation(); choose("3"); };
+          } else if (t.startsWith("? ") || t.startsWith("？ ")) {
+            sBadge.innerText = "🧠 问答闪卡 (点击制卡)";
+            sBadge.className = "smart-badge badge-card";
+            sBadge.style.display = "inline-flex";
+            sBadge.title = "点击直接作为 FSRS 闪卡存入复习库";
+            sBadge.onclick = (e) => { e.stopPropagation(); choose("2"); };
           } else {
             sBadge.style.display = "none";
           }

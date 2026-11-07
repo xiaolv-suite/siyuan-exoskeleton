@@ -20,14 +20,16 @@ namespace XiaoLv.Desktop.Engine.Modules
             if (doc == null || doc.Headings == null || doc.Headings.Count == 0) return "";
 
             var sb = new StringBuilder();
+            string docOpenUrl = "siyuan-exoskeleton://open-office?path=" + Uri.EscapeDataString(doc.FilePath);
             sb.AppendFormat("### 📑 《{0}》文档大纲目录\n", doc.FileName);
-            sb.AppendFormat("> 📍 **源文件**: `{0}` ({1}) · **最后修改**: {2}\n\n", doc.FilePath, doc.FileSizeFormatted, doc.LastModified.ToString("yyyy-MM-dd HH:mm"));
+            sb.AppendFormat("> 📍 **源文件**: `{0}` ({1}) · [⚡ 本地秒开]({2})\n\n", doc.FilePath, doc.FileSizeFormatted, docOpenUrl);
 
             foreach (var h in doc.Headings)
             {
                 int indent = Math.Max(0, h.Level - 1) * 2;
                 string spaces = new string(' ', indent);
-                sb.AppendFormat("{0}- **H{1}**: {2}\n", spaces, h.Level, h.Title);
+                string jumpUrl = string.Format("siyuan-exoskeleton://open-office?path={0}&heading={1}", Uri.EscapeDataString(doc.FilePath), Uri.EscapeDataString(h.Title));
+                sb.AppendFormat("{0}- **H{1}**: {2}  [直达 ↗]({3})\n", spaces, h.Level, h.Title, jumpUrl);
             }
 
             sb.AppendLine();
@@ -45,8 +47,9 @@ namespace XiaoLv.Desktop.Engine.Modules
             if (doc == null || doc.Comments == null || doc.Comments.Count == 0) return "";
 
             var sb = new StringBuilder();
+            string docOpenUrl = "siyuan-exoskeleton://open-office?path=" + Uri.EscapeDataString(doc.FilePath);
             sb.AppendFormat("### 💬 《{0}》审阅批注与修订待办清单 ({1}条)\n", doc.FileName, doc.Comments.Count);
-            sb.AppendFormat("> 📍 **文档底稿**: `{0}` · 审阅跟踪流\n\n", doc.FilePath);
+            sb.AppendFormat("> 📍 **文档底稿**: `{0}` · [⚡ 打开底稿]({1})\n\n", doc.FilePath, docOpenUrl);
 
             foreach (var c in doc.Comments)
             {
@@ -57,7 +60,7 @@ namespace XiaoLv.Desktop.Engine.Modules
                 sb.AppendFormat("- [ ] **批注建议** ({0} · {1}): {2}\n", author, dateStr, comment);
                 if (!string.IsNullOrEmpty(c.AnchorQuoteText))
                 {
-                    sb.AppendFormat("  > 原文引言: 「{0}」\n", c.AnchorQuoteText.Replace("\r\n", " ").Replace("\n", " ").Trim());
+                    sb.AppendFormat("  > 原文引言: 「{0}」  [↗ 定位]({1})\n", c.AnchorQuoteText.Replace("\r\n", " ").Replace("\n", " ").Trim(), docOpenUrl);
                 }
             }
 
@@ -75,8 +78,9 @@ namespace XiaoLv.Desktop.Engine.Modules
             if (doc == null || doc.Slides == null || doc.Slides.Count == 0) return "";
 
             var sb = new StringBuilder();
+            string pptOpenUrl = "siyuan-exoskeleton://open-office?path=" + Uri.EscapeDataString(doc.FilePath);
             sb.AppendFormat("### 🎬 《{0}》幻灯片核心知识卡片库 ({1}页)\n", doc.FileName, doc.Slides.Count);
-            sb.AppendFormat("> 📍 **演示原件**: `{0}` · FSRS 闪卡提炼\n\n", doc.FilePath);
+            sb.AppendFormat("> 📍 **演示原件**: `{0}` · [⚡ 打开幻灯片]({1})\n\n", doc.FilePath, pptOpenUrl);
 
             foreach (var s in doc.Slides)
             {

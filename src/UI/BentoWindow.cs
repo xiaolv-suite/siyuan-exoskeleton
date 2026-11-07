@@ -749,7 +749,8 @@ namespace XiaoLv.Desktop.UI
                 {
                     string cmd = JsonHelper.GetString(msg, "cmd").Trim();
                     string text = JsonHelper.GetString(msg, "text").Trim();
-                    Hide();
+                    bool keepOpen = JsonHelper.GetBool(msg, "keepOpen", false);
+                    if (!keepOpen) Hide();
                     if (!string.IsNullOrEmpty(cmd))
                     {
                         if (cmd.Equals("syfsrs", StringComparison.OrdinalIgnoreCase) || cmd.Equals("fsrs", StringComparison.OrdinalIgnoreCase))
@@ -761,6 +762,36 @@ namespace XiaoLv.Desktop.UI
                         {
                             OnSubActionRequested(cmd, text);
                         }
+                    }
+                    return;
+                }
+
+                // 6.5 专用于总控抽屉的无阻断追加日记 (支持 keepOpen: true 免切屏)
+                if (op.Equals("appendToDailyNote", StringComparison.OrdinalIgnoreCase))
+                {
+                    string text = JsonHelper.GetString(msg, "text").Trim();
+                    bool keepOpen = JsonHelper.GetBool(msg, "keepOpen", true);
+                    if (!keepOpen) Hide();
+
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        ThreadPool.QueueUserWorkItem(s =>
+                        {
+                            try
+                            {
+                                var conn = SiYuanClient.GetConnectionInfo(false);
+                                bool ok = SmartCaptureMain.AppendToDailyNote(conn.Url, conn.Token, text);
+                                if (ok)
+                                {
+                                    SoundPlayerHelper.PlayFeedback();
+                                    if (OnNotificationRequested != null)
+                                    {
+                                        OnNotificationRequested("思源外骨骼", "✓ 已成功写入今日日记！");
+                                    }
+                                }
+                            }
+                            catch { }
+                        });
                     }
                     return;
                 }
@@ -1444,6 +1475,44 @@ namespace XiaoLv.Desktop.UI
                                 }
                                 catch { }
                             }
+
+                            // 外部监听的本地文档补充扫描 (包含 OfficeFileWatcher 监听的 Word/Excel/PPT/PDF 底稿)
+                            try
+                            {
+                                var watchedFiles = OfficeFileWatcher.GetWatchedFilesSnapshot();
+                                if (watchedFiles != null && watchedFiles.Count > 0)
+                                {
+                                    foreach (var wf in watchedFiles)
+                                    {
+                                        if (!File.Exists(wf)) continue;
+                                        string wfn = Path.GetFileName(wf);
+                                        if (string.IsNullOrEmpty(kw) || wfn.IndexOf(kw, StringComparison.OrdinalIgnoreCase) >= 0 || wf.IndexOf(kw, StringComparison.OrdinalIgnoreCase) >= 0)
+                                        {
+                                            string key = wf + "::watched";
+                                            if (!seenPaths.Contains(key))
+                                            {
+                                                seenPaths.Add(key);
+                                                var fi = new FileInfo(wf);
+                                                var it = new Dictionary<string, object>();
+                                                it["id"] = "watched_" + Guid.NewGuid().ToString("N");
+                                                it["rootId"] = "";
+                                                it["docTitle"] = "本地外部文档 (热监听就绪)";
+                                                it["assetRel"] = "file:///" + wf.Replace('\\', '/');
+                                                it["fileName"] = wfn;
+                                                it["ext"] = fi.Extension.ToLowerInvariant();
+                                                it["size"] = fi.Length >= 1048576 
+                                                    ? (fi.Length / 1048576.0).ToString("F1") + " MB" 
+                                                    : (fi.Length / 1024.0).ToString("F0") + " KB";
+                                                it["fullPath"] = wf;
+                                                it["content"] = "外部文档底稿: " + wf + " (支持大纲/批注透视与深链跳转)";
+                                                it["updated"] = fi.LastWriteTime.ToString("yyyyMMddHHmmss");
+                                                assetsList.Add(it);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch { }
 
                             Dispatcher.Invoke(() =>
                             {

@@ -6863,7 +6863,7 @@
       const lines = summary.Headings.map(h => `${'  '.repeat(Math.max(0, h.Level - 1))}- **H${h.Level}**: ${h.Title}`);
       const md = `### 📑 《${summary.FileName}》大纲树\n> 📍 路径: \`${summary.FilePath}\`\n\n` + lines.join("\n");
       if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'appendToDailyNote', text: md, keepOpen: true }));
         showToast(`✓ 已将《${summary.FileName}》大纲树沉淀写入今日日记！`);
       }
     }
@@ -6874,7 +6874,7 @@
       const lines = summary.Comments.map(c => `- [ ] **批注** (${c.Author || '审阅人'}): ${c.CommentText}${c.AnchorQuoteText ? `\\n  > 引文: 「${c.AnchorQuoteText}」` : ''}`);
       const md = `### 💬 《${summary.FileName}》审阅待办清单 (${summary.Comments.length}条)\n> 📍 底稿: \`${summary.FilePath}\`\n\n` + lines.join("\n");
       if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'appendToDailyNote', text: md, keepOpen: true }));
         showToast(`✓ 已将《${summary.FileName}》的 ${summary.Comments.length} 条批注生成待办清单写入今日日记！`);
       }
     }
@@ -6885,7 +6885,7 @@
       const sh = summary.Sheets[0];
       const md = `### 📊 《${summary.FileName}》[${sh.SheetName}] 数据表\n> 📍 底稿: \`${summary.FilePath}\`\n\n` + sh.SampleMarkdownTable;
       if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'appendToDailyNote', text: md, keepOpen: true }));
         showToast(`✓ 已将表格 [${sh.SheetName}] 结构化沉淀写入今日日记！`);
       }
     }
@@ -6896,7 +6896,7 @@
       const cards = summary.Slides.map(sl => `#### 🧠 Slide ${sl.SlideIndex}: ${sl.Title}\n\n**要点**:\n${sl.ContentPreview}\n\n${sl.HasNotes ? `**演讲备注**:\n${sl.SpeakerNotes}\n\n` : ''}{: custom-riff-decks="PPT" custom-type="flashcard" }`).join("\n\n");
       const md = `### 🎬 《${summary.FileName}》知识卡片库\n\n` + cards;
       if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'appendToDailyNote', text: md, keepOpen: true }));
         showToast(`✓ 已将 ${summary.Slides.length} 张 PPT 幻灯片提炼为 FSRS 复习闪卡！`);
       }
     }
@@ -6906,7 +6906,7 @@
       const title = summary ? summary.FileName : "文档";
       const md = `- [ ] **《${title}》审阅批注** (${author}): ${comment}${quote ? `\n  > 引文: 「${quote}」` : ""}\n{: custom-type="office-comment" }`;
       if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'appendToDailyNote', text: md, keepOpen: true }));
         showToast("✓ 批注已转化为待办任务写入今日日记！");
       }
     }
@@ -6914,7 +6914,7 @@
     function importSingleHeadingDaily(level, title) {
       const md = `### 📑 H${level} ${title}\n- `;
       if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'appendToDailyNote', text: md, keepOpen: true }));
         showToast(`✓ 小节【${title}】已存入今日日记！`);
       }
     }
@@ -7047,7 +7047,7 @@
       }
       md += `\n\n{: custom-type="pdf-reading-notes" custom-file-path="${summary.FilePath.replace(/"/g, '\\"')}" }\n`;
       if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'appendToDailyNote', text: md, keepOpen: true }));
         showToast(`✓ 已将《${title}》研读纲要与页码索引写入今日日记！`);
       }
     }

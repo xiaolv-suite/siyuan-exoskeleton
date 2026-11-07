@@ -1,5 +1,6 @@
 using System;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -28,6 +29,8 @@ namespace XiaoLv.Desktop.UI
         private readonly System.Collections.Generic.List<string> _suggestions = new System.Collections.Generic.List<string>();
         private int _activeSuggestionIndex = 0;
         private static string _savedDraft = "";
+        private bool _isStickyMode = false;
+        private string _stickyBlockId = "";
 
         public event Action<string> OnTextSubmitted;
 
@@ -142,6 +145,14 @@ namespace XiaoLv.Desktop.UI
             intentStack.Children.Add(_intentIconText);
             intentStack.Children.Add(_intentLabelText);
             _intentPill.Child = intentStack;
+            _intentPill.MouseDown += (s, e) =>
+            {
+                if (_isStickyMode && e.ChangedButton == MouseButton.Left)
+                {
+                    Topmost = !Topmost;
+                    _statusBadgeText.Text = Topmost ? "📌 置顶 (Ctrl+S同步)" : "📎 取消置顶 (Ctrl+S同步)";
+                }
+            };
             Grid.SetColumn(_intentPill, 0);
             grid.Children.Add(_intentPill);
 
@@ -222,7 +233,14 @@ namespace XiaoLv.Desktop.UI
             {
                 if (e.ChangedButton == MouseButton.Left)
                 {
-                    SubmitCurrentText();
+                    if (_isStickyMode)
+                    {
+                        SaveStickyContent();
+                    }
+                    else
+                    {
+                        SubmitCurrentText();
+                    }
                 }
             };
 
@@ -389,7 +407,26 @@ namespace XiaoLv.Desktop.UI
                 }
                 else if (e.Key == Key.S && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
-                    SubmitCurrentText();
+                    if (_isStickyMode)
+                    {
+                        SaveStickyContent();
+                    }
+                    else
+                    {
+                        SubmitCurrentText();
+                    }
+                    e.Handled = true;
+                }
+                else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && (e.Key == Key.OemPlus || e.Key == Key.Add))
+                {
+                    if (_inputBox.FontSize < 28) _inputBox.FontSize += 1.5;
+                    _statusBadgeText.Text = string.Format("🔍 字号: {0:0.#}pt", _inputBox.FontSize);
+                    e.Handled = true;
+                }
+                else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && (e.Key == Key.OemMinus || e.Key == Key.Subtract))
+                {
+                    if (_inputBox.FontSize > 10) _inputBox.FontSize -= 1.5;
+                    _statusBadgeText.Text = string.Format("🔍 字号: {0:0.#}pt", _inputBox.FontSize);
                     e.Handled = true;
                 }
                 else if (e.Key == Key.Tab && _suggestions.Count > 0)
@@ -823,6 +860,59 @@ namespace XiaoLv.Desktop.UI
             RenderSuggestions();
         }
 
+        private void SaveStickyContent()
+        {
+            string txt = _inputBox.Text.Trim();
+            if (string.IsNullOrEmpty(txt)) return;
+
+            if (!string.IsNullOrEmpty(_stickyBlockId))
+            {
+                _statusBadgeText.Text = "⏳ 同步中...";
+                ThreadPool.QueueUserWorkItem(async s =>
+                {
+                    try
+                    {
+                        var res = await SiYuanClient.PostAsync("/api/block/updateBlock", new
+                        {
+                            id = _stickyBlockId,
+                            dataType = "markdown",
+                            data = txt
+                        });
+                        Dispatcher.Invoke(() =>
+                        {
+                            SoundPlayerHelper.PlayFeedback();
+                            _statusBadgeText.Text = "✓ 已同步至思源 (" + DateTime.Now.ToString("HH:mm:ss") + ")";
+                        });
+                    }
+                    catch
+                    {
+                        Dispatcher.Invoke(() => { _statusBadgeText.Text = "⚠️ 同步超时"; });
+                    }
+                });
+            }
+            else
+            {
+                _statusBadgeText.Text = "⏳ 记入日记中...";
+                ThreadPool.QueueUserWorkItem(s =>
+                {
+                    try
+                    {
+                        var ctx = new DesktopStepContext("SYS", txt);
+                        SmartCaptureMain.Exec(ctx);
+                        Dispatcher.Invoke(() =>
+                        {
+                            SoundPlayerHelper.PlayFeedback();
+                            _statusBadgeText.Text = "✓ 已追加至今日日记 (" + DateTime.Now.ToString("HH:mm:ss") + ")";
+                        });
+                    }
+                    catch
+                    {
+                        Dispatcher.Invoke(() => { _statusBadgeText.Text = "⚠️ 写入日记失败"; });
+                    }
+                });
+            }
+        }
+
         public static void Prompt(Action<string> onSubmitted)
         {
             Prompt(null, onSubmitted);
@@ -839,18 +929,24 @@ namespace XiaoLv.Desktop.UI
 
         /// <summary>
         /// 呼出极轻量桌面图钉便签 (Sticky Pin HUD)，供写代码/写报告时置顶悬浮对照参考
+        /// 支持 Ctrl+S 实时双向同步更新至思源笔记原生块或追加至日记，Ctrl+/- 缩放阅读字号
         /// </summary>
-        public static void ShowStickyNote(string title, string content)
+        public static void ShowStickyNote(string title, string content, string blockId = "")
         {
             var win = new MiniInputWindow(null);
-            win.Title = "思源外骨骼 · 桌面图钉便签: " + title;
-            win.Width = 460;
-            win.Height = 250;
+            win._isStickyMode = true;
+            win._stickyBlockId = blockId ?? "";
+            win.Title = "思源外骨骼 · 桌面图钉便签: " + (string.IsNullOrEmpty(title) ? "参考便签" : title);
+            win.Width = 480;
+            win.Height = 280;
             win.ExpandToScratchpadMode();
             win._intentLabelText.Text = "图钉便签";
             win._intentIconText.Text = "📌";
-            win._inputBox.Text = (!string.IsNullOrEmpty(title) ? ("### 📌 " + title + "\n\n") : "") + content;
-            win._statusBadgeText.Text = "📌 置顶参考中 (Esc关闭)";
+            win._intentPill.Cursor = Cursors.Hand;
+            win._intentPill.ToolTip = "点击切换是否置顶悬浮 (当前: 置顶)";
+            win._inputBox.Text = (!string.IsNullOrEmpty(title) ? ("### 📌 " + title + "\n\n") : "") + (content ?? "");
+            win._statusBadgeText.Text = "📌 置顶 (Ctrl+S同步 · Esc退出)";
+            win._statusBadge.ToolTip = "点击或按 Ctrl+S 实时同步更新至思源笔记";
             win.Topmost = true;
             win.Show();
             win.Activate();

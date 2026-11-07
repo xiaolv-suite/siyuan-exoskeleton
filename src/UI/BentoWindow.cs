@@ -393,7 +393,8 @@ namespace XiaoLv.Desktop.UI
                 {
                     string t = JsonHelper.GetString(msg, "title");
                     string c = JsonHelper.GetString(msg, "content");
-                    MiniInputWindow.ShowStickyNote(t, c);
+                    string bId = JsonHelper.GetString(msg, "blockId");
+                    MiniInputWindow.ShowStickyNote(t, c, bId);
                     return;
                 }
 

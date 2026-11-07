@@ -2946,6 +2946,7 @@
           <span class="brand-pill" id="timeline-modal-count">0 条记录</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="kickstartDailyFlow()" style="font-size: 11px; padding: 3px 10px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.4);" title="一键直投今日三大核心目标与晚间复盘骨架至今日日记">🌅 开启今日心流</button>
           <button class="pref-btn" onclick="copyTodayDailyDocRef()" style="font-size: 11px; padding: 3px 10px;" title="复制今日日记双链 ((id &quot;日期 今日日记&quot;))">🔗 贴日记双链</button>
           <button class="pref-btn" id="timeline-open-doc-btn" onclick="openTodayDailyDoc()" style="font-size: 11px; padding: 3px 10px;">📄 打开今日日记</button>
           <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleTodayTimeline()">✕</button>
@@ -5454,6 +5455,26 @@
       }
     }
 
+    function kickstartDailyFlow() {
+      const tpl = BUILTIN_TEMPLATES.find(t => t.id === "tpl_daily_review");
+      const content = tpl ? tpl.content : "### 🌅 每日心流与复盘\n- 🎯 **今日三大核心目标**:\n  - [ ] \n  - [ ] \n  - [ ] \n- 🌙 **晚间复盘与高光**:\n  - 🌟 今日成就高光: \n  - 💡 关键收获认知: ";
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'executeCommand',
+          cmd: 'sys',
+          text: content
+        }));
+        showToast("🌅 已开启今日心流！三大核心目标骨架已直投日记");
+        setTimeout(() => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({ op: 'getTodayTimeline' }));
+          }
+        }, 800);
+      } else {
+        showToast("✓ [模拟] 已开启今日心流！三大核心目标骨架已直投日记");
+      }
+    }
+
     function copyTodayDailyDocRef() {
       if (todayTimelineData && todayTimelineData.docId) {
         const title = todayTimelineData.docTitle || "今日日记";
@@ -6427,12 +6448,13 @@
         else if (sType === "table") { iconType = "table"; iconColor = "var(--emerald-mint)"; badgeName = "表格"; }
         else if (sType === "code") { iconType = "terminal"; iconColor = "var(--cyber-purple)"; badgeName = "代码"; }
         else if (sType === "image") { iconType = "camera"; iconColor = "var(--tech-amber)"; badgeName = "图片"; }
+        else if (sType === "rich-text") { iconType = "edit"; iconColor = "var(--cyber-sky)"; badgeName = "富文本"; }
 
         const title = c.Title || c.title || c.Summary || c.summary || "剪贴板快照";
         const desc = c.Summary || c.summary || "剪贴板快照内容";
         const content = c.EnrichedMarkdown || c.enrichedMarkdown || c.RawText || c.rawText || "";
 
-        // 多态分类过滤支持: c:url / c:code / c:table / c:img / c:text / 关键词
+        // 多态分类过滤支持: c:url / c:code / c:table / c:img / c:rich / 关键词
         if (subKw) {
           if (subKw === "url" || subKw === "link" || subKw === "链接") {
             if (sType !== "url") continue;
@@ -6442,6 +6464,8 @@
             if (sType !== "table") continue;
           } else if (subKw === "image" || subKw === "img" || subKw === "pic" || subKw === "图片" || subKw === "截图") {
             if (sType !== "image") continue;
+          } else if (subKw === "rich" || subKw === "富文本" || subKw === "md") {
+            if (sType !== "rich-text") continue;
           } else {
             const matchAll = (title + " " + desc + " " + content).toLowerCase();
             if (!matchAll.includes(subKw)) continue;

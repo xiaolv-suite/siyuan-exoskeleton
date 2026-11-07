@@ -185,6 +185,13 @@ async function main() {
   console.log(`   隔离专用端口: ${PORT} · 专用令牌: ${TOKEN}`);
   console.log("================================================================================\n");
 
+  // 清除可能遗留的孤儿测试进程
+  const myPid = process.pid;
+  try {
+    const ps = `Get-CimInstance Win32_Process -Filter "CommandLine like '%e2e-isolated%'" | Where-Object { $_.ProcessId -ne ${myPid} } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`;
+    execSync(`powershell.exe -NoProfile -Command "${ps}"`, { stdio: "ignore" });
+  } catch {}
+
   stopProcess("思源外骨骼");
   stopProcess("思源小驴");
   stopPreviousIsolatedKernel();
@@ -676,7 +683,7 @@ async function main() {
 
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
-  await api("/api/system/exit", { force: true });
+  try { await api("/api/system/exit", { force: true }); } catch {}
   
   // 等待内核端口彻底关闭断开
   for (let i = 0; i < 20; i++) {
@@ -745,7 +752,7 @@ async function main() {
   stopProcess("思源外骨骼");
   stopProcess("思源小驴");
   if (!KEEP) {
-    await api("/api/system/exit", { force: true });
+    try { await api("/api/system/exit", { force: true }); } catch {}
     await sleep(800);
     stopPreviousIsolatedKernel();
     try {

@@ -5145,6 +5145,7 @@
             <button class="inspector-dock-btn" onclick="copyBlockRef('${item.blockId}', '${escapeQuote(item.blockContent || item.title)}')">🔗 复制双链</button>
             <button class="inspector-dock-btn" onclick="pinAsStickyNote('#${escapeQuote(tagName)}# 标签笔记', '${escapeQuote(item.blockContent || item.title)}', '${item.blockId || ''}')">📌 钉在桌面</button>
             <button class="inspector-dock-btn" onclick="copyAllTagBlocksAsMarkdown('${escapeQuote(tagName)}')">📋 复制全部聚合大纲</button>
+            <button class="inspector-dock-btn" onclick="appendTagOutlineDaily('${escapeQuote(tagName)}')" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);" title="一键将此标签聚合大纲写入今日日记">📥 大纲写入日记</button>
           </div>
         </div>
       `;
@@ -5154,6 +5155,21 @@
       const lines = filteredItems.map(it => `- [${it.blockContent || it.title}](siyuan://blocks/${it.blockId})`);
       const md = `### 🏷️ #${tag}# 笔记聚合大纲\n\n` + lines.join("\n");
       copyToClipboard(md, `已复制 #${tag}# 的全部 ${filteredItems.length} 条聚合清单！`);
+    }
+
+    function appendTagOutlineDaily(tag) {
+      const lines = filteredItems.map(it => `- [${it.blockContent || it.title}](siyuan://blocks/${it.blockId})`);
+      const md = `### 🏷️ #${tag}# 笔记聚合大纲\n\n` + lines.join("\n");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'executeCommand',
+          cmd: 'SYS',
+          text: md
+        }));
+        showToast(`✓ 已将 #${tag}# 的 ${filteredItems.length} 条聚合清单沉淀写入今日日记！`);
+      } else {
+        showToast(`[模拟] 已将 #${tag}# 大纲写入日记`);
+      }
     }
 
     function pinAsStickyNote(title, content, blockId) {

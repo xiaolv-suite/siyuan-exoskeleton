@@ -2553,9 +2553,11 @@
       <span class="intent-chip" onclick="insertPrefix('d:')" title="输入 d: 检索思源全库文档"><b>d:</b> 文档</span>
       <span class="intent-chip" onclick="insertPrefix('tag:')" title="输入 tag: 聚合检索全库标签与聚合笔记流"><b>#</b> 标签</span>
       <span class="intent-chip" onclick="insertPrefix('att:')" title="输入 att: 穿透检索全库 PDF 文献与附件资产秒查坞"><b>att:</b> 附件秒查</span>
+      <span class="intent-chip" onclick="insertPrefix('zotero:')" title="唤起本地 Zotero 学术文献管理库"><b>📖</b> Zotero</span>
       <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
       <span class="intent-chip" onclick="insertPrefix('c:')" title="输入 c: 实时查看并调用最近 30 条清洗剪贴板；支持 c:url/c:code/c:table/c:cite/c:math/c:img 分类筛选"><b>c:</b> 剪贴板</span>
+      <span class="intent-chip" onclick="insertPrefix(':')" title="输入 : 快速调用简码扩词与动态模板变量"><b>:</b> 简码</span>
       <span class="chip-divider"></span>
       <span class="intent-chip" onclick="executeItem({ id: 'syg', title: '极速网页剪藏卡' })" title="输入 g: 或按 Alt+Shift+G 免扩展极速剪藏网页"><b>g:</b> 网页剪藏</span>
       <span class="intent-chip" onclick="executeItem({ id: 'syfsrs', title: 'FSRS 闪卡微舱' })" title="无需切入思源，0ms 居中弹出微卡片，空格翻答案，1~4评级秒刷"><b>🧠</b> 刷闪卡</span>
@@ -4128,6 +4130,27 @@
         return;
       }
 
+      // zotero: 模式：调动本地 Zotero 学术文献库
+      if (q.startsWith("zotero:") || q.startsWith("zotero：")) {
+        const subKw = q.replace(/^(zotero:|zotero：)/, "").trim();
+        filteredItems = [{
+          id: 'zotero_action',
+          group: 'search',
+          title: subKw ? `📖 调动 Zotero 检索文献: ${subKw}` : '📖 唤醒 Zotero 学术文献库',
+          desc: '调动本地已安装或运行中的 Zotero 学术文献管理软件 (回车执行)',
+          hotkey: 'Enter',
+          iconType: 'book',
+          iconColor: 'var(--indigo-light)',
+          badge: '学术文献',
+          badgeCls: 'badge-plugin',
+          actionType: 'zotero-open',
+          zoteroQuery: subKw
+        }];
+        selectedIndex = 0;
+        renderItems();
+        return;
+      }
+
       // g: 模式：触发网页免扩展双态剪藏 (支持文献卡片 vs 独立研读专页 + 即时思考批注)
       if (q.startsWith("g:") || q.startsWith("g：") || q === "g") {
         const subKw = q.replace(/^(g:|g：)/, "").trim();
@@ -4424,7 +4447,7 @@
 
     function hasPrefixSearch(str) {
       if (!str) return false;
-      const prefixes = ["b:", "b：", "d:", "d：", "att:", "att：", "asset:", "asset：", "t:", "t：", "m:", "m：", "v:", "v：", "c:", "c：", "p:", "p：", "ev:", "ev：", "g:", "g：", "av:", "av：", "trash:", "trash：", "recycle:", "rescue:", "hist:", "ws:", "ws：", "session:", "workspace:", "voice:", "voice："];
+      const prefixes = ["b:", "b：", "d:", "d：", "att:", "att：", "asset:", "asset：", "zotero:", "zotero：", "tag:", "tag：", "t:", "t：", "m:", "m：", "v:", "v：", "c:", "c：", "p:", "p：", "ev:", "ev：", "g:", "g：", "av:", "av：", "trash:", "trash：", "recycle:", "rescue:", "hist:", "ws:", "ws：", "session:", "workspace:", "voice:", "voice："];
       return prefixes.some(p => str.toLowerCase().startsWith(p));
     }
 
@@ -4715,6 +4738,17 @@
 
       showToast(`✓ 已执行: ${item.title}`);
       recordItemUsage(item.id);
+
+      // Zotero 文献库调动分支
+      if (item.actionType === "zotero-open") {
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'openInZotero', query: item.zoteroQuery || '' }));
+          closeWindow();
+        } else {
+          showToast("已请求调动 Zotero 文献库");
+        }
+        return;
+      }
 
       // 网页双态剪藏分支 (文献卡片 vs 独立研读专页)
       if (item.isWebClipItem || item.id === "syg" || item.id === "syg_card" || item.id === "syg_doc") {

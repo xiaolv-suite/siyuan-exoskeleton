@@ -112,6 +112,64 @@ namespace XiaoLv.Desktop.Core
         }
 
         /// <summary>
+        /// 全网 URL 智能脱敏与去追踪参数净化引擎 (URL Tracking Parameter Purification)
+        /// 剥离 utm_*, spm_id_from, vd_source, xsec_token, fbclid 等冗长营销与隐私追踪参数
+        /// 还原简洁纯净的 Canonical 规范网址，避免笔记正文被冗长 URL 乱码污染
+        /// </summary>
+        public static string PurifyUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url)) return "";
+            string clean = url.Trim();
+
+            try
+            {
+                int qIdx = clean.IndexOf('?');
+                if (qIdx < 0) return clean;
+
+                string baseUrl = clean.Substring(0, qIdx);
+                string queryString = clean.Substring(qIdx + 1);
+
+                // 拆分参数
+                var parts = queryString.Split('&');
+                var keptParams = new List<string>();
+
+                var trackingKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "utm_id",
+                    "spm_id_from", "from_source", "vd_source", "bvid", "broadcast_type", "is_story_h5",
+                    "xsec_token", "xsec_source", "app_id", "app_platform",
+                    "fbclid", "gclid", "dclid", "msclkid",
+                    "isappinstalled", "scene", "clicktime", "enterid", "session_id",
+                    "sharer_id", "mid", "from", "ref", "feature", "si", "scm", "spm"
+                };
+
+                foreach (var p in parts)
+                {
+                    if (string.IsNullOrEmpty(p)) continue;
+                    int eqIdx = p.IndexOf('=');
+                    string key = eqIdx > 0 ? p.Substring(0, eqIdx).Trim() : p.Trim();
+
+                    // 剥离营销追踪参数，保留核心业务参数 (如 id, v, page, p, q, tab 等)
+                    if (trackingKeys.Contains(key) || key.StartsWith("utm_", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+                    keptParams.Add(p);
+                }
+
+                if (keptParams.Count > 0)
+                {
+                    return baseUrl + "?" + string.Join("&", keptParams);
+                }
+                return baseUrl;
+            }
+            catch
+            {
+                return clean;
+            }
+        }
+
+        /// <summary>
         /// 深度解析各大网站标题与作者特征（提取纯正文章标题、真实作者/UP主与站点属性）
         /// 兼容微信公众号、知乎专栏、B站视频、链滴论坛、小红书、微博、arXiv 等
         /// </summary>
@@ -607,7 +665,8 @@ namespace XiaoLv.Desktop.Core
                 string t = Regex.Replace(m.Groups[2].Value, @"<[^>]+>", "").Trim();
                 if (string.IsNullOrEmpty(t)) t = u;
                 if (string.IsNullOrEmpty(u) || u.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase)) return t;
-                return "[" + t + "](" + u + ")";
+                string pureU = PurifyUrl(u);
+                return "[" + t + "](" + pureU + ")";
             }, RegexOptions.IgnoreCase);
 
             // 7. 转换图片 <img src="url" alt="alt" ...>
@@ -618,7 +677,8 @@ namespace XiaoLv.Desktop.Core
                 var altM = Regex.Match(tag, @"alt=[""']([^""']*)[""']", RegexOptions.IgnoreCase);
                 string alt = altM.Success ? altM.Groups[1].Value.Trim() : "";
                 if (string.IsNullOrEmpty(src)) return "";
-                return "\n\n![" + alt + "](" + src + ")\n\n";
+                string pureSrc = PurifyUrl(src);
+                return "\n\n![" + alt + "](" + pureSrc + ")\n\n";
             }, RegexOptions.IgnoreCase);
 
             // 8. 转换加粗与强调 <strong> / <b> / <em> / <i>

@@ -756,7 +756,7 @@ public static class SmartCaptureMain
                     return;
                 }
 
-                string url = snap.Url;
+                string url = TextCleaner.PurifyUrl(snap.Url);
                 string rawTitle = !string.IsNullOrEmpty(snap.CleanTitle) ? snap.CleanTitle : snap.FullTitle;
                 string title, author, siteName;
                 TextCleaner.ParseSiteMetadata(url, rawTitle, out title, out author, out siteName);

@@ -206,24 +206,25 @@ namespace XiaoLv.Desktop.Core
                 Timestamp = DateTime.Now
             };
 
-            // 1. URL 嗅探 (http:// 或 https://)
+            // 1. URL 嗅探与去追踪参数净化
             if (IsSingleUrl(txt))
             {
+                string pureUrl = TextCleaner.PurifyUrl(txt);
                 item.SniffedType = "url";
-                item.Summary = "网页链接: " + Truncate(txt, 40);
-                item.EnrichedMarkdown = "[" + txt + "](" + txt + ")";
+                item.Summary = "网页链接: " + Truncate(pureUrl, 40);
+                item.EnrichedMarkdown = "[" + pureUrl + "](" + pureUrl + ")";
 
                 // 异步抓取网页真实标题
                 ThreadPool.QueueUserWorkItem(s =>
                 {
                     try
                     {
-                        var title = FetchWebPageTitle(txt);
+                        var title = FetchWebPageTitle(pureUrl);
                         if (!string.IsNullOrEmpty(title))
                         {
                             item.Title = title;
                             item.Summary = "网页: " + title;
-                            item.EnrichedMarkdown = "[" + title + "](" + txt + ")";
+                            item.EnrichedMarkdown = "[" + title + "](" + pureUrl + ")";
                             if (OnClipboardEnriched != null) OnClipboardEnriched(item);
                         }
                     }

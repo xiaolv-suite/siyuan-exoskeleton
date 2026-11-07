@@ -802,6 +802,72 @@ async function main() {
   const isWatcherOk = watcherRes.includes("True");
   logStep("Step 7.36: 本地 Office 文档热重载监听与外部保存实时感知 (OfficeFileWatcher) 断言", isWatcherOk, `文件监听热注册断言: ${watcherRes.trim()}`);
 
+  // Step 7.37: Test Zero-Dependency Office Exporter (OfficeExporter: .docx & .xlsx)
+  const exporterScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $exp = $asm.GetType('XiaoLv.Desktop.Core.OfficeExporter');
+    
+    # 1. 导出 docx
+    $mDocx = $exp.GetMethod('ExportMarkdownToDocx', [System.Reflection.BindingFlags]'Public,Static', $null, @([string], [string], [string]), $null);
+    $testMd = '# 战略规划报告' + [Environment]::NewLine + '## 财务目标' + [Environment]::NewLine + '- [ ] 完成A轮融资' + [Environment]::NewLine + '| 指标 | 目标 |' + [Environment]::NewLine + '|---|---|' + [Environment]::NewLine + '| 营收 | 5000万 |';
+    $tmpDocx = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "test_export_" + [System.Guid]::NewGuid().ToString() + ".docx");
+    $outDocx = $mDocx.Invoke($null, @($testMd, "战略规划报告", $tmpDocx));
+    
+    # 2. 导出 xlsx
+    $mXlsx = $exp.GetMethod('ExportTableToXlsx', [System.Reflection.BindingFlags]'Public,Static', $null, @([string], [string], [string]), $null);
+    $testTable = '| 产品 | 销量 | 留存率 |' + [Environment]::NewLine + '|---|---|---|' + [Environment]::NewLine + '| 外骨骼 | 12000 | 92% |';
+    $tmpXlsx = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "test_export_" + [System.Guid]::NewGuid().ToString() + ".xlsx");
+    $outXlsx = $mXlsx.Invoke($null, @($testTable, "销售表", $tmpXlsx));
+    
+    $docxOk = [System.IO.File]::Exists($tmpDocx) -and ((Get-Item $tmpDocx).Length -gt 1000);
+    $xlsxOk = [System.IO.File]::Exists($tmpXlsx) -and ((Get-Item $tmpXlsx).Length -gt 1000);
+    
+    try { [System.IO.File]::Delete($tmpDocx); } catch {}
+    try { [System.IO.File]::Delete($tmpXlsx); } catch {}
+    
+    Write-Output ($docxOk.ToString() + '|' + $xlsxOk.ToString());
+  `;
+  const expRes = runPs(exporterScript);
+  const isExpOk = expRes.includes("True|True");
+  logStep("Step 7.37: 零依赖原生 Office 逆向导出引擎 (Word.docx 与 Excel.xlsx) 断言", isExpOk, `导出生成断言: ${expRes.trim()}`);
+
+  // Step 7.38: Test Light PDF Stream Parser & Reading Notes Generation (PdfLightParser)
+  const pdfLightScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $parser = $asm.GetType('XiaoLv.Desktop.Core.PdfLightParser');
+    
+    # 构造模拟 PDF 总结对象
+    $pdfSummaryType = $asm.GetType('XiaoLv.Desktop.Core.PdfDocumentSummary');
+    $pdfDoc = [Activator]::CreateInstance($pdfSummaryType);
+    $pdfDoc.FileName = 'DeepSeek_V3_Architecture.pdf';
+    $pdfDoc.FilePath = 'D:\\Papers\\DeepSeek_V3_Architecture.pdf';
+    $pdfDoc.PageCount = 38;
+    $pdfDoc.Title = 'DeepSeek-V3 Technical Report';
+    $pdfDoc.Author = 'DeepSeek-AI';
+    $pdfDoc.FileSizeFormatted = '3.8 MB';
+    
+    # 模拟书签大纲
+    $otType = $asm.GetType('XiaoLv.Desktop.Core.PdfOutlineItem');
+    $ot1 = [Activator]::CreateInstance($otType);
+    $ot1.Title = '1. Introduction'; $ot1.Page = 1;
+    $pdfDoc.Outlines.Add($ot1);
+    
+    $ot2 = [Activator]::CreateInstance($otType);
+    $ot2.Title = '2. Architecture Overview'; $ot2.Page = 4;
+    $pdfDoc.Outlines.Add($ot2);
+    
+    $mBuildNotes = $parser.GetMethod('BuildPdfReadingNotesMarkdown', [System.Reflection.BindingFlags]'Public,Static');
+    $notesMd = $mBuildNotes.Invoke($null, @($pdfDoc));
+    
+    $hasNotes = $notesMd.Contains('DeepSeek-V3 Technical Report') -and $notesMd.Contains('38 页') -and $notesMd.Contains('siyuan-exoskeleton://open-pdf') -and $notesMd.Contains('custom-type="pdf-reading-notes"');
+    Write-Output $hasNotes.ToString();
+  `;
+  const pdfRes = runPs(pdfLightScript);
+  const isPdfOk = pdfRes.includes("True");
+  logStep("Step 7.38: 本地学术 PDF 极速流式透视、页码锚点与研读大纲生成断言", isPdfOk, `研读大纲生成断言: ${pdfRes.trim()}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

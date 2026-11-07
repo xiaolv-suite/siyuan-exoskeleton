@@ -1462,9 +1462,13 @@ namespace XiaoLv.Desktop.UI
                 if (op.Equals("openLocalFile", StringComparison.OrdinalIgnoreCase))
                 {
                     string p = JsonHelper.GetString(msg, "path");
+                    int page = 0;
+                    string pageStr = JsonHelper.GetString(msg, "page");
+                    if (!string.IsNullOrEmpty(pageStr)) int.TryParse(pageStr, out page);
+
                     if (!string.IsNullOrEmpty(p) && File.Exists(p))
                     {
-                        FileDispatcher.OpenWithPreferredApp(p);
+                        FileDispatcher.OpenWithPreferredApp(p, page);
                     }
                     return;
                 }
@@ -1528,6 +1532,63 @@ namespace XiaoLv.Desktop.UI
                             catch { }
                         });
                     }
+                    return;
+                }
+
+                // 21.82 本地学术 PDF 极速流式透视 (页数/元数据/书签)
+                if (op.Equals("inspectPdf", StringComparison.OrdinalIgnoreCase))
+                {
+                    string p = JsonHelper.GetString(msg, "filePath");
+                    if (!string.IsNullOrEmpty(p) && File.Exists(p))
+                    {
+                        ThreadPool.QueueUserWorkItem(s =>
+                        {
+                            try
+                            {
+                                var summary = PdfLightParser.InspectPdf(p);
+                                Dispatcher.Invoke(() =>
+                                {
+                                    if (_webView != null && _webView.CoreWebView2 != null)
+                                    {
+                                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onPdfInspectionLoaded) window.onPdfInspectionLoaded(" + JsonHelper.ToJson(summary) + ");");
+                                    }
+                                });
+                            }
+                            catch { }
+                        });
+                    }
+                    return;
+                }
+
+                // 21.85 零依赖逆向导出 Word (.docx) 并本地秒开
+                if (op.Equals("exportDocx", StringComparison.OrdinalIgnoreCase))
+                {
+                    string md = JsonHelper.GetString(msg, "markdown");
+                    string title = JsonHelper.GetString(msg, "title");
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        bool ok = OfficeExporter.ExportAndOpen("docx", md, title);
+                        if (ok && OnNotificationRequested != null)
+                        {
+                            OnNotificationRequested("思源外骨骼 · 导出Word", "✓ 已成功生成标准 .docx 大纲并在本地秒开！");
+                        }
+                    });
+                    return;
+                }
+
+                // 21.86 零依赖逆向导出 Excel (.xlsx) 并本地秒开
+                if (op.Equals("exportXlsx", StringComparison.OrdinalIgnoreCase))
+                {
+                    string table = JsonHelper.GetString(msg, "markdown");
+                    string title = JsonHelper.GetString(msg, "title");
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        bool ok = OfficeExporter.ExportAndOpen("xlsx", table, title);
+                        if (ok && OnNotificationRequested != null)
+                        {
+                            OnNotificationRequested("思源外骨骼 · 导出Excel", "✓ 已成功生成标准 .xlsx 表格并在本地秒开！");
+                        }
+                    });
                     return;
                 }
 

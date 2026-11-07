@@ -5769,6 +5769,10 @@
             <button class="inspector-dock-btn" onclick="copyBlockRef('${targetId}', '${escapeQuote(targetContent)}')" title="复制双链至剪贴板">📋 复制双链</button>
             <button class="inspector-dock-btn" onclick="copyMarkdownLink('${targetId}', '${escapeQuote(targetContent)}')" title="复制 Markdown 链接">📝 复制MD</button>
             <button class="inspector-dock-btn" onclick="pinAsStickyNote('${escapeQuote(docTitle)}', '${escapeQuote(markdownText)}', '${targetId}')" title="钉在桌面作为半透明浮动参考便签，按 Ctrl+S 实时双向回写">📌 钉在桌面</button>
+            <button class="inspector-dock-btn" onclick="exportCurrentToDocx('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);" title="零依赖逆向导出标准 Word (.docx) 大纲并在本地秒开">📤 导出Word</button>
+            ${markdownText.includes('|') ? `
+              <button class="inspector-dock-btn" onclick="exportCurrentToXlsx('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--tech-amber); border-color: rgba(245,158,11,0.4);" title="零依赖逆向导出标准 Excel (.xlsx) 表格并在本地秒开">📤 导出Excel</button>
+            ` : ''}
             <button class="inspector-dock-btn" onclick="togglePinItem(filteredItems[selectedIndex])" title="将此文档置顶常驻到桌面快捷坞 (Ctrl+P)">📌 置顶常驻</button>
           </div>
           <button class="inspector-dock-btn" onclick="openStandaloneDoc('${b.root_id || targetId}')" title="在思源独立新窗口开启此笔记 (Alt+O)">🌐 独立新窗</button>
@@ -6625,6 +6629,9 @@
             ${d.fileName.match(/\.(docx|xlsx|pptx)$/i) ? `
               <button class="inspector-dock-btn" style="background: rgba(99,102,241,0.22); border-color: var(--indigo-light); color: var(--indigo-light); font-weight: 700;" onclick="inspectOfficeDeep('${escapeQuote(d.fullPath)}')" title="零依赖深入透视大纲树、审阅批注、数据表或演讲备注">📖 深度透视</button>
             ` : ''}
+            ${d.fileName.match(/\.pdf$/i) ? `
+              <button class="inspector-dock-btn" style="background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.4); color: #f87171; font-weight: 700;" onclick="inspectPdfDeep('${escapeQuote(d.fullPath)}')" title="流式透视 PDF 页数、元数据与大纲书签目录">📑 PDF 研读透视</button>
+            ` : ''}
             <button class="inspector-dock-btn" onclick="pasteAtCursor('[${escapeQuote(d.fileName)}](${escapeQuote(d.assetRel)}')">⚡ Shift+↵ 贴链接</button>
             <button class="inspector-dock-btn" onclick="copyToClipboard('[${escapeQuote(d.fileName)}](${escapeQuote(d.assetRel)}')">📋 复制链接</button>
             <button class="inspector-dock-btn" onclick="locateInSearchTool('${escapeQuote(d.fileName)}')" title="在 ${getPreferredSearchToolName()} 中极速定位此文件 (Ctrl+E)">🔍 ${getPreferredSearchToolName()} 定位</button>
@@ -6925,6 +6932,131 @@
           text: text,
           target: 'daily'
         }));
+      }
+    }
+
+    let currentPdfSummary = null;
+
+    function inspectPdfDeep(filePath) {
+      if (!filePath) return;
+      showToast("⏳ 正在零依赖流式透视 PDF 文献结构...");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'inspectPdf', filePath: filePath }));
+      }
+    }
+
+    window.onPdfInspectionLoaded = function(summary) {
+      if (!summary) return;
+      currentPdfSummary = summary;
+      renderPdfDeepInspector();
+    };
+
+    function renderPdfDeepInspector() {
+      const inspector = document.getElementById("search-inspector-pane");
+      const summary = currentPdfSummary;
+      if (!inspector || !summary) return;
+
+      const outlines = summary.Outlines || [];
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">📚 本地学术文献透视</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">PDF</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${escapeHtml(summary.PageCount > 0 ? summary.PageCount + ' 页' : '多页')}</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div class="inspector-doc-title">📄 ${escapeHtml(summary.Title || summary.FileName)}</div>
+          </div>
+        </div>
+        <div class="inspector-body" style="padding: 12px; max-height: 400px; overflow-y: auto;">
+          <div style="background: rgba(239,68,68,0.06); border: 1px dashed rgba(239,68,68,0.3); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 4px;">
+              <span>👤 <b>作者</b>: ${escapeHtml(summary.Author || '未注明')}</span>
+              <span>📦 <b>文件大小</b>: ${escapeHtml(summary.FileSizeFormatted)}</span>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted);">📍 路径: <code>${escapeHtml(summary.FilePath)}</code></div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 12px; font-weight: 700; color: var(--text-primary);">📑 章节大纲与页码直达 (${outlines.length} 处):</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <input type="number" id="pdf-jump-page-input" placeholder="页码" min="1" max="${summary.PageCount || 9999}" style="width: 55px; padding: 2px 6px; font-size: 11px; border: 1px solid var(--border-hairline); border-radius: 4px; background: rgba(0,0,0,0.2); color: var(--text-primary); text-align: center;" />
+              <button class="card-launch-btn" style="padding: 2px 6px; font-size: 10px;" onclick="jumpToCustomPdfPage()">📖 直达</button>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            ${outlines.length > 0 ? outlines.map(ot => `
+              <div style="padding: 4px 8px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); border-radius: 4px;">
+                <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1;">
+                  <span class="tag-badge badge-system" style="font-size: 9px; padding: 1px 4px; font-family: monospace;">P.${ot.Page}</span>
+                  <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(ot.Title)}</span>
+                </div>
+                <button class="card-launch-btn" style="padding: 1.5px 6px; font-size: 10px; flex-shrink: 0;" onclick="openPdfAtPage('${escapeQuote(summary.FilePath)}', ${ot.Page})">↗ 打开此页</button>
+              </div>
+            `).join("") : `
+              <div style="text-align: center; color: var(--text-muted); padding: 20px; font-size: 12px;">该 PDF 未内置目录大纲书签，可使用上方页码输入框精准直达任意页</div>
+            `}
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="openPdfAtPage('${escapeQuote(summary.FilePath)}', 1)" title="本地 SumatraPDF / Edge 秒开">⚡ 本地秒开</button>
+            <button class="inspector-dock-btn" onclick="importPdfOutlinesDaily()" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="提取大纲生成读书笔记纲要写入今日日记">📥 提炼研读大纲</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('[📄 《${escapeQuote(summary.Title || summary.FileName)}》](siyuan-exoskeleton://open-pdf?path=${escapeQuote(summary.FilePath.replace(/\\\\/g, '/'))}&page=1)', '已复制页码穿透双向深链！')">🔗 贴页码深链</button>
+            <button class="inspector-dock-btn" onclick="locateInSearchTool('${escapeQuote(summary.FileName)}')" title="本地检索工具定位">🔍 定位文件</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function openPdfAtPage(path, page) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'openLocalFile', path: path, page: String(page || 1) }));
+      }
+    }
+
+    function jumpToCustomPdfPage() {
+      const summary = currentPdfSummary;
+      if (!summary) return;
+      const inp = document.getElementById("pdf-jump-page-input");
+      const p = parseInt(inp ? inp.value : "1", 10) || 1;
+      openPdfAtPage(summary.FilePath, p);
+    }
+
+    function importPdfOutlinesDaily() {
+      const summary = currentPdfSummary;
+      if (!summary) return;
+      const title = summary.Title || summary.FileName;
+      let md = `### 📚 《${title}》 研读纲要与页码索引 (共 ${summary.PageCount || '多'} 页)\n> 📍 底稿: \`${summary.FilePath}\` · [⚡ 打开底稿](siyuan-exoskeleton://open-pdf?path=${encodeURIComponent(summary.FilePath)}&page=1)\n\n`;
+      if (summary.Outlines && summary.Outlines.length > 0) {
+        md += summary.Outlines.map(ot => `- [ ] **${ot.Title}** (P.${ot.Page})  [跳转 ↗](siyuan-exoskeleton://open-pdf?path=${encodeURIComponent(summary.FilePath)}&page=${ot.Page})`).join("\n");
+      } else {
+        md += `- [ ] 核心论点研读摘记 (P.1)  [跳转 ↗](siyuan-exoskeleton://open-pdf?path=${encodeURIComponent(summary.FilePath)}&page=1)`;
+      }
+      md += `\n\n{: custom-type="pdf-reading-notes" custom-file-path="${summary.FilePath.replace(/"/g, '\\"')}" }\n`;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
+        showToast(`✓ 已将《${title}》研读纲要与页码索引写入今日日记！`);
+      }
+    }
+
+    function exportCurrentToDocx(markdown, title) {
+      if (!markdown) return;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'exportDocx', markdown: markdown, title: title || '思源笔记导出' }));
+        showToast("✓ 正在导出标准 Word (.docx) 大纲并在本地秒开...");
+      }
+    }
+
+    function exportCurrentToXlsx(markdown, title) {
+      if (!markdown) return;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'exportXlsx', markdown: markdown, title: title || '表格导出' }));
+        showToast("✓ 正在导出标准 Excel (.xlsx) 表格并在本地秒开...");
       }
     }
 

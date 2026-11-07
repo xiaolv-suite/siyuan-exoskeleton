@@ -400,6 +400,54 @@ namespace XiaoLv.Desktop
                 string text = "";
                 if (clean.StartsWith("siyuan-exoskeleton://", StringComparison.OrdinalIgnoreCase) || clean.StartsWith("xiaolv://", StringComparison.OrdinalIgnoreCase))
                 {
+                    // 1. 本地 Office 双向深链穿透 (siyuan-exoskeleton://open-office 或 ://office)
+                    if (clean.Contains("://open-office") || clean.Contains("://office"))
+                    {
+                        string p = ExtractQueryParam(clean, "path");
+                        string sheet = ExtractQueryParam(clean, "sheet");
+                        string cell = ExtractQueryParam(clean, "cell");
+                        string heading = ExtractQueryParam(clean, "heading");
+                        if (!string.IsNullOrEmpty(p))
+                        {
+                            ThreadPool.QueueUserWorkItem(s =>
+                            {
+                                XiaoLv.Desktop.Engine.Modules.OfficeDeepLinkMain.OpenOfficeLocation(p, sheet, cell, heading);
+                            });
+                            return;
+                        }
+                    }
+
+                    // 2. 本地 PDF 页码精准穿透 (siyuan-exoskeleton://open-pdf 或 ://pdf)
+                    if (clean.Contains("://open-pdf") || clean.Contains("://pdf"))
+                    {
+                        string p = ExtractQueryParam(clean, "path");
+                        string pageStr = ExtractQueryParam(clean, "page");
+                        int pageNum = 0;
+                        int.TryParse(pageStr, out pageNum);
+                        if (!string.IsNullOrEmpty(p))
+                        {
+                            ThreadPool.QueueUserWorkItem(s =>
+                            {
+                                FileDispatcher.OpenWithPreferredApp(p, pageNum);
+                            });
+                            return;
+                        }
+                    }
+
+                    // 3. 通用本地文件秒开 (siyuan-exoskeleton://open-file 或 ://file)
+                    if (clean.Contains("://open-file") || clean.Contains("://file"))
+                    {
+                        string p = ExtractQueryParam(clean, "path");
+                        if (!string.IsNullOrEmpty(p))
+                        {
+                            ThreadPool.QueueUserWorkItem(s =>
+                            {
+                                FileDispatcher.OpenWithPreferredApp(p, 0);
+                            });
+                            return;
+                        }
+                    }
+
                     var m = Regex.Match(clean, @"[?&]cmd=([^&]+)");
                     if (m.Success) cmd = Uri.UnescapeDataString(m.Groups[1].Value);
                     else if (clean.Contains("://quicknote")) cmd = "quick_note";
@@ -719,6 +767,21 @@ namespace XiaoLv.Desktop
             }
 
             return arg;
+        }
+
+        private static string ExtractQueryParam(string url, string paramName)
+        {
+            if (string.IsNullOrEmpty(url) || string.IsNullOrEmpty(paramName)) return "";
+            try
+            {
+                var match = Regex.Match(url, @"[?&]" + Regex.Escape(paramName) + @"=([^&#]+)");
+                if (match.Success)
+                {
+                    return Uri.UnescapeDataString(match.Groups[1].Value).Trim();
+                }
+            }
+            catch { }
+            return "";
         }
 
         private static void ExitApplication()

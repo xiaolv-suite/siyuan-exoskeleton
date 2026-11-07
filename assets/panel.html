@@ -3020,6 +3020,7 @@
             <tr><td><span class="hint-kbd">d: 关键词</span></td><td><b>文档标题秒搜</b>：快速匹配思源文档并一键打开</td></tr>
             <tr><td><span class="hint-kbd">c: / clip:</span></td><td><b>剪贴板历史管道</b>：30条容量，支持 c:url, c:code, c:table, c:cite, c:math, c:img 筛选</td></tr>
             <tr><td><span class="hint-kbd">att: 附件名</span></td><td><b>全库附件秒查坞</b>：PDF/表格/图片秒定，联动 Listary / Everything</td></tr>
+            <tr><td><span class="hint-kbd">office: / word: / excel: / ppt: / pdf:</span></td><td><b>办公与学术文献穿透</b>：大纲结构透视、批注待办清单、AV数据库直投与SumatraPDF页码锚点</td></tr>
             <tr><td><span class="hint-kbd">ev: / listary:</span></td><td><b>全盘文件秒查</b>：直通本地检索工具 (Listary / Everything)</td></tr>
             <tr><td><span class="hint-kbd">av: 关键词</span></td><td><b>属性视图数据库</b>：检视全库 AV 表格定义与字段抽屉</td></tr>
             <tr><td><span class="hint-kbd">ws: / trash:</span></td><td><b>工作现场与回收站</b>：虚拟桌面全景联动 / 误删笔记打捞复原</td></tr>
@@ -4107,13 +4108,14 @@
         return;
       }
 
-      // office: / word: / excel: / ppt: 模式：全库本地文档极速检索与穿透
-      if (q.startsWith("office:") || q.startsWith("office：") || q.startsWith("word:") || q.startsWith("word：") || q.startsWith("excel:") || q.startsWith("excel：") || q.startsWith("ppt:") || q.startsWith("ppt：")) {
-        let subKw = q.replace(/^(office:|office：|word:|word：|excel:|excel：|ppt:|ppt：)/, "").trim();
+      // office: / word: / excel: / ppt: / pdf: 模式：全库本地文档极速检索与穿透
+      if (q.startsWith("office:") || q.startsWith("office：") || q.startsWith("word:") || q.startsWith("word：") || q.startsWith("excel:") || q.startsWith("excel：") || q.startsWith("ppt:") || q.startsWith("ppt：") || q.startsWith("pdf:") || q.startsWith("pdf：")) {
+        let subKw = q.replace(/^(office:|office：|word:|word：|excel:|excel：|ppt:|ppt：|pdf:|pdf：)/, "").trim();
         let extFilter = "";
         if (q.startsWith("word:") || q.startsWith("word：")) extFilter = "docx";
         else if (q.startsWith("excel:") || q.startsWith("excel：")) extFilter = "xlsx";
         else if (q.startsWith("ppt:") || q.startsWith("ppt：")) extFilter = "pptx";
+        else if (q.startsWith("pdf:") || q.startsWith("pdf：")) extFilter = "pdf";
         const queryTerm = extFilter ? (subKw ? `${subKw} ${extFilter}` : extFilter) : subKw;
 
         if (window.chrome && window.chrome.webview) {

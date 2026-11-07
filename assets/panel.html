@@ -2612,218 +2612,249 @@
   <div class="toast-notify" id="toast-notify">✓ 指令已执行</div>
 
   <div class="help-modal-overlay" id="preferences-modal" onclick="closePreferencesOnBg(event)">
-    <div class="help-modal-box" onclick="event.stopPropagation()" style="max-width: 680px;">
-      <div class="help-header">
+    <div class="help-modal-box" onclick="event.stopPropagation()" style="max-width: 720px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; padding: 0;">
+      <div class="help-header" style="padding: 14px 20px; flex-shrink: 0;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 16px;">⚙️</span>
           <span style="font-weight: 700; font-size: 14px;">思源外骨骼 · 超级全局面板偏好与设置中枢</span>
         </div>
         <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="togglePreferencesModal()">✕</button>
       </div>
-      <div class="help-body" style="gap: 16px;">
+
+      <!-- Settings Tab Bar (设置分类导航标签) -->
+      <div class="pref-tabs-nav" style="display: flex; gap: 8px; padding: 10px 20px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.18); overflow-x: auto; flex-shrink: 0;">
+        <button class="cat-btn active" id="pref-tab-btn-status" onclick="switchPrefTab('status')">📡 探针与服务</button>
+        <button class="cat-btn" id="pref-tab-btn-hotkeys" onclick="switchPrefTab('hotkeys')">⚡ 快捷键与输入</button>
+        <button class="cat-btn" id="pref-tab-btn-clip-ai" onclick="switchPrefTab('clip-ai')">🌐 剪藏与AI提炼</button>
+        <button class="cat-btn" id="pref-tab-btn-snippets" onclick="switchPrefTab('snippets')">⌨️ 简码与外观维护</button>
+      </div>
+
+      <div class="help-body" style="flex: 1; overflow-y: auto; padding: 16px 20px; gap: 16px;">
         
-        <!-- Section 1: Live Status & Service Diagnostics -->
-        <div>
-          <div class="help-sec-title"><span>📡 实时连接与服务探针</span></div>
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px;">
-            <div class="pref-stat-card">
-              <div class="pref-stat-label">思源内核</div>
-              <div class="pref-stat-val" id="pref-status-kernel">🟢 :6806 在线</div>
-              <div class="pref-stat-sub" id="pref-status-docs">-- 篇文档</div>
+        <!-- Tab 1: Live Status & Service Diagnostics -->
+        <div id="pref-tab-page-status" style="display: flex; flex-direction: column; gap: 16px;">
+          <div>
+            <div class="help-sec-title"><span>📡 实时连接与服务探针</span></div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px;">
+              <div class="pref-stat-card">
+                <div class="pref-stat-label">思源内核</div>
+                <div class="pref-stat-val" id="pref-status-kernel">🟢 :6806 在线</div>
+                <div class="pref-stat-sub" id="pref-status-docs">-- 篇文档</div>
+              </div>
+              <div class="pref-stat-card">
+                <div class="pref-stat-label">S3 云同步</div>
+                <div class="pref-stat-val" id="pref-status-sync" style="color: var(--emerald-mint);">🟢 活跃守护</div>
+                <div class="pref-stat-sub">增量防冲突</div>
+              </div>
+              <div class="pref-stat-card">
+                <div class="pref-stat-label">Everything</div>
+                <div class="pref-stat-val" id="pref-status-everything" style="color: var(--indigo-light);">🟢 探测中...</div>
+                <div class="pref-stat-sub">全盘毫秒索引</div>
+              </div>
+              <div class="pref-stat-card">
+                <div class="pref-stat-label">Listary</div>
+                <div class="pref-stat-val" id="pref-status-listary" style="color: var(--emerald-mint);">🟢 探测中...</div>
+                <div class="pref-stat-sub">快速定位启动</div>
+              </div>
+              <div class="pref-stat-card">
+                <div class="pref-stat-label">外骨骼网关 / IPC</div>
+                <div class="pref-stat-val" id="pref-status-bridge" style="color: var(--cyber-purple);">🟢 IPC 在线</div>
+                <div class="pref-stat-sub">原生内核直连</div>
+              </div>
             </div>
-            <div class="pref-stat-card">
-              <div class="pref-stat-label">S3 云同步</div>
-              <div class="pref-stat-val" id="pref-status-sync" style="color: var(--emerald-mint);">🟢 活跃守护</div>
-              <div class="pref-stat-sub">增量防冲突</div>
+            <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+              <button class="pref-btn" onclick="openSiYuanSetting()">⚙️ 打开思源设置</button>
+              <button class="pref-btn" onclick="openNativeDataHistory()" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.35);">🕒 打开数据历史大窗</button>
+              <button class="pref-btn" onclick="triggerManualSync()" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.35);">☁️ 立即触发云同步</button>
+              <button class="pref-btn" onclick="locateInSearchTool('')">🔍 唤起本地检索工具 (Everything / Listary)</button>
+              <button class="pref-btn" onclick="triggerTrimMemory()" style="color: var(--indigo-light); border-color: rgba(99,102,241,0.35);">⚡ 深度压缩常驻内存</button>
+              <button class="pref-btn" onclick="cleanOrphanTestKernels()" style="background: rgba(244, 63, 94, 0.12); border-color: rgba(244, 63, 94, 0.35); color: var(--rose-agent);">🧹 清扫遗留靶场内核</button>
             </div>
-            <div class="pref-stat-card">
-              <div class="pref-stat-label">Everything</div>
-              <div class="pref-stat-val" id="pref-status-everything" style="color: var(--indigo-light);">🟢 探测中...</div>
-              <div class="pref-stat-sub">全盘毫秒索引</div>
+            <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 12px; background: rgba(0,0,0,0.22); border-radius: 6px; border: 1px solid var(--border-hairline);">
+              <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+                <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                  <span>📁 数据存储模式：</span>
+                  <span id="pref-storage-mode" style="font-size: 10.5px; font-weight: 700; color: var(--emerald-mint);">便携模式 (D盘优先)</span>
+                </span>
+                <span id="pref-storage-path" style="font-size: 10.5px; color: var(--text-muted); font-family: ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">加载中...</span>
+              </div>
+              <button class="pref-btn" onclick="openDataStorageDir()" style="padding: 3px 10px; font-size: 11px; flex-shrink: 0; color: var(--cyber-sky); border-color: var(--cyber-sky);">📂 浏览数据目录</button>
             </div>
-            <div class="pref-stat-card">
-              <div class="pref-stat-label">Listary</div>
-              <div class="pref-stat-val" id="pref-status-listary" style="color: var(--emerald-mint);">🟢 探测中...</div>
-              <div class="pref-stat-sub">快速定位启动</div>
+            <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px; padding: 4px 8px; line-height: 1.5;">
+              💡 绿色便携提示：置于非 C 盘（如 D:\）运行自动开启便携模式，配置文件、离线缓冲与缓存均落盘于 ./data/，重装系统零丢失；若需自定义路径，在程序根目录建立 data_path.txt 填入目标路径即可重定向。
             </div>
-            <div class="pref-stat-card">
-              <div class="pref-stat-label">外骨骼网关 / IPC</div>
-              <div class="pref-stat-val" id="pref-status-bridge" style="color: var(--cyber-purple);">🟢 IPC 在线</div>
-              <div class="pref-stat-sub">原生内核直连</div>
-            </div>
-          </div>
-          <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
-            <button class="pref-btn" onclick="openSiYuanSetting()">⚙️ 打开思源设置</button>
-            <button class="pref-btn" onclick="openNativeDataHistory()" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.35);">🕒 打开数据历史大窗</button>
-            <button class="pref-btn" onclick="triggerManualSync()" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.35);">☁️ 立即触发云同步</button>
-            <button class="pref-btn" onclick="locateInSearchTool('')">🔍 唤起本地检索工具 (Everything / Listary)</button>
-            <button class="pref-btn" onclick="triggerTrimMemory()" style="color: var(--indigo-light); border-color: rgba(99,102,241,0.35);">⚡ 深度压缩常驻内存</button>
-            <button class="pref-btn" onclick="cleanOrphanTestKernels()" style="background: rgba(244, 63, 94, 0.12); border-color: rgba(244, 63, 94, 0.35); color: var(--rose-agent);">🧹 清扫遗留靶场内核</button>
-          </div>
-          <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 12px; background: rgba(0,0,0,0.22); border-radius: 6px; border: 1px solid var(--border-hairline);">
-            <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
-              <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
-                <span>📁 数据存储模式：</span>
-                <span id="pref-storage-mode" style="font-size: 10.5px; font-weight: 700; color: var(--emerald-mint);">便携模式 (D盘优先)</span>
-              </span>
-              <span id="pref-storage-path" style="font-size: 10.5px; color: var(--text-muted); font-family: ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">加载中...</span>
-            </div>
-            <button class="pref-btn" onclick="openDataStorageDir()" style="padding: 3px 10px; font-size: 11px; flex-shrink: 0; color: var(--cyber-sky); border-color: var(--cyber-sky);">📂 浏览数据目录</button>
           </div>
         </div>
 
-        <!-- Section 1.5: Desktop Native Core Settings -->
-        <div id="pref-sec-desktop" style="border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 8px; padding: 12px; background: rgba(99, 102, 241, 0.06);">
-          <div class="help-sec-title" style="color: var(--indigo-light); font-weight: 700; margin-bottom: 2px;">
-            <span>🚀 桌面原生助手设置 (开机自启 / PopClip / 全局热键)</span>
+        <!-- Tab 2: Desktop Native Hotkeys & Core Input -->
+        <div id="pref-tab-page-hotkeys" style="display: none; flex-direction: column; gap: 14px;">
+          <div id="pref-sec-desktop" style="border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 8px; padding: 12px; background: rgba(99, 102, 241, 0.06);">
+            <div class="help-sec-title" style="color: var(--indigo-light); font-weight: 700; margin-bottom: 2px;">
+              <span>🚀 桌面全局热键矩阵 (点击输入框直接按下键盘录制)</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 11.5px; color: var(--text-secondary); display: flex; justify-content: space-between;">
+                  <span>🎯 超级总控快捷键：</span>
+                  <span style="font-size: 10.5px; color: var(--cyber-sky);">⌨️ 点击即录制</span>
+                </span>
+                <input type="text" id="pref-desktop-master-key" class="search-input hotkey-recorder-input" style="height: 28px; font-size: 12px; font-family: monospace; font-weight: 700; padding: 0 8px; border-radius: 6px; cursor: pointer;" value="Alt+Shift+Q" placeholder="点击后直接按下热键..." title="点击输入框后，直接按下键盘组合键（例如 Ctrl+Alt+Q），按 Esc 取消" />
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 11.5px; color: var(--text-secondary); display: flex; justify-content: space-between;">
+                  <span>✏️ 随身划笔快捷键：</span>
+                  <span style="font-size: 10.5px; color: var(--cyber-sky);">⌨️ 点击即录制</span>
+                </span>
+                <input type="text" id="pref-desktop-pen-key" class="search-input hotkey-recorder-input" style="height: 28px; font-size: 12px; font-family: monospace; font-weight: 700; padding: 0 8px; border-radius: 6px; cursor: pointer;" value="Alt+Shift+W" placeholder="点击后直接按下热键..." title="点击输入框后，直接按下键盘组合键（例如 Ctrl+Alt+W），按 Esc 取消" />
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 11.5px; color: var(--text-secondary); display: flex; justify-content: space-between;">
+                  <span>📸 截屏离线OCR快捷键：</span>
+                  <span style="font-size: 10.5px; color: var(--cyber-sky);">⌨️ 点击即录制</span>
+                </span>
+                <input type="text" id="pref-desktop-ocr-key" class="search-input hotkey-recorder-input" style="height: 28px; font-size: 12px; font-family: monospace; font-weight: 700; padding: 0 8px; border-radius: 6px; cursor: pointer;" value="Alt+Shift+C" placeholder="点击后直接按下热键..." title="点击输入框后，直接按下键盘组合键（例如 Ctrl+Alt+C），按 Esc 取消" />
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 11.5px; color: var(--text-secondary); display: flex; justify-content: space-between;">
+                  <span>⚡ 极速灵感速记快捷键：</span>
+                  <span style="font-size: 10.5px; color: var(--cyber-sky);">⌨️ 点击即录制</span>
+                </span>
+                <input type="text" id="pref-desktop-quick-key" class="search-input hotkey-recorder-input" style="height: 28px; font-size: 12px; font-family: monospace; font-weight: 700; padding: 0 8px; border-radius: 6px; cursor: pointer;" value="Alt+Shift+S" placeholder="点击后直接按下热键..." title="点击输入框后，直接按下键盘组合键（例如 Ctrl+Alt+S），按 Esc 取消" />
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 11.5px; color: var(--text-secondary); display: flex; justify-content: space-between;">
+                  <span>🧠 FSRS闪卡复习快捷键：</span>
+                  <span style="font-size: 10.5px; color: var(--cyber-sky);">⌨️ 点击即录制</span>
+                </span>
+                <input type="text" id="pref-desktop-fsrs-key" class="search-input hotkey-recorder-input" style="height: 28px; font-size: 12px; font-family: monospace; font-weight: 700; padding: 0 8px; border-radius: 6px; cursor: pointer;" value="Alt+Shift+R" placeholder="点击后直接按下热键..." title="点击输入框后，直接按下键盘组合键（例如 Ctrl+Alt+R），按 Esc 取消" />
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 11.5px; color: var(--text-secondary); display: flex; justify-content: space-between;">
+                  <span>🌐 网页极速剪藏快捷键：</span>
+                  <span style="font-size: 10.5px; color: var(--cyber-sky);">⌨️ 点击即录制</span>
+                </span>
+                <input type="text" id="pref-desktop-clip-key" class="search-input hotkey-recorder-input" style="height: 28px; font-size: 12px; font-family: monospace; font-weight: 700; padding: 0 8px; border-radius: 6px; cursor: pointer;" value="Alt+Shift+G" placeholder="点击后直接按下热键..." title="点击输入框后，直接按下键盘组合键（例如 Ctrl+Alt+G），按 Esc 取消" />
+              </div>
+            </div>
+            <!-- 快捷键健康度与冲突自愈诊断 (Hotkey Doctor) -->
+            <div style="margin-top: 12px; padding: 10px 12px; background: rgba(0,0,0,0.22); border-radius: 8px; border: 1px solid var(--border-hairline);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                  <span>🩺</span> 快捷键冲突探测与智能自愈建议
+                </span>
+                <button class="pref-btn" onclick="triggerDiagnoseHotkeys()" style="padding: 3px 10px; font-size: 11px; font-weight: 600; background: rgba(56,189,248,0.12); color: var(--cyber-sky); border-color: var(--cyber-sky);">
+                  🔍 立即探测系统冲突
+                </button>
+              </div>
+              <div id="hotkey-doctor-container" style="font-size: 11.5px; line-height: 1.5; color: var(--text-muted);">
+                点击上方按钮，外骨骼将使用 Win32 真实探针实时排查当前配置快捷键是否被微信/QQ/PowerToys/PixPin等后台软件占用，并自动给出实测 100% 可用的替代键建议。
+              </div>
+            </div>
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div style="display: flex; flex-direction: column; gap: 4px;">
-              <span style="font-size: 11.5px; color: var(--text-secondary); display: flex; justify-content: space-between;">
-                <span>🎯 超级总控快捷键：</span>
-                <span style="font-size: 10.5px; color: var(--cyber-sky);">⌨️ 点击即录制</span>
-              </span>
-              <input type="text" id="pref-desktop-master-key" class="search-input hotkey-recorder-input" style="height: 28px; font-size: 12px; font-family: monospace; font-weight: 700; padding: 0 8px; border-radius: 6px; cursor: pointer;" value="Alt+Shift+Q" placeholder="点击后直接按下热键..." title="点击输入框后，直接按下键盘组合键（例如 Ctrl+Alt+Q），按 Esc 取消" />
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-              <span style="font-size: 11.5px; color: var(--text-secondary); display: flex; justify-content: space-between;">
-                <span>✏️ 随身划笔快捷键：</span>
-                <span style="font-size: 10.5px; color: var(--cyber-sky);">⌨️ 点击即录制</span>
-              </span>
-              <input type="text" id="pref-desktop-pen-key" class="search-input hotkey-recorder-input" style="height: 28px; font-size: 12px; font-family: monospace; font-weight: 700; padding: 0 8px; border-radius: 6px; cursor: pointer;" value="Alt+Shift+W" placeholder="点击后直接按下热键..." title="点击输入框后，直接按下键盘组合键（例如 Ctrl+Alt+W），按 Esc 取消" />
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-              <span style="font-size: 11.5px; color: var(--text-secondary); display: flex; justify-content: space-between;">
-                <span>📸 截屏离线OCR快捷键：</span>
-                <span style="font-size: 10.5px; color: var(--cyber-sky);">⌨️ 点击即录制</span>
-              </span>
-              <input type="text" id="pref-desktop-ocr-key" class="search-input hotkey-recorder-input" style="height: 28px; font-size: 12px; font-family: monospace; font-weight: 700; padding: 0 8px; border-radius: 6px; cursor: pointer;" value="Alt+Shift+C" placeholder="点击后直接按下热键..." title="点击输入框后，直接按下键盘组合键（例如 Ctrl+Alt+C），按 Esc 取消" />
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-              <span style="font-size: 11.5px; color: var(--text-secondary); display: flex; justify-content: space-between;">
-                <span>⚡ 极速灵感速记快捷键：</span>
-                <span style="font-size: 10.5px; color: var(--cyber-sky);">⌨️ 点击即录制</span>
-              </span>
-              <input type="text" id="pref-desktop-quick-key" class="search-input hotkey-recorder-input" style="height: 28px; font-size: 12px; font-family: monospace; font-weight: 700; padding: 0 8px; border-radius: 6px; cursor: pointer;" value="Alt+Shift+S" placeholder="点击后直接按下热键..." title="点击输入框后，直接按下键盘组合键（例如 Ctrl+Alt+S），按 Esc 取消" />
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-              <span style="font-size: 11.5px; color: var(--text-secondary); display: flex; justify-content: space-between;">
-                <span>🧠 FSRS闪卡复习快捷键：</span>
-                <span style="font-size: 10.5px; color: var(--cyber-sky);">⌨️ 点击即录制</span>
-              </span>
-              <input type="text" id="pref-desktop-fsrs-key" class="search-input hotkey-recorder-input" style="height: 28px; font-size: 12px; font-family: monospace; font-weight: 700; padding: 0 8px; border-radius: 6px; cursor: pointer;" value="Alt+Shift+R" placeholder="点击后直接按下热键..." title="点击输入框后，直接按下键盘组合键（例如 Ctrl+Alt+R），按 Esc 取消" />
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-              <span style="font-size: 11.5px; color: var(--text-secondary); display: flex; justify-content: space-between;">
-                <span>🌐 网页极速剪藏快捷键：</span>
-                <span style="font-size: 10.5px; color: var(--cyber-sky);">⌨️ 点击即录制</span>
-              </span>
-              <input type="text" id="pref-desktop-clip-key" class="search-input hotkey-recorder-input" style="height: 28px; font-size: 12px; font-family: monospace; font-weight: 700; padding: 0 8px; border-radius: 6px; cursor: pointer;" value="Alt+Shift+G" placeholder="点击后直接按下热键..." title="点击输入框后，直接按下键盘组合键（例如 Ctrl+Alt+G），按 Esc 取消" />
-            </div>
-          </div>
-          <!-- 快捷键健康度与冲突自愈诊断 (Hotkey Doctor) -->
-          <div style="margin-top: 12px; padding: 10px 12px; background: rgba(0,0,0,0.22); border-radius: 8px; border: 1px solid var(--border-hairline);">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-              <span style="font-size: 12px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
-                <span>🩺</span> 快捷键冲突探测与智能自愈建议
-              </span>
-              <button class="pref-btn" onclick="triggerDiagnoseHotkeys()" style="padding: 3px 10px; font-size: 11px; font-weight: 600; background: rgba(56,189,248,0.12); color: var(--cyber-sky); border-color: var(--cyber-sky);">
-                🔍 立即探测系统冲突
-              </button>
-            </div>
-            <div id="hotkey-doctor-container" style="font-size: 11.5px; line-height: 1.5; color: var(--text-muted);">
-              点击上方按钮，外骨骼将使用 Win32 真实探针实时排查当前配置快捷键是否被微信/QQ/PowerToys/PixPin等后台软件占用，并自动给出实测 100% 可用的替代键建议。
-            </div>
-          </div>
-          <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-            <span style="font-size: 11.5px; color: var(--text-secondary);">🛠️ 优先截图与OCR软件联动：</span>
-            <select id="pref-desktop-sniptool" class="search-input" style="height: 28px; width: 320px; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px; background: var(--bg-card); color: var(--text-primary);">
-              <option value="auto">✨ 智能感知（优先调动运行中的 PixPin / Snipaste）</option>
-              <option value="pixpin">🎯 PixPin（本地已装优先）</option>
-              <option value="snipaste">🎯 Snipaste（本地截图软件）</option>
-              <option value="builtin">🛡️ 外骨骼内置离线引擎（零依赖硬件加速）</option>
-              <option value="windows">🪟 Windows 系统自带截图 (Win+Shift+S)</option>
-            </select>
-          </div>
-          <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-            <span style="font-size: 11.5px; color: var(--text-secondary);">🔍 本地检索增强工具联动 (att: / 资产秒查)：</span>
-            <select id="pref-desktop-searchengine" class="search-input" style="height: 28px; width: 320px; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px; background: var(--bg-card); color: var(--text-primary);">
-              <option value="auto">✨ 智能感知（优先联动运行中的 Everything / Listary）</option>
-              <option value="everything">⚡ Everything（本地全盘毫秒索引与秒定）</option>
-              <option value="listary">🎯 Listary（快速定位与启动）</option>
-              <option value="internal">🛡️ 外骨骼原生 SQLite 检索</option>
-            </select>
-          </div>
-          <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-            <span style="font-size: 11.5px; color: var(--text-secondary);">📥 日记追加目标小节：</span>
-            <input type="text" id="pref-desktop-heading" class="search-input" style="height: 28px; width: 320px; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px;" placeholder="例如: 📥 临时收集箱 或 💡 闪念 (留空则追加文末)" />
-          </div>
-          <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-            <span style="font-size: 11.5px; color: var(--text-secondary);">⏳ 连续速记防碎块粘滞窗口：</span>
-            <input type="number" id="pref-desktop-continuation" class="search-input" style="height: 28px; width: 100px; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px;" min="0" max="600" placeholder="秒 (默认30)" />
-            <span style="font-size: 11px; color: var(--text-muted); flex: 1;">在此秒数内再次速记，自动合并入上一条块，不碎化日记</span>
-          </div>
-          <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-            <span style="font-size: 11.5px; color: var(--text-secondary);">📄 专属收集箱文档 (可选)：</span>
-            <div style="display: flex; gap: 6px; width: 320px;">
-              <input type="text" id="pref-desktop-targetdoc" class="search-input" style="height: 28px; flex: 1; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px;" placeholder="文档标题或ID (留空则默认今日日记)" />
-              <button class="pref-btn" type="button" onclick="selectRecentTargetDoc()" style="padding: 2px 8px; font-size: 11px; white-space: nowrap;" title="从全库最近编辑的文档中快速选择">🔍 选择</button>
-            </div>
-          </div>
-          <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-            <span style="font-size: 11.5px; color: var(--text-secondary);">🌐 网页剪藏默认模式 (Alt+Shift+G)：</span>
-            <select id="pref-desktop-clipmode" class="search-input" style="height: 28px; width: 320px; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px; background: var(--bg-card); color: var(--text-primary);">
-              <option value="card">📑 模式 A：文献卡片流（智能元数据大纲追加至今日日记）</option>
-              <option value="doc">📖 模式 B：独立研读专页（对标 Obsidian/Cubox 独立专页建档）</option>
-            </select>
-          </div>
-          <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-            <span style="font-size: 11.5px; color: var(--text-secondary);">📁 研读专页存储目录：</span>
-            <input type="text" id="pref-desktop-clipfolder" class="search-input" style="height: 28px; width: 320px; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px;" placeholder="默认 /读库/ (如: /剪藏/ 或 /文献/)" />
-          </div>
-          <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-              <span style="font-size: 11.5px; color: var(--text-secondary);">📝 研读专页 Markdown 模板：</span>
-              <select id="pref-desktop-cliptemplate-preset" class="search-input" style="height: 26px; width: 320px; font-size: 11.5px; font-weight: 600; padding: 0 8px; border-radius: 6px; background: var(--bg-card); color: var(--text-primary);" onchange="onClipTemplatePresetChanged(this.value)">
-                <option value="callout">📑 预设 1: 思源原生 Callout 看板（推荐）</option>
-                <option value="yaml">📚 预设 2: YAML 属性专页（对标 Obsidian Frontmatter）</option>
-                <option value="minimal">💡 预设 3: 极简正文摘录流</option>
-                <option value="custom">⚙️ 自定义模板 (支持占位符变量)</option>
+              <span style="font-size: 11.5px; color: var(--text-secondary);">🛠️ 优先截图与OCR软件联动：</span>
+              <select id="pref-desktop-sniptool" class="search-input" style="height: 28px; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px; background: var(--bg-card); color: var(--text-primary);">
+                <option value="auto">✨ 智能感知（优先调动运行中的 PixPin / Snipaste）</option>
+                <option value="pixpin">🎯 PixPin（本地已装优先）</option>
+                <option value="snipaste">🎯 Snipaste（本地截图软件）</option>
+                <option value="builtin">🛡️ 外骨骼内置离线引擎（零依赖硬件加速）</option>
+                <option value="windows">🪟 Windows 系统自带截图 (Win+Shift+S)</option>
               </select>
             </div>
-            <textarea id="pref-desktop-cliptemplate" class="search-input" style="height: 68px; font-size: 11px; font-family: Consolas, monospace; line-height: 1.4; padding: 6px 8px; border-radius: 6px; resize: vertical; display: none;" placeholder="留空则使用默认 Callout 模板。可用变量: {{title}}, {{url}}, {{siteName}}, {{author}}, {{date}}, {{time}}, {{smartTag}}, {{annotation}}, {{content}}"></textarea>
-            <div id="pref-desktop-cliptemplate-hints" style="font-size: 10.5px; color: var(--text-muted); display: none;">
-              💡 占位符: <code style="color:var(--cyber-sky)">{{title}}</code> 标题 · <code style="color:var(--cyber-sky)">{{url}}</code> 链接 · <code style="color:var(--cyber-sky)">{{author}}</code> 作者 · <code style="color:var(--cyber-sky)">{{siteName}}</code> 站点 · <code style="color:var(--cyber-sky)">{{smartTag}}</code> 标签 · <code style="color:var(--cyber-sky)">{{annotation}}</code> 批注 · <code style="color:var(--cyber-sky)">{{content}}</code> 正文
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-secondary);">🔍 本地检索增强工具联动：</span>
+              <select id="pref-desktop-searchengine" class="search-input" style="height: 28px; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px; background: var(--bg-card); color: var(--text-primary);">
+                <option value="auto">✨ 智能感知（优先联动运行中的 Everything / Listary）</option>
+                <option value="everything">⚡ Everything（本地全盘毫秒索引与秒定）</option>
+                <option value="listary">🎯 Listary（快速定位与启动）</option>
+                <option value="internal">🛡️ 外骨骼原生 SQLite 检索</option>
+              </select>
             </div>
           </div>
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border-hairline);">
-            <div style="display: flex; gap: 16px; font-size: 12px;">
-              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="pref-desktop-autofloat" style="accent-color: var(--indigo-primary);" />
-                <span>✨ 划选自动浮窗 (PopClip模式)</span>
-              </label>
-              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="pref-desktop-autostart" style="accent-color: var(--indigo-primary);" />
-                <span>⚙️ 开机自动启动</span>
-              </label>
-              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="pref-desktop-sound" style="accent-color: var(--indigo-primary);" />
-                <span>🔔 操作轻音效反馈</span>
-              </label>
-              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="pref-desktop-lifelog" style="accent-color: var(--indigo-primary);" checked />
-                <span>🌟 Lifelog 智能分流 (账目/专注/打卡自动归流专属小节)</span>
-              </label>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-secondary);">📥 日记追加目标小节：</span>
+              <input type="text" id="pref-desktop-heading" class="search-input" style="height: 28px; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px;" placeholder="例如: 📥 临时收集箱 或 💡 闪念 (留空追加文末)" />
             </div>
-            <button class="pref-btn pref-btn-primary" onclick="saveDesktopPreferences()" style="font-weight: 700; padding: 5px 14px; background: var(--indigo-primary); color: #fff;">💾 保存设置并生效</button>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-secondary);">⏳ 连续速记防碎块粘滞窗口：</span>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="number" id="pref-desktop-continuation" class="search-input" style="height: 28px; width: 90px; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px;" min="0" max="600" placeholder="秒 (默认30)" />
+                <span style="font-size: 11px; color: var(--text-muted);">秒内再记合并为同一块</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 11.5px; color: var(--text-secondary);">📄 专属收集箱文档 (可选)：</span>
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="pref-desktop-targetdoc" class="search-input" style="height: 28px; flex: 1; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px;" placeholder="文档标题或ID (留空则默认今日日记)" />
+              <button class="pref-btn" type="button" onclick="selectRecentTargetDoc()" style="padding: 2px 10px; font-size: 11px; white-space: nowrap;" title="从全库最近编辑的文档中快速选择">🔍 选择文档</button>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 12px; background: rgba(0,0,0,0.18); border-radius: 6px; border: 1px solid var(--border-hairline);">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+              <input type="checkbox" id="pref-desktop-autofloat" style="accent-color: var(--indigo-primary);" />
+              <span>✨ 划选自动浮窗 (PopClip模式)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+              <input type="checkbox" id="pref-desktop-autostart" style="accent-color: var(--indigo-primary);" />
+              <span>⚙️ 开机自动启动</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+              <input type="checkbox" id="pref-desktop-sound" style="accent-color: var(--indigo-primary);" />
+              <span>🔔 操作轻音效反馈</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+              <input type="checkbox" id="pref-desktop-lifelog" style="accent-color: var(--indigo-primary);" checked />
+              <span>🌟 Lifelog 智能分流 (账目/专注/打卡)</span>
+            </label>
           </div>
         </div>
 
-        <!-- Section 1.5: Pre-Ingestion AI Refiner -->
-        <div>
-          <div class="help-sec-title"><span>🤖 国内与本地大模型前置提炼清洗 (Ollama / Qwen / DeepSeek / 豆包)</span></div>
-          <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 10px 12px; margin-top: 8px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <!-- Tab 3: Web Clip & Pre-Ingestion AI Refiner -->
+        <div id="pref-tab-page-clip-ai" style="display: none; flex-direction: column; gap: 14px;">
+          <!-- 网页剪藏配置 -->
+          <div style="border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px; background: rgba(0,0,0,0.18);">
+            <div class="help-sec-title"><span>🌐 网页双态剪藏设置 (Alt+Shift+G)</span></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+              <div>
+                <span style="font-size: 11.5px; color: var(--text-secondary); display: block; margin-bottom: 4px;">剪藏默认模式：</span>
+                <select id="pref-desktop-clipmode" class="search-input" style="height: 28px; width: 100%; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px; background: var(--bg-card); color: var(--text-primary);">
+                  <option value="card">📑 模式 A：文献卡片流（追加至今日日记）</option>
+                  <option value="doc">📖 模式 B：独立研读专页（对标 Obsidian/Cubox 独立建档）</option>
+                </select>
+              </div>
+              <div>
+                <span style="font-size: 11.5px; color: var(--text-secondary); display: block; margin-bottom: 4px;">研读专页存储目录：</span>
+                <input type="text" id="pref-desktop-clipfolder" class="search-input" style="height: 28px; width: 100%; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px;" placeholder="默认 /读库/ (如: /剪藏/ 或 /文献/)" />
+              </div>
+            </div>
+            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                <span style="font-size: 11.5px; color: var(--text-secondary);">📝 研读专页 Markdown 模板：</span>
+                <select id="pref-desktop-cliptemplate-preset" class="search-input" style="height: 26px; width: 280px; font-size: 11.5px; font-weight: 600; padding: 0 8px; border-radius: 6px; background: var(--bg-card); color: var(--text-primary);" onchange="onClipTemplatePresetChanged(this.value)">
+                  <option value="callout">📑 预设 1: 思源原生 Callout 看板（推荐）</option>
+                  <option value="yaml">📚 预设 2: YAML 属性专页（对标 Obsidian Frontmatter）</option>
+                  <option value="minimal">💡 预设 3: 极简正文摘录流</option>
+                  <option value="custom">⚙️ 自定义模板 (支持占位符变量)</option>
+                </select>
+              </div>
+              <textarea id="pref-desktop-cliptemplate" class="search-input" style="height: 68px; font-size: 11px; font-family: Consolas, monospace; line-height: 1.4; padding: 6px 8px; border-radius: 6px; resize: vertical; display: none;" placeholder="留空则使用默认 Callout 模板。可用变量: {{title}}, {{url}}, {{siteName}}, {{author}}, {{date}}, {{time}}, {{smartTag}}, {{annotation}}, {{content}}"></textarea>
+              <div id="pref-desktop-cliptemplate-hints" style="font-size: 10.5px; color: var(--text-muted); display: none;">
+                💡 占位符: <code style="color:var(--cyber-sky)">{{title}}</code> 标题 · <code style="color:var(--cyber-sky)">{{url}}</code> 链接 · <code style="color:var(--cyber-sky)">{{author}}</code> 作者 · <code style="color:var(--cyber-sky)">{{siteName}}</code> 站点 · <code style="color:var(--cyber-sky)">{{smartTag}}</code> 标签 · <code style="color:var(--cyber-sky)">{{annotation}}</code> 批注 · <code style="color:var(--cyber-sky)">{{content}}</code> 正文 · <code style="color:var(--cyber-sky)">{{year}}</code> 年 · <code style="color:var(--cyber-sky)">{{weekday}}</code> 星期
+              </div>
+            </div>
+          </div>
+
+          <!-- Pre-Ingestion AI Refiner -->
+          <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px;">
+            <div class="help-sec-title"><span>🤖 国内与本地大模型前置提炼清洗 (Ollama / Qwen / DeepSeek / 豆包)</span></div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; margin-top: 6px;">
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; font-weight: 700;">
                 <input type="checkbox" id="pref-desktop-ai-enabled" style="accent-color: var(--indigo-primary);" />
                 <span>启用入库前大模型清洗提炼 (Pre-Ingestion AI Refiner)</span>
@@ -2850,92 +2881,70 @@
           </div>
         </div>
 
-        <!-- Section 1.8: Custom Snippets Expansion -->
-        <div>
-          <div class="help-sec-title"><span>⌨️ 自定义简码扩词 (:简码)</span></div>
-          <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 10px 12px; margin-top: 8px;">
+        <!-- Tab 4: Snippets, Appearance & Maintenance -->
+        <div id="pref-tab-page-snippets" style="display: none; flex-direction: column; gap: 14px;">
+          <!-- Custom Snippets Expansion -->
+          <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-              <span style="font-size: 11px; color: var(--text-muted);">
-                内置: <code style="color:var(--cyber-sky)">:date</code>, <code style="color:var(--cyber-sky)">:time</code>, <code style="color:var(--cyber-sky)">:now</code>, <code style="color:var(--cyber-sky)">:todo</code>, <code style="color:var(--cyber-sky)">:thx</code>, <code style="color:var(--cyber-sky)">:meeting</code>, <code style="color:var(--cyber-sky)">:daily</code>。变量: <code style="color:var(--indigo-light)">{{year}}</code>, <code style="color:var(--indigo-light)">{{weekday}}</code>, <code style="color:var(--indigo-light)">{{clipboard}}</code>
-              </span>
+              <span class="help-sec-title" style="margin: 0;"><span>⌨️ 自定义简码扩词 (:简码)</span></span>
               <button class="pref-btn" type="button" onclick="addNewSnippetRow()" style="font-size: 11px; padding: 2px 8px;">➕ 新增简码</button>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
+              内置: <code style="color:var(--cyber-sky)">:date</code>, <code style="color:var(--cyber-sky)">:time</code>, <code style="color:var(--cyber-sky)">:now</code>, <code style="color:var(--cyber-sky)">:todo</code>, <code style="color:var(--cyber-sky)">:thx</code>, <code style="color:var(--cyber-sky)">:meeting</code>, <code style="color:var(--cyber-sky)">:daily</code>。变量: <code style="color:var(--indigo-light)">{{year}}</code>, <code style="color:var(--indigo-light)">{{weekday}}</code>, <code style="color:var(--indigo-light)">{{clipboard}}</code>
             </div>
             <div id="custom-snippets-container" style="display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto;">
               <!-- 动态注入简码行 -->
             </div>
           </div>
-        </div>
 
-        <!-- Section 2: Appearance & Layout Preferences -->
-        <div>
-          <div class="help-sec-title"><span>🎨 界面与排版偏好</span></div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
-            <div class="pref-row">
-              <span>色彩主题：</span>
-              <div style="display: flex; gap: 6px;">
-                <button class="pref-pill-btn" id="pref-theme-dark" onclick="setPanelTheme('dark')">🌙 暗夜黑曜</button>
-                <button class="pref-pill-btn" id="pref-theme-light" onclick="setPanelTheme('light')">☀️ 通透冷白</button>
-                <button class="pref-pill-btn" id="pref-theme-auto" onclick="setPanelTheme('auto')">🌓 跟随系统</button>
+          <!-- Appearance & Layout Preferences -->
+          <div style="border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px; background: rgba(0,0,0,0.18);">
+            <div class="help-sec-title"><span>🎨 界面与排版偏好</span></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
+              <div class="pref-row">
+                <span>色彩主题：</span>
+                <div style="display: flex; gap: 6px;">
+                  <button class="pref-pill-btn" id="pref-theme-dark" onclick="setPanelTheme('dark')">🌙 暗夜黑曜</button>
+                  <button class="pref-pill-btn" id="pref-theme-light" onclick="setPanelTheme('light')">☀️ 通透冷白</button>
+                  <button class="pref-pill-btn" id="pref-theme-auto" onclick="setPanelTheme('auto')">🌓 跟随系统</button>
+                </div>
+              </div>
+              <div class="pref-row">
+                <span>默认排版视图：</span>
+                <div style="display: flex; gap: 6px;">
+                  <button class="pref-pill-btn" id="pref-layout-grid" onclick="setPanelLayout('grid')">🎴 卡片</button>
+                  <button class="pref-pill-btn" id="pref-layout-list" onclick="setPanelLayout('list')">☰ 列表</button>
+                  <button class="pref-pill-btn" id="pref-layout-tile" onclick="setPanelLayout('tiles')">❖ 磁贴</button>
+                </div>
               </div>
             </div>
-            <div class="pref-row">
-              <span>默认排版视图：</span>
-              <div style="display: flex; gap: 6px;">
-                <button class="pref-pill-btn" id="pref-layout-grid" onclick="setPanelLayout('grid')">🎴 卡片</button>
-                <button class="pref-pill-btn" id="pref-layout-list" onclick="setPanelLayout('list')">☰ 列表</button>
-                <button class="pref-pill-btn" id="pref-layout-tile" onclick="setPanelLayout('tiles')">❖ 磁贴</button>
-              </div>
-            </div>
           </div>
-        </div>
 
-        <!-- Section 3: Cards Visibility & Customization -->
-        <div>
-          <div class="help-sec-title"><span>🎴 动作卡片个性化管理</span></div>
-          <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
-            <button class="pref-btn pref-btn-primary" onclick="toggleEditModeFromPref()">✏️ 进入卡片显隐编辑模式 (按 E)</button>
-            <button class="pref-btn" onclick="showAllCards()">👁 恢复显示全部 27 个核心卡片</button>
-            <button class="pref-btn" onclick="showOnlyRecommended()">⭐ 仅保留精选推荐卡片</button>
-          </div>
-        </div>
-
-        <!-- Section 4: Standalone Architecture & Principles -->
-        <div>
-          <div class="help-sec-title"><span>🛡️ 单文件独立架构与外骨骼准则</span></div>
-          <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 8px;">
-            思源外骨骼为 100% 独立单文件原生桌面程序（~2.99MB），已彻底脱离外部平台依赖：
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 10px;">
-            <div style="padding: 8px 10px; background: rgba(99, 102, 241, 0.08); border: 1px solid var(--border-hairline); border-radius: 6px;">
-              <b>⚡ 0ms 唤醒与极低常驻</b><br>
-              5 级深度内存压缩，交互后物理内存压制至 ~2MB 级，0% CPU 占用。
+          <!-- Cards Visibility & Customization -->
+          <div style="border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px; background: rgba(0,0,0,0.18);">
+            <div class="help-sec-title"><span>🎴 动作卡片个性化管理与维护</span></div>
+            <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+              <button class="pref-btn pref-btn-primary" onclick="toggleEditModeFromPref()">✏️ 进入卡片显隐编辑模式 (按 E)</button>
+              <button class="pref-btn" onclick="showAllCards()">👁 恢复显示全部 25 个核心卡片</button>
+              <button class="pref-btn" onclick="showOnlyRecommended()">⭐ 仅保留精选推荐卡片</button>
+              <button class="pref-btn" onclick="clearUsageHistory()">🗑 清空高频点击历史</button>
+              <button class="pref-btn" onclick="resetToFactoryDefaults()">🔄 恢复面板出厂默认设置</button>
             </div>
-            <div style="padding: 8px 10px; background: rgba(16, 185, 129, 0.08); border: 1px solid var(--border-hairline); border-radius: 6px;">
-              <b>🔗 原生内核与 SQLite 穿透</b><br>
-              零插件依赖，直通 127.0.0.1/::1 与块级数据库，断网离岸队列自动兜底。
-            </div>
-            <div style="padding: 8px 10px; background: rgba(56, 189, 248, 0.08); border: 1px solid var(--border-hairline); border-radius: 6px;">
-              <b>🎯 外部上下文感知与清洗</b><br>
-              自动嗅探活动窗口/网页URL注入 Block IAL，PDF 断行连字符与格式自愈。
-            </div>
-            <div style="padding: 8px 10px; background: rgba(168, 85, 247, 0.08); border: 1px solid var(--border-hairline); border-radius: 6px;">
-              <b>🛠️ 本地工具能力抽象适配</b><br>
-              优先调动运行中的 PixPin、Snipaste、Everything，不绑架用户习惯。
-            </div>
-          </div>
-        </div>
-
-        <!-- Section 5: History & Data Maintenance -->
-        <div>
-          <div class="help-sec-title"><span>🧹 数据与缓存维护</span></div>
-          <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
-            <button class="pref-btn" onclick="clearUsageHistory()">🗑 清空高频点击历史</button>
-            <button class="pref-btn" onclick="resetToFactoryDefaults()">🔄 恢复面板出厂默认设置</button>
           </div>
         </div>
 
       </div>
+
+      <!-- Fixed Modal Footer -->
+      <div class="pref-modal-footer" style="padding: 10px 20px; border-top: 1px solid var(--border-hairline); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.22); flex-shrink: 0;">
+        <span style="font-size: 11px; color: var(--text-muted);">💡 快捷提示：按 <b>Ctrl+S</b> 亦可随时保存并立即生效设置，按 <b>Esc</b> 关闭</span>
+        <div style="display: flex; gap: 8px;">
+          <button class="pref-btn" onclick="togglePreferencesModal()" style="font-size: 11.5px; padding: 4px 12px;">取消</button>
+          <button class="pref-btn pref-btn-primary" onclick="saveDesktopPreferences()" style="font-size: 11.5px; font-weight: 700; padding: 4px 18px; background: var(--indigo-primary); color: #fff;">💾 保存全部设置并生效 (Ctrl+S)</button>
+        </div>
+      </div>
     </div>
+  </div>
   </div>
 
   <!-- AI 前置提炼结果模态弹窗 -->
@@ -3513,11 +3522,27 @@
       if (modal) modal.classList.remove("open");
     }
 
+    let currentPrefTab = "status";
+
+    function switchPrefTab(tabName) {
+      currentPrefTab = tabName;
+      const tabNames = ["status", "hotkeys", "clip-ai", "snippets"];
+      tabNames.forEach(t => {
+        const btn = document.getElementById("pref-tab-btn-" + t);
+        const page = document.getElementById("pref-tab-page-" + t);
+        if (btn) btn.classList.toggle("active", t === tabName);
+        if (page) page.style.display = (t === tabName) ? "flex" : "none";
+      });
+    }
+
     function togglePreferencesModal() {
       const modal = document.getElementById("preferences-modal");
       if (!modal) return;
       const isOpen = modal.classList.toggle("open");
-      if (isOpen) refreshPrefDialogTelemetry();
+      if (isOpen) {
+        switchPrefTab(currentPrefTab || "status");
+        refreshPrefDialogTelemetry();
+      }
     }
 
     function closePreferencesOnBg(e) {
@@ -7096,6 +7121,18 @@
           }
         });
       });
+
+      const prefModal = document.getElementById("preferences-modal");
+      if (prefModal && !prefModal.__ctrls_inited) {
+        prefModal.__ctrls_inited = true;
+        prefModal.addEventListener("keydown", function(e) {
+          if (e.ctrlKey && (e.key === "s" || e.key === "S")) {
+            e.preventDefault();
+            e.stopPropagation();
+            saveDesktopPreferences();
+          }
+        });
+      }
     }
 
     function syncDesktopPreferencesUI() {

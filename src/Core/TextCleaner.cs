@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -421,17 +422,54 @@ namespace XiaoLv.Desktop.Core
 
         /// <summary>
         /// 盘古之白 (Pangu Spacing): 在中文与英文/数字之间插入舒适阅读空格
+        /// 具备代码块、内联代码与 URL 链接占位保护，绝不破坏语法标记
         /// </summary>
         public static string FormatPanguSpacing(string text)
         {
             if (string.IsNullOrEmpty(text)) return "";
 
-            // 中文接英文/数字：汉a -> 汉 a
-            text = Regex.Replace(text, @"([\u4e00-\u9fa5])([a-zA-Z0-9$])", "$1 $2");
-            // 英文/数字接中文：a汉 -> a 汉
-            text = Regex.Replace(text, @"([a-zA-Z0-9$])([\u4e00-\u9fa5])", "$1 $2");
+            // 1. 保护代码块与行内代码
+            var codeBlocks = new List<string>();
+            string sanitized = Regex.Replace(text, @"(```[\s\S]*?```|`[^`\r\n]+`)", m =>
+            {
+                string ph = " __PANGU_CODE_" + codeBlocks.Count + "__ ";
+                codeBlocks.Add(m.Value);
+                return ph;
+            });
 
-            return text;
+            // 2. 保护 URL 链接免受内部插入空格破坏
+            var urls = new List<string>();
+            sanitized = Regex.Replace(sanitized, @"(https?://[^\s\u4e00-\u9fa5<>""']+)", m =>
+            {
+                string ph = " __PANGU_URL_" + urls.Count + "__ ";
+                urls.Add(m.Value);
+                return ph;
+            });
+
+            // 3. 中文与英文/数字之间插入空格
+            sanitized = Regex.Replace(sanitized, @"([\u4e00-\u9fa5\u3040-\u30ff])([a-zA-Z0-9$#@%&*])", "$1 $2");
+            sanitized = Regex.Replace(sanitized, @"([a-zA-Z0-9$#@%&*])([\u4e00-\u9fa5\u3040-\u30ff])", "$1 $2");
+            sanitized = Regex.Replace(sanitized, @"([\u4e00-\u9fa5\u3040-\u30ff])([(])", "$1 $2");
+            sanitized = Regex.Replace(sanitized, @"([)])([\u4e00-\u9fa5\u3040-\u30ff])", "$1 $2");
+
+            // 4. 清理冗余的连续空格（保留换行）
+            sanitized = Regex.Replace(sanitized, @"[ \t]{2,}", " ");
+
+            // 5. 还原 URL
+            sanitized = Regex.Replace(sanitized, @"\s*__PANGU_URL_(\d+)__\s*", m =>
+            {
+                int idx = int.Parse(m.Groups[1].Value);
+                return idx < urls.Count ? urls[idx] : "";
+            });
+
+            // 6. 还原代码块
+            sanitized = Regex.Replace(sanitized, @"\s*__PANGU_CODE_(\d+)__\s*", m =>
+            {
+                int idx = int.Parse(m.Groups[1].Value);
+                return idx < codeBlocks.Count ? codeBlocks[idx] : "";
+            });
+
+            return sanitized.Trim();
         }
 
         /// <summary>

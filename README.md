@@ -136,26 +136,26 @@
 
 ---
 
-## 四、 27 款核心动作卡片全览
+## 四、 25 款王牌心流动作卡片全景 (高聚类·零冗余)
 
 ```
-【📝 极速捕获 (Capture)】
-  1. sypen    随身划笔           Alt+Shift+W    选中文本 1~6 盲打分发，带上下文溯源
-  2. sys      多态速记           Alt+Shift+S    !待办/?闪卡/@人脉/#项目 意图分流，30s粘滞合并
-  3. syg      网页极速剪藏       Alt+Shift+G    0ms 前台网页文献卡剪藏，脱敏清洗
+【📝 极速捕获 (Capture · 6)】
+  1. sypen    随身划笔           Alt+Shift+W    选中文本 1~6 盲打分发，带上下文溯源与原位回贴
+  2. sys      多态速记           Alt+Shift+S    !待办/?闪卡/@人脉/#项目 意图分流，30s粘滞合并，Lifelog时序分流
+  3. syg      网页剪藏与批注     Alt+Shift+G    0ms 前台网页文献卡/研读专页双态剪藏，g:即时批注，防盗链图床自愈
   4. syimg    截屏离线OCR        Alt+Shift+C    调动 PixPin/Snipaste/WinRT，图文双落盘
   5. syoff    表格数据清洗       syoff          Excel/WPS 数据转标准 Markdown 表格
   6. syvoice  语音速记微舱       voice:         微信输入法/讯飞语音去噪自愈直化日记
 
-【🔍 检索双链 (Search)】
-  7. syf      全库快查与双链     Alt+Shift+F    b:块秒搜 / d:文档，双栏抽屉，Shift+Enter回贴双链
-  8. syatt    附件文献秒查       att:           全库 PDF/文献穿透，Everything / Listary 毫秒联动秒开
-  9. syd      今日日记           Enter / syd    原生 SQL 直达当天日记，未建则自动创建
- 10. syo      浮动大纲导航       Alt+Shift+O    H1~H6 目录树拼音即搜即跳
- 11. syzg     最近编辑文档       syzg           倒序快速打开最近修改笔记
- 12. syws     工作现场快照       ws:            虚拟桌面与多任务窗口全景现场恢复
+【🔍 检索双链 (Search · 6)】
+  7. syf      全库快查与双链     Alt+Shift+F    b:块秒搜 / d:文档标题，双栏抽屉，Shift+Enter回贴双链
+  8. syatt    附件文献秒查       att:           全库 PDF/文献穿透，Everything / Listary 联动，支持 -page 页码直达
+  9. sytag    全库标签穿透坞     tag: / #标签   穿透检索全库匹配标签块，专属抽屉聚合流，1键导出 Markdown 大纲
+ 10. syd      今日日记           Enter / syd    原生 SQL 直达当天日记，未建则自动创建
+ 11. syo      全景大纲与导图     Alt+Shift+O    H1~H6 目录树拼音即搜即跳，抽屉原生贝塞尔曲线 SVG 导图
+ 12. syws     工作现场快照       ws:            虚拟桌面与多任务窗口全景现场一键抓取与恢复
 
-【🧩 垂直生态 (Learning · Alt+1~8 直达)】
+【🧩 垂直生态 (Learning · 8 · Alt+1~8 直达)】
  13. syda     习惯打卡           Alt+1          免切窗打卡记录 / 唤起打卡大窗
  14. syhome   事务管家           Alt+2          免切窗录入备忘 / 唤起管家总控
  15. syrm     人脉工作台         Alt+3          录入交集互动 / 唤起人脉档案网
@@ -165,16 +165,14 @@
  19. sybk     备考与练习台       Alt+7          备考进度概览 / 唤起学习考试练习大窗
  20. sylq     标签快速切换       Alt+8          唤起小驴雷切极速切屏面板
 
-【🌐 指令拓展 (Commands)】
- 21. syc      审阅批注来源卡     Alt+Shift+M    长文划选速记审阅意见，生成防404结构卡
- 22. syx      纯净Markdown复制   Alt+Shift+X    剥离思源 {: id} 属性杂质，双链还原自然标题
- 23. sym      一键思维导图       sym            提取大纲自动插入 Mermaid 交互导图块
- 24. syp      原色高亮美化       syp            原生 CSS 变量荧光高亮或清除格式
- 25. sycmd    插件命令调度       p:             输入 p: 穿透检索并执行全库已装插件命令
+【🌐 格式心流 (Commands · 3)】
+ 21. syx      纯净Markdown复制   Alt+Shift+X    剥离思源 {: id} 属性杂质，双链还原自然标题
+ 22. syp      原色高亮美化       syp            原生 CSS 变量荧光高亮或清除格式
+ 23. sycmd    插件命令调度       p:             输入 p: 穿透检索并执行全库已装插件命令
 
-【⚙️ 运维体检 (Maintenance)】
- 26. sytrash  回收站时光机       trash:         检索快照历史，查看误删/被覆盖笔记并 1 键打捞
- 27. syh      全库系统体检       syh            排查断链、孤儿附件，综合诊断内核与离岸队列
+【⚙️ 运维体检 (Maintenance · 2)】
+ 24. sytrash  回收站时光机       trash:         检索快照历史，查看误删/被覆盖笔记并 1 键打捞
+ 25. syh      全库系统体检       syh            排查断链、孤儿附件，综合诊断内核与离岸队列
 ```
 
 ---

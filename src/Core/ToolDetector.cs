@@ -341,6 +341,72 @@ namespace XiaoLv.Desktop.Core
             return null;
         }
 
+        public static LocalToolInfo DetectZotero()
+        {
+            try
+            {
+                var procs = Process.GetProcessesByName("zotero");
+                bool isRunning = procs.Length > 0;
+                string exePath = "";
+                if (isRunning)
+                {
+                    try { exePath = procs[0].MainModule.FileName; } catch { }
+                }
+
+                if (string.IsNullOrEmpty(exePath))
+                {
+                    string[] probePaths = new string[]
+                    {
+                        @"C:\Program Files\Zotero\zotero.exe",
+                        @"C:\Program Files (x86)\Zotero\zotero.exe",
+                        @"D:\Program Files\Zotero\zotero.exe",
+                        @"D:\RJ\Zotero\zotero.exe",
+                        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Programs\Zotero\zotero.exe")
+                    };
+
+                    foreach (var p in probePaths)
+                    {
+                        if (File.Exists(p)) { exePath = p; break; }
+                    }
+                }
+
+                if (isRunning || !string.IsNullOrEmpty(exePath))
+                {
+                    return new LocalToolInfo
+                    {
+                        Id = "zotero",
+                        Name = "Zotero (学术文献管理" + (isRunning ? "·运行中" : "") + ")",
+                        ExePath = exePath,
+                        IsRunning = isRunning,
+                        IsInstalled = !string.IsNullOrEmpty(exePath)
+                    };
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        public static bool OpenInZotero(string query)
+        {
+            var zotero = DetectZotero();
+            if (zotero != null && (!string.IsNullOrEmpty(zotero.ExePath) || zotero.IsRunning))
+            {
+                try
+                {
+                    if (query.StartsWith("zotero://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Process.Start(new ProcessStartInfo(query) { UseShellExecute = true });
+                        return true;
+                    }
+                    string exe = !string.IsNullOrEmpty(zotero.ExePath) ? zotero.ExePath : "zotero.exe";
+                    Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
+                    return true;
+                }
+                catch { }
+            }
+            return false;
+        }
+
         public static bool OpenInEverything(string query)
         {
             var ev = DetectEverything();

@@ -643,12 +643,15 @@ async function main() {
     $asm = [System.Reflection.Assembly]::Load($bytes);
     $sm = $asm.GetType('XiaoLv.Desktop.Core.SnippetExpansionEngine');
     $mExp = $sm.GetMethod('Expand', [System.Reflection.BindingFlags]'Public,Static', $null, @([string]), $null);
+    $mReload = $sm.GetMethod('ReloadCustomSnippets', [System.Reflection.BindingFlags]'Public,Static');
+    $customJson = '[{\"Shortcode\":\":sig\",\"Label\":\"签名\",\"Template\":\"Best regards, Alex {{year}}\"}]';
+    $mReload.Invoke($null, @($customJson));
     $expDate = $mExp.Invoke($null, @(':date'));
-    $expThx = $mExp.Invoke($null, @(':thx'));
-    Write-Output ($expDate + '###' + $expThx);
+    $expSig = $mExp.Invoke($null, @(':sig'));
+    Write-Output ($expDate + '###' + $expSig);
   `;
   const snipRes = runPs(snipScript);
-  const snipOk = snipRes.includes("2026-") && snipRes.includes("非常感谢");
+  const snipOk = snipRes.includes("2026-") && snipRes.includes("Best regards") && snipRes.includes("2026");
   logStep("Step 7.31: 简码扩词与动态占位符求值引擎 (SnippetExpansionEngine / :简码) 断言", snipOk, `简码展开结果: [${snipRes.trim()}]`);
 
   // Step 7.32: Test Dual Protocol Registration (siyuan-exoskeleton:// & xiaolv://)

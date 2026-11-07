@@ -1454,6 +1454,15 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
+                // 21.7 调动本地 Zotero 学术文献管理库 (zotero: 或 zotero:// 链接穿透)
+                if (op.Equals("openInZotero", StringComparison.OrdinalIgnoreCase))
+                {
+                    string q = JsonHelper.GetString(msg, "query");
+                    if (string.IsNullOrEmpty(q)) q = JsonHelper.GetString(msg, "keyword");
+                    ToolDetector.OpenInZotero(q ?? "");
+                    return;
+                }
+
                 // 21.6 误删打捞与时光机安全检索 (rescue: / hist: 语法)
                 if (op.Equals("searchRescue", StringComparison.OrdinalIgnoreCase))
                 {

@@ -2278,17 +2278,34 @@ namespace XiaoLv.Desktop.UI
 
         public void NotifyOfficeFileChanged(string filePath)
         {
+            if (string.IsNullOrEmpty(filePath)) return;
             try
             {
-                var summary = OfficeOpenXmlParser.InspectFile(filePath);
-                Dispatcher.Invoke(() =>
+                string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                if (ext == ".pdf")
                 {
-                    if (_webView != null && _webView.CoreWebView2 != null)
+                    var pdfSummary = PdfLightParser.InspectPdf(filePath);
+                    Dispatcher.Invoke(() =>
                     {
-                        string js = string.Format("if(window.onOfficeInspectionLoaded && window.currentOfficeDocSummary && window.currentOfficeDocSummary.FilePath === {0}) window.onOfficeInspectionLoaded({1});", JsonHelper.ToJson(filePath), JsonHelper.ToJson(summary));
-                        _webView.CoreWebView2.ExecuteScriptAsync(js);
-                    }
-                });
+                        if (_webView != null && _webView.CoreWebView2 != null)
+                        {
+                            string js = string.Format("if(window.onPdfInspectionLoaded && window.currentPdfSummary && window.currentPdfSummary.FilePath === {0}) window.onPdfInspectionLoaded({1});", JsonHelper.ToJson(filePath), JsonHelper.ToJson(pdfSummary));
+                            _webView.CoreWebView2.ExecuteScriptAsync(js);
+                        }
+                    });
+                }
+                else
+                {
+                    var summary = OfficeOpenXmlParser.InspectFile(filePath);
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (_webView != null && _webView.CoreWebView2 != null)
+                        {
+                            string js = string.Format("if(window.onOfficeInspectionLoaded && window.currentOfficeDocSummary && window.currentOfficeDocSummary.FilePath === {0}) window.onOfficeInspectionLoaded({1});", JsonHelper.ToJson(filePath), JsonHelper.ToJson(summary));
+                            _webView.CoreWebView2.ExecuteScriptAsync(js);
+                        }
+                    });
+                }
             }
             catch { }
         }

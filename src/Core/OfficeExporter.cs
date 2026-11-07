@@ -36,6 +36,22 @@ namespace XiaoLv.Desktop.Core
             return name.Trim();
         }
 
+        private static string CleanInlineMarkdown(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return "";
+            // 清理超链接 [文字](url) -> 文字
+            text = Regex.Replace(text, @"\[([^\]]+)\]\([^)]+\)", "$1");
+            // 清理粗体 **文字** -> 文字
+            text = Regex.Replace(text, @"\*\*([^*]+)\*\*", "$1");
+            // 清理斜体 *文字* -> 文字
+            text = Regex.Replace(text, @"\*([^*]+)\*", "$1");
+            // 清理行内代码 `代码` -> 代码
+            text = Regex.Replace(text, @"`([^`]+)`", "$1");
+            // 清理思源块引用 ((id "锚文本")) -> 锚文本
+            text = Regex.Replace(text, @"\(\([a-zA-Z0-9\-_]+\s+""([^""]+)""\)\)", "$1");
+            return text;
+        }
+
         /// <summary>
         /// 将 Markdown 文本转译并打包为标准 .docx 文档
         /// 完整保留 H1~H3 大纲层级、待办清单、无序列表、引用块与数据表格
@@ -106,48 +122,48 @@ namespace XiaoLv.Desktop.Core
                 // 3. 一级标题 (H1)
                 if (line.StartsWith("# "))
                 {
-                    string hText = XmlEscape(line.Substring(2).Trim());
+                    string hText = XmlEscape(CleanInlineMarkdown(line.Substring(2).Trim()));
                     docXml.AppendFormat("    <w:p><w:pPr><w:pStyle w:val=\"1\"/><w:spacing w:before=\"280\" w:after=\"160\"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val=\"36\"/><w:szCs w:val=\"36\"/><w:color w:val=\"1E293B\"/></w:rPr><w:t>{0}</w:t></w:r></w:p>\n", hText);
                 }
                 // 4. 二级标题 (H2)
                 else if (line.StartsWith("## "))
                 {
-                    string hText = XmlEscape(line.Substring(3).Trim());
+                    string hText = XmlEscape(CleanInlineMarkdown(line.Substring(3).Trim()));
                     docXml.AppendFormat("    <w:p><w:pPr><w:pStyle w:val=\"2\"/><w:spacing w:before=\"240\" w:after=\"120\"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val=\"30\"/><w:szCs w:val=\"30\"/><w:color w:val=\"334155\"/></w:rPr><w:t>{0}</w:t></w:r></w:p>\n", hText);
                 }
                 // 5. 三级标题 (H3)
                 else if (line.StartsWith("### "))
                 {
-                    string hText = XmlEscape(line.Substring(4).Trim());
+                    string hText = XmlEscape(CleanInlineMarkdown(line.Substring(4).Trim()));
                     docXml.AppendFormat("    <w:p><w:pPr><w:pStyle w:val=\"3\"/><w:spacing w:before=\"200\" w:after=\"100\"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val=\"26\"/><w:szCs w:val=\"26\"/><w:color w:val=\"475569\"/></w:rPr><w:t>{0}</w:t></w:r></w:p>\n", hText);
                 }
                 // 6. 待办清单
                 else if (line.StartsWith("- [ ] ") || line.StartsWith("* [ ] "))
                 {
-                    string tText = XmlEscape(line.Substring(6).Trim());
+                    string tText = XmlEscape(CleanInlineMarkdown(line.Substring(6).Trim()));
                     docXml.AppendFormat("    <w:p><w:pPr><w:ind w:left=\"360\"/><w:spacing w:after=\"80\"/></w:pPr><w:r><w:rPr><w:color w:val=\"6366F1\"/></w:rPr><w:t>☐  </w:t></w:r><w:r><w:t>{0}</w:t></w:r></w:p>\n", tText);
                 }
                 else if (line.StartsWith("- [x] ") || line.StartsWith("* [x] ") || line.StartsWith("- [X] ") || line.StartsWith("* [X] "))
                 {
-                    string tText = XmlEscape(line.Substring(6).Trim());
+                    string tText = XmlEscape(CleanInlineMarkdown(line.Substring(6).Trim()));
                     docXml.AppendFormat("    <w:p><w:pPr><w:ind w:left=\"360\"/><w:spacing w:after=\"80\"/></w:pPr><w:r><w:rPr><w:color w:val=\"10B981\"/></w:rPr><w:t>☑  </w:t></w:r><w:r><w:rPr><w:strike/><w:color w:val=\"94A3B8\"/></w:rPr><w:t>{0}</w:t></w:r></w:p>\n", tText);
                 }
                 // 7. 无序列表项
                 else if (line.StartsWith("- ") || line.StartsWith("* "))
                 {
-                    string itemText = XmlEscape(line.Substring(2).Trim());
+                    string itemText = XmlEscape(CleanInlineMarkdown(line.Substring(2).Trim()));
                     docXml.AppendFormat("    <w:p><w:pPr><w:ind w:left=\"360\"/><w:spacing w:after=\"80\"/></w:pPr><w:r><w:rPr><w:color w:val=\"3B82F6\"/></w:rPr><w:t>•  </w:t></w:r><w:r><w:t>{0}</w:t></w:r></w:p>\n", itemText);
                 }
                 // 8. 引用块
                 else if (line.StartsWith("> "))
                 {
-                    string qText = XmlEscape(line.Substring(2).Trim());
+                    string qText = XmlEscape(CleanInlineMarkdown(line.Substring(2).Trim()));
                     docXml.AppendFormat("    <w:p><w:pPr><w:ind w:left=\"480\"/><w:pBdr><w:left w:val=\"single\" w:sz=\"18\" w:space=\"12\" w:color=\"6366F1\"/></w:pBdr><w:spacing w:before=\"80\" w:after=\"80\"/></w:pPr><w:r><w:rPr><w:i/><w:color w:val=\"64748B\"/></w:rPr><w:t>{0}</w:t></w:r></w:p>\n", qText);
                 }
                 // 9. 普通正文段落
                 else
                 {
-                    string pText = XmlEscape(line);
+                    string pText = XmlEscape(CleanInlineMarkdown(line));
                     docXml.AppendFormat("    <w:p><w:pPr><w:spacing w:after=\"120\" w:line=\"360\" w:lineRule=\"auto\"/></w:pPr><w:r><w:rPr><w:sz w:val=\"22\"/><w:szCs w:val=\"22\"/><w:color w:val=\"1E293B\"/></w:rPr><w:t>{0}</w:t></w:r></w:p>\n", pText);
                 }
             }
@@ -225,7 +241,7 @@ namespace XiaoLv.Desktop.Core
 
                 foreach (var c in cells)
                 {
-                    string cText = XmlEscape(c.Trim());
+                    string cText = XmlEscape(CleanInlineMarkdown(c.Trim()));
                     sb.AppendLine("        <w:tc>");
                     sb.AppendLine("          <w:tcPr>");
                     if (isHeader)
@@ -277,7 +293,7 @@ namespace XiaoLv.Desktop.Core
                 {
                     string colLetter = GetColumnLetter(cIdx + 1);
                     string cellRef = colLetter + rIdx;
-                    string cellVal = XmlEscape(cells[cIdx].Trim());
+                    string cellVal = XmlEscape(CleanInlineMarkdown(cells[cIdx].Trim()));
                     sheetData.AppendFormat("      <c r=\"{0}\" t=\"inlineStr\"><is><t>{1}</t></is></c>\n", cellRef, cellVal);
                 }
 

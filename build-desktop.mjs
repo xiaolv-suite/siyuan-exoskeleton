@@ -97,6 +97,7 @@ const rsp = [
   `/out:${targetExe}`,
   '/platform:x64',
   '/optimize+',
+  '/warn:4',
   '/reference:System.dll',
   '/reference:System.Core.dll',
   '/reference:System.Data.dll',

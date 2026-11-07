@@ -33,6 +33,10 @@ namespace XiaoLv.Desktop.Core
 
             lock (_lock)
             {
+                if (_watchedFiles.Count > 150)
+                {
+                    _watchedFiles.Clear();
+                }
                 _watchedFiles.Add(fullPath);
 
                 if (!_dirWatchers.ContainsKey(dir))
@@ -65,7 +69,7 @@ namespace XiaoLv.Desktop.Core
             if (fn.StartsWith("~$")) return;
 
             string ext = Path.GetExtension(fullPath).ToLowerInvariant();
-            if (ext != ".docx" && ext != ".xlsx" && ext != ".pptx") return;
+            if (ext != ".docx" && ext != ".xlsx" && ext != ".pptx" && ext != ".pdf") return;
 
             lock (_lock)
             {

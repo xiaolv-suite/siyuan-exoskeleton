@@ -72,6 +72,7 @@ namespace XiaoLv.Desktop.Core
                 summary.FileSizeBytes = fi.Length;
                 summary.FileSizeFormatted = FormatFileSize(fi.Length);
                 summary.LastModified = fi.LastWriteTime;
+                try { OfficeFileWatcher.WatchFile(filePath); } catch { }
 
                 // 1. 流式采样首尾数据块 (前 32KB 与后 64KB)
                 byte[] headBuffer = new byte[Math.Min(fi.Length, 32768)];

@@ -2875,6 +2875,7 @@
               <div style="display: flex; gap: 6px;">
                 <button class="pref-pill-btn" id="pref-theme-dark" onclick="setPanelTheme('dark')">🌙 暗夜黑曜</button>
                 <button class="pref-pill-btn" id="pref-theme-light" onclick="setPanelTheme('light')">☀️ 通透冷白</button>
+                <button class="pref-pill-btn" id="pref-theme-auto" onclick="setPanelTheme('auto')">🌓 跟随系统</button>
               </div>
             </div>
             <div class="pref-row">
@@ -3552,9 +3553,10 @@
 
       updateStorageUI();
 
-      const curTheme = document.documentElement.getAttribute("data-theme") || "dark";
-      document.getElementById("pref-theme-dark")?.classList.toggle("active", curTheme === "dark");
-      document.getElementById("pref-theme-light")?.classList.toggle("active", curTheme === "light");
+      const storedTheme = localStorage.getItem("omni_panel_theme") || "dark";
+      document.getElementById("pref-theme-dark")?.classList.toggle("active", storedTheme === "dark");
+      document.getElementById("pref-theme-light")?.classList.toggle("active", storedTheme === "light");
+      document.getElementById("pref-theme-auto")?.classList.toggle("active", storedTheme === "auto");
 
       const curLayout = layoutMode || "grid";
       document.getElementById("pref-layout-grid")?.classList.toggle("active", curLayout === "grid");
@@ -3587,7 +3589,9 @@
     }
 
     function setPanelTheme(t) {
-      if (currentTheme !== t) toggleTheme();
+      currentTheme = t;
+      localStorage.setItem("omni_panel_theme", t);
+      applyTheme(t);
       refreshPrefDialogTelemetry();
     }
 
@@ -3738,15 +3742,38 @@
     }
 
     function toggleTheme() {
-      currentTheme = (currentTheme === "dark") ? "light" : "dark";
-      localStorage.setItem("omni_panel_theme", currentTheme);
-      applyTheme(currentTheme);
+      const stored = localStorage.getItem("omni_panel_theme") || "dark";
+      let nextTheme = "dark";
+      if (stored === "dark") nextTheme = "light";
+      else if (stored === "light") nextTheme = "auto";
+      else nextTheme = "dark";
+
+      currentTheme = nextTheme;
+      localStorage.setItem("omni_panel_theme", nextTheme);
+      applyTheme(nextTheme);
+      showToast(`🌓 色彩主题: ${nextTheme === 'dark' ? '🌙 暗夜黑曜' : nextTheme === 'light' ? '☀️ 通透冷白' : '🌓 跟随系统'}`);
+      refreshPrefDialogTelemetry();
     }
 
     function applyTheme(th) {
-      document.documentElement.setAttribute("data-theme", th);
+      let resolved = th;
+      if (th === "auto") {
+        resolved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", resolved);
       const btn = document.getElementById("theme-btn");
-      if (btn) btn.innerText = (th === "dark") ? "🌙" : "☀️";
+      if (btn) btn.innerText = (th === "auto") ? "🌓" : (resolved === "dark") ? "🌙" : "☀️";
+    }
+
+    if (window.matchMedia) {
+      try {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+          const stored = localStorage.getItem("omni_panel_theme") || "dark";
+          if (stored === "auto") {
+            applyTheme("auto");
+          }
+        });
+      } catch(e) {}
     }
 
     function getColCount() {

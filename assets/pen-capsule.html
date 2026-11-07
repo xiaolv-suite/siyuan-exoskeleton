@@ -355,8 +355,12 @@
     }
 
     function applyTheme(th) {
-      document.documentElement.setAttribute("data-theme", th);
-      document.getElementById("theme-btn").innerText = (th === "dark") ? "☀️" : "🌙";
+      let resolved = th;
+      if (th === "auto") {
+        resolved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", resolved);
+      document.getElementById("theme-btn").innerText = (resolved === "dark") ? "☀️" : "🌙";
       localStorage.setItem("pen_capsule_theme", th);
     }
 

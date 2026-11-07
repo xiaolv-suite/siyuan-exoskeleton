@@ -1871,13 +1871,31 @@
     }
 
   
-    /* Quick Intent Chips */
+    /* Quick Intent Chips (横向流式光轨 · 极低纵向占用) */
     .quick-intent-chips {
       display: flex;
       align-items: center;
       gap: 6px;
       margin-top: 8px;
-      flex-wrap: wrap;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      padding-bottom: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-hairline) transparent;
+      -webkit-overflow-scrolling: touch;
+    }
+    .quick-intent-chips::-webkit-scrollbar {
+      height: 4px;
+    }
+    .quick-intent-chips::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .quick-intent-chips::-webkit-scrollbar-thumb {
+      background: var(--border-hairline);
+      border-radius: 4px;
+    }
+    .quick-intent-chips::-webkit-scrollbar-thumb:hover {
+      background: var(--indigo-light);
     }
     .intent-chip {
       font-size: 11px;
@@ -1890,6 +1908,8 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
       transition: all 0.15s ease;
       user-select: none;
     }
@@ -1903,6 +1923,13 @@
       color: var(--indigo-light);
       font-family: ui-monospace, monospace;
       font-weight: 700;
+    }
+    .chip-divider {
+      width: 1px;
+      height: 14px;
+      background: var(--border-hairline);
+      margin: 0 2px;
+      flex-shrink: 0;
     }
 
     /* ==========================================================
@@ -2437,12 +2464,17 @@
   <div class="controls-bar">
     <nav class="category-tabs" id="category-tabs">
       <button class="cat-btn active" id="cat-btn-all" onclick="setCategoryFilter('all')">全部 (27)</button>
-      <button class="cat-btn" onclick="setCategoryFilter('capture')">📝 极速捕获 (6)</button>
-      <button class="cat-btn" onclick="setCategoryFilter('search')">🔍 搜索资产 (6)</button>
-      <button class="cat-btn" onclick="setCategoryFilter('learning')">🧩 生态直达 (8 · Alt+1~8)</button>
-      <button class="cat-btn" onclick="setCategoryFilter('commands')">🌐 格式心流 (5)</button>
-      <button class="cat-btn" onclick="setCategoryFilter('maintenance')">⚙️ 系统运维 (2)</button>
+      <button class="cat-btn" id="cat-btn-capture" onclick="setCategoryFilter('capture')">📝 极速捕获 (6)</button>
+      <button class="cat-btn" id="cat-btn-search" onclick="setCategoryFilter('search')">🔍 搜索资产 (6)</button>
+      <button class="cat-btn" id="cat-btn-learning" onclick="setCategoryFilter('learning')">🧩 生态直达 (8 · Alt+1~8)</button>
+      <button class="cat-btn" id="cat-btn-commands" onclick="setCategoryFilter('commands')">🌐 格式心流 (5)</button>
+      <button class="cat-btn" id="cat-btn-maintenance" onclick="setCategoryFilter('maintenance')">⚙️ 系统运维 (2)</button>
     </nav>
+    <div class="layout-switcher" title="切换视图排版模式">
+      <button type="button" class="layout-btn" id="layout-btn-grid" onclick="setLayoutMode('grid')" title="网格便当盒卡片视图">🎴 卡片</button>
+      <button type="button" class="layout-btn" id="layout-btn-list" onclick="setLayoutMode('list')" title="高信息密度列表视图">☰ 列表</button>
+      <button type="button" class="layout-btn" id="layout-btn-tiles" onclick="setLayoutMode('tiles')" title="微磁贴轻量视图">❖ 磁贴</button>
+    </div>
   </div>
 
 

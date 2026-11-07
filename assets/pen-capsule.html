@@ -474,6 +474,30 @@
             sBadge.style.display = "inline-flex";
             sBadge.title = "点击直接作为 FSRS 闪卡存入复习库";
             sBadge.onclick = (e) => { e.stopPropagation(); choose("2"); };
+          } else if (/\.pdf$/i.test(t) || /file:\/\/\/.*\.pdf$/i.test(t)) {
+            sBadge.innerText = "📑 本地PDF (点击透视研读)";
+            sBadge.className = "smart-badge badge-cite";
+            sBadge.style.display = "inline-flex";
+            sBadge.title = "检测到本地 PDF 文档，点击流式透视大纲书签与页码";
+            sBadge.onclick = (e) => {
+              e.stopPropagation();
+              const p = t.replace(/^file:\/\/\//i, "").replace(/\//g, "\\");
+              if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({ op: 'openPanelWithQuery', query: 'pdf:' + p }));
+              }
+            };
+          } else if (/\.(docx|xlsx|pptx)$/i.test(t) || /file:\/\/\/.*\.(docx|xlsx|pptx)$/i.test(t)) {
+            sBadge.innerText = "🏢 Office底稿 (点击结构透视)";
+            sBadge.className = "smart-badge badge-table";
+            sBadge.style.display = "inline-flex";
+            sBadge.title = "检测到本地 Office 底稿，点击进入大纲与批注透视";
+            sBadge.onclick = (e) => {
+              e.stopPropagation();
+              const p = t.replace(/^file:\/\/\//i, "").replace(/\//g, "\\");
+              if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({ op: 'openPanelWithQuery', query: 'office:' + p }));
+              }
+            };
           } else {
             sBadge.style.display = "none";
           }

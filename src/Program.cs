@@ -178,7 +178,7 @@ namespace XiaoLv.Desktop
 
             _capsuleWindow.OnOpenMasterRequested += (text) =>
             {
-                _bentoWindow.ShowPanel();
+                _bentoWindow.ShowPanel(text);
             };
 
             // 载入持久化配置

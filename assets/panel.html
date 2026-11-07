@@ -2553,6 +2553,8 @@
       <span class="intent-chip" onclick="insertPrefix('d:')" title="输入 d: 检索思源全库文档"><b>d:</b> 文档</span>
       <span class="intent-chip" onclick="insertPrefix('tag:')" title="输入 tag: 聚合检索全库标签与聚合笔记流"><b>#</b> 标签</span>
       <span class="intent-chip" onclick="insertPrefix('att:')" title="输入 att: 穿透检索全库 PDF 文献与附件资产秒查坞"><b>att:</b> 附件秒查</span>
+      <span class="intent-chip" onclick="insertPrefix('office:')" title="输入 office: 检索与透视本地 Word/Excel/PPT 大纲与批注"><b>🏢</b> Office</span>
+      <span class="intent-chip" onclick="insertPrefix('pdf:')" title="输入 pdf: 检索全库学术 PDF 并流式透视大纲书签与页码"><b>📑</b> PDF</span>
       <span class="intent-chip" onclick="insertPrefix('zotero:')" title="唤起本地 Zotero 学术文献管理库"><b>📖</b> Zotero</span>
       <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
@@ -6212,7 +6214,11 @@
     function insertPrefix(p) {
       const si = document.getElementById("search-input");
       if (!si) return;
-      si.value = p + (p.endsWith(":") ? "" : " ");
+      if (p.includes(":") && !p.endsWith(":")) {
+        si.value = p;
+      } else {
+        si.value = p + (p.endsWith(":") ? "" : " ");
+      }
       si.focus();
       si.setSelectionRange(si.value.length, si.value.length);
       updateSearchClearBtn();

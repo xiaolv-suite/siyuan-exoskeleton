@@ -167,6 +167,15 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
+                // 携带参数唤起总控面板
+                if (op.Equals("openPanelWithQuery", StringComparison.OrdinalIgnoreCase))
+                {
+                    string q = JsonHelper.GetString(msg, "query");
+                    Hide();
+                    if (OnOpenMasterRequested != null) OnOpenMasterRequested(q);
+                    return;
+                }
+
                 // 提取操作指令 (1~6 或 q)
                 string cmd = JsonHelper.GetString(msg, "cmd");
                 if (string.IsNullOrEmpty(cmd))

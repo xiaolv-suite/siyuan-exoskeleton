@@ -388,6 +388,15 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
+                // 1.9 桌面图钉悬浮参考便签 (Sticky Pin HUD)
+                if (op.Equals("pinStickyNote", StringComparison.OrdinalIgnoreCase))
+                {
+                    string t = JsonHelper.GetString(msg, "title");
+                    string c = JsonHelper.GetString(msg, "content");
+                    MiniInputWindow.ShowStickyNote(t, c);
+                    return;
+                }
+
                 // 2. 保存偏好设置
                 if (op.Equals("saveSettings", StringComparison.OrdinalIgnoreCase))
                 {
@@ -477,6 +486,43 @@ namespace XiaoLv.Desktop.UI
                                 if (_webView != null && _webView.CoreWebView2 != null)
                                 {
                                     _webView.CoreWebView2.ExecuteScriptAsync("if(window.onDocSearchResults) window.onDocSearchResults(" + JsonHelper.ToJson(new { code = 0, data = docsList }) + ");");
+                                }
+                            });
+                        }
+                        catch { }
+                    });
+                    return;
+                }
+
+                // 3.55 全库标签穿透秒搜 (tag: / #标签 语法)
+                if (op.Equals("searchTags", StringComparison.OrdinalIgnoreCase))
+                {
+                    string kw = JsonHelper.GetString(msg, "keyword");
+                    ThreadPool.QueueUserWorkItem(async s =>
+                    {
+                        try
+                        {
+                            string safeTag = (kw ?? "").Trim().TrimStart('#', '＃').Replace("'", "''");
+                            string sql;
+                            if (!string.IsNullOrEmpty(safeTag))
+                            {
+                                sql = "SELECT b.id, b.root_id, b.content, b.hpath, b.type, b.updated FROM blocks b " +
+                                      "WHERE (b.content LIKE '%#" + safeTag + "%' OR b.ial LIKE '%#" + safeTag + "%') " +
+                                      "ORDER BY b.updated DESC LIMIT 40";
+                            }
+                            else
+                            {
+                                sql = "SELECT b.id, b.root_id, b.content, b.hpath, b.type, b.updated FROM blocks b " +
+                                      "WHERE (b.content LIKE '%#%#' OR b.ial LIKE '%#%#') " +
+                                      "ORDER BY b.updated DESC LIMIT 30";
+                            }
+
+                            var rows = await SiYuanClient.SqlAsync(sql);
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onTagSearchResults) window.onTagSearchResults(" + JsonHelper.ToJson(new { code = 0, data = rows, tag = safeTag }) + ");");
                                 }
                             });
                         }

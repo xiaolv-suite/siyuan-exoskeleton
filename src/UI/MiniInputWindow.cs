@@ -836,5 +836,24 @@ namespace XiaoLv.Desktop.UI
             win.Activate();
             win.Focus();
         }
+
+        /// <summary>
+        /// 呼出极轻量桌面图钉便签 (Sticky Pin HUD)，供写代码/写报告时置顶悬浮对照参考
+        /// </summary>
+        public static void ShowStickyNote(string title, string content)
+        {
+            var win = new MiniInputWindow(null);
+            win.Title = "思源外骨骼 · 桌面图钉便签: " + title;
+            win.Width = 460;
+            win.Height = 250;
+            win.ExpandToScratchpadMode();
+            win._intentLabelText.Text = "图钉便签";
+            win._intentIconText.Text = "📌";
+            win._inputBox.Text = (!string.IsNullOrEmpty(title) ? ("### 📌 " + title + "\n\n") : "") + content;
+            win._statusBadgeText.Text = "📌 置顶参考中 (Esc关闭)";
+            win.Topmost = true;
+            win.Show();
+            win.Activate();
+        }
     }
 }

@@ -2524,6 +2524,7 @@
       <span class="chip-divider"></span>
       <span class="intent-chip" onclick="insertPrefix('b:')" title="输入 b: 毫秒级检索思源正文块并直接复制/回贴双链"><b>b:</b> 块级秒搜</span>
       <span class="intent-chip" onclick="insertPrefix('d:')" title="输入 d: 检索思源全库文档"><b>d:</b> 文档</span>
+      <span class="intent-chip" onclick="insertPrefix('tag:')" title="输入 tag: 聚合检索全库标签与聚合笔记流"><b>#</b> 标签</span>
       <span class="intent-chip" onclick="insertPrefix('att:')" title="输入 att: 穿透检索全库 PDF 文献与附件资产秒查坞"><b>att:</b> 附件秒查</span>
       <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
@@ -3754,9 +3755,20 @@
         banner.style.display = "flex";
         banner.innerHTML = `<div><span class="intent-tag">🧠 闪卡制作</span>识别到问答闪卡，回车自动注入 FSRS 复习库</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认入库</span>`;
       } else if (raw.startsWith("#") || raw.startsWith("＃")) {
-        activeIntentAction = "sys";
+        if (!raw.includes(" ") && raw.length > 1) {
+          activeIntentAction = null;
+          const tagKw = raw.substring(1).trim();
+          banner.style.display = "flex";
+          banner.innerHTML = `<div><span class="intent-tag">🏷️ 标签穿透</span>全库聚合检索标签 #${tagKw}#</div><span style="font-size: 10px; opacity: 0.8;">↵ 定位标签</span>`;
+        } else {
+          activeIntentAction = "sys";
+          banner.style.display = "flex";
+          banner.innerHTML = `<div><span class="intent-tag">📁 项目归流</span>识别到项目标签，回车归流至项目专页或日记</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认入库</span>`;
+        }
+      } else if (q.startsWith("tag:") || q.startsWith("tag：")) {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">📁 项目归流</span>识别到项目标签，回车归流至项目专页或日记</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认入库</span>`;
+        const tagKw = raw.replace(/^(tag:|tag：)/i, "").trim();
+        banner.innerHTML = `<div><span class="intent-tag">🏷️ 标签穿透</span>全库聚合检索标签 #${tagKw}#</div><span style="font-size: 10px; opacity: 0.8;">↵ 定位标签</span>`;
       } else if (q.startsWith("sql:") || q.startsWith("sql：")) {
         activeIntentAction = "syf";
         banner.style.display = "flex";
@@ -3796,6 +3808,15 @@
         filteredItems = [...PANEL_ITEMS];
         selectedIndex = 0;
         renderItems();
+        return;
+      }
+
+      // tag: / #标签 模式：全库标签穿透检索与聚合流
+      if (q.startsWith("tag:") || q.startsWith("tag：") || (raw.startsWith("#") && !raw.includes(" ") && raw.length > 1)) {
+        const tagKw = raw.replace(/^(tag:|tag：|#|＃)/i, "").trim();
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage({ op: 'searchTags', keyword: tagKw });
+        }
         return;
       }
 

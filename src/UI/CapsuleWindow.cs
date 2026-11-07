@@ -31,7 +31,7 @@ namespace XiaoLv.Desktop.UI
         public CapsuleWindow()
         {
             Title = "思源外骨骼 · 随身划笔微胶囊";
-            Width = 410;
+            Width = 440;
             Height = 188;
             WindowStyle = WindowStyle.None;
             AllowsTransparency = true;

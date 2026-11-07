@@ -29,6 +29,8 @@ namespace XiaoLv.Desktop.UI
         private readonly System.Collections.Generic.List<string> _suggestions = new System.Collections.Generic.List<string>();
         private int _activeSuggestionIndex = 0;
         private static string _savedDraft = "";
+        private static readonly System.Collections.Generic.List<string> _recentInputHistory = new System.Collections.Generic.List<string>();
+        private int _historyIndex = -1;
         private bool _isStickyMode = false;
         private string _stickyBlockId = "";
 
@@ -275,7 +277,14 @@ namespace XiaoLv.Desktop.UI
                 TriggerAiRefine("takeaways");
             });
 
+            // 快捷填入并清洗剪贴板文本按钮 (📋 贴板)
+            var clipBtn = CreateHeaderActionButton("📋 贴板", "快速填入并清洗剪贴板文本 (快捷键: Ctrl+Shift+V)", () =>
+            {
+                PasteAndCleanClipboard();
+            });
+
             headerActionStack.Children.Add(timeBtn);
+            headerActionStack.Children.Add(clipBtn);
             headerActionStack.Children.Add(todoBtn);
             headerActionStack.Children.Add(voiceBtn);
             headerActionStack.Children.Add(aiBtn);
@@ -436,6 +445,49 @@ namespace XiaoLv.Desktop.UI
                     TriggerAiRefine("takeaways");
                     e.Handled = true;
                 }
+                else if (e.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+                {
+                    PasteAndCleanClipboard();
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Up && _suggestions.Count == 0 && (!_isScratchpadMode || _inputBox.CaretIndex == 0))
+                {
+                    lock (_recentInputHistory)
+                    {
+                        if (_recentInputHistory.Count > 0)
+                        {
+                            if (_historyIndex + 1 < _recentInputHistory.Count)
+                            {
+                                _historyIndex++;
+                                _inputBox.Text = _recentInputHistory[_historyIndex];
+                                _inputBox.CaretIndex = _inputBox.Text.Length;
+                                _statusBadgeText.Text = "📜 历史 (" + (_historyIndex + 1) + "/" + _recentInputHistory.Count + ")";
+                            }
+                            e.Handled = true;
+                        }
+                    }
+                }
+                else if (e.Key == Key.Down && _suggestions.Count == 0 && (!_isScratchpadMode || _inputBox.CaretIndex == _inputBox.Text.Length))
+                {
+                    lock (_recentInputHistory)
+                    {
+                        if (_historyIndex > 0)
+                        {
+                            _historyIndex--;
+                            _inputBox.Text = _recentInputHistory[_historyIndex];
+                            _inputBox.CaretIndex = _inputBox.Text.Length;
+                            _statusBadgeText.Text = "📜 历史 (" + (_historyIndex + 1) + "/" + _recentInputHistory.Count + ")";
+                            e.Handled = true;
+                        }
+                        else if (_historyIndex == 0)
+                        {
+                            _historyIndex = -1;
+                            _inputBox.Text = "";
+                            _statusBadgeText.Text = "↵ 入库";
+                            e.Handled = true;
+                        }
+                    }
+                }
                 else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && (e.Key == Key.OemPlus || e.Key == Key.Add))
                 {
                     if (_inputBox.FontSize < 28) _inputBox.FontSize += 1.5;
@@ -576,23 +628,58 @@ namespace XiaoLv.Desktop.UI
             string txt = _inputBox.Text.Trim();
             _savedDraft = "";
             Close();
-            if (!string.IsNullOrEmpty(txt) && OnTextSubmitted != null)
+            if (!string.IsNullOrEmpty(txt))
             {
-                // 1. 简码与宏占位符自动展开 (如 :date, :time, :now, :meeting, :thx)
-                if (txt.StartsWith(":") || txt.StartsWith("：") || txt.Contains("{{"))
+                lock (_recentInputHistory)
                 {
-                    txt = SnippetExpansionEngine.Expand(txt);
+                    _recentInputHistory.Remove(txt);
+                    _recentInputHistory.Insert(0, txt);
+                    if (_recentInputHistory.Count > 30) _recentInputHistory.RemoveAt(30);
                 }
 
-                // 2. 智能口语去噪与自愈检测：若包含口头语或口述标点指令，自动完成去噪净化
-                if (txt.Contains("逗号") || txt.Contains("句号") || txt.Contains("问号") ||
-                    txt.Contains("感叹号") || txt.Contains("换行") || txt.Contains("呃") ||
-                    txt.Contains("那个就是说") || txt.Contains("怎么说呢"))
+                if (OnTextSubmitted != null)
                 {
-                    txt = VoiceCaptureManager.CleanVoiceSpeech(txt);
+                    // 1. 简码与宏占位符自动展开 (如 :date, :time, :now, :meeting, :thx)
+                    if (txt.StartsWith(":") || txt.StartsWith("：") || txt.Contains("{{"))
+                    {
+                        txt = SnippetExpansionEngine.Expand(txt);
+                    }
+
+                    // 2. 智能口语去噪与自愈检测：若包含口头语或口述标点指令，自动完成去噪净化
+                    if (txt.Contains("逗号") || txt.Contains("句号") || txt.Contains("问号") ||
+                        txt.Contains("感叹号") || txt.Contains("换行") || txt.Contains("呃") ||
+                        txt.Contains("那个就是说") || txt.Contains("怎么说呢"))
+                    {
+                        txt = VoiceCaptureManager.CleanVoiceSpeech(txt);
+                    }
+                    OnTextSubmitted(txt);
                 }
-                OnTextSubmitted(txt);
             }
+        }
+
+        private void PasteAndCleanClipboard()
+        {
+            try
+            {
+                string clip = NativeClipboard.GetTextSafe();
+                if (!string.IsNullOrEmpty(clip))
+                {
+                    string cleanedClip = TextCleaner.CleanAll(clip);
+                    if (!string.IsNullOrEmpty(_inputBox.SelectedText))
+                    {
+                        _inputBox.SelectedText = cleanedClip;
+                    }
+                    else
+                    {
+                        int c = _inputBox.CaretIndex;
+                        _inputBox.Text = _inputBox.Text.Insert(c, cleanedClip);
+                        _inputBox.CaretIndex = c + cleanedClip.Length;
+                    }
+                    SoundPlayerHelper.PlayFeedback();
+                    _statusBadgeText.Text = "📋 已填入剪贴板";
+                }
+            }
+            catch { }
         }
 
         private void StampCurrentTime(bool includeSeconds = false)

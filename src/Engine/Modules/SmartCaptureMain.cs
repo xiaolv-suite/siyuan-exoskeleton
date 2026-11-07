@@ -212,6 +212,7 @@ public static class SmartCaptureMain
             !rawTrim.StartsWith("$$") &&
             !(rawTrim.StartsWith("|") && rawTrim.Contains("\n|")) &&
             !rawTrim.StartsWith("---") &&
+            !Regex.IsMatch(rawTrim, @"^#{1,6}\s") &&
             string.IsNullOrEmpty(dynamicHeading) &&
             string.IsNullOrEmpty(explicitTargetDoc))
         {
@@ -224,7 +225,8 @@ public static class SmartCaptureMain
                     var lt = l.TrimStart();
                     if (lt.StartsWith("!") || lt.StartsWith("！") || lt.StartsWith("?") || lt.StartsWith("？") ||
                         lt.StartsWith("¥") || lt.StartsWith("￥") || lt.StartsWith("~") || lt.StartsWith("+") ||
-                        lt.StartsWith("@") || lt.StartsWith("＠") || lt.StartsWith("#") || lt.StartsWith("＃"))
+                        lt.StartsWith("@") || lt.StartsWith("＠") ||
+                        ((lt.StartsWith("#") || lt.StartsWith("＃")) && !Regex.IsMatch(lt, @"^#{1,6}\s")))
                     {
                         hasIntent = true;
                         break;

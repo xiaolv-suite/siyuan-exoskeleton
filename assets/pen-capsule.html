@@ -160,29 +160,32 @@
       box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.12);
     }
 
-    /* 6 键微拟物排版 */
+    /* 8 键微拟物排版 (4 列 x 2 行) */
     .key-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
       margin-bottom: 6px;
     }
 
     .chiclet-btn {
       display: flex;
       align-items: center;
-      gap: 7px;
-      padding: 8px 10px;
+      gap: 5px;
+      padding: 7px 6px;
       border-radius: 8px;
       background: var(--bg-card);
       border: 1px solid var(--border-card);
       border-bottom: 2.5px solid var(--border-card-bottom);
       color: var(--text-main);
       cursor: pointer;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 750;
       transition: all 0.1s cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      white-space: nowrap;
+      overflow: hidden;
+      justify-content: center;
     }
     .chiclet-btn:hover {
       background: var(--bg-card-hover);
@@ -199,7 +202,9 @@
     .btn-3:hover { border-color: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }
     .btn-4:hover { border-color: #0ea5e9; box-shadow: 0 0 10px rgba(14, 165, 233, 0.3); }
     .btn-5:hover { border-color: #6366f1; box-shadow: 0 0 10px rgba(99, 102, 241, 0.3); }
-    .btn-6:hover { border-color: #f43f5e; box-shadow: 0 0 10px rgba(244, 63, 94, 0.3); }
+    .btn-6:hover { border-color: #06b6d4; box-shadow: 0 0 10px rgba(6, 182, 212, 0.3); }
+    .btn-7:hover { border-color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.3); }
+    .btn-8:hover { border-color: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }
 
     .kbd-cap {
       background: var(--kbd-bg);
@@ -304,14 +309,22 @@
       <span class="kbd-cap" style="color: #06b6d4;">6</span>
       <span>🔗 贴双链</span>
     </div>
+    <div class="chiclet-btn btn-7" onclick="choose('7', event)">
+      <span class="kbd-cap" style="color: #38bdf8;">7</span>
+      <span>🤖 AI提炼</span>
+    </div>
+    <div class="chiclet-btn btn-8" onclick="choose('8', event)">
+      <span class="kbd-cap" style="color: #f59e0b;">8</span>
+      <span>📌 钉便签</span>
+    </div>
   </div>
 
   <!-- 底栏提示 -->
   <div class="capsule-footer">
     <div class="footer-left">
-      <span>敲击 <b style="color: var(--text-main);">1 ~ 6</b> 盲打分发</span>
+      <span>敲击 <b style="color: var(--text-main);">1 ~ 8</b> 盲打分发</span>
       <span>•</span>
-      <span><b style="color: var(--text-main);">Q</b> 携文进总控</span>
+      <span><b style="color: var(--text-main);">Q</b> 进总控</span>
       <span>•</span>
       <span><b style="color: var(--text-main);">↵</b> 入日记</span>
     </div>
@@ -528,7 +541,7 @@
         pasteRadarRef();
         return;
       }
-      if (['1', '2', '3', '4', '5', '6'].includes(e.key) && (!isInputFocused || e.altKey || e.ctrlKey)) {
+      if (['1', '2', '3', '4', '5', '6', '7', '8'].includes(e.key) && (!isInputFocused || e.altKey || e.ctrlKey)) {
         e.preventDefault();
         let mod = e.shiftKey ? ":shift" : (e.ctrlKey ? ":ctrl" : "");
         choose(e.key + mod);

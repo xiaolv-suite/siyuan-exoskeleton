@@ -49,11 +49,11 @@ async function pollSql(stmt, maxTries = 10, intervalMs = 300) {
 function stopProcess(name) {
   try {
     const exeName = name.endsWith(".exe") ? name : `${name}.exe`;
-    const killCmd = `Get-Process | Where-Object { $_.Path -and ($_.Path.Contains('bin\\Release') -or $_.Path.Contains('XiaoLvDesktop') -or $_.ProcessName -like '*外骨骼*' -or $_.ProcessName -like '*思源*') } | Stop-Process -Force -ErrorAction SilentlyContinue`;
+    const killCmd = `Get-Process -Name '*外骨骼*','*XiaoLv*','*思源小驴*' -ErrorAction SilentlyContinue | Stop-Process -Force; Get-Process | Where-Object { try { $_.Path -match 'bin\\\\Release|XiaoLvDesktop' } catch { $false } } | Stop-Process -Force -ErrorAction SilentlyContinue`;
     execSync(`powershell.exe -NoProfile -Command "${killCmd}"`, { stdio: "ignore" });
-    execSync(`chcp 65001 > nul && taskkill /F /T /IM "${exeName}"`, { stdio: "ignore" });
+    try { execSync(`chcp 65001 > nul && taskkill /F /T /IM "${exeName}"`, { stdio: "ignore" }); } catch {}
     for (let i = 0; i < 25; i++) {
-      const count = execSync(`powershell.exe -NoProfile -Command "@(Get-Process | Where-Object { $_.Path -and ($_.Path.Contains('bin\\Release') -or $_.Path.Contains('XiaoLvDesktop')) }).Count"`).toString().trim();
+      const count = execSync(`powershell.exe -NoProfile -Command "@(Get-Process -Name '*外骨骼*','*XiaoLv*' -ErrorAction SilentlyContinue).Count"`).toString().trim();
       if (!count || count === "0") break;
       execSync(`powershell.exe -NoProfile -Command "Start-Sleep -Milliseconds 150"`, { stdio: "ignore" });
     }

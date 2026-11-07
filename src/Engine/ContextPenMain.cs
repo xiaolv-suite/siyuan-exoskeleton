@@ -365,6 +365,41 @@ public static class ContextPenMain
             SafeContext.Set(context, "通知反馈", ok ? "✓ [加批注] 审阅批注卡已存入今日日记！" : "❌ 写入失败");
             return;
         }
+
+        // 分支 7: AI 前置提炼 3 要点入日记
+        if (op == "7" || op == "ai")
+        {
+            string prompt = XiaoLv.Desktop.Core.AiRefiner.PromptKeyPoints;
+            var aiRes = XiaoLv.Desktop.Core.AiRefiner.Refine(prompt, text);
+            string finalMd;
+            if (aiRes != null && aiRes.Success && !string.IsNullOrEmpty(aiRes.Content))
+            {
+                finalMd = "### 🤖 AI 提炼洞见 (" + timeStr + ")\n> 来源: " + windowTitle + "\n\n" + aiRes.Content + "\n\n{: custom-type=\"ai-summary\" }";
+            }
+            else
+            {
+                finalMd = "- " + timeStr + " 💡 " + text;
+            }
+            var ok = AppendBlock(syUrl, token, docId, finalMd);
+            if (ok) XiaoLv.Desktop.Core.SoundPlayerHelper.PlayFeedback();
+            SafeContext.Set(context, "是否成功", ok);
+            SafeContext.Set(context, "需要通知", true);
+            SafeContext.Set(context, "通知反馈", ok ? "✓ [AI提炼] 核心要点已提炼并写入今日日记！" : "❌ 写入失败");
+            return;
+        }
+
+        // 分支 8: 钉在桌面浮动便签
+        if (op == "8" || op == "pin" || op == "sticky")
+        {
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                XiaoLv.Desktop.UI.MiniInputWindow.ShowStickyNote("划选便签: " + windowTitle, text);
+            });
+            SafeContext.Set(context, "是否成功", true);
+            SafeContext.Set(context, "需要通知", true);
+            SafeContext.Set(context, "通知反馈", "📌 已将划选内容钉在桌面！");
+            return;
+        }
     }
 
     private static string BuildCapsuleHtml(string preview)

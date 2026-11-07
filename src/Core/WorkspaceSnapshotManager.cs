@@ -64,7 +64,7 @@ namespace XiaoLv.Desktop.Core
 
         private static string GetStoragePath()
         {
-            string appDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XiaoLvDesktop");
+            string appDir = EmbeddedResourceManager.AppDataDir;
             if (!Directory.Exists(appDir)) Directory.CreateDirectory(appDir);
             return Path.Combine(appDir, "workspaces.json");
         }
@@ -247,7 +247,7 @@ namespace XiaoLv.Desktop.Core
                     if (removed > 0)
                     {
                         string json = JsonHelper.ToJson(current);
-                        File.WriteAllText(GetStoragePath(), json, Encoding.UTF8);
+                        File.WriteAllText(GetStoragePath(), json, new UTF8Encoding(false));
                         return true;
                     }
                 }

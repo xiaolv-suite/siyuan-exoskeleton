@@ -16,7 +16,7 @@ namespace XiaoLv.Desktop.Core
             {
                 if (_initTask == null)
                 {
-                    var userDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XiaoLvDesktop", "WebView2");
+                    var userDataFolder = Path.Combine(EmbeddedResourceManager.AppDataDir, "WebView2");
                     Directory.CreateDirectory(userDataFolder);
 
                     // 极致轻量化 Chromium 启动参数调优：

@@ -13,6 +13,19 @@ namespace XiaoLv.Desktop.Core
 
         private static string _appDataDir;
         private static string _assetsDir;
+        private static bool? _isPortableMode;
+
+        public static bool IsPortableMode
+        {
+            get
+            {
+                if (!_isPortableMode.HasValue)
+                {
+                    var dir = AppDataDir;
+                }
+                return _isPortableMode ?? false;
+            }
+        }
 
         public static string AppDataDir
         {
@@ -20,10 +33,75 @@ namespace XiaoLv.Desktop.Core
             {
                 if (_appDataDir == null)
                 {
-                    _appDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XiaoLvDesktop");
-                    if (!Directory.Exists(_appDataDir)) Directory.CreateDirectory(_appDataDir);
+                    _appDataDir = ResolveOptimalDataDir();
                 }
                 return _appDataDir;
+            }
+        }
+
+        private static string ResolveOptimalDataDir()
+        {
+            try
+            {
+                // 0. 隔离靶场优先：若环境变量指定 SIYUAN_URL，为保持 E2E 隔离靶场一致性，使用 AppData 模式
+                if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SIYUAN_URL")))
+                {
+                    _isPortableMode = false;
+                    var defaultDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XiaoLvDesktop");
+                    if (!Directory.Exists(defaultDir)) Directory.CreateDirectory(defaultDir);
+                    return defaultDir;
+                }
+
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+
+                // 1. 检查是否存在自定义重定向文件 data_path.txt
+                var redirectFile = Path.Combine(baseDir, "data_path.txt");
+                if (File.Exists(redirectFile))
+                {
+                    string customPath = File.ReadAllText(redirectFile, System.Text.Encoding.UTF8).Trim();
+                    if (!string.IsNullOrEmpty(customPath))
+                    {
+                        if (!Directory.Exists(customPath)) Directory.CreateDirectory(customPath);
+                        _isPortableMode = true;
+                        return customPath;
+                    }
+                }
+
+                // 2. 检查程序同级是否存在 data 文件夹或 portable.txt 标记 (便携模式优先)
+                var localDataDir = Path.Combine(baseDir, "data");
+                var portableFlag = Path.Combine(baseDir, "portable.txt");
+                bool isPortableExplicit = Directory.Exists(localDataDir) || File.Exists(portableFlag);
+
+                // 3. 若位于非 C 盘（如 D 盘），且对当前目录具有完全写权限，推荐并优先开启同级便携模式
+                bool isNonCDrive = !baseDir.StartsWith("C:\\", StringComparison.OrdinalIgnoreCase);
+                if (isPortableExplicit || (isNonCDrive && HasWritePermission(baseDir)))
+                {
+                    if (!Directory.Exists(localDataDir)) Directory.CreateDirectory(localDataDir);
+                    _isPortableMode = true;
+                    return localDataDir;
+                }
+            }
+            catch { }
+
+            // 4. 标准系统 AppData 模式（C 盘受限环境或普通安装环境）
+            _isPortableMode = false;
+            var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XiaoLvDesktop");
+            if (!Directory.Exists(appData)) Directory.CreateDirectory(appData);
+            return appData;
+        }
+
+        private static bool HasWritePermission(string dirPath)
+        {
+            try
+            {
+                string testFile = Path.Combine(dirPath, ".test_write_" + Guid.NewGuid().ToString("N"));
+                File.WriteAllText(testFile, "test");
+                File.Delete(testFile);
+                return true;
+            }
+            catch
+            {
+                return false;
             }
         }
 

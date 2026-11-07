@@ -2632,6 +2632,16 @@
             <button class="pref-btn" onclick="triggerTrimMemory()" style="color: var(--indigo-light); border-color: rgba(99,102,241,0.35);">⚡ 深度压缩常驻内存</button>
             <button class="pref-btn" onclick="cleanOrphanTestKernels()" style="background: rgba(244, 63, 94, 0.12); border-color: rgba(244, 63, 94, 0.35); color: var(--rose-agent);">🧹 清扫遗留靶场内核</button>
           </div>
+          <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 12px; background: rgba(0,0,0,0.22); border-radius: 6px; border: 1px solid var(--border-hairline);">
+            <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+              <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                <span>📁 数据存储模式：</span>
+                <span id="pref-storage-mode" style="font-size: 10.5px; font-weight: 700; color: var(--emerald-mint);">便携模式 (D盘优先)</span>
+              </span>
+              <span id="pref-storage-path" style="font-size: 10.5px; color: var(--text-muted); font-family: ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">加载中...</span>
+            </div>
+            <button class="pref-btn" onclick="openDataStorageDir()" style="padding: 3px 10px; font-size: 11px; flex-shrink: 0; color: var(--cyber-sky); border-color: var(--cyber-sky);">📂 浏览数据目录</button>
+          </div>
         </div>
 
         <!-- Section 1.5: Desktop Native Core Settings -->
@@ -3410,6 +3420,8 @@
         }
       }
 
+      updateStorageUI();
+
       const curTheme = document.documentElement.getAttribute("data-theme") || "dark";
       document.getElementById("pref-theme-dark")?.classList.toggle("active", curTheme === "dark");
       document.getElementById("pref-theme-light")?.classList.toggle("active", curTheme === "light");
@@ -3418,6 +3430,30 @@
       document.getElementById("pref-layout-grid")?.classList.toggle("active", curLayout === "grid");
       document.getElementById("pref-layout-list")?.classList.toggle("active", curLayout === "list");
       document.getElementById("pref-layout-tile")?.classList.toggle("active", curLayout === "tiles");
+    }
+
+    function openDataStorageDir() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'openDataDir' }));
+      } else {
+        showToast("已请求打开数据存储目录");
+      }
+    }
+
+    function updateStorageUI() {
+      const info = window.__STORAGE_INFO__;
+      const modeEl = document.getElementById("pref-storage-mode");
+      const pathEl = document.getElementById("pref-storage-path");
+      if (info) {
+        if (modeEl) {
+          modeEl.textContent = info.isPortable ? "🟢 绿色便携模式 (零污染 C 盘)" : "🔵 系统应用目录模式 (AppData)";
+          modeEl.style.color = info.isPortable ? "var(--emerald-mint)" : "var(--cyber-sky)";
+        }
+        if (pathEl) {
+          pathEl.textContent = info.dataDir || "";
+          pathEl.title = info.dataDir || "";
+        }
+      }
     }
 
     function setPanelTheme(t) {

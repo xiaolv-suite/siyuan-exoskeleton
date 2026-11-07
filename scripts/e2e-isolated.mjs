@@ -50,6 +50,11 @@ function stopProcess(name) {
   try {
     const exeName = name.endsWith(".exe") ? name : `${name}.exe`;
     execSync(`chcp 65001 > nul && taskkill /F /T /IM "${exeName}"`, { stdio: "ignore" });
+    for (let i = 0; i < 25; i++) {
+      const count = execSync(`powershell.exe -NoProfile -Command "@(Get-Process -Name '${name}*' -ErrorAction SilentlyContinue).Count"`).toString().trim();
+      if (!count || count === "0") break;
+      execSync(`powershell.exe -NoProfile -Command "Start-Sleep -Milliseconds 150"`, { stdio: "ignore" });
+    }
     const sweepScript = `
       Add-Type -TypeDefinition @'
       using System; using System.Runtime.InteropServices;

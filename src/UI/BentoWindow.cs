@@ -376,6 +376,18 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
+                // 1.8 打开本地数据存储目录
+                if (op.Equals("openDataDir", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        var dir = EmbeddedResourceManager.AppDataDir;
+                        Process.Start("explorer.exe", "\"" + dir + "\"");
+                    }
+                    catch { }
+                    return;
+                }
+
                 // 2. 保存偏好设置
                 if (op.Equals("saveSettings", StringComparison.OrdinalIgnoreCase))
                 {
@@ -1690,7 +1702,8 @@ namespace XiaoLv.Desktop.UI
                         jsCode = File.ReadAllText(statePath, Encoding.UTF8);
                     }
                     var s = AppSettings.Instance;
-                    var settingsJs = "window.__DESKTOP_SETTINGS__ = " + JsonHelper.ToJson(s) + ";";
+                    var storageInfo = new { dataDir = EmbeddedResourceManager.AppDataDir, isPortable = EmbeddedResourceManager.IsPortableMode };
+                    var settingsJs = "window.__DESKTOP_SETTINGS__ = " + JsonHelper.ToJson(s) + ";\nwindow.__STORAGE_INFO__ = " + JsonHelper.ToJson(storageInfo) + ";";
                     var script = jsCode + "\n" + settingsJs + "\nif(window.initLiveTelemetry) window.initLiveTelemetry();";
 
                     Dispatcher.Invoke(() =>

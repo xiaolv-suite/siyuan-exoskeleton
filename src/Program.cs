@@ -625,6 +625,7 @@ namespace XiaoLv.Desktop
                 {
                     string finalCmd = "SYS";
                     if (action != null && action.Contains("card")) text = "?" + text;
+                    else if (action != null && action.Contains("todo")) text = "!" + text;
                     var ctx = new DesktopStepContext(finalCmd, text);
                     ctx.OnNotificationRequested += (t, m) => SafeNotify(t, m);
                     SmartCaptureMain.Exec(ctx);

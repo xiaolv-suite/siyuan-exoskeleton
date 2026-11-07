@@ -26,6 +26,7 @@ namespace XiaoLv.Desktop.Core
   <actions>
     <input id=""quickNoteText"" type=""text"" placeHolderContent=""例如: 明天下午2点和老张开会 !待办..."" />
     <action content=""📝 入日记"" arguments=""action=diary"" activationType=""background"" />
+    <action content=""📋 派待办"" arguments=""action=todo"" activationType=""background"" />
     <action content=""🧠 制闪卡"" arguments=""action=card"" activationType=""background"" />
   </actions>
 </toast>";

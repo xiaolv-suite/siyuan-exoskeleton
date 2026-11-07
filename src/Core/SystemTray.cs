@@ -99,6 +99,12 @@ namespace XiaoLv.Desktop.Core
                 ToolDetector.OpenInSearchTool("", pref);
             };
 
+            var itemZotero = new ToolStripMenuItem("📖 调动学术文献库 (Zotero)");
+            itemZotero.Click += (s, e) =>
+            {
+                ToolDetector.OpenInZotero("");
+            };
+
             var itemSync = new ToolStripMenuItem("☁️ 立即触发云同步 (安全增量数据)");
             itemSync.Click += (s, e) => { if (OnManualSyncClicked != null) OnManualSyncClicked(); };
 
@@ -203,6 +209,7 @@ namespace XiaoLv.Desktop.Core
             _menu.Items.Add(itemFsrs);
             _menu.Items.Add(itemWebClip);
             _menu.Items.Add(itemSearchTool);
+            _menu.Items.Add(itemZotero);
             _menu.Items.Add(itemSync);
             _menu.Items.Add(itemTrim);
             _menu.Items.Add(itemToast);

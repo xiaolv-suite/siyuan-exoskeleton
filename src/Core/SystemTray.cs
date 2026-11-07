@@ -212,6 +212,7 @@ namespace XiaoLv.Desktop.Core
             _menu.Items.Add(sep1);
             _menu.Items.Add(itemProbe);
             _menu.Items.Add(itemCleanOrphans);
+            _menu.Items.Add(itemDataDir);
             _menu.Items.Add(itemAutoStart);
             _menu.Items.Add(itemUpdate);
             _menu.Items.Add(sep2);

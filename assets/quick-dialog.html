@@ -803,8 +803,9 @@
         }
       }
 
-      // Render Theme
-      document.documentElement.setAttribute("data-theme", state.theme || "light");
+      // Render Theme (优先继承主面板暗黑/浅色主题)
+      const currentPanelTheme = localStorage.getItem("omni_panel_theme") || "dark";
+      document.documentElement.setAttribute("data-theme", state.theme || currentPanelTheme);
 
       // Render Header
       document.getElementById("dialog-title").textContent = state.title || "思源小驴";

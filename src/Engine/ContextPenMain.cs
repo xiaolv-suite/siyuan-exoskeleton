@@ -150,16 +150,15 @@ public static class ContextPenMain
             // 1.1 Lifelog 语法智能多态直投 (¥记账, ~专注, +习惯)
             if (text.StartsWith("¥") || text.StartsWith("￥") || text.StartsWith("~") || text.StartsWith("+"))
             {
-                string category, tags;
-                string parsed = XiaoLv.Desktop.Core.LifelogParser.ParseLine(text, out category, out tags);
-                if (!string.IsNullOrEmpty(parsed))
+                var entry = XiaoLv.Desktop.Core.LifelogParser.Parse(text);
+                if (entry != null && entry.Category != XiaoLv.Desktop.Core.LifelogCategory.Note)
                 {
-                    string lifelogMd = "- " + parsed;
+                    string lifelogMd = entry.FormattedMarkdown + (!string.IsNullOrEmpty(entry.IalAttributes) ? ("\n" + entry.IalAttributes) : "");
                     var okLife = AppendBlock(syUrl, token, targetDocId, lifelogMd);
                     if (okLife) XiaoLv.Desktop.Core.SoundPlayerHelper.PlayFeedback();
                     SafeContext.Set(context, "是否成功", okLife);
                     SafeContext.Set(context, "需要通知", true);
-                    SafeContext.Set(context, "通知反馈", okLife ? ("✓ [Lifelog] " + category + " 已记入今日日记！") : "❌ 写入失败");
+                    SafeContext.Set(context, "通知反馈", okLife ? ("✓ [Lifelog] " + entry.CategoryLabel + " 已记入今日日记！") : "❌ 写入失败");
                     return;
                 }
             }

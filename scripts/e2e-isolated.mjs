@@ -683,6 +683,34 @@ async function main() {
   const hkCount = parseInt(hkRes || "0", 10);
   logStep("Step 7.33: 全局快捷键冲突深度诊断与智能自愈引擎 (HotkeyConflictManager) 断言", hkCount === 6, `体检完成 · 覆盖核心动作: ${hkCount} 项`);
 
+  // Step 7.34: Test Academic DOI/arXiv, LaTeX Math, and Table Conversion (ClipboardWatcher)
+  const academicScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $cw = $asm.GetType('XiaoLv.Desktop.Core.ClipboardWatcher');
+    
+    # 1. DOI 探测
+    $mDoi = $cw.GetMethod('TryDetectAcademicCitation', [System.Reflection.BindingFlags]'Public,Static');
+    $argsDoi = [object[]]@('10.1038/s41586-020-2649-2', $null, $null, $null);
+    $okDoi = $mDoi.Invoke($null, $argsDoi);
+    
+    # 2. LaTeX 数学公式探测
+    $mMath = $cw.GetMethod('TryDetectLatexMath', [System.Reflection.BindingFlags]'Public,Static');
+    $argsMath = [object[]]@('\\frac{1}{2}\\int_0^\\infty e^{-x^2}dx', $null);
+    $okMath = $mMath.Invoke($null, $argsMath);
+    
+    # 3. 多空格对齐表格转换
+    $mTab = $cw.GetMethod('TryConvertTableToMarkdown', [System.Reflection.BindingFlags]'Public,Static');
+    $sampleTab = 'Name  Age  Role' + [Environment]::NewLine + 'Alice  25  Engineer' + [Environment]::NewLine + 'Bob  30  Designer';
+    $argsTab = [object[]]@($sampleTab, $null, 0, 0);
+    $okTab = $mTab.Invoke($null, $argsTab);
+    
+    Write-Output ($okDoi.ToString() + '|' + $okMath.ToString() + '|' + $okTab.ToString());
+  `;
+  const acadRes = runPs(academicScript);
+  const isAcadOk = acadRes.includes("True|True|True");
+  logStep("Step 7.34: 学术文献引用 (DOI/arXiv)、LaTeX 数学公式与数据表格嗅探断言", isAcadOk, `嗅探断言: ${acadRes}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

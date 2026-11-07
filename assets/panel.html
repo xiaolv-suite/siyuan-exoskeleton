@@ -2528,7 +2528,7 @@
       <span class="intent-chip" onclick="insertPrefix('att:')" title="输入 att: 穿透检索全库 PDF 文献与附件资产秒查坞"><b>att:</b> 附件秒查</span>
       <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
-      <span class="intent-chip" onclick="insertPrefix('c:')" title="输入 c: 实时查看并调用最近 30 条清洗剪贴板；支持 c:url/c:code/c:table/c:img 分类筛选"><b>c:</b> 剪贴板</span>
+      <span class="intent-chip" onclick="insertPrefix('c:')" title="输入 c: 实时查看并调用最近 30 条清洗剪贴板；支持 c:url/c:code/c:table/c:cite/c:math/c:img 分类筛选"><b>c:</b> 剪贴板</span>
       <span class="chip-divider"></span>
       <span class="intent-chip" onclick="executeItem({ id: 'syg', title: '极速网页剪藏卡' })" title="输入 g: 或按 Alt+Shift+G 免扩展极速剪藏网页"><b>g:</b> 网页剪藏</span>
       <span class="intent-chip" onclick="executeItem({ id: 'syfsrs', title: 'FSRS 闪卡微舱' })" title="无需切入思源，0ms 居中弹出微卡片，空格翻答案，1~4评级秒刷"><b>🧠</b> 刷闪卡</span>
@@ -2907,7 +2907,7 @@
             <tr><td><span class="hint-kbd">g: 批注</span></td><td><b>网页批注剪藏</b>：保存“网页元数据 + 选区正文 + 个人洞见”</td></tr>
             <tr><td><span class="hint-kbd">b: 关键词</span></td><td><b>块级毫秒级秒搜</b>：全库正文/代码/标题，回车定位</td></tr>
             <tr><td><span class="hint-kbd">d: 关键词</span></td><td><b>文档标题秒搜</b>：快速匹配思源文档并一键打开</td></tr>
-            <tr><td><span class="hint-kbd">c: / clip:</span></td><td><b>剪贴板历史管道</b>：30条容量，支持 c:url, c:code, c:table, c:img 筛选</td></tr>
+            <tr><td><span class="hint-kbd">c: / clip:</span></td><td><b>剪贴板历史管道</b>：30条容量，支持 c:url, c:code, c:table, c:cite, c:math, c:img 筛选</td></tr>
             <tr><td><span class="hint-kbd">att: 附件名</span></td><td><b>全库附件秒查坞</b>：PDF/表格/图片秒定，联动 Listary / Everything</td></tr>
             <tr><td><span class="hint-kbd">ev: / listary:</span></td><td><b>全盘文件秒查</b>：直通本地检索工具 (Listary / Everything)</td></tr>
             <tr><td><span class="hint-kbd">av: 关键词</span></td><td><b>属性视图数据库</b>：检视全库 AV 表格定义与字段抽屉</td></tr>
@@ -6471,12 +6471,14 @@
         else if (sType === "code") { iconType = "terminal"; iconColor = "var(--cyber-purple)"; badgeName = "代码"; }
         else if (sType === "image") { iconType = "camera"; iconColor = "var(--tech-amber)"; badgeName = "图片"; }
         else if (sType === "rich-text") { iconType = "edit"; iconColor = "var(--cyber-sky)"; badgeName = "富文本"; }
+        else if (sType === "academic") { iconType = "book"; iconColor = "var(--indigo-light)"; badgeName = "文献"; }
+        else if (sType === "math") { iconType = "spell-check"; iconColor = "var(--rose-agent)"; badgeName = "公式"; }
 
         const title = c.Title || c.title || c.Summary || c.summary || "剪贴板快照";
         const desc = c.Summary || c.summary || "剪贴板快照内容";
         const content = c.EnrichedMarkdown || c.enrichedMarkdown || c.RawText || c.rawText || "";
 
-        // 多态分类过滤支持: c:url / c:code / c:table / c:img / c:rich / 关键词
+        // 多态分类过滤支持: c:url / c:code / c:table / c:cite / c:math / c:img / c:rich / 关键词
         if (subKw) {
           if (subKw === "url" || subKw === "link" || subKw === "链接") {
             if (sType !== "url") continue;
@@ -6488,6 +6490,10 @@
             if (sType !== "image") continue;
           } else if (subKw === "rich" || subKw === "富文本" || subKw === "md") {
             if (sType !== "rich-text") continue;
+          } else if (subKw === "academic" || subKw === "cite" || subKw === "文献" || subKw === "论文" || subKw === "doi" || subKw === "arxiv") {
+            if (sType !== "academic") continue;
+          } else if (subKw === "math" || subKw === "公式" || subKw === "latex") {
+            if (sType !== "math") continue;
           } else {
             const matchAll = (title + " " + desc + " " + content).toLowerCase();
             if (!matchAll.includes(subKw)) continue;

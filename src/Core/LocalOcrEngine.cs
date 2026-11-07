@@ -125,7 +125,7 @@ namespace XiaoLv.Desktop.Core
             }
 
             // 2. 3D PDF 连字符与断行自愈缝合
-            cleaned = TextCleaner.Unbreak3dPdfHyphens(cleaned);
+            cleaned = TextCleaner.CleanPdfNewlines(cleaned);
 
             // 3. 盘古中英混排空格优化
             cleaned = TextCleaner.FormatPanguSpacing(cleaned);

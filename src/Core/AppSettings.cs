@@ -43,6 +43,10 @@ namespace XiaoLv.Desktop.Core
         public string WebClipDefaultMode { get; set; }
         public string WebClipTargetFolder { get; set; }
         public string WebClipCustomTemplate { get; set; }
+        public bool AiEnabled { get; set; }
+        public string AiBaseUrl { get; set; }
+        public string AiModel { get; set; }
+        public string AiApiKey { get; set; }
 
         public AppSettings()
         {
@@ -69,6 +73,10 @@ namespace XiaoLv.Desktop.Core
             WebClipDefaultMode = "card";
             WebClipTargetFolder = "/读库/";
             WebClipCustomTemplate = "";
+            AiEnabled = false;
+            AiBaseUrl = "http://localhost:11434/v1";
+            AiModel = "qwen2.5:latest";
+            AiApiKey = "";
         }
 
         private static string SettingsFilePath
@@ -110,6 +118,10 @@ namespace XiaoLv.Desktop.Core
                     s.WebClipDefaultMode = JsonHelper.GetString(dict, "webClipDefaultMode", s.WebClipDefaultMode);
                     s.WebClipTargetFolder = JsonHelper.GetString(dict, "webClipTargetFolder", s.WebClipTargetFolder);
                     s.WebClipCustomTemplate = JsonHelper.GetString(dict, "webClipCustomTemplate", s.WebClipCustomTemplate);
+                    s.AiEnabled = JsonHelper.GetBool(dict, "aiEnabled", s.AiEnabled);
+                    s.AiBaseUrl = JsonHelper.GetString(dict, "aiBaseUrl", s.AiBaseUrl);
+                    s.AiModel = JsonHelper.GetString(dict, "aiModel", s.AiModel);
+                    s.AiApiKey = JsonHelper.GetString(dict, "aiApiKey", s.AiApiKey);
                 }
                 else
                 {

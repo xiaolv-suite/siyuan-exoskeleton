@@ -144,6 +144,10 @@ namespace XiaoLv.Desktop
                     s.WebClipTargetFolder = JsonHelper.GetString(dict, "webClipTargetFolder", s.WebClipTargetFolder);
                     s.WebClipCustomTemplate = JsonHelper.GetString(dict, "webClipCustomTemplate", s.WebClipCustomTemplate);
                     s.PinnedDocsJson = JsonHelper.GetString(dict, "pinnedDocsJson", s.PinnedDocsJson);
+                    s.AiEnabled = JsonHelper.GetBool(dict, "aiEnabled", s.AiEnabled);
+                    s.AiBaseUrl = JsonHelper.GetString(dict, "aiBaseUrl", s.AiBaseUrl);
+                    s.AiModel = JsonHelper.GetString(dict, "aiModel", s.AiModel);
+                    s.AiApiKey = JsonHelper.GetString(dict, "aiApiKey", s.AiApiKey);
 
                     s.Save();
                     SelectionHelper.AutoFloatEnabled = s.AutoFloatEnabled;

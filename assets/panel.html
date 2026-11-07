@@ -2789,6 +2789,37 @@
           </div>
         </div>
 
+        <!-- Section 1.5: Pre-Ingestion AI Refiner -->
+        <div>
+          <div class="help-sec-title"><span>🤖 国内与本地大模型前置提炼清洗 (Ollama / Qwen / DeepSeek / 豆包)</span></div>
+          <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 10px 12px; margin-top: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; font-weight: 700;">
+                <input type="checkbox" id="pref-desktop-ai-enabled" style="accent-color: var(--indigo-primary);" />
+                <span>启用入库前大模型清洗提炼 (Pre-Ingestion AI Refiner)</span>
+              </label>
+              <button class="pref-btn" id="btn-test-ai" onclick="testAiConnection()" style="font-size: 11px; padding: 3px 10px;">🧪 测试连接</button>
+            </div>
+            <div id="ai-settings-inputs" style="display: grid; grid-template-columns: 1.5fr 1fr 1.5fr; gap: 8px; font-size: 11.5px;">
+              <div>
+                <span style="color: var(--text-secondary); display: block; margin-bottom: 3px;">API Base URL:</span>
+                <input type="text" id="pref-desktop-ai-url" class="search-input" style="height: 26px; font-size: 11.5px; padding: 0 8px; border-radius: 5px; width: 100%;" placeholder="默认 http://localhost:11434/v1" />
+              </div>
+              <div>
+                <span style="color: var(--text-secondary); display: block; margin-bottom: 3px;">Model 模型:</span>
+                <input type="text" id="pref-desktop-ai-model" class="search-input" style="height: 26px; font-size: 11.5px; padding: 0 8px; border-radius: 5px; width: 100%;" placeholder="qwen2.5:latest / deepseek-chat" />
+              </div>
+              <div>
+                <span style="color: var(--text-secondary); display: block; margin-bottom: 3px;">API Key (本地Ollama免填):</span>
+                <input type="password" id="pref-desktop-ai-key" class="search-input" style="height: 26px; font-size: 11.5px; padding: 0 8px; border-radius: 5px; width: 100%;" placeholder="sk-... (Ollama可留空)" />
+              </div>
+            </div>
+            <div id="ai-test-status" style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+              💡 纯前置清洗微舱：支持本地 Ollama、通义千问 (DashScope)、豆包、DeepSeek、硅基流动等 OpenAI 兼容端点。
+            </div>
+          </div>
+        </div>
+
         <!-- Section 2: Appearance & Layout Preferences -->
         <div>
           <div class="help-sec-title"><span>🎨 界面与排版偏好</span></div>
@@ -6732,6 +6763,14 @@
         if (cmEl && s.webClipDefaultMode) cmEl.value = s.webClipDefaultMode;
         const cfEl = document.getElementById("pref-desktop-clipfolder");
         if (cfEl) cfEl.value = s.webClipTargetFolder || "/读库/";
+        const aiEnEl = document.getElementById("pref-desktop-ai-enabled");
+        if (aiEnEl) aiEnEl.checked = !!s.aiEnabled;
+        const aiUrlEl = document.getElementById("pref-desktop-ai-url");
+        if (aiUrlEl) aiUrlEl.value = s.aiBaseUrl || "http://localhost:11434/v1";
+        const aiModelEl = document.getElementById("pref-desktop-ai-model");
+        if (aiModelEl) aiModelEl.value = s.aiModel || "qwen2.5:latest";
+        const aiKeyEl = document.getElementById("pref-desktop-ai-key");
+        if (aiKeyEl) aiKeyEl.value = s.aiApiKey || "";
         const ctplEl = document.getElementById("pref-desktop-cliptemplate");
         const ctplPresetEl = document.getElementById("pref-desktop-cliptemplate-preset");
         const ctplHints = document.getElementById("pref-desktop-cliptemplate-hints");
@@ -6809,6 +6848,10 @@
       const aVal = !!document.getElementById("pref-desktop-autostart")?.checked;
       const sndVal = !!document.getElementById("pref-desktop-sound")?.checked;
       const llVal = !!document.getElementById("pref-desktop-lifelog")?.checked;
+      const aiEnVal = !!document.getElementById("pref-desktop-ai-enabled")?.checked;
+      const aiUrlVal = (document.getElementById("pref-desktop-ai-url")?.value || "http://localhost:11434/v1").trim();
+      const aiModelVal = (document.getElementById("pref-desktop-ai-model")?.value || "qwen2.5:latest").trim();
+      const aiKeyVal = (document.getElementById("pref-desktop-ai-key")?.value || "").trim();
 
       if (window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({
@@ -6830,13 +6873,49 @@
           autoFloatEnabled: fVal,
           autoStart: aVal,
           soundFeedbackEnabled: sndVal,
-          lifelogAutoSectionEnabled: llVal
+          lifelogAutoSectionEnabled: llVal,
+          aiEnabled: aiEnVal,
+          aiBaseUrl: aiUrlVal,
+          aiModel: aiModelVal,
+          aiApiKey: aiKeyVal
         }));
         showToast("✓ 桌面设置已提交保存！");
       } else {
         showToast("✓ 浏览器预览模式：已模拟保存设置");
       }
     }
+
+    function testAiConnection() {
+      const url = (document.getElementById("pref-desktop-ai-url")?.value || "http://localhost:11434/v1").trim();
+      const model = (document.getElementById("pref-desktop-ai-model")?.value || "qwen2.5:latest").trim();
+      const key = (document.getElementById("pref-desktop-ai-key")?.value || "").trim();
+      const statusEl = document.getElementById("ai-test-status");
+      if (statusEl) {
+        statusEl.innerHTML = `<span style="color: var(--tech-amber);">⏳ 正在探测 ${escapeHtml(model)} (${escapeHtml(url)})...</span>`;
+      }
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'testAiConnection',
+          baseUrl: url,
+          apiKey: key,
+          model: model
+        }));
+      } else {
+        setTimeout(() => {
+          if (statusEl) statusEl.innerHTML = `<span style="color: var(--emerald-mint);">🟢 [模拟] 连接成功 (15ms)</span>`;
+        }, 500);
+      }
+    }
+
+    window.onAiTestResult = function(res) {
+      const statusEl = document.getElementById("ai-test-status");
+      if (!statusEl) return;
+      if (res && res.Success) {
+        statusEl.innerHTML = `<span style="color: var(--emerald-mint);">🟢 ${escapeHtml(res.Content || '连接就绪')} (${res.LatencyMs}ms)</span>`;
+      } else {
+        statusEl.innerHTML = `<span style="color: var(--rose-agent);">🔴 连接异常: ${escapeHtml(res?.ErrorMessage || '网络超时或未运行')} (${res?.LatencyMs || 0}ms)</span>`;
+      }
+    };
 
     // ==========================================================
     // 快捷键冲突探测与智能更换建议 (Hotkey Doctor)

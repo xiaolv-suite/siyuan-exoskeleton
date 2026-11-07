@@ -398,6 +398,47 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
+                // 1.95 测试 AI 连通性
+                if (op.Equals("testAiConnection", StringComparison.OrdinalIgnoreCase))
+                {
+                    string baseUrl = JsonHelper.GetString(msg, "baseUrl");
+                    string apiKey = JsonHelper.GetString(msg, "apiKey");
+                    string model = JsonHelper.GetString(msg, "model");
+                    ThreadPool.QueueUserWorkItem(st =>
+                    {
+                        var res = AiRefiner.TestConnection(baseUrl, apiKey, model);
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                string jsonRes = JsonHelper.ToJson(res);
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onAiTestResult) window.onAiTestResult(" + jsonRes + ");");
+                            }
+                        });
+                    });
+                    return;
+                }
+
+                // 1.96 入库前大模型清洗提炼
+                if (op.Equals("refineTextWithAi", StringComparison.OrdinalIgnoreCase))
+                {
+                    string inst = JsonHelper.GetString(msg, "instruction");
+                    string txt = JsonHelper.GetString(msg, "text");
+                    ThreadPool.QueueUserWorkItem(st =>
+                    {
+                        var res = AiRefiner.Refine(inst, txt);
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                string jsonRes = JsonHelper.ToJson(res);
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onAiRefineResult) window.onAiRefineResult(" + jsonRes + ");");
+                            }
+                        });
+                    });
+                    return;
+                }
+
                 // 2. 保存偏好设置
                 if (op.Equals("saveSettings", StringComparison.OrdinalIgnoreCase))
                 {

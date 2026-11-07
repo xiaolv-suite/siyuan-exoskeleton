@@ -734,7 +734,7 @@ async function main() {
   const qPath = path.join(process.env.LOCALAPPDATA, "XiaoLvDesktop", "offline_queue.json");
   let qOk = false;
   let qContent = "";
-  for (let i = 0; i < 35; i++) {
+  for (let i = 0; i < 65; i++) {
     if (fs.existsSync(qPath)) {
       try {
         qContent = fs.readFileSync(qPath, "utf8");

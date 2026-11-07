@@ -322,14 +322,31 @@ namespace XiaoLv.Desktop.Core
             // 若配置了自定义模板，则按占位符求值展开
             if (!string.IsNullOrEmpty(template) && template.Trim().Length > 0)
             {
+                var dt = DateTime.Now;
+                string weekdayStr = "";
+                switch (dt.DayOfWeek)
+                {
+                    case DayOfWeek.Monday: weekdayStr = "周一"; break;
+                    case DayOfWeek.Tuesday: weekdayStr = "周二"; break;
+                    case DayOfWeek.Wednesday: weekdayStr = "周三"; break;
+                    case DayOfWeek.Thursday: weekdayStr = "周四"; break;
+                    case DayOfWeek.Friday: weekdayStr = "周五"; break;
+                    case DayOfWeek.Saturday: weekdayStr = "周六"; break;
+                    case DayOfWeek.Sunday: weekdayStr = "周日"; break;
+                }
+
                 string rendered = template;
                 rendered = rendered.Replace("{{title}}", title ?? "")
                                    .Replace("{{url}}", url ?? "")
                                    .Replace("{{siteName}}", siteName ?? "")
                                    .Replace("{{author}}", author ?? "")
                                    .Replace("{{date}}", dateStr)
-                                   .Replace("{{time}}", DateTime.Now.ToString("HH:mm"))
+                                   .Replace("{{time}}", dt.ToString("HH:mm"))
                                    .Replace("{{datetime}}", timeStr)
+                                   .Replace("{{year}}", dt.ToString("yyyy"))
+                                   .Replace("{{month}}", dt.ToString("MM"))
+                                   .Replace("{{day}}", dt.ToString("dd"))
+                                   .Replace("{{weekday}}", weekdayStr)
                                    .Replace("{{smartTag}}", smartTag ?? "")
                                    .Replace("{{annotation}}", !string.IsNullOrEmpty(userAnnotation) ? userAnnotation.Trim() : "")
                                    .Replace("{{content}}", !string.IsNullOrEmpty(content) ? content.Trim() : "*(未捕获到选区文本)*");

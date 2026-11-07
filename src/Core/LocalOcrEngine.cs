@@ -78,9 +78,33 @@ namespace XiaoLv.Desktop.Core
                 var bmpOp = getBmpMethod.Invoke(decoder, null);
                 var softwareBmp = AwaitWinRT(bmpOp, softwareBitmapType);
 
-                // 5. OcrEngine.TryCreateFromUserProfileLanguages()
+                // 5. OcrEngine.TryCreateFromUserProfileLanguages() 并在无匹配时回退到可用识别语言
                 var createEngineMethod = ocrEngineType.GetMethod("TryCreateFromUserProfileLanguages", Type.EmptyTypes);
-                var engine = createEngineMethod.Invoke(null, null);
+                var engine = createEngineMethod != null ? createEngineMethod.Invoke(null, null) : null;
+                if (engine == null)
+                {
+                    var availProp = ocrEngineType.GetProperty("AvailableRecognizerLanguages", BindingFlags.Public | BindingFlags.Static);
+                    if (availProp != null)
+                    {
+                        var availLangs = availProp.GetValue(null, null) as System.Collections.IEnumerable;
+                        if (availLangs != null)
+                        {
+                            var tryCreateFromLangMethod = ocrEngineType.GetMethod("TryCreateFromLanguage");
+                            if (tryCreateFromLangMethod != null)
+                            {
+                                foreach (var lang in availLangs)
+                                {
+                                    try
+                                    {
+                                        engine = tryCreateFromLangMethod.Invoke(null, new object[] { lang });
+                                        if (engine != null) break;
+                                    }
+                                    catch { }
+                                }
+                            }
+                        }
+                    }
+                }
                 if (engine == null) return "";
 
                 // 6. engine.RecognizeAsync(softwareBmp)

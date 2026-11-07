@@ -790,6 +790,44 @@ namespace XiaoLv.Desktop.UI
                     _suggestions.Add(sn.Shortcode + " " + sn.Label);
                 }
             }
+            else
+            {
+                // 双向链接智能补全 ([[ 或 【【 实时反查思源知识库)
+                int bIdx = Math.Max(t.LastIndexOf("[["), t.LastIndexOf("【【"));
+                if (bIdx >= 0)
+                {
+                    string kw = t.Substring(bIdx + 2).Trim();
+                    if (kw.Length >= 1)
+                    {
+                        string safeKw = kw.Replace("'", "''");
+                        ThreadPool.QueueUserWorkItem(async s =>
+                        {
+                            try
+                            {
+                                string sql = "SELECT id, content FROM blocks WHERE (content LIKE '%" + safeKw + "%' OR name LIKE '%" + safeKw + "%' OR alias LIKE '%" + safeKw + "%') AND type IN ('d', 'h', 'p') ORDER BY updated DESC LIMIT 4";
+                                var rows = await SiYuanClient.SqlAsync(sql);
+                                if (rows != null && rows.Count > 0)
+                                {
+                                    Dispatcher.Invoke(() =>
+                                    {
+                                        _suggestions.Clear();
+                                        foreach (var r in rows)
+                                        {
+                                            string bid = JsonHelper.GetString(r, "id");
+                                            string bcontent = JsonHelper.GetString(r, "content");
+                                            string title = (!string.IsNullOrEmpty(bcontent) ? bcontent.Replace("\r", " ").Replace("\n", " ").Trim() : "无标题");
+                                            if (title.Length > 20) title = title.Substring(0, 20) + "...";
+                                            _suggestions.Add("((" + bid + " \"" + title + "\"))");
+                                        }
+                                        RenderSuggestions();
+                                    });
+                                }
+                            }
+                            catch { }
+                        });
+                    }
+                }
+            }
 
             RenderSuggestions();
         }
@@ -850,6 +888,19 @@ namespace XiaoLv.Desktop.UI
                 string code = suggestion.Split(' ')[0];
                 string exp = SnippetExpansionEngine.Expand(code);
                 _inputBox.Text = exp;
+            }
+            else if (suggestion.Contains("((") && suggestion.Contains("))"))
+            {
+                int lastBracket = Math.Max(_inputBox.Text.LastIndexOf("[["), _inputBox.Text.LastIndexOf("【【"));
+                if (lastBracket >= 0)
+                {
+                    string before = _inputBox.Text.Substring(0, lastBracket);
+                    _inputBox.Text = before + suggestion + " ";
+                }
+                else
+                {
+                    _inputBox.Text = suggestion + " ";
+                }
             }
             else
             {

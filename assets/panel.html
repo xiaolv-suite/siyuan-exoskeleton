@@ -6720,9 +6720,12 @@
               ${headings.map(h => {
                 const indent = Math.max(0, h.Level - 1) * 12;
                 return `
-                  <div style="padding: 4px 8px; margin-left: ${indent}px; display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.02); border-radius: 4px;">
-                    <span class="tag-badge badge-system" style="font-size: 9px; padding: 1px 4px; font-family: monospace;">H${h.Level}</span>
-                    <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(h.Title)}</span>
+                  <div style="padding: 4px 8px; margin-left: ${indent}px; display: flex; align-items: center; justify-content: space-between; gap: 6px; background: rgba(255,255,255,0.02); border-radius: 4px;">
+                    <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1;">
+                      <span class="tag-badge badge-system" style="font-size: 9px; padding: 1px 4px; font-family: monospace;">H${h.Level}</span>
+                      <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(h.Title)}</span>
+                    </div>
+                    <button class="card-launch-btn" style="padding: 1.5px 6px; font-size: 10px; flex-shrink: 0;" onclick="importSingleHeadingDaily('${h.Level}', '${escapeQuote(h.Title)}')">📥 记此节</button>
                   </div>
                 `;
               }).join("")}
@@ -6743,7 +6746,10 @@
                     <span>⏱️ ${c.Date ? new Date(c.Date).toLocaleDateString() : ''}</span>
                   </div>
                   <div style="font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">${escapeHtml(c.CommentText)}</div>
-                  ${c.AnchorQuoteText ? `<div style="font-size: 11px; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 4px 6px; border-radius: 4px;">引文: 「${escapeHtml(c.AnchorQuoteText)}」</div>` : ''}
+                  ${c.AnchorQuoteText ? `<div style="font-size: 11px; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 4px 6px; border-radius: 4px; margin-bottom: 4px;">引文: 「${escapeHtml(c.AnchorQuoteText)}」</div>` : ''}
+                  <div style="display: flex; justify-content: flex-end;">
+                    <button class="card-launch-btn" style="padding: 1.5px 6px; font-size: 10px; color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" onclick="importSingleCommentDaily('${escapeQuote(c.Author || '审阅人')}', '${escapeQuote(c.CommentText)}', '${escapeQuote(c.AnchorQuoteText || '')}')">📥 仅转此条待办</button>
+                  </div>
                 </div>
               `).join("")}
             </div>
@@ -6758,7 +6764,10 @@
             <div style="margin-bottom: 14px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <span style="font-weight: 700; color: var(--tech-amber); font-size: 12.5px;">📊 ${escapeHtml(sh.SheetName)} (${sh.RowCount}行 × ${sh.ColCount}列)</span>
-                <button class="card-launch-btn" style="padding: 2px 6px; font-size: 10px;" onclick="copyToClipboard('${escapeQuote(sh.SampleMarkdownTable)}', '已复制工作表 Markdown 表格！')">📋 复制表格</button>
+                <div style="display: flex; gap: 4px;">
+                  <button class="card-launch-btn" style="padding: 2px 6px; font-size: 10px;" onclick="copyToClipboard('${escapeQuote(sh.SampleMarkdownTable)}', '已复制工作表 Markdown 表格！')">📋 复制表格</button>
+                  <button class="card-launch-btn" style="padding: 2px 6px; font-size: 10px; color: var(--tech-amber); border-color: rgba(245,158,11,0.4);" onclick="importSingleSheetToAv('${escapeQuote(sh.SampleMarkdownTable)}')">📥 入属性视图</button>
+                </div>
               </div>
               <div style="font-size: 11px; overflow-x: auto; max-height: 200px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-hairline); border-radius: 6px; padding: 8px; white-space: pre; font-family: Consolas, monospace;">${escapeHtml(sh.SampleMarkdownTable)}</div>
             </div>
@@ -6818,6 +6827,9 @@
             ${fileType === 'pptx' ? `
               <button class="inspector-dock-btn" onclick="importPptCardsDaily()" style="color: var(--cyber-purple); border-color: rgba(168,85,247,0.4);" title="幻灯片与备注提取为 FSRS 闪卡写入日记">🧠 提炼闪卡库</button>
             ` : ''}
+            ${summary.ExtractedPlainText && summary.ExtractedPlainText.length > 20 ? `
+              <button class="inspector-dock-btn" onclick="triggerAiRefine('takeaways', currentOfficeDocSummary.ExtractedPlainText)" style="color: var(--cyber-purple); border-color: rgba(168,85,247,0.45); font-weight: 700;" title="调用大模型提炼此 Office 文档核心要点">🤖 AI 提炼要点</button>
+            ` : ''}
             <button class="inspector-dock-btn" onclick="locateInSearchTool('${escapeQuote(summary.FileName)}')" title="本地检索工具定位">🔍 定位文件</button>
             <button class="inspector-dock-btn" onclick="copyToClipboard('[${escapeQuote(summary.FileName)}](file:///${escapeQuote(summary.FilePath.replace(/\\\\/g, '/'))})', '已复制本地文件链接！')">🔗 贴外链</button>
           </div>
@@ -6871,6 +6883,48 @@
       if (window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
         showToast(`✓ 已将 ${summary.Slides.length} 张 PPT 幻灯片提炼为 FSRS 复习闪卡！`);
+      }
+    }
+
+    function importSingleCommentDaily(author, comment, quote) {
+      const summary = currentOfficeDocSummary;
+      const title = summary ? summary.FileName : "文档";
+      const md = `- [ ] **《${title}》审阅批注** (${author}): ${comment}${quote ? `\n  > 引文: 「${quote}」` : ""}\n{: custom-type="office-comment" }`;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
+        showToast("✓ 批注已转化为待办任务写入今日日记！");
+      }
+    }
+
+    function importSingleHeadingDaily(level, title) {
+      const md = `### 📑 H${level} ${title}\n- `;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'SYS', text: md }));
+        showToast(`✓ 小节【${title}】已存入今日日记！`);
+      }
+    }
+
+    function importSingleSheetToAv(tableMd) {
+      if (!tableMd) return;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'importExcelToAv', markdown: tableMd }));
+        showToast("✓ 正在将工作表数据批量注入属性视图...");
+      }
+    }
+
+    function triggerAiRefine(mode, text) {
+      if (!text) {
+        showToast("⚠️ 内容为空，无法提炼");
+        return;
+      }
+      showToast("🤖 正在调用大模型进行智能提炼，请稍候...");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'refineWithAi',
+          mode: mode || 'takeaways',
+          text: text,
+          target: 'daily'
+        }));
       }
     }
 

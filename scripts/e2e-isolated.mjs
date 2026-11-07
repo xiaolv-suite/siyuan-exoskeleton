@@ -772,6 +772,36 @@ async function main() {
   const isOfficeOk = officeRes.includes("True|True");
   logStep("Step 7.35: 本地 Office 零依赖流式解析、大纲透视与批注待办转化断言", isOfficeOk, `大纲与待办转译断言: ${officeRes}`);
 
+  // Step 7.36: Test Office File Watcher & Dynamic Linkage Engine (OfficeFileWatcher)
+  const watcherScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $watcherType = $asm.GetType('XiaoLv.Desktop.Core.OfficeFileWatcher');
+    
+    # 模拟监听一个本地临时 docx 文件
+    $tmpDir = [System.IO.Path]::GetTempPath();
+    $tmpDocx = [System.IO.Path]::Combine($tmpDir, "test_watcher_" + [System.Guid]::NewGuid().ToString() + ".docx");
+    [System.IO.File]::WriteAllText($tmpDocx, "fake-docx-content");
+    
+    $mWatch = $watcherType.GetMethod('WatchFile', [System.Reflection.BindingFlags]'Public,Static');
+    $mWatch.Invoke($null, @($tmpDocx));
+    
+    $mGetSnap = $watcherType.GetMethod('GetWatchedFilesSnapshot', [System.Reflection.BindingFlags]'Public,Static');
+    $snap = $mGetSnap.Invoke($null, $null);
+    
+    $isWatched = $snap -contains $tmpDocx;
+    
+    $mStop = $watcherType.GetMethod('StopAll', [System.Reflection.BindingFlags]'Public,Static');
+    $mStop.Invoke($null, $null);
+    
+    try { [System.IO.File]::Delete($tmpDocx); } catch {}
+    
+    Write-Output $isWatched.ToString();
+  `;
+  const watcherRes = runPs(watcherScript);
+  const isWatcherOk = watcherRes.includes("True");
+  logStep("Step 7.36: 本地 Office 文档热重载监听与外部保存实时感知 (OfficeFileWatcher) 断言", isWatcherOk, `文件监听热注册断言: ${watcherRes.trim()}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

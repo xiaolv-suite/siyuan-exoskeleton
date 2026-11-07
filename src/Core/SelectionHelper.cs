@@ -202,6 +202,25 @@ namespace XiaoLv.Desktop.Core
         {
             if (timeoutMs <= 0) timeoutMs = 70;
 
+            // 0. 微软 Office 与金山 WPS COM 晚绑定优先直读 (0ms读取，100% 保护剪贴板)
+            try
+            {
+                var snap = ContextPerception.CaptureForegroundContextFast();
+                if (snap != null && !string.IsNullOrEmpty(snap.ProcessName))
+                {
+                    string pLower = snap.ProcessName.ToLowerInvariant();
+                    if (pLower == "winword" || pLower == "excel" || pLower == "wps" || pLower == "et")
+                    {
+                        var officeSel = OfficeComBridge.TryGetActiveOfficeSelection(pLower);
+                        if (officeSel != null && officeSel.Success && !string.IsNullOrEmpty(officeSel.Text))
+                        {
+                            return officeSel.Text.Trim();
+                        }
+                    }
+                }
+            }
+            catch { }
+
             IsInternalClipboardOperation = true;
             string oldClip = null;
             try

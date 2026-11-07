@@ -1086,6 +1086,23 @@ public static class SmartCaptureMain
             }
         });
     }
+
+    /// <summary>
+    /// 原生将一段 Markdown 追加至今日日记，自动发现日记笔记本并处理文件并发重试
+    /// </summary>
+    public static bool AppendToDailyNote(string syUrl, string token, string markdown)
+    {
+        if (string.IsNullOrEmpty(syUrl) || string.IsNullOrEmpty(markdown)) return false;
+        string diaryNotebookId = SafeContext.GetDiaryNotebookId(null, syUrl, token);
+        var dailyBody = "{\"notebook\":\"" + SafeContext.EscapeJson(diaryNotebookId) + "\",\"dataType\":\"markdown\",\"data\":\"" + SafeContext.EscapeJson(markdown) + "\"}";
+        var res = SyKernelRequest.DoRequest(syUrl, token, "/api/block/appendDailyNoteBlock", dailyBody);
+        if (!res.Success && !string.IsNullOrEmpty(res.Error) && (res.Error.Contains("Access is denied") || res.Error.Contains("rename")))
+        {
+            Thread.Sleep(300);
+            res = SyKernelRequest.DoRequest(syUrl, token, "/api/block/appendDailyNoteBlock", dailyBody);
+        }
+        return res.Success;
+    }
 }
 
 

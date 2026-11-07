@@ -1542,6 +1542,46 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
+                // 21.91 Excel 表格一键转入思源属性视图 (AV 数据库)
+                if (op.Equals("importExcelToAv", StringComparison.OrdinalIgnoreCase))
+                {
+                    string targetAvId = JsonHelper.GetString(msg, "avId");
+                    string tableMd = JsonHelper.GetString(msg, "markdown");
+                    ThreadPool.QueueUserWorkItem(async s =>
+                    {
+                        try
+                        {
+                            var conn = SiYuanClient.GetConnectionInfo(false);
+                            if (string.IsNullOrEmpty(targetAvId))
+                            {
+                                // 自动寻找最近更新的 AV 视图
+                                var avRows = await SiYuanClient.SqlAsync("SELECT id FROM blocks WHERE type='av' ORDER BY updated DESC LIMIT 1");
+                                if (avRows != null && avRows.Count > 0)
+                                {
+                                    targetAvId = JsonHelper.GetString(avRows[0], "id");
+                                }
+                            }
+
+                            if (!string.IsNullOrEmpty(targetAvId))
+                            {
+                                XiaoLv.Desktop.Engine.Modules.OfficeDeepLinkMain.ImportExcelToAvDatabase(conn.Url, conn.Token, targetAvId, tableMd, (t, m) =>
+                                {
+                                    if (OnNotificationRequested != null) OnNotificationRequested(t, m);
+                                });
+                            }
+                            else
+                            {
+                                if (OnNotificationRequested != null) OnNotificationRequested("思源外骨骼", "⚠️ 未找到可注入的属性视图，请先在思源中创建属性视图！");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            if (OnNotificationRequested != null) OnNotificationRequested("思源外骨骼", "⚠️ 导入属性视图失败: " + ex.Message);
+                        }
+                    });
+                    return;
+                }
+
                 // 21.6 误删打捞与时光机安全检索 (rescue: / hist: 语法)
                 if (op.Equals("searchRescue", StringComparison.OrdinalIgnoreCase))
                 {
@@ -1648,6 +1688,66 @@ namespace XiaoLv.Desktop.UI
                     {
                         if (OnNotificationRequested != null) OnNotificationRequested(t, m);
                     }, mode);
+                    return;
+                }
+
+                // 22.8 通用大模型前置智能提炼 (AI Refine) 并写入今日日记或回调前端
+                if (op.Equals("refineWithAi", StringComparison.OrdinalIgnoreCase) || op.Equals("executeAiRefine", StringComparison.OrdinalIgnoreCase))
+                {
+                    string mode = JsonHelper.GetString(msg, "mode"); // "takeaways", "todos", "polish", "translate"
+                    string inputText = JsonHelper.GetString(msg, "text");
+                    string targetDoc = JsonHelper.GetString(msg, "target"); // "daily" or "return"
+
+                    if (!string.IsNullOrEmpty(inputText))
+                    {
+                        string prompt = AiRefiner.PromptKeyPoints;
+                        string opName = "要点提炼";
+                        if (mode == "todos") { prompt = AiRefiner.PromptActionItems; opName = "待办提取"; }
+                        else if (mode == "polish") { prompt = AiRefiner.PromptPolish; opName = "去噪润色"; }
+                        else if (mode == "translate") { prompt = AiRefiner.PromptTranslate; opName = "学术翻译"; }
+
+                        ThreadPool.QueueUserWorkItem(s =>
+                        {
+                            try
+                            {
+                                var refineRes = AiRefiner.Refine(prompt, inputText);
+                                if (refineRes.Success && !string.IsNullOrEmpty(refineRes.Content))
+                                {
+                                    if (targetDoc == "daily" || string.IsNullOrEmpty(targetDoc))
+                                    {
+                                        var conn = SiYuanClient.GetConnectionInfo(false);
+                                        string md = string.Format("### 🤖 大模型{0}\n{1}\n\n{{: custom-type=\"ai-refined\" }}\n", opName, refineRes.Content.Trim());
+                                        SmartCaptureMain.AppendToDailyNote(conn.Url, conn.Token, md);
+                                        if (OnNotificationRequested != null)
+                                        {
+                                            OnNotificationRequested("思源外骨骼 · AI提炼", "✓ 已成功完成" + opName + "并沉淀写入今日日记！");
+                                        }
+                                    }
+                                    Dispatcher.Invoke(() =>
+                                    {
+                                        if (_webView != null && _webView.CoreWebView2 != null)
+                                        {
+                                            _webView.CoreWebView2.ExecuteScriptAsync(string.Format("if(window.onAiRefined) window.onAiRefined({{ success: true, mode: '{0}', content: {1} }});", SafeContext.EscapeJson(mode), JsonHelper.ToJson(refineRes.Content)));
+                                        }
+                                    });
+                                }
+                                else
+                                {
+                                    if (OnNotificationRequested != null)
+                                    {
+                                        OnNotificationRequested("思源外骨骼 · AI提炼", "⚠️ 提炼失败: " + refineRes.ErrorMessage);
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                if (OnNotificationRequested != null)
+                                {
+                                    OnNotificationRequested("思源外骨骼 · AI提炼", "⚠️ 提炼异常: " + ex.Message);
+                                }
+                            }
+                        });
+                    }
                     return;
                 }
 
@@ -2042,6 +2142,23 @@ namespace XiaoLv.Desktop.UI
                     }
                     _webView.CoreWebView2.MemoryUsageTargetLevel = CoreWebView2MemoryUsageTargetLevel.Normal;
                 }
+            }
+            catch { }
+        }
+
+        public void NotifyOfficeFileChanged(string filePath)
+        {
+            try
+            {
+                var summary = OfficeOpenXmlParser.InspectFile(filePath);
+                Dispatcher.Invoke(() =>
+                {
+                    if (_webView != null && _webView.CoreWebView2 != null)
+                    {
+                        string js = string.Format("if(window.onOfficeInspectionLoaded && window.currentOfficeDocSummary && window.currentOfficeDocSummary.FilePath === {0}) window.onOfficeInspectionLoaded({1});", JsonHelper.ToJson(filePath), JsonHelper.ToJson(summary));
+                        _webView.CoreWebView2.ExecuteScriptAsync(js);
+                    }
+                });
             }
             catch { }
         }

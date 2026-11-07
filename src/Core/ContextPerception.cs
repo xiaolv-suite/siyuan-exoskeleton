@@ -173,6 +173,19 @@ namespace XiaoLv.Desktop.Core
             {
                 snap.Url = TryExtractBrowserUrl(snap.Hwnd);
             }
+            else if (IsOfficeProcess(snap.ProcessName))
+            {
+                try
+                {
+                    var off = OfficeComBridge.TryGetActiveOfficeSelection(snap.ProcessName);
+                    if (off != null && !string.IsNullOrEmpty(off.DocumentPath))
+                    {
+                        snap.Url = "file:///" + off.DocumentPath.Replace('\\', '/');
+                        if (!string.IsNullOrEmpty(off.DocumentTitle)) snap.CleanTitle = off.DocumentTitle;
+                    }
+                }
+                catch { }
+            }
             return snap;
         }
 
@@ -186,7 +199,27 @@ namespace XiaoLv.Desktop.Core
             {
                 snap.Url = TryExtractBrowserUrl(snap.Hwnd);
             }
+            else if (IsOfficeProcess(snap.ProcessName))
+            {
+                try
+                {
+                    var off = OfficeComBridge.TryGetActiveOfficeSelection(snap.ProcessName);
+                    if (off != null && !string.IsNullOrEmpty(off.DocumentPath))
+                    {
+                        snap.Url = "file:///" + off.DocumentPath.Replace('\\', '/');
+                        if (!string.IsNullOrEmpty(off.DocumentTitle)) snap.CleanTitle = off.DocumentTitle;
+                    }
+                }
+                catch { }
+            }
             return snap;
+        }
+
+        private static bool IsOfficeProcess(string procName)
+        {
+            if (string.IsNullOrEmpty(procName)) return false;
+            var name = procName.ToLowerInvariant();
+            return name == "winword" || name == "excel" || name == "wps" || name == "et";
         }
 
         private static bool IsBrowserProcess(string procName)

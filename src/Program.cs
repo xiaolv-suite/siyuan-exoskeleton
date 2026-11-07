@@ -238,6 +238,19 @@ namespace XiaoLv.Desktop
                 });
             };
 
+            // Office 本地文档联动热重载监听
+            OfficeFileWatcher.NotificationHandler = (title, text) => SafeNotify(title, text);
+            OfficeFileWatcher.OnOfficeFileChanged += (filePath) =>
+            {
+                if (_wpfApp != null && _wpfApp.Dispatcher != null && _bentoWindow != null)
+                {
+                    _wpfApp.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        _bentoWindow.NotifyOfficeFileChanged(filePath);
+                    }));
+                }
+            };
+
             // 系统托盘初始化
             _tray = new SystemTray();
             _tray.OnOpenPanelClicked += () => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel());
@@ -715,6 +728,7 @@ namespace XiaoLv.Desktop
                 SiYuanGuardian.Stop();
                 ClipboardWatcher.Stop();
                 SelectionHelper.StopMouseHook();
+                OfficeFileWatcher.StopAll();
                 if (_hotkeys != null) _hotkeys.Dispose();
                 if (_tray != null) _tray.Dispose();
                 if (_ipcServer != null) _ipcServer.Dispose();

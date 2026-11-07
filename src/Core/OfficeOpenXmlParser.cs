@@ -136,6 +136,7 @@ namespace XiaoLv.Desktop.Core
                 summary.LastModified = fi.LastWriteTime;
 
                 string ext = fi.Extension.ToLowerInvariant();
+                try { OfficeFileWatcher.WatchFile(filePath); } catch { }
                 if (ext == ".docx")
                 {
                     summary.FileType = "docx";

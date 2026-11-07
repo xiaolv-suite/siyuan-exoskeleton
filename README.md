@@ -107,8 +107,9 @@
 - 调用 Windows 原生 `IVirtualDesktopManager` COM 接口，将思源多窗文档、本地文件（SumatraPDF、Office、VS Code）打包为 500 字节轻量现场快照；
 - 支持多任务工作现场 0ms 无感切入与还原。
 
-### 13. ★ 开放本地工具适配：Everything / Listary / 资源管理器自由选用 (`ToolDetector.cs`)
+### 13. ★ 开放本地工具适配：Everything / Listary / Zotero / 资源管理器自由选用 (`ToolDetector.cs`)
 - **绝不绑架用户习惯**：无论是习惯用 **Listary**（快速激活检索）还是 **Everything**（全盘毫秒索引），系统均可秒级感知并设为首选引擎；
+- **学术生态联动**：深度感知 **Zotero** 学术文献库与 **SumatraPDF**，支持 `zotero:` 前缀与 `zotero://` URI 原位激活调动；
 - **自适应界面感知**：抽屉按钮根据当前运行与偏好动态变为 **`🔍 Listary 定位`** 或 **`🔍 Everything 定位`**，支持快捷键 `Ctrl+E` 与前缀 `listary:`、`ev:`、`find:`；
 - **偏好面板状态联动**：设置页提供 Everything 与 Listary 双通道实时探针，支持一键切换。
 

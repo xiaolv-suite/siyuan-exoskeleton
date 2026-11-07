@@ -284,9 +284,9 @@ namespace XiaoLv.Desktop
 
         private static void HandleIpcMessage(string msg)
         {
-            if (string.IsNullOrEmpty(msg)) return;
+            if (string.IsNullOrEmpty(msg) || _wpfApp == null || _wpfApp.Dispatcher == null) return;
 
-            _wpfApp.Dispatcher.Invoke(() =>
+            _wpfApp.Dispatcher.BeginInvoke(new Action(() =>
             {
                 var clean = msg.Trim();
 
@@ -416,7 +416,7 @@ namespace XiaoLv.Desktop
                 {
                     DispatchInternal(cmd, text);
                 }
-            });
+            }));
         }
 
         private static void DispatchInternal(string cmd, string text)

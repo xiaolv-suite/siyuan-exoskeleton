@@ -2153,6 +2153,29 @@
       border-color: var(--indigo-border);
       color: var(--indigo-light);
     }
+    .ai-pill-btn {
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: #a5b4fc;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .ai-pill-btn:hover {
+      background: rgba(99, 102, 241, 0.25);
+      border-color: #818cf8;
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    .ai-pill-btn:active {
+      transform: translateY(1px);
+    }
     .mindmap-node:hover rect {
       filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.6));
     }
@@ -2887,6 +2910,28 @@
           </div>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- AI 前置提炼结果模态弹窗 -->
+  <div class="help-modal-overlay" id="ai-result-modal" onclick="closeAiResultModal(event)">
+    <div class="help-modal-box" onclick="event.stopPropagation()" style="max-width: 620px;">
+      <div class="help-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">🤖</span>
+          <span style="font-weight: 700; font-size: 14px;" id="ai-result-title">AI 前置清洗提炼结果</span>
+          <span class="brand-pill" id="ai-result-badge">就绪</span>
+        </div>
+        <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="closeAiResultModal()">✕</button>
+      </div>
+      <div class="help-body" style="gap: 12px;">
+        <div id="ai-result-content" style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px; font-size: 12.5px; line-height: 1.6; max-height: 340px; overflow-y: auto; white-space: pre-wrap; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif;"></div>
+        <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-hairline); padding-top: 10px;">
+          <button class="inspector-dock-btn" onclick="copyAiResult()" title="复制结果至剪贴板">📋 复制结果</button>
+          <button class="inspector-dock-btn" onclick="pinAiResultSticky()" title="将提炼结果钉在桌面浮动便签">📌 钉在桌面</button>
+          <button class="inspector-dock-btn primary" onclick="appendAiResultToDaily()" title="一键写入今日日记">📥 写入今日日记</button>
+        </div>
       </div>
     </div>
   </div>
@@ -5456,6 +5501,15 @@
           <div id="inspector-detail-view" style="display: ${currentInspectorTab === 'detail' ? 'block' : 'none'};">
             ${ialTags ? `<div class="inspector-ial-tags">${ialTags}</div>` : ""}
             <div class="inspector-preview-card">${escapeHtml(markdownText)}</div>
+            ${markdownText && markdownText.length >= 10 ? `
+              <div class="inspector-ai-toolbar" style="display: flex; gap: 6px; margin: 8px 0 10px 0; flex-wrap: wrap;">
+                <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; align-self: center;">🤖 AI 提炼:</span>
+                <button class="ai-pill-btn" onclick="triggerAiRefine('takeaways', '${escapeQuote(markdownText)}')" title="将当前文本提炼为3条核心结论并追加至日记">⚡ 提炼3要点</button>
+                <button class="ai-pill-btn" onclick="triggerAiRefine('todo', '${escapeQuote(markdownText)}')" title="提取待办行动项任务清单">📋 提取待办</button>
+                <button class="ai-pill-btn" onclick="triggerAiRefine('polish', '${escapeQuote(markdownText)}')" title="错别字纠正与盘古排版润色">✨ 规范排版</button>
+                <button class="ai-pill-btn" onclick="triggerAiRefine('translate', '${escapeQuote(markdownText)}')" title="专业学术翻译为中文">🌐 学术翻译</button>
+              </div>
+            ` : ""}
             ${headingsHtml}
             ${sibHtml}
             ${backlinkHtml}
@@ -6916,6 +6970,91 @@
         statusEl.innerHTML = `<span style="color: var(--rose-agent);">🔴 连接异常: ${escapeHtml(res?.ErrorMessage || '网络超时或未运行')} (${res?.LatencyMs || 0}ms)</span>`;
       }
     };
+
+    let currentAiResultText = "";
+
+    function triggerAiRefine(actionType, text) {
+      if (!text || !text.trim()) {
+        showToast("⚠️ 当前没有可供提炼的文本");
+        return;
+      }
+      let prompt = "";
+      let label = "提炼";
+      if (actionType === "takeaways") {
+        prompt = "请阅读以下用户摘录的内容，将其核心要点提炼为3条高度凝练的Markdown无序列表项（- ），保留关键数据与重要结论，去除冗余废话，使用中文直接输出：";
+        label = "提炼核心3要点";
+      } else if (actionType === "todo") {
+        prompt = "请从以下文本或会议内容中，提取所有可执行的行动项与任务清单，转换为标准待办列表项（- [ ] 任务内容），包含截止时间或负责人（若有），使用中文直接输出：";
+        label = "提取行动项待办";
+      } else if (actionType === "polish") {
+        prompt = "请对以下笔记内容进行结构化排版与去噪润色：纠正错别字，规范中英文间距（盘古排版），修复断行与标点，保留所有原始事实与代码，直接输出润色后的Markdown正文，严禁输出任何额外客套话：";
+        label = "规范排版去噪";
+      } else if (actionType === "translate") {
+        prompt = "请将以下学术文献或技术内容翻译为流畅、准确的中文学术语言，保持专业术语准确性，直接输出翻译结果：";
+        label = "学术翻译";
+      }
+
+      showToast(`🤖 AI ${label}中，正在调动模型...`);
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'refineTextWithAi',
+          instruction: prompt,
+          text: text
+        }));
+      } else {
+        setTimeout(() => {
+          showAiResultModal(`- 💡 [模拟提炼要点 1]: 这是第一项核心洞见\n- 💡 [模拟提炼要点 2]: 这是第二项核心洞见\n- 💡 [模拟提炼要点 3]: 这是第三项核心洞见`, 245);
+        }, 500);
+      }
+    }
+
+    window.onAiRefineResult = function(res) {
+      if (res && res.Success && res.Content) {
+        showAiResultModal(res.Content, res.LatencyMs);
+      } else {
+        showToast("⚠️ AI 提炼响应异常: " + (res?.ErrorMessage || "连接超时"));
+      }
+    };
+
+    function showAiResultModal(content, latencyMs) {
+      currentAiResultText = content;
+      const modal = document.getElementById("ai-result-modal");
+      const contentEl = document.getElementById("ai-result-content");
+      const badgeEl = document.getElementById("ai-result-badge");
+      if (contentEl) contentEl.innerText = content;
+      if (badgeEl) badgeEl.innerText = latencyMs ? `${latencyMs}ms 就绪` : "就绪";
+      if (modal) modal.classList.add("open");
+    }
+
+    function closeAiResultModal(e) {
+      const modal = document.getElementById("ai-result-modal");
+      if (modal) modal.classList.remove("open");
+    }
+
+    function copyAiResult() {
+      if (!currentAiResultText) return;
+      copyToClipboard(currentAiResultText, "✓ 已复制 AI 提炼结果至剪贴板！");
+      closeAiResultModal();
+    }
+
+    function pinAiResultSticky() {
+      if (!currentAiResultText) return;
+      pinAsStickyNote("AI 提炼结果", currentAiResultText);
+      closeAiResultModal();
+    }
+
+    function appendAiResultToDaily() {
+      if (!currentAiResultText) return;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'executeCommand',
+          cmd: 'SYS',
+          text: currentAiResultText
+        }));
+        showToast("✓ 已将 AI 提炼结果写入今日日记！");
+      }
+      closeAiResultModal();
+    }
 
     // ==========================================================
     // 快捷键冲突探测与智能更换建议 (Hotkey Doctor)

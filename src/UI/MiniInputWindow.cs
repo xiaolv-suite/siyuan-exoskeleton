@@ -269,9 +269,16 @@ namespace XiaoLv.Desktop.UI
                 TriggerVoiceMode();
             });
 
+            // 快捷 AI 前置提炼按钮 (🤖 提炼)
+            var aiBtn = CreateHeaderActionButton("🤖 提炼", "调用本地 Ollama 或国内大模型提炼核心3要点 (快捷键: Ctrl+J)", () =>
+            {
+                TriggerAiRefine("takeaways");
+            });
+
             headerActionStack.Children.Add(timeBtn);
             headerActionStack.Children.Add(todoBtn);
             headerActionStack.Children.Add(voiceBtn);
+            headerActionStack.Children.Add(aiBtn);
             headerActionStack.Children.Add(_statusBadge);
 
             Grid.SetColumn(headerActionStack, 2);
@@ -415,6 +422,11 @@ namespace XiaoLv.Desktop.UI
                     {
                         SubmitCurrentText();
                     }
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.J && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                {
+                    TriggerAiRefine("takeaways");
                     e.Handled = true;
                 }
                 else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && (e.Key == Key.OemPlus || e.Key == Key.Add))
@@ -637,6 +649,42 @@ namespace XiaoLv.Desktop.UI
             _statusBadge.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0284c7"));
             _inputBox.Focus();
             VoiceCaptureManager.TriggerWindowsVoiceTyping();
+        }
+
+        private void TriggerAiRefine(string actionType)
+        {
+            string curTxt = _inputBox.Text.Trim();
+            if (string.IsNullOrEmpty(curTxt))
+            {
+                _statusBadgeText.Text = "⚠️ 请先输入待提炼内容";
+                return;
+            }
+
+            string prompt = AiRefiner.PromptKeyPoints;
+            string actionLabel = "提炼要点";
+            if (actionType == "todo") { prompt = AiRefiner.PromptActionItems; actionLabel = "提取待办"; }
+            else if (actionType == "polish") { prompt = AiRefiner.PromptPolish; actionLabel = "规范排版"; }
+            else if (actionType == "translate") { prompt = AiRefiner.PromptTranslate; actionLabel = "学术翻译"; }
+
+            _statusBadgeText.Text = "⏳ AI " + actionLabel + "中...";
+            ThreadPool.QueueUserWorkItem(st =>
+            {
+                var res = AiRefiner.Refine(prompt, curTxt);
+                Dispatcher.Invoke(() =>
+                {
+                    if (res != null && res.Success && !string.IsNullOrEmpty(res.Content))
+                    {
+                        SoundPlayerHelper.PlayFeedback();
+                        _inputBox.Text = res.Content;
+                        _inputBox.CaretIndex = _inputBox.Text.Length;
+                        _statusBadgeText.Text = "✓ AI " + actionLabel + "完成 (" + res.LatencyMs + "ms)";
+                    }
+                    else
+                    {
+                        _statusBadgeText.Text = "⚠️ AI 响应异常: " + (res != null ? res.ErrorMessage : "超时");
+                    }
+                });
+            });
         }
 
         private Border CreateHeaderActionButton(string label, string tooltip, Action onClick)

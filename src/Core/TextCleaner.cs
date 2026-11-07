@@ -305,6 +305,48 @@ namespace XiaoLv.Desktop.Core
         }
 
         /// <summary>
+        /// 针对主流知识站点自动映射思源文档原生专属色彩 Emoji 图标
+        /// </summary>
+        public static string GetSiteEmoji(string siteName)
+        {
+            if (string.IsNullOrEmpty(siteName)) return "1f4d1"; // 📑
+            switch (siteName)
+            {
+                case "微信公众号": return "1f4f0"; // 📰
+                case "知乎": return "1f4a1";      // 💡
+                case "哔哩哔哩": return "1f3ac";  // 🎬
+                case "GitHub": return "2b50";     // ⭐
+                case "arXiv": return "1f4da";      // 📚
+                case "少数派": return "26a1";     // ⚡
+                case "掘金":
+                case "CSDN": return "1f4bb";      // 💻
+                case "小红书": return "1f4d5";    // 📕
+                case "链滴": return "1f4ac";      // 💬
+                case "语雀":
+                case "飞书文档": return "1f4dd";  // 📝
+                default: return "1f4d1";          // 📑
+            }
+        }
+
+        /// <summary>
+        /// 智能探测网页未标注语言的代码块，自动为其注入标准语言语法高亮标签
+        /// </summary>
+        public static string EnrichCodeBlocks(string content)
+        {
+            if (string.IsNullOrEmpty(content)) return "";
+            return Regex.Replace(content, @"```[ \t]*(\r?\n[\s\S]*?)```", new MatchEvaluator(delegate(Match m)
+            {
+                string codeBody = m.Groups[1].Value;
+                string lang;
+                if (ClipboardWatcher.TryDetectCodeSnippet(codeBody, out lang))
+                {
+                    return "```" + lang + codeBody + "```";
+                }
+                return m.Value;
+            }));
+        }
+
+        /// <summary>
         /// 构建独立研读专页 Markdown 结构 (带来源看板、作者、发布时间、智能标签及思源原生 Callout 块)
         /// 对齐 Obsidian Web Clipper / Cubox / Readwise 独立研读专页规范，支持用户自定义模板与占位符展开
         /// </summary>

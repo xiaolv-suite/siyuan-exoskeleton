@@ -4793,6 +4793,18 @@
         return;
       }
 
+    function triggerWebClipWithAi(mode) {
+      showToast("🤖 正在调用大模型提炼网页要点并剪藏...");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'executeWebClipWithAi',
+          mode: mode || 'card'
+        }));
+      } else {
+        showToast("已请求 AI 提炼剪藏");
+      }
+    }
+
       // 附件资产本地秒开分支 (灵感 Ⅰ)
       if (item.isAssetItem && item.assetData) {
         openAssetLocalFile(item.assetData.fullPath);
@@ -5202,9 +5214,11 @@
           </div>
         </div>
         <div class="inspector-dock">
-          <div class="inspector-dock-actions">
-            <button class="inspector-dock-btn primary" onclick="executeItem({ clipMode: 'card', userAnnotation: '${escapeQuote(annotation)}' })" title="保存为文献卡片存入日记 (Enter)">📑 存为文献卡片</button>
-            <button class="inspector-dock-btn" style="background: rgba(168,85,247,0.18); border-color: rgba(168,85,247,0.5); color: #c084fc; font-weight: 700;" onclick="executeItem({ clipMode: 'doc', userAnnotation: '${escapeQuote(annotation)}' })" title="新建独立研读专页笔记 (Shift+Enter)">📄 新建研读专页</button>
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="executeItem({ clipMode: 'card', userAnnotation: '${escapeQuote(annotation)}' })" title="保存为文献卡片存入日记 (Enter)">📑 存为文献卡片 (Enter)</button>
+            <button class="inspector-dock-btn" style="background: rgba(168,85,247,0.18); border-color: rgba(168,85,247,0.5); color: #c084fc; font-weight: 700;" onclick="executeItem({ clipMode: 'doc', userAnnotation: '${escapeQuote(annotation)}' })" title="新建独立研读专页笔记 (Shift+Enter)">📄 新建研读专页 (Shift+↵)</button>
+            <button class="inspector-dock-btn" style="background: rgba(56,189,248,0.14); border-color: rgba(56,189,248,0.45); color: var(--cyber-sky); font-weight: 700;" onclick="triggerWebClipWithAi('card')" title="自动调用大模型提炼核心要点后存入今日日记">🤖 AI提炼后存卡</button>
+            <button class="inspector-dock-btn" style="background: rgba(99,102,241,0.14); border-color: rgba(99,102,241,0.45); color: #a5b4fc; font-weight: 700;" onclick="triggerWebClipWithAi('doc')" title="自动调用大模型提炼核心要点后建立独立专页">🤖 AI提炼建专页</button>
           </div>
         </div>
       `;

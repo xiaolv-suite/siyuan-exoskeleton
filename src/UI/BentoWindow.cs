@@ -1602,6 +1602,19 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
+                // 22.5 融合前置大模型提炼的智能网页剪藏
+                if (op.Equals("executeWebClipWithAi", StringComparison.OrdinalIgnoreCase))
+                {
+                    string mode = JsonHelper.GetString(msg, "mode");
+                    if (string.IsNullOrEmpty(mode)) mode = "card";
+                    Hide();
+                    SmartCaptureMain.ExecuteWebClipWithAi((t, m) =>
+                    {
+                        if (OnNotificationRequested != null) OnNotificationRequested(t, m);
+                    }, mode);
+                    return;
+                }
+
                 // 23. 安全触发思源云端增量数据同步 (S3/WebDAV云同步守护)
                 if (op.Equals("performSync", StringComparison.OrdinalIgnoreCase))
                 {

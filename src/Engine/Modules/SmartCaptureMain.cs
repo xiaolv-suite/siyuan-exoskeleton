@@ -858,6 +858,8 @@ public static class SmartCaptureMain
                 if (!string.IsNullOrEmpty(selected))
                 {
                     selected = TextCleaner.CleanSiteSpecific(selected, url, out siteName);
+                    selected = TextCleaner.RemoveWebGarbageTail(selected);
+                    selected = TextCleaner.EnrichCodeBlocks(selected);
                 }
 
                 // 4. 环境连接自愈
@@ -915,6 +917,15 @@ public static class SmartCaptureMain
                     var createRes = SyKernelRequest.DoRequest(syUrl, token, "/api/filetree/createDocWithMd", createReq);
                     if (!createRes.Success)
                     {
+                        // 冲突自愈 1: 尝试在标题后追加时间戳防重名覆盖
+                        string dedupDocTitle = safeDocTitle + "_" + DateTime.Now.ToString("HHmmss");
+                        docPath = rawFolder + dedupDocTitle;
+                        createReq = "{\"notebook\":\"" + SafeContext.EscapeJson(targetNbId) + "\",\"path\":\"" + SafeContext.EscapeJson(docPath) + "\",\"markdown\":\"" + SafeContext.EscapeJson(fullMd) + "\"}";
+                        createRes = SyKernelRequest.DoRequest(syUrl, token, "/api/filetree/createDocWithMd", createReq);
+                    }
+                    if (!createRes.Success)
+                    {
+                        // 冲突自愈 2: 降级到根目录创建
                         docPath = "/" + safeDocTitle;
                         createReq = "{\"notebook\":\"" + SafeContext.EscapeJson(targetNbId) + "\",\"path\":\"" + SafeContext.EscapeJson(docPath) + "\",\"markdown\":\"" + SafeContext.EscapeJson(fullMd) + "\"}";
                         createRes = SyKernelRequest.DoRequest(syUrl, token, "/api/filetree/createDocWithMd", createReq);
@@ -934,6 +945,9 @@ public static class SmartCaptureMain
                                 { "custom-clip-status", "unread" },
                                 { "custom-clip-time", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") }
                             };
+                            string docEmoji = TextCleaner.GetSiteEmoji(siteName);
+                            if (!string.IsNullOrEmpty(docEmoji)) attrs["icon"] = docEmoji;
+
                             SyKernelRequest.DoRequest(syUrl, token, "/api/attr/setBlockAttrs", JsonHelper.ToJson(new { id = createdDocId, attrs = attrs }));
                         }
 
@@ -1012,6 +1026,50 @@ public static class SmartCaptureMain
             catch (Exception ex)
             {
                 if (notify != null) notify("思源外骨骼", "⚠️ 剪藏异常: " + ex.Message);
+            }
+        });
+    }
+
+    /// <summary>
+    /// 融合前置大模型提炼的智能网页剪藏 (1-Click AI Summarize & Clip)
+    /// 自动对当前网页划选正文提取 3 条核心要点，注入批注区并写入文献卡或专页
+    /// </summary>
+    public static void ExecuteWebClipWithAi(Action<string, string> notify, string clipMode)
+    {
+        ThreadPool.QueueUserWorkItem(state =>
+        {
+            try
+            {
+                IntPtr prevHwnd = XiaoLv.Desktop.UI.BentoWindow.LastExternalForegroundHwnd;
+                var snap = (prevHwnd != IntPtr.Zero)
+                    ? ContextPerception.CaptureForegroundContext(prevHwnd)
+                    : ContextPerception.CaptureForegroundContext();
+
+                string selected = SelectionHelper.CaptureSelectedText(150);
+                if (string.IsNullOrEmpty(selected) && ClipboardWatcher.IsEnabled && ClipboardWatcher.LatestItem != null)
+                {
+                    selected = ClipboardWatcher.LatestItem.RawText;
+                }
+
+                if (string.IsNullOrEmpty(selected))
+                {
+                    if (notify != null) notify("思源外骨骼 · AI 剪藏", "⚠️ 请先在网页中划选需要 AI 提炼的核心正文段落");
+                    return;
+                }
+
+                if (notify != null) notify("思源外骨骼 · AI 剪藏", "🤖 正在调用大模型提炼核心要点...");
+                var aiRes = AiRefiner.Refine(AiRefiner.PromptKeyPoints, selected);
+                string annotation = "";
+                if (aiRes != null && aiRes.Success && !string.IsNullOrEmpty(aiRes.Content))
+                {
+                    annotation = "【AI 核心结论】\n" + aiRes.Content;
+                }
+
+                ExecuteWebClip(notify, annotation, clipMode);
+            }
+            catch (Exception ex)
+            {
+                if (notify != null) notify("思源外骨骼", "❌ AI 提炼剪藏异常: " + ex.Message);
             }
         });
     }

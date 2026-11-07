@@ -679,7 +679,7 @@ namespace XiaoLv.Desktop.Core
             return true;
         }
 
-        private static bool TryDetectCodeSnippet(string txt, out string lang)
+        public static bool TryDetectCodeSnippet(string txt, out string lang)
         {
             lang = "";
             if (string.IsNullOrEmpty(txt) || txt.Length < 20) return false;

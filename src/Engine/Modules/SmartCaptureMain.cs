@@ -131,6 +131,17 @@ public static class SmartCaptureMain
             return;
         }
 
+        // 快速离线探针：若内核无法连通，瞬时降级存入离岸队列 (零等待快速通道)
+        var kernelProbe = SyKernelRequest.DoRequest(syUrl, token, "/api/system/version", "{}");
+        if (!kernelProbe.Success)
+        {
+            XiaoLv.Desktop.Core.OfflineQueueManager.EnqueueNote(text, windowTitle);
+            SafeContext.Set(context, "是否成功", true);
+            SafeContext.Set(context, "需要通知", true);
+            SafeContext.Set(context, "通知反馈", "✓ 思源未就绪或暂时离线，笔记已自动存入离岸安全队列，上线后自动同步！");
+            return;
+        }
+
         diaryNotebookId = SafeContext.GetDiaryNotebookId(context, syUrl, token);
         if (string.IsNullOrEmpty(diaryNotebookId))
         {

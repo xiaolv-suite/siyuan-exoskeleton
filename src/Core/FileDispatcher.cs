@@ -341,7 +341,7 @@ namespace XiaoLv.Desktop.Core
                 req.Method = "GET";
                 req.Timeout = 5000;
                 req.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-                // 伪造 Referer 绕过微信/知乎反爬防盗链限制
+                // 伪造 Referer 绕过各大平台反爬与防盗链限制 (微信/知乎/B站/微博/小红书/CSDN/掘金)
                 if (imageUrl.Contains("mmbiz.qpic.cn") || imageUrl.Contains("weixin.qq.com"))
                 {
                     req.Referer = "https://mp.weixin.qq.com/";
@@ -349,6 +349,26 @@ namespace XiaoLv.Desktop.Core
                 else if (imageUrl.Contains("zhimg.com") || imageUrl.Contains("zhihu.com"))
                 {
                     req.Referer = "https://www.zhihu.com/";
+                }
+                else if (imageUrl.Contains("biliimg.com") || imageUrl.Contains("hdslb.com") || imageUrl.Contains("bilibili.com"))
+                {
+                    req.Referer = "https://www.bilibili.com/";
+                }
+                else if (imageUrl.Contains("sinaimg.cn") || imageUrl.Contains("weibo.com"))
+                {
+                    req.Referer = "https://weibo.com/";
+                }
+                else if (imageUrl.Contains("csdnimg.cn") || imageUrl.Contains("csdn.net"))
+                {
+                    req.Referer = "https://blog.csdn.net/";
+                }
+                else if (imageUrl.Contains("xhscdn.com") || imageUrl.Contains("xiaohongshu.com"))
+                {
+                    req.Referer = "https://www.xiaohongshu.com/";
+                }
+                else if (imageUrl.Contains("juejin.cn") || imageUrl.Contains("byteimg.com"))
+                {
+                    req.Referer = "https://juejin.cn/";
                 }
 
                 string ext = ".png";

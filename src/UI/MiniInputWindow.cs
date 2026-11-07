@@ -522,6 +522,20 @@ namespace XiaoLv.Desktop.UI
             _statusBadge.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#064e3b"));
             _statusBadge.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10b981"));
             if (_lifelogChipsPanel != null) _lifelogChipsPanel.Visibility = Visibility.Collapsed;
+
+            // 智能防溢出：若展开后底部超出屏幕工作区，自动向上抬升
+            try
+            {
+                var curPos = SelectionHelper.GetCurrentCursorPos();
+                var screen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)curPos.X, (int)curPos.Y));
+                double scale = WindowPositionHelper.GetDpiScaleForPoint((int)curPos.X, (int)curPos.Y);
+                double bottomDip = (screen.WorkingArea.Top + screen.WorkingArea.Height) / scale;
+                if (Top + Height > bottomDip - 10)
+                {
+                    Top = bottomDip - Height - 10;
+                }
+            }
+            catch { }
         }
 
         private void UpdateIntentDisplay(string raw)

@@ -3745,6 +3745,28 @@
         activeIntentAction = "sys";
         banner.style.display = "flex";
         banner.innerHTML = `<div><span class="intent-tag">👥 人脉速记</span>识别到联系人，回车后台静默记录互动与原生双链</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认入库</span>`;
+      } else if (raw.startsWith(">>") || raw.startsWith("》》")) {
+        activeIntentAction = "sys";
+        banner.style.display = "flex";
+        const heading = raw.replace(/^(>>|》》)/, "").trim().split(/\s+/)[0] || "小节名";
+        banner.innerHTML = `<div><span class="intent-tag">📌 小节换轨</span>识别到内联小节换轨，回车追加至今日日记的《${escapeHtml(heading)}》小节</div><span style="font-size: 10px; opacity: 0.8;">↵ 换轨追加</span>`;
+      } else if (raw.startsWith(">@") || raw.startsWith("》@") || raw.startsWith("》＠")) {
+        activeIntentAction = "sys";
+        banner.style.display = "flex";
+        const targetDoc = raw.replace(/^(>@|》@|》＠)/, "").trim().split(/\s+/)[0] || "文档名";
+        banner.innerHTML = `<div><span class="intent-tag">🎯 跨文档直投</span>识别到跨文档直投目标，回车无需切窗直接追加写入《${escapeHtml(targetDoc)}》</div><span style="font-size: 10px; opacity: 0.8;">↵ 精准直投</span>`;
+      } else if (raw.startsWith("¥") || raw.startsWith("￥") || raw.startsWith("$")) {
+        activeIntentAction = "sys";
+        banner.style.display = "flex";
+        banner.innerHTML = `<div><span class="intent-tag">💰 账目花销</span>识别到开销记账，回车自动打标金额与时序 IAL 并归类入今日日记</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认记账</span>`;
+      } else if (raw.startsWith("~") || raw.startsWith("～")) {
+        activeIntentAction = "sys";
+        banner.style.display = "flex";
+        banner.innerHTML = `<div><span class="intent-tag">⏱️ 专注时序</span>识别到专注时长，回车自动倒推起止时间区间并结构化归档</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认专注</span>`;
+      } else if (raw.startsWith("+") || raw.startsWith("＋")) {
+        activeIntentAction = "sys";
+        banner.style.display = "flex";
+        banner.innerHTML = `<div><span class="intent-tag">💧 习惯打卡</span>识别到习惯打卡语法，回车自动生成习惯打卡结构化记录</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认打卡</span>`;
       } else if (raw.startsWith("!") || raw.startsWith("！")) {
         activeIntentAction = "sys";
         banner.style.display = "flex";

@@ -34,37 +34,41 @@ namespace XiaoLv.Desktop
         [STAThread]
         public static void Main(string[] args)
         {
-            // 0. 初始化内嵌程序集与原生资源自释放解析器 (零外部松散依赖，单 EXE 自包含)
-            EmbeddedResourceManager.InitializeAssemblyResolver();
-            EmbeddedResourceManager.EnsureRuntimeAssets();
-
-            // 1. 协议解析或参数规范化
-            string incomingCommand = ParseCommandLineOrProtocol(args);
-
-            // 2. 单实例检查 (防崩溃锁遗留导致互斥异常；支持多轮重试防残留句柄抢占)
-            bool isNewInstance = false;
-            for (int r = 0; r < 5; r++)
+            try
             {
-                try
-                {
-                    _mutex = new Mutex(true, MutexName, out isNewInstance);
-                    if (isNewInstance) break;
-                }
-                catch (AbandonedMutexException)
-                {
-                    isNewInstance = true;
-                    break;
-                }
-                Thread.Sleep(150);
-            }
+                // 0. 初始化内嵌程序集与原生资源自释放解析器 (零外部松散依赖，单 EXE 自包含)
+                EmbeddedResourceManager.InitializeAssemblyResolver();
+                EmbeddedResourceManager.EnsureRuntimeAssets();
 
-            if (!isNewInstance)
-            {
-                // 已有实例在运行：将参数通过命名管道直接转交给运行中的实例
-                string msgToSend = !string.IsNullOrEmpty(incomingCommand) ? incomingCommand : "open_panel";
-                IpcManager.SendToRunningInstance(msgToSend);
-                return;
-            }
+                // 1. 协议解析或参数规范化
+                string incomingCommand = ParseCommandLineOrProtocol(args);
+
+                // 2. 单实例检查 (防崩溃锁遗留导致互斥异常；支持多轮重试防残留句柄抢占)
+                bool isNewInstance = false;
+                for (int r = 0; r < 5; r++)
+                {
+                    try
+                    {
+                        _mutex = new Mutex(true, MutexName, out isNewInstance);
+                        if (isNewInstance) break;
+                    }
+                    catch (AbandonedMutexException)
+                    {
+                        isNewInstance = true;
+                        break;
+                    }
+                    Thread.Sleep(150);
+                }
+
+                Logger.Info("Program Main: isNewInstance=" + isNewInstance + ", MutexName=" + MutexName + ", args=" + (args != null ? string.Join(" ", args) : ""));
+                if (!isNewInstance)
+                {
+                    // 已有实例在运行：将参数通过命名管道直接转交给运行中的实例
+                    string msgToSend = !string.IsNullOrEmpty(incomingCommand) ? incomingCommand : "open_panel";
+                    Logger.Info("Program Main: sending to existing instance: " + msgToSend);
+                    IpcManager.SendToRunningInstance(msgToSend);
+                    return;
+                }
 
             // 3. 首次启动主进程
             _wpfApp = new System.Windows.Application();
@@ -293,6 +297,12 @@ namespace XiaoLv.Desktop
 
             // 运行 WPF 消息循环
             _wpfApp.Run();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("FATAL Main unhandled exception: " + ex);
+                try { Console.Error.WriteLine(ex.ToString()); } catch { }
+            }
         }
 
         private static void HandleIpcMessage(string msg)
@@ -354,6 +364,19 @@ namespace XiaoLv.Desktop
                     {
                         FileDispatcher.DispatchFileToSiYuan(filePath, (t, m) => SafeNotify(t, m));
                     });
+                    return;
+                }
+
+                if (clean.StartsWith("inspect:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var filePath = clean.Substring(8).Trim().Trim('"');
+                    if (File.Exists(filePath))
+                    {
+                        _wpfApp.Dispatcher.Invoke(() =>
+                        {
+                            _bentoWindow.InspectExternalFile(filePath);
+                        });
+                    }
                     return;
                 }
 
@@ -443,6 +466,20 @@ namespace XiaoLv.Desktop
                             ThreadPool.QueueUserWorkItem(s =>
                             {
                                 FileDispatcher.OpenWithPreferredApp(p, 0);
+                            });
+                            return;
+                        }
+                    }
+
+                    // 4. 本地文档极速透视抽屉 (siyuan-exoskeleton://inspect 或 ://preview)
+                    if (clean.Contains("://inspect") || clean.Contains("://preview"))
+                    {
+                        string p = ExtractQueryParam(clean, "path");
+                        if (!string.IsNullOrEmpty(p) && File.Exists(p))
+                        {
+                            _wpfApp.Dispatcher.Invoke(() =>
+                            {
+                                _bentoWindow.InspectExternalFile(p);
                             });
                             return;
                         }
@@ -742,6 +779,10 @@ namespace XiaoLv.Desktop
             {
                 return "sendfile:" + args[1].Trim();
             }
+            if ((arg.Equals("-inspect", StringComparison.OrdinalIgnoreCase) || arg.Equals("--inspect", StringComparison.OrdinalIgnoreCase) || arg.Equals("-preview", StringComparison.OrdinalIgnoreCase)) && args.Length > 1)
+            {
+                return "inspect:" + args[1].Trim();
+            }
 
             string cmd = "";
             string paramText = "";
@@ -788,6 +829,7 @@ namespace XiaoLv.Desktop
 
         private static void ExitApplication()
         {
+            Logger.Info("ExitApplication called! StackTrace=" + Environment.StackTrace);
             try
             {
                 SiYuanGuardian.Stop();

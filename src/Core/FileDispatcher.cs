@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using XiaoLv.Desktop.Engine.Modules;
 
 namespace XiaoLv.Desktop.Core
 {
@@ -36,20 +37,94 @@ namespace XiaoLv.Desktop.Core
             if (File.Exists(filePath))
             {
                 var fi = new FileInfo(filePath);
-                string assetPath, err;
-                if (!UploadAsset(syUrl, token, filePath, out assetPath, out err))
+                string ext = fi.Extension.ToLowerInvariant();
+                string safeName = fi.Name.Replace("[", "【").Replace("]", "】");
+                string timeStr = DateTime.Now.ToString("HH:mm");
+
+                // 结构化文档透视优先
+                string structuredMd = "";
+                bool isStructured = false;
+                try
                 {
-                    if (notify != null) notify("思源外骨骼", "❌ 资产上传失败: " + err);
-                    return;
+                    if (ext == ".docx")
+                    {
+                        OfficeFileWatcher.WatchFile(filePath);
+                        var doc = OfficeOpenXmlParser.InspectFile(filePath);
+                        if (doc != null && doc.Headings != null && doc.Headings.Count > 0)
+                        {
+                            structuredMd = OfficeDeepLinkMain.BuildWordOutlineMarkdown(doc);
+                            isStructured = true;
+                        }
+                    }
+                    else if (ext == ".xlsx")
+                    {
+                        OfficeFileWatcher.WatchFile(filePath);
+                        var doc = OfficeOpenXmlParser.InspectFile(filePath);
+                        if (doc != null && doc.Sheets != null && doc.Sheets.Count > 0)
+                        {
+                            var sb = new StringBuilder();
+                            sb.AppendFormat("### 📊 《{0}》 表格结构透视 (共 {1} 个工作表)\n", doc.FileName, doc.Sheets.Count);
+                            string docOpenUrl = "siyuan-exoskeleton://open-office?path=" + Uri.EscapeDataString(doc.FilePath);
+                            sb.AppendFormat("> 📍 **本地底稿**: `{0}` · [⚡ 本地秒开]({1})\n\n", doc.FilePath, docOpenUrl);
+                            sb.AppendLine("#### 📑 工作表清单与单元格速览");
+                            foreach (var sh in doc.Sheets)
+                            {
+                                string shUrl = string.Format("siyuan-exoskeleton://open-office?path={0}&sheet={1}", Uri.EscapeDataString(doc.FilePath), Uri.EscapeDataString(sh.SheetName));
+                                sb.AppendFormat("- 📄 **{0}** ({1} 行) · [定位 ↗]({2})\n", sh.SheetName, sh.RowCount, shUrl);
+                            }
+                            sb.AppendLine();
+                            sb.AppendFormat("{{: custom-type=\"office-excel-outline\" custom-file-path=\"{0}\" }}\n", doc.FilePath.Replace("\"", "\\\""));
+                            structuredMd = sb.ToString();
+                            isStructured = true;
+                        }
+                    }
+                    else if (ext == ".pptx")
+                    {
+                        OfficeFileWatcher.WatchFile(filePath);
+                        var doc = OfficeOpenXmlParser.InspectFile(filePath);
+                        if (doc != null && doc.Slides != null && doc.Slides.Count > 0)
+                        {
+                            structuredMd = OfficeDeepLinkMain.BuildPptFlashcardsMarkdown(doc);
+                            isStructured = true;
+                        }
+                    }
+                    else if (ext == ".pdf")
+                    {
+                        OfficeFileWatcher.WatchFile(filePath);
+                        var pdf = PdfLightParser.InspectPdf(filePath);
+                        if (pdf != null)
+                        {
+                            structuredMd = PdfLightParser.BuildPdfReadingNotesMarkdown(pdf);
+                            isStructured = true;
+                        }
+                    }
+                }
+                catch { }
+
+                string assetPath, err;
+                UploadAsset(syUrl, token, filePath, out assetPath, out err);
+
+                string appendData;
+                if (isStructured && !string.IsNullOrEmpty(structuredMd))
+                {
+                    if (!string.IsNullOrEmpty(assetPath))
+                    {
+                        structuredMd += string.Format("\n> 📦 **思源资产库备份**: [{0}]({1}) (更新于 {2})\n", safeName, assetPath, timeStr);
+                    }
+                    appendData = structuredMd.TrimEnd();
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(assetPath))
+                    {
+                        if (notify != null) notify("思源外骨骼", "❌ 资产上传失败: " + err);
+                        return;
+                    }
+                    bool isImg = (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" || ext == ".svg" || ext == ".bmp");
+                    string md = isImg ? ("![" + safeName + "](" + assetPath + ")") : ("📎 [" + safeName + " (" + FormatFileSize(fi.Length) + ")](" + assetPath + ")");
+                    appendData = "* " + md + "\n  * ⏱️ 上传于 " + timeStr + " · 外部直投";
                 }
 
-                string ext = fi.Extension.ToLowerInvariant();
-                bool isImg = (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" || ext == ".svg" || ext == ".bmp");
-                string safeName = fi.Name.Replace("[", "【").Replace("]", "】");
-                string md = isImg ? ("![" + safeName + "](" + assetPath + ")") : ("📎 [" + safeName + " (" + FormatFileSize(fi.Length) + ")](" + assetPath + ")");
-
-                string timeStr = DateTime.Now.ToString("HH:mm");
-                string appendData = "* " + md + "\n  * ⏱️ 上传于 " + timeStr + " · 外部直投";
                 var r = SyKernelRequest.DoRequest(syUrl, token, "/api/block/appendBlock", JsonHelper.ToJson(new
                 {
                     parentID = targetDocId,
@@ -158,45 +233,132 @@ namespace XiaoLv.Desktop.Core
             string fileName = fi.Name;
             string ext = fi.Extension.ToLowerInvariant();
             string sizeStr = FormatFileSize(fi.Length);
-
-            string assetPath;
-            string err;
-            bool ok = UploadAsset(syUrl, token, filePath, out assetPath, out err);
-
-            if (!ok || string.IsNullOrEmpty(assetPath))
-            {
-                if (notify != null) notify("思源外骨骼 · 文件速递", "❌ 文件上传至思源资产库失败: " + err);
-                return;
-            }
-
-            // 构造 Markdown 嵌入代码
             string safeName = fileName.Replace("[", "【").Replace("]", "】");
-            string md;
-            bool isImg = (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" || ext == ".svg" || ext == ".bmp");
-            bool isMedia = (ext == ".mp3" || ext == ".wav" || ext == ".mp4" || ext == ".mkv" || ext == ".mov");
+            string timeStr = DateTime.Now.ToString("HH:mm");
 
-            if (isImg)
+            // 1. 若为本地 Office 或 PDF 结构化文档，执行高精度零依赖流式透视
+            string structuredMd = "";
+            bool isStructured = false;
+
+            try
             {
-                md = "![" + safeName + "](" + assetPath + ")";
+                if (ext == ".docx")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    var doc = OfficeOpenXmlParser.InspectFile(filePath);
+                    if (doc != null && doc.Headings != null && doc.Headings.Count > 0)
+                    {
+                        structuredMd = OfficeDeepLinkMain.BuildWordOutlineMarkdown(doc);
+                        isStructured = true;
+                    }
+                }
+                else if (ext == ".xlsx")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    var doc = OfficeOpenXmlParser.InspectFile(filePath);
+                    if (doc != null && doc.Sheets != null && doc.Sheets.Count > 0)
+                    {
+                        var sb = new StringBuilder();
+                        sb.AppendFormat("### 📊 《{0}》 表格结构透视 (共 {1} 个工作表)\n", doc.FileName, doc.Sheets.Count);
+                        string docOpenUrl = "siyuan-exoskeleton://open-office?path=" + Uri.EscapeDataString(doc.FilePath);
+                        sb.AppendFormat("> 📍 **本地底稿**: `{0}` · [⚡ 本地秒开]({1})\n\n", doc.FilePath, docOpenUrl);
+                        sb.AppendLine("#### 📑 工作表清单与单元格速览");
+                        foreach (var sh in doc.Sheets)
+                        {
+                            string shUrl = string.Format("siyuan-exoskeleton://open-office?path={0}&sheet={1}", Uri.EscapeDataString(doc.FilePath), Uri.EscapeDataString(sh.SheetName));
+                            sb.AppendFormat("- 📄 **{0}** ({1} 行) · [定位 ↗]({2})\n", sh.SheetName, sh.RowCount, shUrl);
+                        }
+                        sb.AppendLine();
+                        sb.AppendFormat("{{: custom-type=\"office-excel-outline\" custom-file-path=\"{0}\" }}\n", doc.FilePath.Replace("\"", "\\\""));
+                        structuredMd = sb.ToString();
+                        isStructured = true;
+                    }
+                }
+                else if (ext == ".pptx")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    var doc = OfficeOpenXmlParser.InspectFile(filePath);
+                    if (doc != null && doc.Slides != null && doc.Slides.Count > 0)
+                    {
+                        structuredMd = OfficeDeepLinkMain.BuildPptFlashcardsMarkdown(doc);
+                        isStructured = true;
+                    }
+                }
+                else if (ext == ".pdf")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    var pdf = PdfLightParser.InspectPdf(filePath);
+                    if (pdf != null)
+                    {
+                        structuredMd = PdfLightParser.BuildPdfReadingNotesMarkdown(pdf);
+                        isStructured = true;
+                    }
+                }
             }
-            else if (isMedia)
+            catch { }
+
+            // 2. 尝试上传至思源资产库作为备份
+            string assetPath = null;
+            string err = null;
+            UploadAsset(syUrl, token, filePath, out assetPath, out err);
+
+            // 3. 构建写入 Markdown
+            string appendData;
+            string diaryNb = SafeContext.GetDiaryNotebookId(null, syUrl, token);
+
+            if (isStructured && !string.IsNullOrEmpty(structuredMd))
             {
-                md = "🎬 [" + safeName + " (" + sizeStr + ")](" + assetPath + ")";
+                if (!string.IsNullOrEmpty(assetPath))
+                {
+                    structuredMd += string.Format("\n> 📦 **思源资产库备份**: [{0}]({1}) (更新于 {2})\n", safeName, assetPath, timeStr);
+                }
+                appendData = structuredMd.TrimEnd();
             }
             else
             {
-                md = "📄 [" + safeName + " (" + sizeStr + ")](" + assetPath + ")";
+                if (string.IsNullOrEmpty(assetPath))
+                {
+                    if (notify != null) notify("思源外骨骼 · 文件速递", "❌ 文件上传至思源资产库失败: " + err);
+                    return;
+                }
+
+                bool isImg = (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" || ext == ".svg" || ext == ".bmp");
+                bool isMedia = (ext == ".mp3" || ext == ".wav" || ext == ".mp4" || ext == ".mkv" || ext == ".mov");
+
+                string md;
+                if (isImg)
+                {
+                    md = "![" + safeName + "](" + assetPath + ")";
+                }
+                else if (isMedia)
+                {
+                    md = "🎬 [" + safeName + " (" + sizeStr + ")](" + assetPath + ")";
+                }
+                else
+                {
+                    md = "📄 [" + safeName + " (" + sizeStr + ")](" + assetPath + ")";
+                }
+
+                appendData = "- " + timeStr + " 📦 " + md;
             }
 
-            // 写入今日日记
-            string diaryNb = SafeContext.GetDiaryNotebookId(null, syUrl, token);
-            string appendData = "- " + DateTime.Now.ToString("HH:mm") + " 📦 " + md;
             string postJson = "{\"notebook\":\"" + diaryNb + "\",\"dataType\":\"markdown\",\"data\":\"" + SafeContext.EscapeJson(appendData) + "\"}";
 
             var r = SyKernelRequest.DoRequest(syUrl, token, "/api/block/appendDailyNoteBlock", postJson);
             if (r.Success)
             {
-                if (notify != null) notify("思源外骨骼 · 文件速递", "✓ 已将【" + fileName + "】成功归档入今日日记！");
+                SoundPlayerHelper.PlayFeedback();
+                if (notify != null)
+                {
+                    if (isStructured)
+                    {
+                        notify("思源外骨骼 · 结构化透视入库", "✓ 已将《" + fileName + "》结构大纲存入今日日记并激活外部监听！");
+                    }
+                    else
+                    {
+                        notify("思源外骨骼 · 文件速递", "✓ 已将【" + fileName + "】成功归档入今日日记！");
+                    }
+                }
             }
             else
             {

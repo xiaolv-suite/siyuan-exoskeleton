@@ -48,12 +48,10 @@ async function pollSql(stmt, maxTries = 10, intervalMs = 300) {
 
 function stopProcess(name) {
   try {
-    const exeName = name.endsWith(".exe") ? name : `${name}.exe`;
-    const killCmd = `Get-Process -Name '*外骨骼*','*XiaoLv*','*思源小驴*' -ErrorAction SilentlyContinue | Stop-Process -Force; Get-Process | Where-Object { try { $_.Path -match 'bin\\\\Release|XiaoLvDesktop' } catch { $false } } | Stop-Process -Force -ErrorAction SilentlyContinue`;
+    const killCmd = `Get-Process | Where-Object { $_.Path -and ($_.Path.Contains('bin\\Release') -or $_.Path.Contains('XiaoLvDesktop')) } | Stop-Process -Force -ErrorAction SilentlyContinue`;
     execSync(`powershell.exe -NoProfile -Command "${killCmd}"`, { stdio: "ignore" });
-    try { execSync(`chcp 65001 > nul && taskkill /F /T /IM "${exeName}"`, { stdio: "ignore" }); } catch {}
     for (let i = 0; i < 25; i++) {
-      const count = execSync(`powershell.exe -NoProfile -Command "@(Get-Process -Name '*外骨骼*','*XiaoLv*' -ErrorAction SilentlyContinue).Count"`).toString().trim();
+      const count = execSync(`powershell.exe -NoProfile -Command "@(Get-Process | Where-Object { $_.Path -and ($_.Path.Contains('bin\\Release') -or $_.Path.Contains('XiaoLvDesktop')) }).Count"`).toString().trim();
       if (!count || count === "0") break;
       execSync(`powershell.exe -NoProfile -Command "Start-Sleep -Milliseconds 150"`, { stdio: "ignore" });
     }
@@ -889,6 +887,43 @@ async function main() {
   const ideRes = runPs(ideScript);
   const isIdeOk = ideRes.includes("True|True");
   logStep("Step 7.39: 开发者 IDE 工程与活动源码文件环境感知 (VS Code / PyCharm / Cursor) 断言", isIdeOk, `工程提取断言: ${ideRes.trim()}`);
+
+  // Step 7.40: Test PowerPoint & WPS Presentation COM Late-Binding Reflection
+  const pptScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $bridge = $asm.GetType('XiaoLv.Desktop.Core.OfficeComBridge');
+    $mPpt = $bridge.GetMethod('TryGetActiveOfficeSelection', [System.Reflection.BindingFlags]'Public,Static');
+    $resPowerPnt = $mPpt.Invoke($null, @('powerpnt'));
+    $resWpp = $mPpt.Invoke($null, @('wpp'));
+    $safeRes = ($null -ne $resPowerPnt) -and ($null -ne $resWpp) -and ($resPowerPnt.AppType -eq 'ppt' -or $resPowerPnt.AppType -eq '');
+    Write-Output ($safeRes.ToString());
+  `;
+  const pptRes = runPs(pptScript);
+  const isPptOk = pptRes.includes("True");
+  logStep("Step 7.40: PowerPoint 与 WPS 演示 COM 晚绑定透视与选区安全反射断言", isPptOk, `PPT晚绑定反射断言: ${pptRes.trim()}`);
+
+  // Step 7.41: Test Shell Context Menu & -inspect Command Line Parsing
+  const shellScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $mgr = $asm.GetType('XiaoLv.Desktop.Core.ShellContextMenuManager');
+    $mReg = $mgr.GetMethod('Register', [System.Reflection.BindingFlags]'Public,Static');
+    $mIsReg = $mgr.GetMethod('IsRegistered', [System.Reflection.BindingFlags]'Public,Static');
+    $regOk = $mReg.Invoke($null, $null);
+    $isReg = $mIsReg.Invoke($null, $null);
+
+    $prog = $asm.GetType('XiaoLv.Desktop.Program');
+    $mParse = $prog.GetMethod('ParseCommandLineOrProtocol', [System.Reflection.BindingFlags]'NonPublic,Static');
+    $argsArr = , [string[]]@('-inspect', 'D:\\test.docx');
+    $parsed = $mParse.Invoke($null, $argsArr);
+    $cmdOk = ($parsed -eq 'inspect:D:\\test.docx');
+
+    Write-Output ($isReg.ToString() + '|' + $cmdOk.ToString());
+  `;
+  const shellRes = runPs(shellScript);
+  const isShellOk = shellRes.includes("True|True");
+  logStep("Step 7.41: 资源管理器思源外骨骼双右键菜单与 -inspect 命令行解析穿透断言", isShellOk, `右键与命令行断言: ${shellRes.trim()}`);
 
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");

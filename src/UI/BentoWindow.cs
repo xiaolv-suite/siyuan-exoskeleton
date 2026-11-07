@@ -2115,6 +2115,45 @@ namespace XiaoLv.Desktop.UI
             catch { }
         }
 
+        public void InspectExternalFile(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return;
+            string fullPath = Path.GetFullPath(filePath);
+            string ext = Path.GetExtension(fullPath).ToLowerInvariant();
+
+            ShowPanel();
+
+            ThreadPool.QueueUserWorkItem(s =>
+            {
+                try
+                {
+                    if (ext == ".pdf")
+                    {
+                        var summary = PdfLightParser.InspectPdf(fullPath);
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onPdfInspectionLoaded) window.onPdfInspectionLoaded(" + JsonHelper.ToJson(summary) + ");");
+                            }
+                        });
+                    }
+                    else if (ext == ".docx" || ext == ".xlsx" || ext == ".pptx")
+                    {
+                        var summary = OfficeOpenXmlParser.InspectFile(fullPath);
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOfficeInspectionLoaded) window.onOfficeInspectionLoaded(" + JsonHelper.ToJson(summary) + ");");
+                            }
+                        });
+                    }
+                }
+                catch { }
+            });
+        }
+
         public void ShowPanel(string initialQuery = null)
         {
             // 1. 0ms 瞬间上屏与聚焦（秒开核心：从挂起态迅速唤醒 WebView2）

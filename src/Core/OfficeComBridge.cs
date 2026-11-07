@@ -72,6 +72,20 @@ namespace XiaoLv.Desktop.Core
                     if (!etRes.Success) etRes = ReadExcelSelection("ket.Application", "WPS 表格", "et");
                     return etRes;
                 }
+
+                // 5. 微软 PowerPoint
+                if (pLower == "powerpnt")
+                {
+                    return ReadPowerPointSelection("PowerPoint.Application", "Microsoft PowerPoint", "ppt");
+                }
+
+                // 6. 金山 WPS 演示
+                if (pLower == "wpp")
+                {
+                    var wppRes = ReadPowerPointSelection("wpp.Application", "WPS 演示", "ppt");
+                    if (!wppRes.Success) wppRes = ReadPowerPointSelection("kwpp.Application", "WPS 演示", "ppt");
+                    return wppRes;
+                }
             }
             catch { }
 
@@ -199,6 +213,91 @@ namespace XiaoLv.Desktop.Core
                     }
                 }
                 catch { }
+            }
+            catch { }
+
+            return res;
+        }
+
+        private static OfficeSelectionResult ReadPowerPointSelection(string progId, string displayName, string appType)
+        {
+            var res = new OfficeSelectionResult { AppType = appType, AppDisplayName = displayName };
+            try
+            {
+                object app = null;
+                try { app = Marshal.GetActiveObject(progId); } catch { return res; }
+                if (app == null) return res;
+
+                Type tApp = app.GetType();
+
+                // 读取活动演示文稿路径
+                try
+                {
+                    object pres = tApp.InvokeMember("ActivePresentation", BindingFlags.GetProperty, null, app, null);
+                    if (pres != null)
+                    {
+                        Type tPres = pres.GetType();
+                        res.DocumentPath = (string)tPres.InvokeMember("FullName", BindingFlags.GetProperty, null, pres, null);
+                        res.DocumentTitle = (string)tPres.InvokeMember("Name", BindingFlags.GetProperty, null, pres, null);
+                    }
+                }
+                catch { }
+
+                // 读取当前活动窗口与幻灯片索引
+                try
+                {
+                    object actWin = tApp.InvokeMember("ActiveWindow", BindingFlags.GetProperty, null, app, null);
+                    if (actWin != null)
+                    {
+                        Type tWin = actWin.GetType();
+
+                        // 提取当前所在幻灯片页码
+                        try
+                        {
+                            object view = tWin.InvokeMember("View", BindingFlags.GetProperty, null, actWin, null);
+                            if (view != null)
+                            {
+                                object slide = view.GetType().InvokeMember("Slide", BindingFlags.GetProperty, null, view, null);
+                                if (slide != null)
+                                {
+                                    object idx = slide.GetType().InvokeMember("SlideIndex", BindingFlags.GetProperty, null, slide, null);
+                                    if (idx != null)
+                                    {
+                                        res.SubLocation = "Slide" + idx.ToString();
+                                    }
+                                }
+                            }
+                        }
+                        catch { }
+
+                        // 提取划选文字
+                        try
+                        {
+                            object sel = tWin.InvokeMember("Selection", BindingFlags.GetProperty, null, actWin, null);
+                            if (sel != null)
+                            {
+                                object tr = sel.GetType().InvokeMember("TextRange", BindingFlags.GetProperty, null, sel, null);
+                                if (tr != null)
+                                {
+                                    string rawText = (string)tr.GetType().InvokeMember("Text", BindingFlags.GetProperty, null, tr, null);
+                                    if (!string.IsNullOrEmpty(rawText))
+                                    {
+                                        res.Text = rawText.Trim('\r', '\n', '\a', '\0', ' ', '\t');
+                                        res.Success = !string.IsNullOrEmpty(res.Text);
+                                    }
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+
+                if (!string.IsNullOrEmpty(res.DocumentPath) && string.IsNullOrEmpty(res.Text))
+                {
+                    // 若无划选文字但处于演示文稿中，依然标定文档成功
+                    res.Success = true;
+                }
             }
             catch { }
 

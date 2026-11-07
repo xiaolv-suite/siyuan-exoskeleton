@@ -563,6 +563,24 @@ namespace XiaoLv.Desktop.Core
                 return ph;
             });
 
+            // 2.5 保护 LaTeX 数学公式 ($$...$$ 与 $...$)
+            var mathBlocks = new List<string>();
+            sanitized = Regex.Replace(sanitized, @"(\$\$[\s\S]*?\$\$|\$[^$\r\n]+\$)", m =>
+            {
+                string ph = " __PANGU_MATH_" + mathBlocks.Count + "__ ";
+                mathBlocks.Add(m.Value);
+                return ph;
+            });
+
+            // 2.6 保护思源原生块引用与动态模板占位符
+            var syBlocks = new List<string>();
+            sanitized = Regex.Replace(sanitized, @"(\(\([a-z0-9\-]{14,24}(?:\s+""[^""]*"")?\)\)|\{\{[\s\S]*?\}\})", m =>
+            {
+                string ph = " __PANGU_SY_" + syBlocks.Count + "__ ";
+                syBlocks.Add(m.Value);
+                return ph;
+            }, RegexOptions.IgnoreCase);
+
             // 3. 中文与英文/数字之间插入空格
             sanitized = Regex.Replace(sanitized, @"([\u4e00-\u9fa5\u3040-\u30ff])([a-zA-Z0-9$#@%&*])", "$1 $2");
             sanitized = Regex.Replace(sanitized, @"([a-zA-Z0-9$#@%&*])([\u4e00-\u9fa5\u3040-\u30ff])", "$1 $2");
@@ -572,7 +590,21 @@ namespace XiaoLv.Desktop.Core
             // 4. 清理冗余的连续空格（保留换行）
             sanitized = Regex.Replace(sanitized, @"[ \t]{2,}", " ");
 
-            // 5. 还原 URL
+            // 5. 还原思源块引用与模板占位符
+            sanitized = Regex.Replace(sanitized, @"\s*__PANGU_SY_(\d+)__\s*", m =>
+            {
+                int idx = int.Parse(m.Groups[1].Value);
+                return idx < syBlocks.Count ? (" " + syBlocks[idx] + " ") : "";
+            });
+
+            // 5.5 还原 LaTeX 数学公式
+            sanitized = Regex.Replace(sanitized, @"\s*__PANGU_MATH_(\d+)__\s*", m =>
+            {
+                int idx = int.Parse(m.Groups[1].Value);
+                return idx < mathBlocks.Count ? (" " + mathBlocks[idx] + " ") : "";
+            });
+
+            // 5.8 还原 URL
             sanitized = Regex.Replace(sanitized, @"\s*__PANGU_URL_(\d+)__\s*", m =>
             {
                 int idx = int.Parse(m.Groups[1].Value);

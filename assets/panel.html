@@ -4539,6 +4539,12 @@
         return;
       }
 
+      // 呼出全库标签穿透视图
+      if (item.id === "sytag") {
+        insertPrefix("tag:");
+        return;
+      }
+
       // 呼出插件命令穿透视图
       if (item.id === "sycmd") {
         insertPrefix("p:");
@@ -5414,6 +5420,7 @@
             <button class="inspector-dock-btn" onclick="pasteBlockRef('${targetId}', '${escapeQuote(targetContent)}')" title="在外部窗口光标处注入双链 ((id &quot;文本&quot;)) (Shift+Enter)">⚡ Shift+↵ 穿透回贴</button>
             <button class="inspector-dock-btn" onclick="copyBlockRef('${targetId}', '${escapeQuote(targetContent)}')" title="复制双链至剪贴板">📋 复制双链</button>
             <button class="inspector-dock-btn" onclick="copyMarkdownLink('${targetId}', '${escapeQuote(targetContent)}')" title="复制 Markdown 链接">📝 复制MD</button>
+            <button class="inspector-dock-btn" onclick="pinAsStickyNote('${escapeQuote(docTitle)}', '${escapeQuote(markdownText)}')" title="钉在桌面作为半透明浮动参考便签">📌 钉在桌面</button>
             <button class="inspector-dock-btn" onclick="togglePinItem(filteredItems[selectedIndex])" title="将此文档置顶常驻到桌面快捷坞 (Ctrl+P)">📌 置顶常驻</button>
           </div>
           <button class="inspector-dock-btn" onclick="openStandaloneDoc('${b.root_id || targetId}')" title="在思源独立新窗口开启此笔记 (Alt+O)">🌐 独立新窗</button>

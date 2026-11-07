@@ -237,6 +237,8 @@ public static class SmartCaptureMain
                     if (lt.StartsWith("!") || lt.StartsWith("！") || lt.StartsWith("?") || lt.StartsWith("？") ||
                         lt.StartsWith("¥") || lt.StartsWith("￥") || lt.StartsWith("~") || lt.StartsWith("+") ||
                         lt.StartsWith("@") || lt.StartsWith("＠") ||
+                        lt.StartsWith("- [ ]") || lt.StartsWith("* [ ]") || lt.StartsWith("[ ]") ||
+                        lt.StartsWith("- [x]") || lt.StartsWith("* [x]") || lt.StartsWith("[x]") ||
                         ((lt.StartsWith("#") || lt.StartsWith("＃")) && !Regex.IsMatch(lt, @"^#{1,6}\s")))
                     {
                         hasIntent = true;
@@ -399,13 +401,31 @@ public static class SmartCaptureMain
         }
 
         // =============================================================
-        // 分支 B: '!' 或 '!待办' 任务待办分流 (思源原生 - [ ] 待办 + 可选管家同步)
+        // 分支 B: '!' 或 '!待办' 或 '- [ ]' 任务待办分流 (思源原生 - [ ] 待办 + 可选管家同步)
         // 排除 Markdown 图片语法 (![图片描述](路径))
         // =============================================================
-        if ((text.StartsWith("!") || text.StartsWith("！")) && !text.StartsWith("![") && !text.StartsWith("！["))
+        bool isTodoIntent = ((text.StartsWith("!") || text.StartsWith("！")) && !text.StartsWith("![") && !text.StartsWith("！["))
+                         || text.StartsWith("- [ ]") || text.StartsWith("* [ ]") || text.StartsWith("[ ]")
+                         || text.StartsWith("- [x]") || text.StartsWith("* [x]") || text.StartsWith("[x]")
+                         || text.StartsWith("- [X]") || text.StartsWith("* [X]") || text.StartsWith("[X]");
+        if (isTodoIntent)
         {
-            var todoContent = text.TrimStart('!', '！', ' ');
-            if (todoContent.StartsWith("待办")) todoContent = todoContent.Substring(2).TrimStart('：', ':', ' ');
+            bool isDone = text.StartsWith("- [x]") || text.StartsWith("* [x]") || text.StartsWith("[x]")
+                       || text.StartsWith("- [X]") || text.StartsWith("* [X]") || text.StartsWith("[X]");
+            string todoContent;
+            if (text.StartsWith("- [ ]") || text.StartsWith("* [ ]") || text.StartsWith("- [x]") || text.StartsWith("* [x]") || text.StartsWith("- [X]") || text.StartsWith("* [X]"))
+            {
+                todoContent = text.Substring(5).Trim();
+            }
+            else if (text.StartsWith("[ ]") || text.StartsWith("[x]") || text.StartsWith("[X]"))
+            {
+                todoContent = text.Substring(3).Trim();
+            }
+            else
+            {
+                todoContent = text.TrimStart('!', '！', ' ');
+                if (todoContent.StartsWith("待办")) todoContent = todoContent.Substring(2).TrimStart('：', ':', ' ');
+            }
 
             if (string.IsNullOrWhiteSpace(todoContent))
             {
@@ -415,7 +435,7 @@ public static class SmartCaptureMain
                 return;
             }
 
-            var mdTask = "- [ ] " + timeStr + " " + todoContent + " (来自 " + windowTitle + ")";
+            var mdTask = (isDone ? "- [x] " : "- [ ] ") + timeStr + " " + todoContent + " (来自 " + windowTitle + ")";
             var postBody = "{\"notebook\":\"" + diaryNotebookId + "\",\"dataType\":\"markdown\",\"data\":\"" + SafeContext.EscapeJson(mdTask) + "\"}";
 
             var r = SyKernelRequest.DoRequest(syUrl, token, "/api/block/appendDailyNoteBlock", postBody);
@@ -464,10 +484,13 @@ public static class SmartCaptureMain
             }
 
             var splitIdx = cardRaw.IndexOf("//");
-            if (splitIdx < 0) splitIdx = cardRaw.IndexOf("——");
+            int sepLen = 2;
+            if (splitIdx < 0) { splitIdx = cardRaw.IndexOf("::"); sepLen = 2; }
+            if (splitIdx < 0) { splitIdx = cardRaw.IndexOf("——"); sepLen = 2; }
+            if (splitIdx < 0) { splitIdx = cardRaw.IndexOf("--"); sepLen = 2; }
 
             var question = splitIdx > 0 ? cardRaw.Substring(0, splitIdx).Trim() : cardRaw;
-            var answer = splitIdx > 0 ? cardRaw.Substring(splitIdx + 2).Trim() : "(待补充答案)";
+            var answer = splitIdx > 0 ? cardRaw.Substring(splitIdx + sepLen).Trim() : "(待补充答案)";
 
             question = question.TrimStart('?', '？', '#', ' ');
             if (question.StartsWith("🎴")) question = question.Substring("🎴".Length).TrimStart();

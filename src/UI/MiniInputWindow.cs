@@ -348,6 +348,13 @@ namespace XiaoLv.Desktop.UI
             {
                 if (e.Key == Key.Escape)
                 {
+                    if (!_isStickyMode && !string.IsNullOrEmpty(_inputBox.Text))
+                    {
+                        _inputBox.Text = "";
+                        _statusBadgeText.Text = "↵ 入库";
+                        e.Handled = true;
+                        return;
+                    }
                     saveDraftAction();
                     Close();
                     e.Handled = true;

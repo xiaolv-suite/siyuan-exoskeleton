@@ -68,27 +68,54 @@ namespace XiaoLv.Desktop.Core
             }
         }
 
-        public static bool OpenWithPreferredApp(string filePath)
+        public static bool OpenWithPreferredApp(string filePath, int targetPage = 0)
         {
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return false;
+            if (string.IsNullOrEmpty(filePath)) return false;
+
+            // 智能解析文件名中自带的页码锚点 (如 paper.pdf#page=12 或 paper.pdf#12)
+            string cleanPath = filePath;
+            int page = targetPage;
+            var pageMatch = Regex.Match(filePath, @"#(?:page=)?(\d+)$", RegexOptions.IgnoreCase);
+            if (pageMatch.Success)
+            {
+                page = int.Parse(pageMatch.Groups[1].Value);
+                cleanPath = filePath.Substring(0, pageMatch.Index);
+            }
+
+            if (!File.Exists(cleanPath)) return false;
 
             try
             {
-                string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                string ext = Path.GetExtension(cleanPath).ToLowerInvariant();
 
-                // 1. 若为 PDF，检查是否有优先阅读器 (SumatraPDF)
+                // 1. 若为 PDF 文献，优先调用轻量学术级 SumatraPDF 并携带页码穿透跳转
                 if (ext == ".pdf")
                 {
                     var sumatra = ToolDetector.DetectSumatraPdf();
                     if (sumatra != null && !string.IsNullOrEmpty(sumatra.ExePath))
                     {
-                        Process.Start(sumatra.ExePath, "\"" + filePath + "\"");
+                        string args = page > 0 
+                            ? string.Format("-page {0} \"{1}\"", page, cleanPath) 
+                            : string.Format("\"{0}\"", cleanPath);
+
+                        Process.Start(new ProcessStartInfo(sumatra.ExePath, args) { UseShellExecute = true });
                         return true;
+                    }
+                    else if (page > 0)
+                    {
+                        // 若未装 SumatraPDF 但附带页码，优先通过 Edge 内置 PDF 引擎携带 #page= 深度跳转
+                        try
+                        {
+                            string edgeUri = "file:///" + cleanPath.Replace('\\', '/') + "#page=" + page;
+                            Process.Start("msedge.exe", "\"" + edgeUri + "\"");
+                            return true;
+                        }
+                        catch { }
                     }
                 }
 
                 // 2. 默认调用系统原生关联程序打开
-                Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
+                Process.Start(new ProcessStartInfo(cleanPath) { UseShellExecute = true });
                 return true;
             }
             catch { }

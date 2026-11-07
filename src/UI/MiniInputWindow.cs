@@ -435,6 +435,9 @@ namespace XiaoLv.Desktop.UI
                 Close();
             };
 
+            // 窗口关闭即时触发物理内存深度压缩
+            Closed += (s, e) => MemoryOptimizer.ScheduleTrim(300);
+
             Loaded += (s, e) =>
             {
                 _inputBox.Focus();

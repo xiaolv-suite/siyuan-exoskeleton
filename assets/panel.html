@@ -395,6 +395,28 @@
       border-color: var(--rose-agent);
       color: #fff;
     }
+    .quick-num-badge {
+      font-family: ui-monospace, SFMono-Regular, "Cascadia Code", Consolas, monospace;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: var(--key-badge-bg);
+      border: 1px solid var(--border-hairline);
+      border-bottom: 2px solid var(--border-card-bottom);
+      padding: 1px 5px;
+      border-radius: 4px;
+      line-height: 1.2;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    .search-item-row.selected .quick-num-badge,
+    .list-item.selected .quick-num-badge {
+      color: var(--indigo-light);
+      border-color: var(--indigo-border);
+      background: var(--indigo-subtle);
+    }
     .key-badge {
       font-family: ui-monospace, SFMono-Regular, "Cascadia Code", Consolas, monospace;
       font-size: 11px;
@@ -585,6 +607,12 @@
       box-shadow: var(--card-shadow-selected);
       transform: translateY(-2px);
     }
+    .card-item:active {
+      transform: translateY(0.5px) scale(0.992);
+      border-color: var(--border-selected);
+      box-shadow: var(--card-shadow);
+      transition-duration: 0.04s;
+    }
 
     .card-header {
       display: flex;
@@ -754,6 +782,11 @@
       border-color: var(--border-selected);
       box-shadow: var(--card-shadow-selected);
     }
+    .list-item:active {
+      transform: translateY(0.5px);
+      background: var(--bg-selected);
+      transition-duration: 0.04s;
+    }
     .list-left {
       display: flex;
       align-items: center;
@@ -836,6 +869,11 @@
       border-color: var(--border-selected);
       box-shadow: var(--card-shadow-selected);
       transform: translateY(-2px);
+    }
+    .tile-item:active {
+      transform: translateY(0.5px) scale(0.985);
+      border-color: var(--border-selected);
+      transition-duration: 0.04s;
     }
     .tile-icon {
       width: 40px;
@@ -2017,6 +2055,12 @@
       background: var(--bg-selected);
       border-color: var(--border-selected);
       box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+    }
+    .search-item-row:active {
+      transform: translateY(0.5px);
+      background: var(--bg-selected);
+      border-color: var(--border-selected);
+      transition-duration: 0.04s;
     }
 
     .search-item-left {
@@ -4250,6 +4294,7 @@
               </div>
             </div>
             <div class="list-right">
+              ${index < 9 ? `<span class="quick-num-badge" title="按 Ctrl+${index + 1} 直接执行">^${index + 1}</span>` : ""}
               ${item.pluginHotkey ? `<span class="plugin-alt-key">${item.pluginHotkey}</span>` : ""}
               ${actionButtons}
               <span class="card-code" style="font-size: 10px;">${item.id}</span>
@@ -4394,7 +4439,13 @@
       }
     }
 
+    let isExecutingItem = false;
     function executeItem(item, customText = "") {
+      if (!item) return;
+      if (isExecutingItem) return;
+      isExecutingItem = true;
+      setTimeout(() => { isExecutingItem = false; }, 350);
+
       showToast(`✓ 已执行: ${item.title}`);
       recordItemUsage(item.id);
 
@@ -4887,7 +4938,10 @@
                     <div class="search-item-sub">${it.desc}</div>
                   </div>
                 </div>
-                <span class="tag-badge ${it.badgeCls} search-item-badge">${it.badge}</span>
+                <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                  ${idx < 9 ? `<span class="quick-num-badge" title="按 Ctrl+${idx + 1} 直接执行">^${idx + 1}</span>` : ""}
+                  <span class="tag-badge ${it.badgeCls} search-item-badge">${it.badge}</span>
+                </div>
               </div>
             `;
           }).join("")}
@@ -5483,6 +5537,8 @@
 
     window.onBlockSearchResults = function(resp) {
       if (!resp || !Array.isArray(resp.data)) return;
+      const q = document.getElementById("search-input") ? document.getElementById("search-input").value.trim().toLowerCase() : "";
+      if (!q.startsWith("b:") && !q.startsWith("b：")) return;
       const blocks = resp.data;
       const dynamicList = [];
 
@@ -5520,6 +5576,8 @@
 
     window.onDocSearchResults = function(resp) {
       if (!resp || !Array.isArray(resp.data)) return;
+      const q = document.getElementById("search-input") ? document.getElementById("search-input").value.trim().toLowerCase() : "";
+      if (!q.startsWith("d:") && !q.startsWith("d：") && !q.startsWith("doc:") && !q.startsWith("doc：")) return;
       const docs = resp.data;
       filteredItems = docs.map(d => ({
         id: `doc_${d.id}`,

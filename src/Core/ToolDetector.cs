@@ -209,6 +209,7 @@ namespace XiaoLv.Desktop.Core
             try
             {
                 var procs = Process.GetProcessesByName("Everything");
+                if (procs.Length == 0) procs = Process.GetProcessesByName("Everything64");
                 bool isRunning = procs.Length > 0;
                 string exePath = "";
                 if (isRunning)
@@ -222,8 +223,12 @@ namespace XiaoLv.Desktop.Core
                     {
                         @"D:\Program Files\Everything\Everything.exe",
                         @"C:\Program Files\Everything\Everything.exe",
+                        @"C:\Program Files\Everything\Everything64.exe",
+                        @"C:\Program Files\Everything 1.5a\Everything64.exe",
+                        @"C:\Program Files\Everything 1.5a\Everything.exe",
                         @"C:\Program Files (x86)\Everything\Everything.exe",
-                        @"D:\Everything\Everything.exe"
+                        @"D:\Everything\Everything.exe",
+                        @"D:\Everything\Everything64.exe"
                     };
 
                     foreach (var p in probePaths)

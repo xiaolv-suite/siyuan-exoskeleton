@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using XiaoLv.Desktop.Core;
 using Brushes = System.Windows.Media.Brushes;
 using Point = System.Windows.Point;
 
@@ -34,6 +35,9 @@ namespace XiaoLv.Desktop.UI
             Top = SystemParameters.VirtualScreenTop;
             Width = SystemParameters.VirtualScreenWidth;
             Height = SystemParameters.VirtualScreenHeight;
+
+            // 截屏遮罩关闭即时释放多屏巨大 Bitmap 并深度修剪工作集
+            Closed += (s, e) => MemoryOptimizer.ScheduleTrim(300);
 
             _canvas = new Canvas();
             Content = _canvas;

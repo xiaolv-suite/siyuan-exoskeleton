@@ -213,6 +213,9 @@ namespace XiaoLv.Desktop.UI
             rootBorder.Child = mainGrid;
             Content = rootBorder;
 
+            // 窗口关闭即时触发物理内存深度压缩与垃圾回收
+            Closed += (s, e) => MemoryOptimizer.ScheduleTrim(300);
+
             PreviewKeyDown += (s, e) =>
             {
                 if (e.Key == Key.Escape)

@@ -60,7 +60,7 @@ public static class LvSendCommand
         string usedChannel = "";
         string sendError = "";
 
-        if ((channelPref == "auto" || channelPref == "fast") && (plugin == "siyuan-speed-switch" || plugin == "siyuan-quickgate"))
+        if ((channelPref == "auto" || channelPref == "fast") && (plugin == "siyuan-speed-switch" || plugin == "raikiri" || plugin == "siyuan-quickgate"))
         {
             sent = TrySendBroadcast(syUrl, token, envelopeJson, out sendError);
             if (sent) usedChannel = "broadcast";

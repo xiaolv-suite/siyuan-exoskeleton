@@ -128,8 +128,28 @@ namespace XiaoLv.Desktop.Core
                 bool ok = false;
                 if (item.Type == "note")
                 {
-                    string dateStr = item.CreatedAt.ToString("HH:mm");
-                    string md = "- " + dateStr + " 📦 *(离线补录)* " + item.Content;
+                    string dateStr = (item.CreatedAt.Date == DateTime.Today)
+                        ? item.CreatedAt.ToString("HH:mm")
+                        : item.CreatedAt.ToString("MM-dd HH:mm");
+
+                    string md;
+                    if (item.Content.StartsWith("- [ ]") || item.Content.StartsWith("* [ ]"))
+                    {
+                        md = "- [ ] " + dateStr + " 📦 *(离线补录)* " + item.Content.Substring(5).Trim();
+                    }
+                    else if (item.Content.StartsWith("- [x]") || item.Content.StartsWith("* [x]"))
+                    {
+                        md = "- [x] " + dateStr + " 📦 *(离线补录)* " + item.Content.Substring(5).Trim();
+                    }
+                    else if (item.Content.StartsWith("!") || item.Content.StartsWith("！"))
+                    {
+                        md = "- [ ] " + dateStr + " 📦 *(离线补录)* " + item.Content.TrimStart('!', '！', ' ');
+                    }
+                    else
+                    {
+                        md = "- " + dateStr + " 📦 *(离线补录)* " + item.Content;
+                    }
+
                     string postJson = "{\"notebook\":\"" + diaryNb + "\",\"dataType\":\"markdown\",\"data\":\"" + SafeContext.EscapeJson(md) + "\"}";
                     var r = SyKernelRequest.DoRequest(syUrl, token, "/api/block/appendDailyNoteBlock", postJson);
                     ok = r.Success;

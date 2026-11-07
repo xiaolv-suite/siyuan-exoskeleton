@@ -48,12 +48,8 @@ async function pollSql(stmt, maxTries = 10, intervalMs = 300) {
 
 function stopProcess(name) {
   try {
-    execSync(`powershell.exe -NoProfile -Command "Stop-Process -Name '${name}*' -Force -ErrorAction SilentlyContinue"`, { stdio: "ignore" });
-    for (let i = 0; i < 25; i++) {
-      const count = execSync(`powershell.exe -NoProfile -Command "@(Get-Process -Name '${name}*' -ErrorAction SilentlyContinue).Count"`).toString().trim();
-      if (!count || count === "0") break;
-      execSync(`powershell.exe -NoProfile -Command "Start-Sleep -Milliseconds 150"`, { stdio: "ignore" });
-    }
+    const exeName = name.endsWith(".exe") ? name : `${name}.exe`;
+    execSync(`chcp 65001 > nul && taskkill /F /T /IM "${exeName}"`, { stdio: "ignore" });
     const sweepScript = `
       Add-Type -TypeDefinition @'
       using System; using System.Runtime.InteropServices;
@@ -156,7 +152,7 @@ async function sendViaPipe(cmd, text, extra = null, retries = 6) {
   for (let i = 0; i < retries; i++) {
     try {
       return await new Promise((resolve, reject) => {
-        const pipePath = path.join("//./pipe", "XiaoLvDesktop_IPC_Pipe");
+        const pipePath = path.join("//./pipe", "XiaoLvDesktop_IPC_Pipe_Isolated");
         const client = net.connect(pipePath, () => {
           const payload = JSON.stringify({ cmd, text: text || "", extra }) + "\n";
           client.write(payload, "utf8", () => {
@@ -696,7 +692,7 @@ async function main() {
   const qPath = path.join(process.env.LOCALAPPDATA, "XiaoLvDesktop", "offline_queue.json");
   let qOk = false;
   let qContent = "";
-  for (let i = 0; i < 25; i++) {
+  for (let i = 0; i < 35; i++) {
     if (fs.existsSync(qPath)) {
       try {
         qContent = fs.readFileSync(qPath, "utf8");

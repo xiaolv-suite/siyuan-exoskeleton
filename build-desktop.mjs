@@ -12,7 +12,7 @@ fs.mkdirSync(outDir, { recursive: true });
 
 // 1. Gracefully terminate running instances if any & sweep ghost tray icons
 try {
-  execSync('powershell -Command "Stop-Process -Name \'思源外骨骼*\',\'思源小驴*\' -Force -ErrorAction SilentlyContinue"');
+  execSync('chcp 65001 > nul && taskkill /F /T /IM "思源外骨骼.exe" & taskkill /F /T /IM "思源小驴.exe"', { stdio: "ignore" });
   // 扫清任务栏与溢出托盘中的幽灵图标
   const sweepScript = `
     Add-Type -TypeDefinition @'

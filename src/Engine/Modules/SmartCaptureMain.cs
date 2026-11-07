@@ -132,6 +132,14 @@ public static class SmartCaptureMain
         }
 
         diaryNotebookId = SafeContext.GetDiaryNotebookId(context, syUrl, token);
+        if (string.IsNullOrEmpty(diaryNotebookId))
+        {
+            XiaoLv.Desktop.Core.OfflineQueueManager.EnqueueNote(text, windowTitle);
+            SafeContext.Set(context, "是否成功", true);
+            SafeContext.Set(context, "需要通知", true);
+            SafeContext.Set(context, "通知反馈", "✓ 思源未就绪或暂时不可达，笔记已自动存入离线安全队列，恢复后自动同步！");
+            return;
+        }
 
         var now = DateTime.Now;
         var timeStr = now.ToString("HH:mm");

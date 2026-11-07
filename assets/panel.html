@@ -375,6 +375,26 @@
       gap: 6px;
       padding-right: 14px;
     }
+    .search-clear-btn {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid var(--border-hairline);
+      background: var(--key-badge-bg);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      margin-right: 4px;
+      transition: all 0.15s;
+    }
+    .search-clear-btn:hover {
+      background: var(--rose-agent);
+      border-color: var(--rose-agent);
+      color: #fff;
+    }
     .key-badge {
       font-family: ui-monospace, SFMono-Regular, "Cascadia Code", Consolas, monospace;
       font-size: 11px;
@@ -474,6 +494,24 @@
       color: #fff;
       font-weight: 600;
       box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+    }
+
+    /* Accessible Focus-Visible Rings & Tactile Feedback */
+    button:focus-visible,
+    input:focus-visible,
+    .intent-chip:focus-visible,
+    .cat-btn:focus-visible,
+    .layout-btn:focus-visible,
+    .card-item:focus-visible,
+    .list-item:focus-visible,
+    .tile-item:focus-visible {
+      outline: 2px solid var(--border-selected);
+      outline-offset: 2px;
+    }
+    .layout-btn:active,
+    .cat-btn:active,
+    .intent-chip:active {
+      transform: translateY(1px);
     }
 
     /* Main Container */
@@ -2422,13 +2460,14 @@
         autofocus
       />
       <div class="search-shortcuts">
+        <button type="button" id="search-clear-btn" class="search-clear-btn" onclick="clearSearchInput()" style="display: none;" title="清空检索内容 (Esc)">✕</button>
         <span class="key-badge">↵ 执行</span>
         <span class="key-badge">Shift+↵ 穿透回贴</span>
         <span class="key-badge">Esc 退出</span>
       </div>
     </div>
 
-    <!-- Quick Intent Chips below the search box -->
+    <!-- Quick Intent Chips below the search box (横向流式光轨) -->
     <div class="quick-intent-chips" id="quick-intent-chips">
       <span class="intent-chip" onclick="stampCurrentTime()" title="在输入框前置盖上当前时间戳 (HH:mm)"><b>🕒</b> 时间</span>
       <span class="intent-chip" onclick="insertPrefix('!')" title="输入 ! 快速将待办事项存入今日日记"><b>!</b> 待办</span>
@@ -2438,22 +2477,25 @@
       <span class="intent-chip" onclick="insertPrefix('@')" title="输入 @ 记录人脉互动与双链时间线"><b>@</b> 人脉</span>
       <span class="intent-chip" onclick="insertPrefix('?')" title="输入 ? 制作原生 FSRS 闪卡"><b>?</b> 闪卡</span>
       <span class="intent-chip" onclick="insertPrefix('#')" title="输入 # 归入项目专页或今日日记"><b>#</b> 项目</span>
+      <span class="chip-divider"></span>
       <span class="intent-chip" onclick="insertPrefix('b:')" title="输入 b: 毫秒级检索思源正文块并直接复制/回贴双链"><b>b:</b> 块级秒搜</span>
       <span class="intent-chip" onclick="insertPrefix('d:')" title="输入 d: 检索思源全库文档"><b>d:</b> 文档</span>
+      <span class="intent-chip" onclick="insertPrefix('att:')" title="输入 att: 穿透检索全库 PDF 文献与附件资产秒查坞"><b>att:</b> 附件秒查</span>
       <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
+      <span class="intent-chip" onclick="insertPrefix('c:')" title="输入 c: 实时查看并调用最近 30 条清洗剪贴板；支持 c:url/c:code/c:table/c:img 分类筛选"><b>c:</b> 剪贴板</span>
+      <span class="chip-divider"></span>
+      <span class="intent-chip" onclick="executeItem({ id: 'syg', title: '极速网页剪藏卡' })" title="输入 g: 或按 Alt+Shift+G 免扩展极速剪藏网页"><b>g:</b> 网页剪藏</span>
       <span class="intent-chip" onclick="executeItem({ id: 'syfsrs', title: 'FSRS 闪卡微舱' })" title="无需切入思源，0ms 居中弹出微卡片，空格翻答案，1~4评级秒刷"><b>🧠</b> 刷闪卡</span>
       <span class="intent-chip" onclick="insertPrefix('t:')" title="输入 t: 秒查全库未完成的任务清单并支持直接勾选"><b>t:</b> 待办清单</span>
       <span class="intent-chip" onclick="insertPrefix('m:')" title="输入 m: 秒查全库已收藏或加书签的重点块与文档"><b>m:</b> 收藏</span>
       <span class="intent-chip" onclick="insertPrefix('v:')" title="输入 v: 快速调用每日复盘、文献卡片、会议纪要等结构化模板"><b>v:</b> 模板速贴</span>
-      <span class="intent-chip" onclick="insertPrefix('att:')" title="输入 att: 穿透检索全库 PDF 文献与附件资产秒查坞"><b>att:</b> 附件秒查</span>
-      <span class="intent-chip" onclick="executeItem({ id: 'syg', title: '极速网页剪藏卡' })" title="输入 g: 或按 Alt+Shift+G 免扩展极速剪藏网页"><b>g:</b> 网页剪藏</span>
       <span class="intent-chip" onclick="insertPrefix('ws:')" title="输入 ws: 管理工作现场快照与微软虚拟桌面全景联动"><b>🏢</b> 现场快照</span>
       <span class="intent-chip" onclick="insertPrefix('voice:')" title="输入 voice: 呼出语音速记微舱与口语去噪自愈"><b>🎙️</b> 语音速记</span>
       <span class="intent-chip" onclick="insertPrefix('trash:')" title="输入 trash: 查看思源文档回收站、误删笔记与历史快照打捞"><b>🗑️</b> 回收站</span>
-      <span class="intent-chip" onclick="insertPrefix('c:')" title="输入 c: 实时查看并调用最近 30 条清洗剪贴板；支持 c:url/c:code/c:table/c:img 分类筛选"><b>c:</b> 剪贴板</span>
       <span class="intent-chip" onclick="toggleTodayTimeline()" title="无需切入思源，0ms 滑出今日日记记录的全部灵感、待办与笔记"><b>📅</b> 今日时间轴</span>
-      <span class="intent-chip" style="margin-left: auto; opacity: 0.7; cursor: pointer;" onclick="toggleCheatsheet()" title="查看完整快捷键心流"><b>Alt+1~8</b> 官方直达</span>
+      <span class="chip-divider"></span>
+      <span class="intent-chip" style="opacity: 0.75; cursor: pointer;" onclick="toggleCheatsheet()" title="查看完整快捷键心流"><b>Alt+1~8</b> 官方直达</span>
     </div>
 
     <div id="intent-banner" class="intent-banner" style="display: none;"></div>
@@ -3126,6 +3168,7 @@
       let searchRaf = 0;
       searchInput.addEventListener("input", (e) => {
         const val = e.target.value;
+        updateSearchClearBtn();
         if (searchRaf) cancelAnimationFrame(searchRaf);
         searchRaf = requestAnimationFrame(() => {
           searchRaf = 0;
@@ -3135,6 +3178,17 @@
 
       window.addEventListener("keydown", (e) => {
         const isInputFocused = (document.activeElement === searchInput);
+
+        // Ctrl + 1 ~ 9 快速盲打执行当前搜索结果的前 9 项
+        if (e.ctrlKey && !e.altKey && !e.shiftKey && e.key >= "1" && e.key <= "9") {
+          const targetIdx = parseInt(e.key, 10) - 1;
+          if (filteredItems.length > 0 && targetIdx >= 0 && targetIdx < filteredItems.length) {
+            e.preventDefault();
+            selectedIndex = targetIdx;
+            executeSelected(false);
+            return;
+          }
+        }
 
         // Alt + 1 ~ 9 快速跨软件唤起对应小驴插件
         if (e.altKey && !e.ctrlKey && !e.metaKey && e.key >= "1" && e.key <= "9") {
@@ -3146,7 +3200,8 @@
           }
         }
 
-        if (e.altKey && (e.key === "o" || e.key === "O")) {
+        // Alt+O 或 Ctrl+O 快速打开原文档
+        if ((e.altKey || (e.ctrlKey && !e.shiftKey)) && (e.key === "o" || e.key === "O")) {
           e.preventDefault();
           if (filteredItems.length > 0 && selectedIndex >= 0 && selectedIndex < filteredItems.length) {
             const item = filteredItems[selectedIndex];
@@ -3243,6 +3298,11 @@
           const modal = document.getElementById("cheatsheet-modal");
           if (modal && modal.classList.contains("open")) {
             modal.classList.remove("open");
+            return;
+          }
+          // 二段式退出：若搜索框有内容，优先清空搜索并还原卡片视图；若搜索框已空，退出面板
+          if (searchInput && searchInput.value.trim().length > 0) {
+            clearSearchInput();
             return;
           }
           closeWindow();
@@ -3574,6 +3634,23 @@
         }
       }
       return false;
+    }
+
+    function clearSearchInput() {
+      const si = document.getElementById("search-input");
+      if (!si) return;
+      si.value = "";
+      updateSearchClearBtn();
+      handleSearch("");
+      si.focus();
+    }
+
+    function updateSearchClearBtn() {
+      const si = document.getElementById("search-input");
+      const btn = document.getElementById("search-clear-btn");
+      if (btn && si) {
+        btn.style.display = si.value.trim().length > 0 ? "inline-flex" : "none";
+      }
     }
 
     function handleSearch(query) {

@@ -13,7 +13,14 @@ namespace XiaoLv.Desktop
 {
     public static class Program
     {
-        private const string MUTEX_NAME = "XiaoLvDesktop_SingleInstance_Mutex";
+        private static string MutexName
+        {
+            get
+            {
+                var isIsolated = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SIYUAN_URL"));
+                return isIsolated ? "XiaoLvDesktop_Isolated_Mutex" : "XiaoLvDesktop_SingleInstance_Mutex";
+            }
+        }
         private static Mutex _mutex;
         private static SystemTray _tray;
         private static HotKeyManager _hotkeys;
@@ -34,15 +41,21 @@ namespace XiaoLv.Desktop
             // 1. 协议解析或参数规范化
             string incomingCommand = ParseCommandLineOrProtocol(args);
 
-            // 2. 单实例检查 (防崩溃锁遗留导致互斥异常)
+            // 2. 单实例检查 (防崩溃锁遗留导致互斥异常；支持多轮重试防残留句柄抢占)
             bool isNewInstance = false;
-            try
+            for (int r = 0; r < 5; r++)
             {
-                _mutex = new Mutex(true, MUTEX_NAME, out isNewInstance);
-            }
-            catch (AbandonedMutexException)
-            {
-                isNewInstance = true;
+                try
+                {
+                    _mutex = new Mutex(true, MutexName, out isNewInstance);
+                    if (isNewInstance) break;
+                }
+                catch (AbandonedMutexException)
+                {
+                    isNewInstance = true;
+                    break;
+                }
+                Thread.Sleep(150);
             }
 
             if (!isNewInstance)

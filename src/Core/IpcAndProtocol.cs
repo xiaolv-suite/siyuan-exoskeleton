@@ -66,7 +66,14 @@ namespace XiaoLv.Desktop.Core
 
     public static class IpcManager
     {
-        private const string PIPE_NAME = "XiaoLvDesktop_IPC_Pipe";
+        public static string PipeName
+        {
+            get
+            {
+                var isIsolated = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SIYUAN_URL"));
+                return isIsolated ? "XiaoLvDesktop_IPC_Pipe_Isolated" : "XiaoLvDesktop_IPC_Pipe";
+            }
+        }
 
         /// <summary>
         /// 尝试向已在运行的实例发送指令，若发送成功则返回 true，说明已有实例在跑
@@ -76,7 +83,7 @@ namespace XiaoLv.Desktop.Core
             if (timeoutMs <= 0) timeoutMs = 1200;
             try
             {
-                using (var client = new NamedPipeClientStream(".", PIPE_NAME, PipeDirection.Out))
+                using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out))
                 {
                     client.Connect(timeoutMs);
                     using (var writer = new StreamWriter(client, Encoding.UTF8))
@@ -125,7 +132,7 @@ namespace XiaoLv.Desktop.Core
                 {
                     try
                     {
-                        using (var pipe = new NamedPipeServerStream(PIPE_NAME, PipeDirection.In, 10, PipeTransmissionMode.Byte))
+                        using (var pipe = new NamedPipeServerStream(PipeName, PipeDirection.In, 10, PipeTransmissionMode.Byte))
                         {
                             pipe.WaitForConnection();
                             using (var reader = new StreamReader(pipe, Encoding.UTF8))

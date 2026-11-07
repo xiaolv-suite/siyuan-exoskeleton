@@ -148,6 +148,8 @@ namespace XiaoLv.Desktop
                     s.AiBaseUrl = JsonHelper.GetString(dict, "aiBaseUrl", s.AiBaseUrl);
                     s.AiModel = JsonHelper.GetString(dict, "aiModel", s.AiModel);
                     s.AiApiKey = JsonHelper.GetString(dict, "aiApiKey", s.AiApiKey);
+                    s.CustomSnippetsJson = JsonHelper.GetString(dict, "customSnippetsJson", s.CustomSnippetsJson);
+                    SnippetExpansionEngine.ReloadCustomSnippets(s.CustomSnippetsJson);
 
                     s.Save();
                     SelectionHelper.AutoFloatEnabled = s.AutoFloatEnabled;

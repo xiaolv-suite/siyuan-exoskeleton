@@ -23,6 +23,7 @@ namespace XiaoLv.Desktop.Core
     public static class SnippetExpansionEngine
     {
         private static readonly Dictionary<string, SnippetDefinition> _builtinSnippets = new Dictionary<string, SnippetDefinition>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, SnippetDefinition> _customSnippets = new Dictionary<string, SnippetDefinition>(StringComparer.OrdinalIgnoreCase);
 
         static SnippetExpansionEngine()
         {
@@ -36,6 +37,31 @@ namespace XiaoLv.Desktop.Core
             RegisterBuiltin(":meeting", "标准会议纪要骨架", "### 👥 会议纪要\n\n- 🕒 时间: {{now}}\n- 📌 参会人: \n- 🎯 核心议题: \n- 📋 行动项: \n  - [ ] ");
             RegisterBuiltin(":daily", "日记结构化骨架", "### 📅 今日概览 ({{date}})\n\n- 🎯 核心目标: \n- 📝 关键进展: \n- 💡 灵感反思: ");
             RegisterBuiltin(":code", "代码块模板", "```csharp\n// \n```");
+        }
+
+        public static void ReloadCustomSnippets(string json)
+        {
+            lock (_customSnippets)
+            {
+                _customSnippets.Clear();
+                if (string.IsNullOrEmpty(json)) return;
+                try
+                {
+                    var items = JsonHelper.FromJson<List<SnippetDefinition>>(json);
+                    if (items != null)
+                    {
+                        foreach (var it in items)
+                        {
+                            if (!string.IsNullOrEmpty(it.Shortcode))
+                            {
+                                it.Source = "自定义";
+                                _customSnippets[it.Shortcode] = it;
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
         }
 
         private static void RegisterBuiltin(string code, string label, string template)
@@ -55,6 +81,20 @@ namespace XiaoLv.Desktop.Core
             if (string.IsNullOrEmpty(prefix)) return results;
 
             string pLower = prefix.ToLowerInvariant();
+
+            // 1. 自定义简码优先匹配
+            lock (_customSnippets)
+            {
+                foreach (var kvp in _customSnippets)
+                {
+                    if (kvp.Key.ToLowerInvariant().StartsWith(pLower))
+                    {
+                        results.Add(kvp.Value);
+                    }
+                }
+            }
+
+            // 2. 内置标准简码
             foreach (var kvp in _builtinSnippets)
             {
                 if (kvp.Key.ToLowerInvariant().StartsWith(pLower))
@@ -78,6 +118,10 @@ namespace XiaoLv.Desktop.Core
             res = Regex.Replace(res, @"\{\{date\}\}", now.ToString("yyyy-MM-dd"), RegexOptions.IgnoreCase);
             res = Regex.Replace(res, @"\{\{time\}\}", now.ToString("HH:mm"), RegexOptions.IgnoreCase);
             res = Regex.Replace(res, @"\{\{now\}\}", now.ToString("yyyy-MM-dd HH:mm"), RegexOptions.IgnoreCase);
+            res = Regex.Replace(res, @"\{\{year\}\}", now.ToString("yyyy"), RegexOptions.IgnoreCase);
+            res = Regex.Replace(res, @"\{\{month\}\}", now.ToString("MM"), RegexOptions.IgnoreCase);
+            res = Regex.Replace(res, @"\{\{day\}\}", now.ToString("dd"), RegexOptions.IgnoreCase);
+            res = Regex.Replace(res, @"\{\{weekday\}\}", GetWeekdayChinese(now), RegexOptions.IgnoreCase);
             res = Regex.Replace(res, @"\{\{uuid\}\}", Guid.NewGuid().ToString("N").Substring(0, 8), RegexOptions.IgnoreCase);
 
             if (res.IndexOf("{{clipboard}}", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -89,6 +133,21 @@ namespace XiaoLv.Desktop.Core
             return res;
         }
 
+        private static string GetWeekdayChinese(DateTime dt)
+        {
+            switch (dt.DayOfWeek)
+            {
+                case DayOfWeek.Monday: return "周一";
+                case DayOfWeek.Tuesday: return "周二";
+                case DayOfWeek.Wednesday: return "周三";
+                case DayOfWeek.Thursday: return "周四";
+                case DayOfWeek.Friday: return "周五";
+                case DayOfWeek.Saturday: return "周六";
+                case DayOfWeek.Sunday: return "周日";
+                default: return "";
+            }
+        }
+
         /// <summary>
         /// 尝试按简码展开文本内容
         /// </summary>
@@ -98,6 +157,14 @@ namespace XiaoLv.Desktop.Core
             string key = input.Trim();
 
             SnippetDefinition def;
+            lock (_customSnippets)
+            {
+                if (_customSnippets.TryGetValue(key, out def))
+                {
+                    return ResolveVariables(def.Template);
+                }
+            }
+
             if (_builtinSnippets.TryGetValue(key, out def))
             {
                 return ResolveVariables(def.Template);

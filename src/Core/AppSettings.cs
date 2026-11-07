@@ -47,6 +47,7 @@ namespace XiaoLv.Desktop.Core
         public string AiBaseUrl { get; set; }
         public string AiModel { get; set; }
         public string AiApiKey { get; set; }
+        public string CustomSnippetsJson { get; set; }
 
         public AppSettings()
         {
@@ -77,6 +78,7 @@ namespace XiaoLv.Desktop.Core
             AiBaseUrl = "http://localhost:11434/v1";
             AiModel = "qwen2.5:latest";
             AiApiKey = "";
+            CustomSnippetsJson = "[]";
         }
 
         private static string SettingsFilePath
@@ -122,6 +124,8 @@ namespace XiaoLv.Desktop.Core
                     s.AiBaseUrl = JsonHelper.GetString(dict, "aiBaseUrl", s.AiBaseUrl);
                     s.AiModel = JsonHelper.GetString(dict, "aiModel", s.AiModel);
                     s.AiApiKey = JsonHelper.GetString(dict, "aiApiKey", s.AiApiKey);
+                    s.CustomSnippetsJson = JsonHelper.GetString(dict, "customSnippetsJson", s.CustomSnippetsJson);
+                    SnippetExpansionEngine.ReloadCustomSnippets(s.CustomSnippetsJson);
                 }
                 else
                 {

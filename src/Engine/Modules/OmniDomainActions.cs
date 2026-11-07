@@ -828,6 +828,14 @@ public static class CleanMarkdownExportMain
         // E. 清理 HTML 特殊标签杂质 (如思源专有 span data-type 等)
         text = Regex.Replace(text, "<span[^>]*data-type=[^>]*>([^<]*)<\\/span>", "$1");
 
+        // E.1 剥离思源超级块包围标记 ({{{row / {{{col ... }}})
+        text = Regex.Replace(text, @"^\{\{\{(row|col)[^\n]*\r?\n?", "", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+        text = Regex.Replace(text, @"^\}\}\}\s*$", "", RegexOptions.Multiline);
+
+        // E.2 剥离思源嵌入块语法：{{((id))}} 或 {{select ...}}
+        text = Regex.Replace(text, @"\{\{\(\([0-9a-zA-Z\-]+\)\)\}\}", "");
+        text = Regex.Replace(text, @"\{\{select\s+[^}]+\}\}", "", RegexOptions.IgnoreCase);
+
         // F. 规范化排版空白与行尾空格
         var lines = text.Split(new char[] { '\n' }, StringSplitOptions.None);
         var sb = new StringBuilder();

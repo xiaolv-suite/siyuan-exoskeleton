@@ -45,7 +45,8 @@ namespace XiaoLv.Desktop.Core
 
                 string ext = fi.Extension.ToLowerInvariant();
                 bool isImg = (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" || ext == ".svg" || ext == ".bmp");
-                string md = isImg ? ("![" + fi.Name + "](" + assetPath + ")") : ("📎 [" + fi.Name + " (" + FormatFileSize(fi.Length) + ")](" + assetPath + ")");
+                string safeName = fi.Name.Replace("[", "【").Replace("]", "】");
+                string md = isImg ? ("![" + safeName + "](" + assetPath + ")") : ("📎 [" + safeName + " (" + FormatFileSize(fi.Length) + ")](" + assetPath + ")");
 
                 string timeStr = DateTime.Now.ToString("HH:mm");
                 string appendData = "* " + md + "\n  * ⏱️ 上传于 " + timeStr + " · 外部直投";
@@ -169,21 +170,22 @@ namespace XiaoLv.Desktop.Core
             }
 
             // 构造 Markdown 嵌入代码
+            string safeName = fileName.Replace("[", "【").Replace("]", "】");
             string md;
             bool isImg = (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" || ext == ".svg" || ext == ".bmp");
             bool isMedia = (ext == ".mp3" || ext == ".wav" || ext == ".mp4" || ext == ".mkv" || ext == ".mov");
 
             if (isImg)
             {
-                md = "![" + fileName + "](" + assetPath + ")";
+                md = "![" + safeName + "](" + assetPath + ")";
             }
             else if (isMedia)
             {
-                md = "🎬 [" + fileName + " (" + sizeStr + ")](" + assetPath + ")";
+                md = "🎬 [" + safeName + " (" + sizeStr + ")](" + assetPath + ")";
             }
             else
             {
-                md = "📄 [" + fileName + " (" + sizeStr + ")](" + assetPath + ")";
+                md = "📄 [" + safeName + " (" + sizeStr + ")](" + assetPath + ")";
             }
 
             // 写入今日日记

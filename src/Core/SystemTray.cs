@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -165,6 +166,12 @@ namespace XiaoLv.Desktop.Core
             {
                 string msg = KernelManager.CleanOrphanTestKernels();
                 ShowNotice("思源外骨骼 · 靶场清扫", msg);
+            };
+
+            var itemDataDir = new ToolStripMenuItem("📂 浏览本地数据目录 (" + (EmbeddedResourceManager.IsPortableMode ? "便携模式" : "AppData") + ")");
+            itemDataDir.Click += (s, e) =>
+            {
+                try { Process.Start("explorer.exe", "\"" + EmbeddedResourceManager.AppDataDir + "\""); } catch { }
             };
 
             var itemAutoStart = new ToolStripMenuItem("⚙️ 开机自动启动");

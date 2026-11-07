@@ -2765,7 +2765,10 @@
           </div>
           <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
             <span style="font-size: 11.5px; color: var(--text-secondary);">📄 专属收集箱文档 (可选)：</span>
-            <input type="text" id="pref-desktop-targetdoc" class="search-input" style="height: 28px; width: 320px; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px;" placeholder="文档标题或ID (留空则默认今日日记)" />
+            <div style="display: flex; gap: 6px; width: 320px;">
+              <input type="text" id="pref-desktop-targetdoc" class="search-input" style="height: 28px; flex: 1; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px;" placeholder="文档标题或ID (留空则默认今日日记)" />
+              <button class="pref-btn" type="button" onclick="selectRecentTargetDoc()" style="padding: 2px 8px; font-size: 11px; white-space: nowrap;" title="从全库最近编辑的文档中快速选择">🔍 选择</button>
+            </div>
           </div>
           <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
             <span style="font-size: 11.5px; color: var(--text-secondary);">🌐 网页剪藏默认模式 (Alt+Shift+G)：</span>
@@ -2843,6 +2846,22 @@
             </div>
             <div id="ai-test-status" style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
               💡 纯前置清洗微舱：支持本地 Ollama、通义千问 (DashScope)、豆包、DeepSeek、硅基流动等 OpenAI 兼容端点。
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 1.8: Custom Snippets Expansion -->
+        <div>
+          <div class="help-sec-title"><span>⌨️ 自定义简码扩词 (:简码)</span></div>
+          <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 10px 12px; margin-top: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <span style="font-size: 11px; color: var(--text-muted);">
+                内置: <code style="color:var(--cyber-sky)">:date</code>, <code style="color:var(--cyber-sky)">:time</code>, <code style="color:var(--cyber-sky)">:now</code>, <code style="color:var(--cyber-sky)">:todo</code>, <code style="color:var(--cyber-sky)">:thx</code>, <code style="color:var(--cyber-sky)">:meeting</code>, <code style="color:var(--cyber-sky)">:daily</code>。变量: <code style="color:var(--indigo-light)">{{year}}</code>, <code style="color:var(--indigo-light)">{{weekday}}</code>, <code style="color:var(--indigo-light)">{{clipboard}}</code>
+              </span>
+              <button class="pref-btn" type="button" onclick="addNewSnippetRow()" style="font-size: 11px; padding: 2px 8px;">➕ 新增简码</button>
+            </div>
+            <div id="custom-snippets-container" style="display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto;">
+              <!-- 动态注入简码行 -->
             </div>
           </div>
         </div>
@@ -7034,6 +7053,12 @@
           pinnedDocs = JSON.parse(rawPinned);
         } catch { }
         renderPinnedDock();
+
+        try {
+          const rawSnippets = s.customSnippetsJson || "[]";
+          const snips = JSON.parse(rawSnippets);
+          renderCustomSnippetRows(snips);
+        } catch { }
       }
     }
 
@@ -7110,11 +7135,77 @@
           aiEnabled: aiEnVal,
           aiBaseUrl: aiUrlVal,
           aiModel: aiModelVal,
-          aiApiKey: aiKeyVal
+          aiApiKey: aiKeyVal,
+          customSnippetsJson: JSON.stringify(collectCustomSnippetRows())
         }));
         showToast("✓ 桌面设置已提交保存！");
       } else {
         showToast("✓ 浏览器预览模式：已模拟保存设置");
+      }
+    }
+
+    function renderCustomSnippetRows(snippets) {
+      const container = document.getElementById("custom-snippets-container");
+      if (!container) return;
+      if (!Array.isArray(snippets) || snippets.length === 0) {
+        container.innerHTML = `<div style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 8px;">暂无自定义简码，点击上方「➕ 新增简码」添加个人常用语段</div>`;
+        return;
+      }
+
+      container.innerHTML = snippets.map((s, idx) => `
+        <div class="custom-snippet-row" style="display: grid; grid-template-columns: 85px 95px 1fr 24px; gap: 6px; align-items: center;">
+          <input type="text" class="search-input snip-code-input" style="height: 24px; font-size: 11px; padding: 0 6px; border-radius: 4px; font-family: monospace;" value="${escapeHtml(s.Shortcode || s.shortcode || ':')}" placeholder=":code" />
+          <input type="text" class="search-input snip-label-input" style="height: 24px; font-size: 11px; padding: 0 6px; border-radius: 4px;" value="${escapeHtml(s.Label || s.label || '')}" placeholder="标签名称" />
+          <input type="text" class="search-input snip-tpl-input" style="height: 24px; font-size: 11px; padding: 0 6px; border-radius: 4px;" value="${escapeHtml(s.Template || s.template || '')}" placeholder="展开模板 (支持{{date}}等)" />
+          <button class="pref-btn" type="button" onclick="removeSnippetRow(${idx})" style="padding: 0; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--rose-agent);" title="删除">✕</button>
+        </div>
+      `).join("");
+    }
+
+    function addNewSnippetRow() {
+      const container = document.getElementById("custom-snippets-container");
+      if (!container) return;
+      const current = collectCustomSnippetRows();
+      current.push({ shortcode: ":", label: "", template: "" });
+      renderCustomSnippetRows(current);
+    }
+
+    function removeSnippetRow(idx) {
+      const current = collectCustomSnippetRows();
+      current.splice(idx, 1);
+      renderCustomSnippetRows(current);
+    }
+
+    function collectCustomSnippetRows() {
+      const rows = document.querySelectorAll(".custom-snippet-row");
+      const list = [];
+      rows.forEach(r => {
+        const code = r.querySelector(".snip-code-input")?.value?.trim() || "";
+        const label = r.querySelector(".snip-label-input")?.value?.trim() || "";
+        const tpl = r.querySelector(".snip-tpl-input")?.value || "";
+        if (code && code !== ":") {
+          list.push({ shortcode: code.startsWith(":") ? code : (":" + code), label: label || code, template: tpl });
+        }
+      });
+      return list;
+    }
+
+    function selectRecentTargetDoc() {
+      if (window.__OMNI_RUNTIME__ && Array.isArray(window.__OMNI_RUNTIME__.recentDocs) && window.__OMNI_RUNTIME__.recentDocs.length > 0) {
+        const docs = window.__OMNI_RUNTIME__.recentDocs;
+        const options = docs.map((d, i) => `${i + 1}. 《${d.title || d.content}》`).join("\n");
+        const chosen = prompt(`请选择目标收集箱文档 (输入序号 1~${docs.length})：\n\n${options}`, "1");
+        if (chosen) {
+          const idx = parseInt(chosen, 10) - 1;
+          if (idx >= 0 && idx < docs.length) {
+            const targetEl = document.getElementById("pref-desktop-targetdoc");
+            if (targetEl) targetEl.value = docs[idx].title || docs[idx].content || docs[idx].id;
+          }
+        }
+      } else {
+        insertPrefix("d:");
+        closePreferencesOnBg();
+        showToast("💡 正在检索全库文档，选中文档后按回车查看详情！");
       }
     }
 

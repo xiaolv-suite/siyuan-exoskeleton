@@ -992,15 +992,84 @@ namespace XiaoLv.Desktop.UI
 						                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onDeadLinksHealed) window.onDeadLinksHealed(" + JsonHelper.ToJson(new { code = 0, data = rep }) + ");");
 						                                }
 						                            });
-						                            if (rep.HealedCount > 0 && OnNotificationRequested != null)
-						                            {
-						                                OnNotificationRequested("双链智能自愈", string.Format("✓ 成功自愈重定向 {0} 处悬空死链！", rep.HealedCount));
-						                            }
-						                        }
-						                        catch { }
-						                    });
-						                    return;
-						                }
+							                            if (rep.HealedCount > 0 && OnNotificationRequested != null)
+							                            {
+							                                OnNotificationRequested("双链智能自愈", string.Format("✓ 成功自愈重定向 {0} 处悬空死链！", rep.HealedCount));
+							                            }
+							                        }
+							                        catch { }
+							                    });
+							                    return;
+							                }
+
+							                // 3.61B 系统全库综合体检与死链清道夫大视窗 (SystemComprehensiveDoctor)
+							                if (op.Equals("runSystemDoctorFullAudit", StringComparison.OrdinalIgnoreCase))
+							                {
+							                    ThreadPool.QueueUserWorkItem(async s =>
+							                    {
+							                        try
+							                        {
+							                            var audit = await SystemComprehensiveDoctor.RunFullAuditAsync();
+							                            Dispatcher.Invoke(() =>
+							                            {
+							                                if (_webView != null && _webView.CoreWebView2 != null)
+							                                {
+							                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onSystemDoctorReportLoaded) window.onSystemDoctorReportLoaded(" + JsonHelper.ToJson(new { code = 0, data = audit }) + ");");
+							                                }
+							                            });
+							                        }
+							                        catch { }
+							                    });
+							                    return;
+							                }
+
+							                if (op.Equals("quarantineDoctorOrphans", StringComparison.OrdinalIgnoreCase))
+							                {
+							                    int qCount = SystemComprehensiveDoctor.QuarantineOrphanAssets();
+							                    if (_webView != null && _webView.CoreWebView2 != null)
+							                    {
+							                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onDoctorOrphansQuarantined) window.onDoctorOrphansQuarantined(" + JsonHelper.ToJson(new { code = 0, count = qCount }) + ");");
+							                    }
+							                    if (qCount > 0 && OnNotificationRequested != null)
+							                    {
+							                        OnNotificationRequested("孤儿资产安全隔离", string.Format("✓ 已将 {0} 篇孤儿附件安全转移至隔离区！", qCount));
+							                    }
+							                    return;
+							                }
+
+							                if (op.Equals("restoreDoctorOrphans", StringComparison.OrdinalIgnoreCase))
+							                {
+							                    int rCount = SystemComprehensiveDoctor.RestoreOrphanAssets();
+							                    if (_webView != null && _webView.CoreWebView2 != null)
+							                    {
+							                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onDoctorOrphansRestored) window.onDoctorOrphansRestored(" + JsonHelper.ToJson(new { code = 0, count = rCount }) + ");");
+							                    }
+							                    if (rCount > 0 && OnNotificationRequested != null)
+							                    {
+							                        OnNotificationRequested("孤儿资产原位打捞", string.Format("✓ 已从隔离区原位打捞复原 {0} 篇附件！", rCount));
+							                    }
+							                    return;
+							                }
+
+							                if (op.Equals("cleanDoctorEmptyBlocks", StringComparison.OrdinalIgnoreCase))
+							                {
+							                    ThreadPool.QueueUserWorkItem(async s =>
+							                    {
+							                        int cleaned = await SystemComprehensiveDoctor.CleanEmptyBlocksAsync(50);
+							                        Dispatcher.Invoke(() =>
+							                        {
+							                            if (_webView != null && _webView.CoreWebView2 != null)
+							                            {
+							                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onDoctorEmptyBlocksCleaned) window.onDoctorEmptyBlocksCleaned(" + JsonHelper.ToJson(new { code = 0, count = cleaned }) + ");");
+							                            }
+							                            if (cleaned > 0 && OnNotificationRequested != null)
+							                            {
+							                                OnNotificationRequested("幽灵空块清理", string.Format("✓ 已成功物理释放 {0} 处无意义空白块！", cleaned));
+							                            }
+							                        });
+							                    });
+							                    return;
+							                }
 
 						                // 3.62 零依赖独立单文件 HTML 网页导出并在系统浏览器秒开
 						                if (op.Equals("exportDocHtml", StringComparison.OrdinalIgnoreCase))

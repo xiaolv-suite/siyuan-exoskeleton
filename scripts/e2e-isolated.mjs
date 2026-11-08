@@ -3278,6 +3278,75 @@ async function main() {
                              webhookProfileHubResp.hasData;
   logStep("Step 7.164: 极速调用桥配置预设全量检索 (GET /api/profile) 断言", isWebhookProfileHubOk, `预设总数: ${webhookProfileHubResp?.count}`);
 
+  // Step 7.165: Test System Doctor Modal UI Template Integrity in panel.html
+  const hasDoctorModal = panelContent.includes('id="system-doctor-modal"') &&
+                         panelContent.includes('id="doc-health-score"') &&
+                         panelContent.includes('id="doctor-stats-strip"') &&
+                         panelContent.includes('id="doctor-tab-bar"') &&
+                         panelContent.includes('id="doctor-modal-body"');
+  logStep("Step 7.165: 系统全库综合体检与死链清道夫 (system-doctor-modal) 模版架构断言", hasDoctorModal, `体检大盘模版完整性: ${hasDoctorModal}`);
+
+  // Step 7.166: Test Topbar Doctor Button & Intent Chip Linkage in panel.html
+  const hasDoctorTopLink = panelContent.includes('id="doctor-btn"') &&
+                           panelContent.includes('toggleSystemDoctorModal()') &&
+                           panelContent.includes('<b>🩺</b> 系统体检');
+  logStep("Step 7.166: 顶栏 🩺 体检按钮与横向流式意图胶囊直达断言", hasDoctorTopLink, `顶栏体检中枢入口联动: ${hasDoctorTopLink}`);
+
+  // Step 7.167: Test SystemComprehensiveDoctor Full Audit Engine in C# Backend
+  const docAuditScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $docType = $asm.GetType('XiaoLv.Desktop.Core.SystemComprehensiveDoctor');
+    $mAudit = $docType.GetMethod('RunFullAuditAsync', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+
+    $task = $mAudit.Invoke($null, $null);
+    $res = $task.GetAwaiter().GetResult();
+
+    $okAudit = ($null -ne $res) -and ($res.HealthScore -ge 50) -and ($res.LatencyMs -ge 0) -and ($res.ReportMarkdown.Length -gt 20);
+    Write-Output ($okAudit.ToString() + '|' + $res.HealthScore + '|' + $res.HealthGrade);
+  `;
+  const docAuditRes = runPs(docAuditScript);
+  const isDocAuditOk = docAuditRes.includes("True");
+  logStep("Step 7.167: 系统全库综合体检评分引擎 (SystemComprehensiveDoctor) 断言", isDocAuditOk, `综合体检结论: ${docAuditRes.trim()}`);
+
+  // Step 7.168: Test System Doctor Frontend Functions & 4-Dimension Tabs in panel.html
+  const hasDoctorJs = panelContent.includes('function toggleSystemDoctorModal') &&
+                      panelContent.includes('function triggerSystemDoctorAudit') &&
+                      panelContent.includes('function switchDoctorTab') &&
+                      panelContent.includes('triggerHealDeadLinksFromDoctor') &&
+                      panelContent.includes('quarantineDoctorOrphansAction') &&
+                      panelContent.includes('dumpDoctorReportToDaily');
+  logStep("Step 7.168: 综合体检前端驱动逻辑与4大治理维度 (死链/孤儿/空块/报告) 断言", hasDoctorJs, `前端体检驱动函数完整性: ${hasDoctorJs}`);
+
+  // Step 7.169: Test ExternalApiBridge Doctor Webhook (GET /api/doctor/diagnose)
+  let webhookDoctorResp;
+  try {
+    const getResp = await fetch("http://127.0.0.1:43990/api/doctor/diagnose");
+    const getJson = await getResp.json();
+    webhookDoctorResp = {
+      code: getJson.code,
+      hasData: !!getJson.data,
+      score: getJson.data?.HealthScore,
+      deadCount: getJson.data?.DeadRefCount
+    };
+  } catch (err) {
+    webhookDoctorResp = { error: err.message };
+  }
+  const isWebhookDoctorOk = webhookDoctorResp &&
+                            webhookDoctorResp.code === 0 &&
+                            webhookDoctorResp.hasData &&
+                            typeof webhookDoctorResp.score === 'number';
+  logStep("Step 7.169: 极速调用桥全库体检接口 (GET /api/doctor/diagnose) 断言", isWebhookDoctorOk, `体检响应: ${JSON.stringify(webhookDoctorResp)}`);
+
+  // Step 7.170: Test Bento syh Card & Search Linkage to System Doctor Modal in panel.html
+  const hasDoctorSearchLink = panelContent.includes('toggleSystemDoctorModal();') &&
+                              panelContent.includes('q === "syh" || q === "doctor"') &&
+                              panelContent.includes('🩺 展开体检大视窗');
+  logStep("Step 7.170: 检索前缀 syh/doctor 与体检抽屉展开大视窗深度联动断言", hasDoctorSearchLink, `体检大视窗呼出联动: ${hasDoctorSearchLink}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

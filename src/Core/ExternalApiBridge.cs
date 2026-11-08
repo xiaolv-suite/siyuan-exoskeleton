@@ -287,12 +287,19 @@ namespace XiaoLv.Desktop.Core
 						                    return;
 						                }
 
-						                // S. 双向知识网络星轨拓扑全景: /api/graph/radial
-						                if (rawPath.Equals("/api/graph/radial", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/graph/radial", StringComparison.OrdinalIgnoreCase))
-						                {
-						                    HandleRadialGraphRequest(req, resp);
-						                    return;
-						                }
+							                // S. 双向知识网络星轨拓扑全景: /api/graph/radial
+							                if (rawPath.Equals("/api/graph/radial", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/graph/radial", StringComparison.OrdinalIgnoreCase))
+							                {
+							                    HandleRadialGraphRequest(req, resp);
+							                    return;
+							                }
+
+							                // T. 全库知识体检与系统诊断: /api/doctor/diagnose
+							                if (rawPath.Equals("/api/doctor/diagnose", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/doctor/diagnose", StringComparison.OrdinalIgnoreCase))
+							                {
+							                    HandleDoctorDiagnoseRequest(req, resp);
+							                    return;
+							                }
 
 			                // 未匹配到路由
 			                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
@@ -1020,7 +1027,28 @@ namespace XiaoLv.Desktop.Core
 			                }
 			                catch (Exception ex)
 			                {
-			                    WriteJsonResponse(resp, 500, new { code = 500, msg = "生成星轨图谱异常: " + ex.Message });
+				                    WriteJsonResponse(resp, 500, new { code = 500, msg = "生成星轨图谱异常: " + ex.Message });
+				                }
+			            });
+			        }
+
+			        private static void HandleDoctorDiagnoseRequest(HttpListenerRequest req, HttpListenerResponse resp)
+			        {
+			            ThreadPool.QueueUserWorkItem(async s =>
+			            {
+			                try
+			                {
+			                    var result = await SystemComprehensiveDoctor.RunFullAuditAsync();
+			                    WriteJsonResponse(resp, 200, new
+			                    {
+			                        code = 0,
+			                        msg = "ok",
+			                        data = result
+			                    });
+			                }
+			                catch (Exception ex)
+			                {
+			                    WriteJsonResponse(resp, 500, new { code = 500, msg = "体检诊断异常: " + ex.Message });
 			                }
 			            });
 			        }

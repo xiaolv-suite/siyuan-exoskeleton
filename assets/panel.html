@@ -2826,6 +2826,9 @@
       <button class="theme-toggle-btn" id="profile-btn" onclick="toggleProfileHubModal()" title="思源配置预设与大模型驱动中枢 (🧩)" style="position: relative;">
         <span>🧩</span>
       </button>
+      <button class="theme-toggle-btn" id="doctor-btn" onclick="toggleSystemDoctorModal()" title="系统全库综合体检与死链清道夫 (🩺)" style="position: relative;">
+        <span>🩺</span>
+      </button>
       <button class="theme-toggle-btn" id="notice-btn" onclick="toggleNotificationCenterModal()" title="全景通知与生命事件中心 (🔔)" style="position: relative;">
         <span>🔔</span>
         <span class="badge-dot" id="notice-badge-dot" style="display: none; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--rose-agent);"></span>
@@ -2912,8 +2915,9 @@
       <span class="intent-chip" onclick="insertPrefix('trash:')" title="输入 trash: 查看思源文档回收站、误删笔记与历史快照打捞"><b>🗑️</b> 回收站</span>
 	      <span class="intent-chip" onclick="toggleTodayTimeline()" title="无需切入思源，0ms 滑出今日日记记录的全部灵感、待办与笔记"><b>📅</b> 今日时间轴</span>
 				      <span class="intent-chip" onclick="triggerFlashback()" title="输入 rand: 随机漫游一条历史重点笔记或那年今日"><b>🎲</b> 漫游回顾</span>
-				      <span class="intent-chip" onclick="toggleHeatmapGalleryModal()" title="查看全库 52 周知识心流沉淀大画廊与年轮徽章"><b>🔥</b> 沉淀热力图</span>
-				      <span class="intent-chip" onclick="toggleGraphModal()" title="全景双向知识网络星轨拓扑视窗，辐射漫游与关系拓扑穿透"><b>🌌</b> 星轨图谱</span>
+					      <span class="intent-chip" onclick="toggleHeatmapGalleryModal()" title="查看全库 52 周知识心流沉淀大画廊与年轮徽章"><b>🔥</b> 沉淀热力图</span>
+					      <span class="intent-chip" onclick="toggleGraphModal()" title="全景双向知识网络星轨拓扑视窗，辐射漫游与关系拓扑穿透"><b>🌌</b> 星轨图谱</span>
+					      <span class="intent-chip" onclick="toggleSystemDoctorModal()" title="全库死链体检、孤儿附件清道夫与系统健康诊断大视窗"><b>🩺</b> 系统体检</span>
       <span class="chip-divider"></span>
       <span class="intent-chip" style="opacity: 0.75; cursor: pointer;" onclick="toggleCheatsheet()" title="查看完整快捷键心流"><b>Alt+1~8</b> 官方直达</span>
     </div>
@@ -3745,6 +3749,58 @@
       <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>隐私安全铁律</b>: 所有凭据（AccessKey / SecretKey / ApiKey / 密码）均已执行安全脱敏屏蔽，随时复制标准参数蓝图</span>
         <span id="profile-modal-stat">已加载 0 个预设</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 系统全库综合体检与死链清道夫 (System & Knowledge Doctor Modal) -->
+  <div class="timeline-modal-overlay" id="system-doctor-modal" onclick="closeSystemDoctorOnBg(event)">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 95%; max-width: 940px; max-height: 88vh;">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">🩺</span>
+          <span style="font-weight: 700; font-size: 14px;">系统全库综合体检与死链清道夫</span>
+          <span class="brand-pill" id="doc-health-score" style="background: rgba(16, 185, 129, 0.2); color: var(--emerald-mint);">健康评分: 100 优</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="triggerSystemDoctorAudit()" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.4);" title="重新进行全局深度体检">🔄 重新诊断</button>
+          <button class="pref-btn" onclick="triggerHealDeadLinksFromDoctor()" style="font-size: 11px; padding: 3px 10px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.4);" title="自动将失效悬空死链重定向自愈至同名存活块">⚡ 双链自愈</button>
+          <button class="pref-btn" onclick="dumpDoctorReportToDaily()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="将体检诊断报告沉淀写入今日日记">📥 存入日记</button>
+          <button class="pref-btn" onclick="copyDoctorReportMarkdown()" style="font-size: 11px; padding: 3px 10px;" title="复制体检报告 Markdown 文本">📋 复制报告</button>
+          <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleSystemDoctorModal()">✕</button>
+        </div>
+      </div>
+
+      <!-- 4 Core Health Indicators Stats Strip -->
+      <div id="doctor-stats-strip" style="display: flex; gap: 16px; padding: 10px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.18); align-items: center; flex-wrap: wrap; font-size: 11.5px;">
+        <div>🔗 悬空失效死链: <b id="doc-stat-dead" style="color: var(--rose-agent); font-size: 13px;">--</b> 处</div>
+        <div>👻 幽灵空白碎片: <b id="doc-stat-empty" style="color: var(--tech-amber); font-size: 13px;">--</b> 处</div>
+        <div>🗑️ 游离无主附件: <b id="doc-stat-orphan" style="color: var(--cyber-sky); font-size: 13px;">--</b> 篇 (<span id="doc-stat-orphan-size" style="color: var(--text-muted);">0 B</span>)</div>
+        <div>⚡ 通信往返延迟: <b id="doc-stat-latency" style="color: var(--emerald-mint); font-size: 13px;">--</b> ms</div>
+      </div>
+
+      <!-- Mode Switcher Toolbar -->
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.12); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div class="timeline-filters" id="doctor-tab-bar" style="display: flex; gap: 6px; overflow-x: auto; padding: 0;">
+          <button class="cat-btn active" id="doc-tab-deadlinks" onclick="switchDoctorTab('deadlinks')">🔗 悬空死链修复</button>
+          <button class="cat-btn" id="doc-tab-orphans" onclick="switchDoctorTab('orphans')">🗑️ 孤儿附件清道夫</button>
+          <button class="cat-btn" id="doc-tab-empty" onclick="switchDoctorTab('empty')">👻 幽灵空块治理</button>
+          <button class="cat-btn" id="doc-tab-report" onclick="switchDoctorTab('report')">📑 规范诊断报告</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button class="launchpad-mini-btn primary" id="doc-quick-action-btn" onclick="executeDoctorActiveTabAction()">⚡ 执行当前项治理</button>
+        </div>
+      </div>
+
+      <!-- Doctor Body Container -->
+      <div id="doctor-modal-body" style="padding: 16px 18px; overflow-y: auto; max-height: 60vh;">
+        <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在穿透诊断思源全库健康状态...</div>
+      </div>
+
+      <!-- Bottom Footer -->
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+        <span>💡 <b>安全铁律</b>: 孤儿附件支持 <code>.quarantine</code> 隔离区安全移入与打捞复原；双链自愈仅在同名精确匹配时替换</span>
+        <span id="doctor-modal-status">诊断引擎已就绪</span>
       </div>
     </div>
   </div>
@@ -4698,6 +4754,9 @@
       } else if (q.startsWith("graph:") || q.startsWith("graph：") || q.startsWith("star:") || q.startsWith("star：") || q.startsWith("net:") || q === "graph" || q === "star") {
         banner.style.display = "flex";
         banner.innerHTML = `<div><span class="intent-tag">🌌 星轨图谱</span>全屏双向知识网络拓扑，单击节点无缝漫游重构</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开星轨大视窗</span>`;
+      } else if (q.startsWith("doctor:") || q.startsWith("health:") || q.startsWith("deadlink:") || q === "syh" || q === "doctor") {
+        banner.style.display = "flex";
+        banner.innerHTML = `<div><span class="intent-tag">🩺 系统综合体检</span>全库死链修复、孤儿附件清道夫与系统健康诊断大盘</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开体检大视窗</span>`;
       } else {
         banner.style.display = "none";
       }
@@ -4918,6 +4977,12 @@
       if (q.startsWith("graph:") || q.startsWith("graph：") || q.startsWith("star:") || q.startsWith("star：") || q.startsWith("net:") || q === "graph" || q === "star") {
         const subKw = q.replace(/^(graph:|graph：|star:|star：|net:|net：)/, "").trim();
         toggleGraphModal("", subKw);
+        return;
+      }
+
+      // syh 或 doctor: 或 health: 模式：系统全库综合体检与死链清道夫大视窗
+      if (q.startsWith("doctor:") || q.startsWith("health:") || q.startsWith("deadlink:") || q === "syh" || q === "doctor") {
+        toggleSystemDoctorModal();
         return;
       }
 
@@ -10296,7 +10361,8 @@
         </div>
         <div class="inspector-dock">
           <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="inspector-dock-btn primary" onclick="executeItem({ id: 'syh' })" title="启动深度健康体检并沉淀报表至今日日记 (Enter)">🩺 立即执行全库体检</button>
+            <button class="inspector-dock-btn primary" onclick="toggleSystemDoctorModal()" title="展开 940px 系统全库综合体检与死链清道夫独立大视窗">🩺 展开体检大视窗</button>
+            <button class="inspector-dock-btn" onclick="executeItem({ id: 'syh' })" title="启动深度健康体检并沉淀报表至今日日记 (Enter)">📋 沉淀简报至日记</button>
             <button class="inspector-dock-btn" onclick="quarantineAllOrphans()" style="color: var(--amber-glow); border-color: rgba(245,158,11,0.4);" title="将无主孤儿附件安全移入 .quarantine 隔离区">📦 一键移入隔离区</button>
             <button class="inspector-dock-btn" onclick="purgeQuarantineFiles()" style="color: var(--rose-agent); border-color: rgba(244,63,94,0.4);" title="彻底清空隔离区释放磁盘空间">🗑️ 彻底释放隔离区</button>
           </div>
@@ -12326,6 +12392,303 @@
         }));
         showToast("🎉 配置蓝图已成功沉淀至今日日记！");
       }
+    }
+
+    // ==========================================================
+    // 系统全库综合体检与死链清道夫 (System & Knowledge Doctor)
+    // ==========================================================
+    let currentDoctorTab = "deadlinks";
+    window._latestDoctorResult = null;
+
+    function toggleSystemDoctorModal() {
+      const modal = document.getElementById("system-doctor-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) {
+        triggerSystemDoctorAudit();
+      }
+    }
+
+    function closeSystemDoctorOnBg(e) {
+      if (e.target && e.target.id === "system-doctor-modal") {
+        toggleSystemDoctorModal();
+      }
+    }
+
+    function triggerSystemDoctorAudit() {
+      const body = document.getElementById("doctor-modal-body");
+      if (body) {
+        body.innerHTML = '<div style="text-align:center;padding:36px;color:var(--text-muted);font-size:12px;">正在深度穿透诊断全库悬空死链、孤儿附件与系统状态...</div>';
+      }
+      const stat = document.getElementById("doctor-modal-status");
+      if (stat) stat.innerText = "诊断引擎正在执行全量体检...";
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'runSystemDoctorFullAudit' }));
+      }
+    }
+
+    window.onSystemDoctorReportLoaded = function(res) {
+      if (!res || !res.data) return;
+      const d = res.data;
+      window._latestDoctorResult = d;
+
+      // Update Header Score Badge
+      const scoreBadge = document.getElementById("doc-health-score");
+      if (scoreBadge) {
+        scoreBadge.innerText = `健康评分: ${d.HealthScore} 分`;
+        scoreBadge.style.color = d.HealthScore >= 90 ? "var(--emerald-mint)" : (d.HealthScore >= 75 ? "var(--tech-amber)" : "var(--rose-agent)");
+        scoreBadge.style.background = d.HealthScore >= 90 ? "rgba(16,185,129,0.18)" : (d.HealthScore >= 75 ? "rgba(245,158,11,0.18)" : "rgba(244,63,94,0.18)");
+      }
+
+      // Update Stats Strip
+      const deadSpan = document.getElementById("doc-stat-dead");
+      if (deadSpan) deadSpan.innerText = d.DeadRefCount;
+
+      const emptySpan = document.getElementById("doc-stat-empty");
+      if (emptySpan) emptySpan.innerText = d.EmptyBlockCount;
+
+      const orphanSpan = document.getElementById("doc-stat-orphan");
+      if (orphanSpan) orphanSpan.innerText = d.OrphanAssetCount;
+
+      const orphanSizeSpan = document.getElementById("doc-stat-orphan-size");
+      if (orphanSizeSpan) orphanSizeSpan.innerText = d.OrphanAssetSizeFormatted || "0 B";
+
+      const latencySpan = document.getElementById("doc-stat-latency");
+      if (latencySpan) latencySpan.innerText = d.LatencyMs;
+
+      const statusSpan = document.getElementById("doctor-modal-status");
+      if (statusSpan) statusSpan.innerText = `诊断完成 · 状态: ${d.HealthGrade}`;
+
+      renderDoctorCurrentTab();
+    };
+
+    function switchDoctorTab(tab) {
+      currentDoctorTab = tab;
+      const tabs = ["deadlinks", "orphans", "empty", "report"];
+      tabs.forEach(t => {
+        const btn = document.getElementById("doc-tab-" + t);
+        if (btn) btn.classList.toggle("active", t === tab);
+      });
+
+      const actBtn = document.getElementById("doc-quick-action-btn");
+      if (actBtn) {
+        if (tab === "deadlinks") actBtn.innerText = "⚡ 执行双链智能自愈";
+        else if (tab === "orphans") actBtn.innerText = "📦 一键移入安全隔离区";
+        else if (tab === "empty") actBtn.innerText = "🧹 释放前50处空白块";
+        else actBtn.innerText = "📥 沉淀诊断报告至日记";
+      }
+
+      renderDoctorCurrentTab();
+    }
+
+    function executeDoctorActiveTabAction() {
+      if (currentDoctorTab === "deadlinks") {
+        triggerHealDeadLinksFromDoctor();
+      } else if (currentDoctorTab === "orphans") {
+        quarantineDoctorOrphansAction();
+      } else if (currentDoctorTab === "empty") {
+        cleanDoctorEmptyBlocksAction();
+      } else {
+        dumpDoctorReportToDaily();
+      }
+    }
+
+    function renderDoctorCurrentTab() {
+      const body = document.getElementById("doctor-modal-body");
+      if (!body) return;
+      const d = window._latestDoctorResult;
+
+      if (!d) {
+        body.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:12px;">暂无体检数据，请点击上方【🔄 重新诊断】</div>';
+        return;
+      }
+
+      if (currentDoctorTab === "deadlinks") {
+        const deads = d.DeadRefs || [];
+        if (deads.length === 0) {
+          body.innerHTML = `
+            <div style="text-align: center; padding: 48px 24px; color: var(--emerald-mint); font-size: 13px;">
+              <div style="font-size: 36px; margin-bottom: 12px;">🎉</div>
+              <div><b>全库双链健康度 100%</b></div>
+              <div style="font-size: 11px; margin-top: 6px; color: var(--text-muted);">
+                未检测到任何引用失效的悬空死链，引用网络非常坚固！
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        let html = `
+          <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px;">
+            <span>发现 <b>${deads.length}</b> 处失效悬空引用 (点击【⚡ 双链智能自愈】可自动重定向至同名存活块):</span>
+            <button class="launchpad-mini-btn primary" onclick="triggerHealDeadLinksFromDoctor()">⚡ 立即执行智能自愈</button>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 11.5px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-hairline); color: var(--text-muted);">
+                <th style="padding: 6px 8px;">所属笔记</th>
+                <th style="padding: 6px 8px;">引用锚文本</th>
+                <th style="padding: 6px 8px;">失效目标 ID</th>
+                <th style="padding: 6px 8px; text-align: right;">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+        deads.forEach(item => {
+          html += `
+            <tr style="border-bottom: 1px solid var(--border-hairline);">
+              <td style="padding: 8px;"><a href="javascript:void(0)" onclick="openBlockById('${escapeQuote(item.RootId || item.BlockId)}')" style="color:var(--cyber-sky);text-decoration:underline;">《${escapeHtml(item.DocTitle)}》</a></td>
+              <td style="padding: 8px; color: var(--rose-agent); font-weight: 600;">${escapeHtml(item.AnchorText)}</td>
+              <td style="padding: 8px;"><code style="font-size: 10px; color: var(--text-muted);">${escapeHtml(item.MissingDefId)}</code></td>
+              <td style="padding: 8px; text-align: right;">
+                <button class="launchpad-mini-btn" onclick="openBlockById('${escapeQuote(item.BlockId)}')">🎯 定位块</button>
+              </td>
+            </tr>
+          `;
+        });
+        html += `</tbody></table>`;
+        body.innerHTML = html;
+      } else if (currentDoctorTab === "orphans") {
+        const orphans = d.OrphanAssets || [];
+        if (orphans.length === 0) {
+          body.innerHTML = `
+            <div style="text-align: center; padding: 48px 24px; color: var(--emerald-mint); font-size: 13px;">
+              <div style="font-size: 36px; margin-bottom: 12px;">🌱</div>
+              <div><b>附件资产库极度纯净</b></div>
+              <div style="font-size: 11px; margin-top: 6px; color: var(--text-muted);">
+                全库所有图片与文献均已被有效笔记引用，零无主孤儿垃圾文件！
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        let html = `
+          <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px;">
+            <span>发现 <b>${orphans.length}</b> 篇无主附件 (共计占用 <b>${d.OrphanAssetSizeFormatted}</b>):</span>
+            <div style="display: flex; gap: 8px;">
+              <button class="launchpad-mini-btn primary" onclick="quarantineDoctorOrphansAction()">📦 移至隔离区 (.quarantine)</button>
+              <button class="launchpad-mini-btn" onclick="restoreDoctorOrphansAction()">♻️ 隔离区原位打捞</button>
+            </div>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 11.5px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-hairline); color: var(--text-muted);">
+                <th style="padding: 6px 8px;">附件名称</th>
+                <th style="padding: 6px 8px;">占用体积</th>
+                <th style="padding: 6px 8px;">相对路径</th>
+                <th style="padding: 6px 8px; text-align: right;">安全操作</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+        orphans.slice(0, 30).forEach(item => {
+          html += `
+            <tr style="border-bottom: 1px solid var(--border-hairline);">
+              <td style="padding: 8px; font-weight: 600; color: var(--text-primary);">${escapeHtml(item.Name)}</td>
+              <td style="padding: 8px; color: var(--tech-amber); font-family: var(--font-mono);">${escapeHtml(item.SizeFormatted)}</td>
+              <td style="padding: 8px; color: var(--text-muted); font-size: 10.5px;">${escapeHtml(item.RelativePath)}</td>
+              <td style="padding: 8px; text-align: right;">
+                <button class="launchpad-mini-btn" onclick="copyToClipboard('${escapeQuote(item.FullPath)}', '文件路径已复制！')">📋 复制路径</button>
+              </td>
+            </tr>
+          `;
+        });
+        html += `</tbody></table>`;
+        body.innerHTML = html;
+      } else if (currentDoctorTab === "empty") {
+        const empties = d.EmptyBlockIds || [];
+        if (empties.length === 0) {
+          body.innerHTML = `
+            <div style="text-align: center; padding: 48px 24px; color: var(--emerald-mint); font-size: 13px;">
+              <div style="font-size: 36px; margin-bottom: 12px;">✨</div>
+              <div><b>零幽灵无意义空白块</b></div>
+              <div style="font-size: 11px; margin-top: 6px; color: var(--text-muted);">
+                笔记库结构紧凑完整，未发现无内容的空白冗余块！
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        let html = `
+          <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px;">
+            <span>全库发现 <b>${empties.length}</b> 处空白幽灵块 (无文本无引用的残留碎块):</span>
+            <button class="launchpad-mini-btn danger" onclick="cleanDoctorEmptyBlocksAction()">🧹 安全释放前50处空块</button>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; background: rgba(0,0,0,0.25); border-radius: 6px; border: 1px solid var(--border-hairline); max-height: 280px; overflow-y: auto;">
+        `;
+        empties.slice(0, 50).forEach(id => {
+          html += `<span class="launchpad-card-pill" style="font-family: var(--font-mono); font-size: 10.5px;">${escapeHtml(id)}</span>`;
+        });
+        html += `</div>`;
+        body.innerHTML = html;
+      } else if (currentDoctorTab === "report") {
+        body.innerHTML = `
+          <div style="padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid var(--border-hairline);">
+            <pre style="margin: 0; font-size: 11.5px; color: var(--text-primary); font-family: var(--font-mono); white-space: pre-wrap; line-height: 1.6;">${escapeHtml(d.ReportMarkdown || '暂无报告')}</pre>
+          </div>
+        `;
+      }
+    }
+
+    function triggerHealDeadLinksFromDoctor() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'healDeadLinks' }));
+        showToast("⚡ 已向思源发出双链自愈指令，正在执行同名语义重定向...");
+        setTimeout(() => triggerSystemDoctorAudit(), 1200);
+      }
+    }
+
+    function quarantineDoctorOrphansAction() {
+      if (!confirm("确定将当前未被任何笔记引用的孤儿附件移入安全隔离区 (.quarantine) 吗？\n（文件仅软转移暂存，未物理删除，随时可恢复）")) return;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'quarantineDoctorOrphans' }));
+        showToast("📦 已触发孤儿附件安全隔离！");
+        setTimeout(() => triggerSystemDoctorAudit(), 1000);
+      }
+    }
+
+    function restoreDoctorOrphansAction() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'restoreDoctorOrphans' }));
+        showToast("♻️ 正在从隔离区原位打捞复原附件...");
+        setTimeout(() => triggerSystemDoctorAudit(), 1000);
+      }
+    }
+
+    function cleanDoctorEmptyBlocksAction() {
+      if (!confirm("确定安全清理全库无意义空白幽灵块吗？")) return;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'cleanDoctorEmptyBlocks' }));
+        showToast("🧹 正在物理释放空白幽灵块...");
+        setTimeout(() => triggerSystemDoctorAudit(), 1200);
+      }
+    }
+
+    function dumpDoctorReportToDaily() {
+      const d = window._latestDoctorResult;
+      if (!d || !d.ReportMarkdown) {
+        showToast("暂无可沉淀的体检报告！");
+        return;
+      }
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'recordMiniInput',
+          text: d.ReportMarkdown
+        }));
+        showToast("🎉 体检报告已成功沉淀至今日日记！");
+      }
+    }
+
+    function copyDoctorReportMarkdown() {
+      const d = window._latestDoctorResult;
+      if (!d || !d.ReportMarkdown) {
+        showToast("暂无可复制的体检报告！");
+        return;
+      }
+      copyToClipboard(d.ReportMarkdown, "✓ 体检诊断报告 Markdown 源码已复制！");
     }
 
     function closeWindow() {

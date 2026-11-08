@@ -3367,6 +3367,7 @@
               </div>
             </div>
             <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+              <button class="pref-btn" id="pref-onboarding-btn" onclick="toggleOnboardingWizardModal()" style="color: var(--tech-amber); border-color: rgba(245,158,11,0.45); font-weight: 700;">🧭 首启环境自检向导</button>
               <button class="pref-btn" onclick="openSiYuanSetting()">⚙️ 打开思源设置</button>
               <button class="pref-btn" onclick="openNativeDataHistory()" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.35);">🕒 打开数据历史大窗</button>
               <button class="pref-btn" onclick="triggerManualSync()" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.35);">☁️ 立即触发云同步</button>
@@ -3688,7 +3689,10 @@
           <span style="font-size: 16px;">⌨️</span>
           <span style="font-weight: 700; font-size: 14px;">思源外骨骼 · 快捷键与心流罗盘</span>
         </div>
-        <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleCheatsheet()">✕</button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="toggleOnboardingWizardModal()" style="font-size: 11px; padding: 3px 10px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.45); font-weight: 700;" title="打开零配置首启 4 维环境自检与生态向导">🧭 环境自检向导</button>
+          <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleCheatsheet()">✕</button>
+        </div>
       </div>
       <div class="help-body" style="gap: 14px;">
         <div>
@@ -4167,6 +4171,7 @@
           <span class="brand-pill" id="vault-modal-count">0 篇文档</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" id="vm-save-disk-btn" onclick="saveCurrentVaultNoteToDisk()" style="font-size: 11px; padding: 3px 10px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.45); font-weight: 700;" title="将右侧画布中编辑后的 Markdown 内容原位写回外部磁盘文件 (Ctrl+S)">💾 保存回外部文件</button>
           <button class="pref-btn" onclick="promptChangeVaultDirectory()" style="font-size: 11px; padding: 3px 10px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.4);" title="自由更换外部知识库或本地 Markdown 扫描物理目录">📁 更换镜像目录</button>
           <button class="pref-btn" onclick="refreshVaultMirrorData()" style="font-size: 11px; padding: 3px 10px;" title="重新扫描当前镜像目录">🔄 刷新</button>
           <button class="pref-btn" onclick="pasteVaultNoteToCaret()" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.4);" title="将当前选中外部文档内容贴入外部活动光标处 (Shift+Enter)">⚡ 穿透直贴</button>
@@ -4203,7 +4208,7 @@
               <button class="launchpad-mini-btn" onclick="copyCurrentVaultFilePath()" title="复制物理绝对路径">📋 复制路径</button>
             </div>
           </div>
-          <div id="vm-markdown-preview" style="flex: 1; padding: 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid var(--border-hairline); overflow-y: auto; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; color: var(--text-primary); white-space: pre-wrap;">请在左侧点击任一 Markdown 文档，即可在此流式研读全文预览...</div>
+          <div id="vm-markdown-preview" contenteditable="true" spellcheck="false" style="flex: 1; padding: 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid var(--border-hairline); overflow-y: auto; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; color: var(--text-primary); white-space: pre-wrap; outline: none;">请在左侧点击任一 Markdown 文档，即可在此流式研读或就地编辑 (Ctrl+S 保存回磁盘)...</div>
         </div>
       </div>
 
@@ -4409,6 +4414,35 @@
             <button class="inspector-dock-btn" onclick="clearOfflineQueue()" title="清空全部离线缓冲记录">🗑️ 清空队列</button>
             <button class="inspector-dock-btn primary" onclick="flushOfflineQueue()" title="立即将队列中的速记回写到思源今日日记">🚀 立即回写至思源</button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 零配置首启 4 维环境自检与交互向导视窗 (First-Run Environment & Onboarding Wizard Modal) -->
+  <div class="timeline-modal-overlay" id="onboarding-wizard-modal" onclick="closeOnboardingWizardOnBg(event)">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 95%; max-width: 900px; max-height: 88vh;">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">🧭</span>
+          <span style="font-weight: 700; font-size: 14px;">思源外骨骼 v3.0.0 · 零配置首启环境自检与生态向导</span>
+          <span class="brand-pill" id="ob-score-pill" style="background: rgba(16, 185, 129, 0.2); color: var(--emerald-mint);">就绪度: 100 分</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="runOnboardingEnvironmentProbe()" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.4);" title="重新执行本机 4 维环境探针自检">🔄 重新探针</button>
+          <button class="pref-btn" onclick="triggerOnboardingAutoHealHotkeys()" style="font-size: 11px; padding: 3px 10px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.4);" title="自动将存在系统占用冲突的热键替换为实测空闲的推荐热键">⚡ 一键自愈冲突热键</button>
+          <button class="pref-btn" onclick="dumpOnboardingReportToDaily()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="将本机环境自检报告沉淀写入今日日记">📥 存入日记</button>
+          <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleOnboardingWizardModal()">✕</button>
+        </div>
+      </div>
+      <div id="onboarding-modal-body" style="padding: 16px 18px; overflow-y: auto; max-height: 68vh; display: flex; flex-direction: column; gap: 14px;">
+        <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在执行本机思源内核、6大热键、本地效率软件与DPAPI保险箱 4 维探针自检...</div>
+      </div>
+      <div style="padding: 10px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.22); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+        <span>💡 <b>零配置设计</b>: 自动发现思源端口与工作区、自动联动 Everything/Listary/PixPin、支持一键冲突热键自愈</span>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span id="ob-modal-status">探针已就绪</span>
+          <button class="pref-btn pref-btn-primary" onclick="finishOnboardingWizard()" style="font-size: 11.5px; font-weight: 700; padding: 4px 14px; background: var(--emerald-mint); color: #0b1120; border-color: var(--emerald-mint);">🎉 完成巡检并开启心流</button>
         </div>
       </div>
     </div>
@@ -5553,6 +5587,12 @@
           filteredItems = [];
           renderItems();
         }
+        return;
+      }
+
+      // init: 或 wizard: 或 setup: 模式：呼出零配置首启 4 维环境自检与交互向导视窗
+      if (q === "init" || q === "init:" || q === "wizard" || q === "wizard:" || q === "setup" || q === "setup:") {
+        toggleOnboardingWizardModal();
         return;
       }
 
@@ -13628,7 +13668,9 @@
       renderVaultNotesList();
     }
 
+    const _origOnVaultNotesLoaded = window.onVaultNotesLoaded;
     window.onVaultNotesLoaded = function(res) {
+      if (_origOnVaultNotesLoaded) _origOnVaultNotesLoaded(res);
       if (!res || !Array.isArray(res.data)) return;
       currentVaultNotes = res.data;
       if (res.path) currentVaultDir = res.path;
@@ -13751,12 +13793,44 @@
     }
 
     function copyVaultNoteMarkdown() {
-      if (!currentVaultNoteContent) {
+      const previewArea = document.getElementById("vm-markdown-preview");
+      const content = previewArea ? (previewArea.innerText || currentVaultNoteContent) : currentVaultNoteContent;
+      if (!content) {
         showToast("暂无可复制的 Markdown 内容！");
         return;
       }
-      copyToClipboard(currentVaultNoteContent, "✓ 外部文档 Markdown 源码已复制！");
+      copyToClipboard(content, "✓ 外部文档 Markdown 源码已复制！");
     }
+
+    function saveCurrentVaultNoteToDisk() {
+      if (!currentSelectedVaultNote || !currentSelectedVaultNote.FilePath) {
+        showToast("⚠️ 请先在左侧选择一篇外部 Markdown 文档！");
+        return;
+      }
+      const previewArea = document.getElementById("vm-markdown-preview");
+      const editedText = previewArea ? (previewArea.innerText || "") : currentVaultNoteContent;
+      currentVaultNoteContent = editedText;
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'saveVaultNote',
+          filePath: currentSelectedVaultNote.FilePath,
+          content: editedText
+        }));
+        showToast("💾 正在将修改原位保存回外部磁盘 Markdown 文件...");
+      }
+    }
+
+    window.onVaultNoteSaved = function(res) {
+      const statusSpan = document.getElementById("vault-modal-status");
+      if (res && res.success) {
+        const nowStr = new Date().toTimeString().split(' ')[0];
+        if (statusSpan) statusSpan.innerText = `✓ 已于 ${nowStr} 原位保存回磁盘: ${res.filePath}`;
+        showToast("✓ 外部 Markdown 文件已成功原位保存回磁盘！");
+      } else {
+        showToast("⚠️ 保存外部文件失败，请检查文件写权限！");
+      }
+    };
 
     function pasteVaultNoteToCaret() {
       if (!currentVaultNoteContent) {
@@ -13923,6 +13997,7 @@
           <div class="omm-tree-item" style="margin-left: ${indent}px;" onclick="focusMindmapHeadingNode('${h.id}')" ondblclick="openBlockById('${h.id}')" title="单击高亮导图节点 / 双击在思源大窗中原位定位">
             <span class="omm-lvl-badge omm-lvl-${lvl}">${lvlUpper}</span>
             <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${escapeHtml(cleanContent)}</span>
+            <button class="launchpad-mini-btn" onclick="event.stopPropagation(); promptRenameOutlineHeading('${h.id}', '${escapeQuote(cleanContent)}', '${lvl}')" title="原位修改小节标题与 H1~H6 层级" style="padding: 1px 4px; font-size: 10px;">✏️</button>
             <button class="launchpad-mini-btn" onclick="event.stopPropagation(); openBlockById('${h.id}')" title="在思源中定位" style="padding: 1px 4px; font-size: 10px;">🎯</button>
           </div>
         `;
@@ -13977,6 +14052,51 @@
       }
       openBlockById(currentOutlineDocId);
     }
+
+    function promptRenameOutlineHeading(blockId, oldTitle, oldSubtype) {
+      if (!blockId) return;
+      showInlineFormModal({
+        title: "原位修改文档大纲小节标题与层级",
+        icon: "🗺️",
+        fields: [
+          { key: "title", label: "小节标题内容 *", value: oldTitle || "", required: true },
+          { key: "subtype", label: "标题层级 (H1~H6)", type: "select", value: (oldSubtype || "h2").toLowerCase(), options: ["h1", "h2", "h3", "h4", "h5", "h6"] }
+        ],
+        onSubmit: (vals) => {
+          const newTitle = (vals.title || "").trim();
+          const newSub = (vals.subtype || "h2").toLowerCase();
+          if (!newTitle) return;
+
+          const hItem = currentOutlineHeadings.find(x => x.id === blockId);
+          if (hItem) {
+            hItem.content = newTitle;
+            hItem.subtype = newSub;
+          }
+          renderOutlineTreeList();
+          renderOutlineMindmapCanvas();
+
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({
+              op: 'renameOutlineHeading',
+              blockId: blockId,
+              title: newTitle,
+              subtype: newSub
+            }));
+          }
+        }
+      });
+    }
+
+    window.onOutlineHeadingRenamed = function(res) {
+      if (res && res.success) {
+        const statusSpan = document.getElementById("omm-modal-status");
+        const nowStr = new Date().toTimeString().split(' ')[0];
+        if (statusSpan) statusSpan.innerText = `✓ 已于 ${nowStr} 原位更新小节【${res.title}】(${(res.subtype || 'h2').toUpperCase()})`;
+        showToast(`✓ 小节已原位重命名为【${res.title}】并同步重绘导图！`);
+      } else {
+        showToast("⚠️ 小节原位重命名失败！");
+      }
+    };
 
     function copyOutlineMindmapSvg() {
       if (!currentOutlineSvg) {
@@ -14701,6 +14821,7 @@
       "outline-mindmap-modal",
       "table-grid-modal",
       "code-studio-modal",
+      "onboarding-wizard-modal",
       "timeline-modal",
       "preferences-modal",
       "cheatsheet-modal",
@@ -14749,6 +14870,12 @@
             if (csModal && csModal.classList.contains("open")) {
               e.preventDefault();
               saveCurrentCodeSnippetToSiYuan();
+              return;
+            }
+            const vmModal = document.getElementById("vault-mirror-modal");
+            if (vmModal && vmModal.classList.contains("open")) {
+              e.preventDefault();
+              saveCurrentVaultNoteToDisk();
               return;
             }
           }
@@ -15042,6 +15169,155 @@
     document.addEventListener("DOMContentLoaded", () => {
       ModalStackManager.init();
     });
+
+    // ==========================================================
+    // P2 零配置首启 4 维环境自检与交互式引导引擎 (Onboarding Wizard)
+    // ==========================================================
+    window._latestOnboardingProbe = null;
+
+    function toggleOnboardingWizardModal() {
+      const modal = document.getElementById("onboarding-wizard-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) {
+        runOnboardingEnvironmentProbe();
+      }
+    }
+
+    function closeOnboardingWizardOnBg(e) {
+      if (e && e.target && e.target.id === "onboarding-wizard-modal") {
+        toggleOnboardingWizardModal();
+      }
+    }
+
+    function runOnboardingEnvironmentProbe() {
+      const body = document.getElementById("onboarding-modal-body");
+      if (body) {
+        body.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:12px;">正在执行本机思源内核、6大热键、本地效率软件与DPAPI保险箱 4 维探针自检...</div>';
+      }
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'runOnboardingProbe' }));
+      }
+    }
+
+    function triggerOnboardingAutoHealHotkeys() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'autoHealHotkeys' }));
+        showToast("⚡ 正在自动将冲突热键替换为实测空闲组合...");
+      }
+    }
+
+    window.onOnboardingProbeLoaded = function(res) {
+      if (!res || !res.data) return;
+      const p = res.data;
+      window._latestOnboardingProbe = p;
+
+      if (typeof res.healed === "number" && res.healed > 0) {
+        showToast(`🎉 已成功为您自动修复 ${res.healed} 项冲突快捷键！`);
+      }
+
+      const pill = document.getElementById("ob-score-pill");
+      if (pill) {
+        pill.innerText = `就绪度: ${p.ReadinessScore} 分`;
+        pill.style.color = p.ReadinessScore >= 90 ? "var(--emerald-mint)" : "var(--tech-amber)";
+      }
+
+      const statusEl = document.getElementById("ob-modal-status");
+      if (statusEl) statusEl.innerText = p.ReadinessGrade || "环境探针已完成";
+
+      const body = document.getElementById("onboarding-modal-body");
+      if (!body) return;
+
+      const hkRows = (p.HotkeyReports || []).map(hk => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:rgba(255,255,255,0.03); border-radius:5px; font-size:11px;">
+          <span><b>${escapeHtml(hk.ActionName)}</b> <code style="color:var(--cyber-sky); margin-left:4px;">${escapeHtml(hk.CurrentShortcut)}</code></span>
+          <span style="color:${hk.IsAvailable ? 'var(--emerald-mint)' : 'var(--rose-agent)'}; font-weight:700;">
+            ${hk.IsAvailable ? '🟢 畅通' : ('🔴 占用 (' + escapeHtml(hk.ConflictCulprit || '外部软件') + ')')}
+          </span>
+        </div>
+      `).join("");
+
+      body.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+          <!-- Card 1: SiYuan Kernel & Workspace -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:13px; font-weight:700; color:var(--text-primary);">📡 维度一：思源笔记内核与工作区</span>
+              <span class="profile-badge" style="color:${p.KernelConnected ? 'var(--emerald-mint)' : 'var(--tech-amber)'};">
+                ${p.KernelConnected ? '🟢 在线直连' : '🟠 离岸缓冲就绪'}
+              </span>
+            </div>
+            <div style="font-size:11.5px; color:var(--text-secondary); line-height:1.7;">
+              <div>• <b>通信端点</b>: <code>${escapeHtml(p.KernelUrl)}</code> (v${escapeHtml(p.KernelVersion)} · ${p.KernelLatencyMs}ms)</div>
+              <div>• <b>工作区路径</b>: <code>${escapeHtml(p.WorkspaceDir)}</code></div>
+              <div>• <b>知识库规模</b>: <b>${p.NotebookCount}</b> 个笔记本 · <b>${p.DocCount}</b> 篇文档</div>
+            </div>
+          </div>
+
+          <!-- Card 2: Local Ecosystem Tools -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:13px; font-weight:700; color:var(--text-primary);">🛠️ 维度二：本地生产力工具生态联动</span>
+              <span class="profile-badge" style="color:var(--cyber-sky);">智能感知适配</span>
+            </div>
+            <div style="font-size:11.5px; color:var(--text-secondary); line-height:1.7;">
+              <div>• <b>Everything 毫秒检索</b>: <span style="color:${p.EverythingDetected ? 'var(--emerald-mint)' : 'var(--text-muted)'};">${escapeHtml(p.EverythingStatus)}</span></div>
+              <div>• <b>Listary 定位启动</b>: <span style="color:${p.ListaryDetected ? 'var(--emerald-mint)' : 'var(--text-muted)'};">${escapeHtml(p.ListaryStatus)}</span></div>
+              <div>• <b>首选截屏 OCR 引擎</b>: <span style="color:var(--indigo-light);">${escapeHtml(p.BestSnipToolName)}</span></div>
+            </div>
+          </div>
+
+          <!-- Card 3: 6 Core Global Hotkeys -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:13px; font-weight:700; color:var(--text-primary);">⌨️ 维度三：六大全局快捷键健康探针</span>
+              <span class="profile-badge" style="color:${p.AvailableHotkeysCount === p.TotalHotkeysCount ? 'var(--emerald-mint)' : 'var(--tech-amber)'};">
+                ${p.AvailableHotkeysCount} / ${p.TotalHotkeysCount} 畅通
+              </span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              ${hkRows}
+            </div>
+          </div>
+
+          <!-- Card 4: AI Refiner, DPAPI Vault & Storage -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:13px; font-weight:700; color:var(--text-primary);">🔐 维度四：大模型提炼与本机安全存储</span>
+              <span class="profile-badge" style="color:var(--emerald-mint);">DPAPI 硬件加密</span>
+            </div>
+            <div style="font-size:11.5px; color:var(--text-secondary); line-height:1.7;">
+              <div>• <b>前置大模型状态</b>: ${p.AiEnabled ? '🟢 已启用' : '⚪ 按需启用'} (<code>${escapeHtml(p.AiModel)}</code>)</div>
+              <div>• <b>大模型接口地址</b>: <code>${escapeHtml(p.AiEndpoint)}</code></div>
+              <div>• <b>配置存储模式</b>: ${p.StorageIsPortable ? '🟢 绿色便携模式' : '标准模式'} (<code>${escapeHtml(p.StorageDir)}</code>)</div>
+              <div>• <b>凭据安全标准</b>: Windows Crypt32 DPAPI 本机锁密 + 思源笔记库 100% 脱敏</div>
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
+    function dumpOnboardingReportToDaily() {
+      const p = window._latestOnboardingProbe;
+      if (!p || !p.SummaryMarkdown) {
+        showToast("暂无可沉淀的环境自检报告！");
+        return;
+      }
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'recordMiniInput',
+          text: p.SummaryMarkdown
+        }));
+        showToast("🎉 本机环境自检报告已成功沉淀至今日日记！");
+      }
+    }
+
+    function finishOnboardingWizard() {
+      try { localStorage.setItem("xiaolv_v3_onboarded", "1"); } catch(e) {}
+      const modal = document.getElementById("onboarding-wizard-modal");
+      if (modal) modal.classList.remove("open");
+      showToast("🚀 思源外骨骼 v3.0.0 全景工作台已就绪！");
+    }
 
     function closeWindow() {
       if (window.chrome && window.chrome.webview) {

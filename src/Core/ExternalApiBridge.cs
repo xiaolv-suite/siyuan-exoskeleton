@@ -378,6 +378,27 @@ namespace XiaoLv.Desktop.Core
                                                     return;
                                                 }
 
+                                                // AF. 外部知识库 Markdown 原位写回磁盘: /api/vault/write
+                                                if (rawPath.Equals("/api/vault/write", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/vault/write", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    HandleVaultWriteRequest(req, resp);
+                                                    return;
+                                                }
+
+                                                // AG. 文档大纲小节原位重命名与层级调整: /api/outline/rename
+                                                if (rawPath.Equals("/api/outline/rename", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/outline/rename", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    HandleOutlineRenameRequest(req, resp);
+                                                    return;
+                                                }
+
+                                                // AH. 零配置首启 4 维环境自检报告: /api/system/onboarding
+                                                if (rawPath.Equals("/api/system/onboarding", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/system/onboarding", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    HandleOnboardingProbeRequest(req, resp);
+                                                    return;
+                                                }
+
 			                // 未匹配到路由
 			                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
             }
@@ -1515,6 +1536,85 @@ namespace XiaoLv.Desktop.Core
                 catch (Exception ex)
                 {
                     WriteJsonResponse(resp, 500, new { code = 500, msg = "热切换预设异常: " + ex.Message });
+                }
+            });
+        }
+
+        private static void HandleVaultWriteRequest(HttpListenerRequest req, HttpListenerResponse resp)
+        {
+            string body = ReadRequestBody(req);
+            var dict = JsonHelper.ParseDict(body);
+            string path = JsonHelper.GetString(dict, "path");
+            if (string.IsNullOrEmpty(path)) path = JsonHelper.GetString(dict, "filePath");
+            string content = JsonHelper.GetString(dict, "content");
+
+            if (string.IsNullOrEmpty(path))
+            {
+                WriteJsonResponse(resp, 400, new { code = 400, msg = "path 参数不能为空" });
+                return;
+            }
+
+            bool ok = VaultMirrorInspector.WriteNoteContent(path, content ?? "");
+            WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, success = ok, path = path, msg = ok ? "外部文件已原位写回磁盘" : "写回失败" });
+        }
+
+        private static void HandleOutlineRenameRequest(HttpListenerRequest req, HttpListenerResponse resp)
+        {
+            string body = ReadRequestBody(req);
+            var dict = JsonHelper.ParseDict(body);
+            string blockId = JsonHelper.GetString(dict, "blockId");
+            if (string.IsNullOrEmpty(blockId)) blockId = JsonHelper.GetString(dict, "id");
+            string title = JsonHelper.GetString(dict, "title");
+            string subtype = JsonHelper.GetString(dict, "subtype", "h2").ToLowerInvariant();
+
+            if (string.IsNullOrEmpty(blockId) || string.IsNullOrEmpty(title))
+            {
+                WriteJsonResponse(resp, 400, new { code = 400, msg = "blockId 与 title 参数不能为空" });
+                return;
+            }
+
+            ThreadPool.QueueUserWorkItem(async s =>
+            {
+                try
+                {
+                    int lvl = 2;
+                    if (subtype.StartsWith("h") && subtype.Length == 2) int.TryParse(subtype.Substring(1), out lvl);
+                    lvl = Math.Max(1, Math.Min(6, lvl));
+                    string md = new string('#', lvl) + " " + title.Trim();
+
+                    var res = await SiYuanClient.PostAsync("/api/block/updateBlock", new
+                    {
+                        id = blockId,
+                        dataType = "markdown",
+                        data = md
+                    });
+                    bool ok = res != null && res.Success;
+                    WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, success = ok, blockId = blockId, title = title, subtype = "h" + lvl });
+                }
+                catch (Exception ex)
+                {
+                    WriteJsonResponse(resp, 500, new { code = 500, msg = "重命名大纲小节异常: " + ex.Message });
+                }
+            });
+        }
+
+        private static void HandleOnboardingProbeRequest(HttpListenerRequest req, HttpListenerResponse resp)
+        {
+            ThreadPool.QueueUserWorkItem(async s =>
+            {
+                try
+                {
+                    var probe = await FirstRunEnvironmentDoctor.RunFullEnvironmentProbeAsync();
+                    WriteJsonResponse(resp, 200, new
+                    {
+                        code = 0,
+                        msg = "ok",
+                        data = probe
+                    });
+                }
+                catch (Exception ex)
+                {
+                    WriteJsonResponse(resp, 500, new { code = 500, msg = "环境自检异常: " + ex.Message });
                 }
             });
         }

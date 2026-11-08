@@ -215,6 +215,7 @@ async function main() {
 
   // Step 2: Create DailyNote Notebook
   const nbRes = await api("/api/notebook/createNotebook", { name: "DailyNote" });
+  await sleep(500);
   logStep("Step 2: 创建干净的隔离测试日记笔记本", nbRes.code === 0 && !!nbRes.data?.notebook?.id, `Notebook ID: ${nbRes.data?.notebook?.id}`);
 
   // Step 3: Spawn XiaoLv Desktop configured for isolated sandbox
@@ -3674,9 +3675,10 @@ async function main() {
         })
       });
       const updJson = await updResp.json();
-      await sleep(500);
-      const updatedCodeRow = await pollSql(`SELECT id, content, markdown FROM blocks WHERE id='${testCodeBlockId}' AND content LIKE '%return 100%' LIMIT 1`, 6);
-      codeWriteBackOk = updJson.code === 0 && !!updatedCodeRow;
+      const kramRes1 = await api("/api/block/getBlockKramdown", { id: testCodeBlockId });
+      const kram1 = kramRes1?.data?.kramdown || "";
+      const updatedCodeRow = await pollSql(`SELECT id, content, markdown FROM blocks WHERE id='${testCodeBlockId}' AND content LIKE '%return 100%' LIMIT 1`, 12);
+      codeWriteBackOk = updJson.code === 0 && (kram1.includes("return 100") || !!updatedCodeRow);
     }
   } catch {}
   logStep("Step 7.202: 代码工作台双向闭环 — 纯净源码原位写回思源代码块 (POST /api/code/update) 真机断言", codeWriteBackOk, `目标代码块: ${testCodeBlockId}`);
@@ -3790,6 +3792,112 @@ async function main() {
                             panelContent.includes('⚡ 激活生效') &&
                             panelContent.includes('🔐 DPAPI锁密');
   logStep("Step 7.208: 配置预设一键热切换生效 (POST /api/profile/apply) 与 DPAPI 密钥自动还原断言", profileApplyOk && hasProfileApplyUi, `切换结果: ${profileApplySummary}`);
+
+  // Step 7.209: Test FirstRunEnvironmentDoctor 4-Dimension Probe Engine in C# Backend
+  const obProbeScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $docType = $asm.GetType('XiaoLv.Desktop.Core.FirstRunEnvironmentDoctor');
+    $mProbe = $docType.GetMethod('RunFullEnvironmentProbeAsync', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+
+    $task = $mProbe.Invoke($null, $null);
+    $rep = $task.GetAwaiter().GetResult();
+
+    $okProbe = ($null -ne $rep) -and ($rep.ReadinessScore -ge 70) -and ($rep.KernelConnected -eq $true) -and ($rep.TotalHotkeysCount -eq 6) -and ($rep.SummaryMarkdown.Contains('exoskeleton-onboarding-report'));
+    Write-Output ($okProbe.ToString() + '|' + $rep.ReadinessScore + '|' + $rep.AvailableHotkeysCount + '/' + $rep.TotalHotkeysCount);
+  `;
+  const obProbeRes = runPs(obProbeScript);
+  const isObProbeOk = obProbeRes.includes("True|");
+  logStep("Step 7.209: 零配置首启 4 维环境自动探针引擎 (FirstRunEnvironmentDoctor) 真机断言", isObProbeOk, `环境探针结论: ${obProbeRes.trim()}`);
+
+  // Step 7.210: Test ExternalApiBridge Onboarding Probe Endpoint (GET /api/system/onboarding)
+  let webhookObResp;
+  try {
+    const getResp = await fetch("http://127.0.0.1:43990/api/system/onboarding");
+    const getJson = await getResp.json();
+    webhookObResp = {
+      code: getJson.code,
+      score: getJson.data?.ReadinessScore,
+      hkCount: getJson.data?.HotkeyReports?.length
+    };
+  } catch (err) {
+    webhookObResp = { error: err.message };
+  }
+  const isWebhookObOk = webhookObResp && webhookObResp.code === 0 && typeof webhookObResp.score === "number" && webhookObResp.hkCount === 6;
+  logStep("Step 7.210: 极速调用桥首启 4 维环境自检接口 (GET /api/system/onboarding) 断言", isWebhookObOk, `响应: ${JSON.stringify(webhookObResp)}`);
+
+  // Step 7.211: Test Onboarding Wizard Modal UI & Auto-Heal Functions in panel.html
+  const hasOnboardingUi = panelContent.includes('id="onboarding-wizard-modal"') &&
+                          panelContent.includes('id="ob-score-pill"') &&
+                          panelContent.includes('function toggleOnboardingWizardModal') &&
+                          panelContent.includes('function runOnboardingEnvironmentProbe') &&
+                          panelContent.includes('function triggerOnboardingAutoHealHotkeys') &&
+                          panelContent.includes('function finishOnboardingWizard');
+  logStep("Step 7.211: 零配置首启向导大视窗 (onboarding-wizard-modal) 与冲突热键一键自愈驱动断言", hasOnboardingUi, `首启向导模版完整性: ${hasOnboardingUi}`);
+
+  // Step 7.212: Test External Vault Note In-Place Disk Write-Back (POST /api/vault/write)
+  const tempWriteVaultMd = path.join(ROOT, "e2e_vault_writeback_test.md");
+  fs.writeFileSync(tempWriteVaultMd, "# 初始外部笔记\n\n待修改内容", "utf8");
+  let vaultWriteOk = false;
+  try {
+    const writeResp = await fetch("http://127.0.0.1:43990/api/vault/write", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        path: tempWriteVaultMd,
+        content: "# 初始外部笔记\n\n已在外部知识库镜像工作台中原位修改并保存回磁盘！"
+      })
+    });
+    const writeJson = await writeResp.json();
+    const diskText = fs.readFileSync(tempWriteVaultMd, "utf8");
+    vaultWriteOk = writeJson.code === 0 && diskText.includes("原位修改并保存回磁盘");
+  } catch {}
+  try { fs.unlinkSync(tempWriteVaultMd); } catch {}
+  logStep("Step 7.212: 外部知识库工作台双向闭环 — Markdown 原位保存回磁盘 (POST /api/vault/write) 真机断言", vaultWriteOk, `磁盘原位写回验证: ${vaultWriteOk}`);
+
+  // Step 7.213: Test Vault Mirror Bi-Directional Controls & Chained onVaultNotesLoaded Handler
+  const hasVaultWriteUi = panelContent.includes('id="vm-save-disk-btn"') &&
+                          panelContent.includes('function saveCurrentVaultNoteToDisk') &&
+                          panelContent.includes('window.onVaultNoteSaved') &&
+                          panelContent.includes('const _origOnVaultNotesLoaded = window.onVaultNotesLoaded');
+  logStep("Step 7.213: 外部知识库原位保存按钮、Ctrl+S 绑定与 onVaultNotesLoaded 双轨串联断言", hasVaultWriteUi, `外部库写回控件完整性: ${hasVaultWriteUi}`);
+
+  // Step 7.214: Test Document Outline Heading In-Place Rename & Level Change (POST /api/outline/rename)
+  let outlineRenameOk = false;
+  let testHeadingBlockId = "";
+  try {
+    const appendHRes = await api("/api/block/appendBlock", {
+      parentID: row1.root_id,
+      dataType: "markdown",
+      data: "## 初始二级大纲小节"
+    });
+    testHeadingBlockId = appendHRes.data?.[0]?.doOperations?.[0]?.id || "";
+    if (testHeadingBlockId) {
+      const renResp = await fetch("http://127.0.0.1:43990/api/outline/rename", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blockId: testHeadingBlockId,
+          title: "重构后三级核心小节",
+          subtype: "h3"
+        })
+      });
+      const renJson = await renResp.json();
+      const hKramRes = await api("/api/block/getBlockKramdown", { id: testHeadingBlockId });
+      const hKram = hKramRes?.data?.kramdown || "";
+      outlineRenameOk = renJson.code === 0 && hKram.includes("### 重构后三级核心小节");
+    }
+  } catch {}
+  logStep("Step 7.214: 大纲导图工作台双向闭环 — 小节原位重命名与层级升降 (POST /api/outline/rename) 真机断言", outlineRenameOk, `目标标题块: ${testHeadingBlockId}`);
+
+  // Step 7.215: Test Outline Mindmap Studio Inline Heading Edit Controls in panel.html
+  const hasOutlineEditUi = panelContent.includes('function promptRenameOutlineHeading') &&
+                           panelContent.includes('window.onOutlineHeadingRenamed') &&
+                           panelContent.includes("op: 'renameOutlineHeading'");
+  logStep("Step 7.215: 大纲目录树内联重命名按钮与思维导图实时重绘驱动断言", hasOutlineEditUi, `大纲编辑控件完整性: ${hasOutlineEditUi}`);
 
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");

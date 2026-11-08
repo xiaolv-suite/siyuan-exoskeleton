@@ -1,7 +1,7 @@
 # 思源外骨骼 · 桌面穿透工作台 (SiYuan Exoskeleton) v3.0.0
 
 > 🚀 **专为思源笔记打造的 0ms 原生 Windows 桌面穿透工作台与本地生态连接中枢**  
-> 纯原生 Windows C# 5.0 / .NET Framework 4.8 (x64) + 嵌入式 WebView2 架构 · 零外部平台依赖 · **真正纯单文件绿色便携（3.64 MB 单 EXE 包含全部离线资产与运行时），后台冷压缩常驻 ~13-20 MB，待机 CPU 0.0%**
+> 纯原生 Windows C# 5.0 / .NET Framework 4.8 (x64) + 嵌入式 WebView2 架构 · 零外部平台依赖 · **真正纯单文件绿色便携（3.67 MB 单 EXE 包含全部离线资产与运行时），后台冷压缩常驻 ~13-25 MB，待机 CPU 0.0%**
 
 ---
 
@@ -442,6 +442,17 @@
   - **零外部依赖硬件级加密**：基于 Windows 原生 `crypt32.dll` (`CryptProtectData` / `CryptUnprotectData`) 将敏感密钥（`apiKey` / `secretKey` / `accessKey` / `password`）加密锁入本机专属 `local_vault_dpapi.json`，同时思源笔记库《/配置预设》与导出蓝图依然 100% 保持 `[SECURED_CREDENTIAL]` 脱敏铁律；
   - **一键热切换激活 (`⚡ 激活生效`)**：点击预设卡片即可从本机 DPAPI 保险箱自动解密还原凭据并注入运行时热切换生效（卡片实时点亮 `🟢 当前生效` 与 `🔐 DPAPI锁密` 徽章）。
 
+### 63. ★ P2 零配置首启 4 维环境自检向导与全工作台读写终态封板 (`FirstRunEnvironmentDoctor.cs`)
+- **零配置首启 4 维环境自动探针 (`#onboarding-wizard-modal` · `init:` / `wizard:` · `GET /api/system/onboarding`)**：
+  - **维度一 · 思源笔记内核与工作区**：自动探测内核端口、版本、往返通信延迟、工作区路径 (`D:\SIYUAN`)、笔记本数与文档规模；
+  - **维度二 · 本地效率工具生态联动**：自动识别本地 Everything、Listary、PixPin、Snipaste 安装与活跃状态；
+  - **维度三 · 6 大全局热键无冲突自检**：调用 Win32 探针检测 6 项全局热键占用情况，支持点击 **`⚡ 一键自愈冲突热键`** 自动替换为实测空闲热键；
+  - **维度四 · 前置大模型与本机 DPAPI 保险箱**：评估大模型提炼端点、便携存储模式与 Crypt32 DPAPI 硬件锁密状态，生成 0~100 综合就绪评分并支持一键沉淀日记；
+- **外部知识库镜像工作台 (`vault-mirror-modal`) 原位写回磁盘闭环 (`VaultMirrorInspector.WriteNoteContent` + `POST /api/vault/write`)**：
+  - 右侧 Markdown 研读画布支持直接就地编辑，点击顶栏 **`💾 保存回外部文件`**（或按 `Ctrl+S`）即可将修改原位保存回外部磁盘 `.md` 文件；
+- **全景大纲与导图工作台 (`outline-mindmap-modal`) 小节原位重构闭环 (`renameOutlineHeading` + `POST /api/outline/rename`)**：
+  - 左侧 H1~H6 大纲目录树每项提供 **`✏️`** 内联编辑按钮，支持原位重命名小节标题或调整 `H1~H6` 层级，实时同步回思源标题块并即时重绘右侧贝塞尔矢量思维导图。
+
 ---
 
 ## 三、 全局快捷键「六剑客」
@@ -513,11 +524,11 @@
 # 编译最新单文件独立可执行程序
 node build-desktop.mjs
 
-# 执行全量 225 项端到端隔离真机自动化验收
+# 执行全量 232 项端到端隔离真机自动化验收
 pnpm e2e:isolated
 ```
 
-### 自动化验收覆盖面（225 / 225 PASS · 100% 通过）：
+### 自动化验收覆盖面（232 / 232 PASS · 100% 通过）：
 1. 隔离思源 3.8.9 内核冷启动与笔记本绑定；
 2. 单条速记、30 秒防碎块粘滞合并、前台应用环境与 URL 溯源注水；
 3. Lifelog 账目 (`¥`)、专注区间 (`~45m`)、习惯打卡 (`+water`) 自动时序分流；

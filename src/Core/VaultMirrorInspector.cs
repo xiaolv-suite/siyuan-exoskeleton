@@ -122,6 +122,35 @@ namespace XiaoLv.Desktop.Core
             }
         }
 
+        /// <summary>
+        /// 将在外部知识库工作台中原位编辑后的 Markdown 内容安全写回物理文件
+        /// </summary>
+        public static bool WriteNoteContent(string filePath, string content)
+        {
+            if (string.IsNullOrWhiteSpace(filePath)) return false;
+            try
+            {
+                string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                if (ext != ".md" && ext != ".markdown" && ext != ".txt") return false;
+
+                string dir = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
+                File.WriteAllText(filePath, content ?? "", new UTF8Encoding(false));
+                OmniNotificationHub.Push("外部知识库 · 原位保存",
+                    string.Format("外部笔记《{0}》已成功原位保存回磁盘！", Path.GetFileName(filePath)),
+                    "success", "desktop", filePath);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private static string FormatFileSize(long bytes)
         {
             if (bytes < 1024) return bytes + " B";

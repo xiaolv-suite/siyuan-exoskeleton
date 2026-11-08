@@ -1269,23 +1269,133 @@ namespace XiaoLv.Desktop.UI
 									                    return;
 									                }
 
-									                // 3.66B 外部知识库笔记内容读取 (readVaultNote)
-									                if (op.Equals("readVaultNote", StringComparison.OrdinalIgnoreCase))
-									                {
-									                    string filePath = JsonHelper.GetString(msg, "filePath");
-									                    ThreadPool.QueueUserWorkItem(s =>
-									                    {
-									                        string content = VaultMirrorInspector.ReadNoteContent(filePath);
-										                        Dispatcher.Invoke(() =>
-										                        {
-										                            if (_webView != null && _webView.CoreWebView2 != null)
-										                            {
-										                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onVaultNoteContentLoaded) window.onVaultNoteContentLoaded(" + JsonHelper.ToJson(new { code = 0, filePath = filePath, content = content }) + ");");
-										                            }
-										                        });
-										                    });
-										                    return;
-										                }
+                // 3.66B 外部知识库笔记内容读取 (readVaultNote)
+                if (op.Equals("readVaultNote", StringComparison.OrdinalIgnoreCase))
+                {
+                    string filePath = JsonHelper.GetString(msg, "filePath");
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        string content = VaultMirrorInspector.ReadNoteContent(filePath);
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onVaultNoteContentLoaded) window.onVaultNoteContentLoaded(" + JsonHelper.ToJson(new { code = 0, filePath = filePath, content = content }) + ");");
+                            }
+                        });
+                    });
+                    return;
+                }
+
+                // 3.66B2 外部知识库笔记原位写回保存 (saveVaultNote)
+                if (op.Equals("saveVaultNote", StringComparison.OrdinalIgnoreCase))
+                {
+                    string filePath = JsonHelper.GetString(msg, "filePath");
+                    string content = JsonHelper.GetString(msg, "content");
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        bool ok = VaultMirrorInspector.WriteNoteContent(filePath, content);
+                        if (ok) SoundPlayerHelper.PlayFeedback();
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onVaultNoteSaved) window.onVaultNoteSaved(" + JsonHelper.ToJson(new { code = 0, success = ok, filePath = filePath }) + ");");
+                            }
+                        });
+                        if (ok && OnNotificationRequested != null)
+                        {
+                            OnNotificationRequested("外部知识库 · 原位保存", "✓ 已成功将修改原位保存回外部 Markdown 文件！");
+                        }
+                    });
+                    return;
+                }
+
+                // 3.66C2 全景大纲小节原位重命名与层级升降 (renameOutlineHeading)
+                if (op.Equals("renameOutlineHeading", StringComparison.OrdinalIgnoreCase))
+                {
+                    string blockId = JsonHelper.GetString(msg, "blockId");
+                    string newTitle = JsonHelper.GetString(msg, "title");
+                    string subtype = JsonHelper.GetString(msg, "subtype", "h2").ToLowerInvariant();
+                    ThreadPool.QueueUserWorkItem(async s =>
+                    {
+                        try
+                        {
+                            int lvl = 2;
+                            if (subtype.StartsWith("h") && subtype.Length == 2)
+                            {
+                                int.TryParse(subtype.Substring(1), out lvl);
+                            }
+                            lvl = Math.Max(1, Math.Min(6, lvl));
+                            string hashes = new string('#', lvl);
+                            string md = hashes + " " + (newTitle ?? "").Trim();
+
+                            var res = await SiYuanClient.PostAsync("/api/block/updateBlock", new
+                            {
+                                id = blockId,
+                                dataType = "markdown",
+                                data = md
+                            });
+                            bool ok = res != null && res.Success;
+                            if (ok)
+                            {
+                                SoundPlayerHelper.PlayFeedback();
+                                OmniNotificationHub.Push("大纲导图 · 小节重构", string.Format("小节已原位重命名为【{0}】(H{1})！", newTitle, lvl), "success", "siyuan", blockId);
+                            }
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOutlineHeadingRenamed) window.onOutlineHeadingRenamed(" + JsonHelper.ToJson(new { code = 0, success = ok, blockId = blockId, title = newTitle, subtype = "h" + lvl }) + ");");
+                                }
+                            });
+                        }
+                        catch { }
+                    });
+                    return;
+                }
+
+                // 3.66D 零配置首启环境自检与向导探针 (runOnboardingProbe & autoHealHotkeys)
+                if (op.Equals("runOnboardingProbe", StringComparison.OrdinalIgnoreCase))
+                {
+                    ThreadPool.QueueUserWorkItem(async s =>
+                    {
+                        try
+                        {
+                            var probe = await FirstRunEnvironmentDoctor.RunFullEnvironmentProbeAsync();
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOnboardingProbeLoaded) window.onOnboardingProbeLoaded(" + JsonHelper.ToJson(new { code = 0, data = probe }) + ");");
+                                }
+                            });
+                        }
+                        catch { }
+                    });
+                    return;
+                }
+
+                if (op.Equals("autoHealHotkeys", StringComparison.OrdinalIgnoreCase))
+                {
+                    ThreadPool.QueueUserWorkItem(async s =>
+                    {
+                        try
+                        {
+                            int healed = FirstRunEnvironmentDoctor.AutoHealConflictingHotkeys();
+                            var probe = await FirstRunEnvironmentDoctor.RunFullEnvironmentProbeAsync();
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOnboardingProbeLoaded) window.onOnboardingProbeLoaded(" + JsonHelper.ToJson(new { code = 0, healed = healed, data = probe }) + ");");
+                                }
+                            });
+                        }
+                        catch { }
+                    });
+                    return;
+                }
 
 										                // 3.66C 全景大纲与导图独立大视窗 (Outline & Mindmap Studio)
 										                if (op.Equals("getDocOutlineAndMindmap", StringComparison.OrdinalIgnoreCase))

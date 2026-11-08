@@ -2485,7 +2485,7 @@
           <span style="color: var(--emerald-mint); font-weight: 700;">📅</span>
           <span id="telemetry-today-text">今日 0 块</span>
         </div>
-        <div class="t-pill" id="telemetry-tasks" style="cursor: pointer;" onclick="insertPrefix('t:')" title="全库待办事项与任务哨兵 (点击查看待办清单)">
+        <div class="t-pill" id="telemetry-tasks" style="cursor: pointer;" onclick="toggleTasksKanbanModal()" title="全景待办四象限与看板工作台 (点击查看大盘看板)">
           <span style="color: var(--tech-amber); font-weight: 700;">📋</span>
           <span id="telemetry-tasks-text">待办 --</span>
         </div>
@@ -2591,8 +2591,8 @@
       <span class="intent-chip" onclick="insertPrefix('voice:')" title="输入 voice: 呼出语音速记微舱与口语去噪自愈"><b>🎙️</b> 语音速记</span>
       <span class="intent-chip" onclick="insertPrefix('trash:')" title="输入 trash: 查看思源文档回收站、误删笔记与历史快照打捞"><b>🗑️</b> 回收站</span>
 	      <span class="intent-chip" onclick="toggleTodayTimeline()" title="无需切入思源，0ms 滑出今日日记记录的全部灵感、待办与笔记"><b>📅</b> 今日时间轴</span>
-		      <span class="intent-chip" onclick="triggerFlashback()" title="输入 rand: 随机漫游一条历史重点笔记或那年今日"><b>🎲</b> 漫游回顾</span>
-		      <span class="intent-chip" onclick="triggerHeatmap()" title="输入 heat: 查看全库过去一年知识心流沉淀 52 周热力图"><b>🔥</b> 沉淀热力图</span>
+			      <span class="intent-chip" onclick="triggerFlashback()" title="输入 rand: 随机漫游一条历史重点笔记或那年今日"><b>🎲</b> 漫游回顾</span>
+			      <span class="intent-chip" onclick="toggleHeatmapGalleryModal()" title="查看全库 52 周知识心流沉淀大画廊与年轮徽章"><b>🔥</b> 沉淀热力图</span>
       <span class="chip-divider"></span>
       <span class="intent-chip" style="opacity: 0.75; cursor: pointer;" onclick="toggleCheatsheet()" title="查看完整快捷键心流"><b>Alt+1~8</b> 官方直达</span>
     </div>
@@ -3159,6 +3159,79 @@
       <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 深度记录思源弹窗、系统消息、开发回执与心流达成</span>
         <span id="notif-modal-stat">已加载 0 笔</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全景待办四象限与看板独立工作台 (Tasks Kanban & Matrix Modal) -->
+  <div class="timeline-modal-overlay" id="tasks-kanban-modal" onclick="closeTasksKanbanOnBg(event)">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 95%; max-width: 960px; max-height: 86vh;">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">📋</span>
+          <span style="font-weight: 700; font-size: 14px;">全景待办与四象限看板大盘</span>
+          <span class="brand-pill" id="kanban-modal-count">0 项待办</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="promptCreateNewTaskModal()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="快速创建一条带情境与优先级的待办任务">+ 新增待办</button>
+          <button class="pref-btn" onclick="copyChecklistFromKanban()" style="font-size: 11px; padding: 3px 10px;" title="复制全景结构化 Checklist 文本">📋 复制清单</button>
+          <button class="pref-btn" onclick="dumpKanbanChecklistToDaily()" style="font-size: 11px; padding: 3px 10px;" title="将全量待办沉淀入今日日记">📥 归流日记</button>
+          <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleTasksKanbanModal()">✕</button>
+        </div>
+      </div>
+      <!-- Mode Switcher Toolbar -->
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div class="timeline-filters" style="display: flex; gap: 6px; overflow-x: auto; padding: 0;">
+          <button class="cat-btn active" id="kb-view-matrix" onclick="switchKanbanViewMode('matrix')">🎴 四象限矩阵</button>
+          <button class="cat-btn" id="kb-view-status" onclick="switchKanbanViewMode('status')">📊 状态看板</button>
+          <button class="cat-btn" id="kb-view-list" onclick="switchKanbanViewMode('list')">☰ 紧凑清单</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; flex: 1; max-width: 260px;">
+          <input type="text" id="kanban-search-input" placeholder="实时过滤任务/文档..." oninput="handleKanbanLiveFilter(this.value)" style="width: 100%; font-size: 11px; padding: 3px 8px; border-radius: 5px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-primary);" />
+        </div>
+      </div>
+      <!-- Board Container -->
+      <div id="kanban-modal-body" style="padding: 14px 18px; overflow-y: auto; max-height: 64vh;">
+        <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在加载待办数据...</div>
+      </div>
+      <!-- Bottom Footer -->
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+        <span>💡 支持点击任一待办卡片一键【🍅 开启心流】，专注完成自动打勾结绳并记录时序</span>
+        <span id="kanban-modal-stat">加载中...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 52 周年度知识心流沉淀大画廊 (Yearly Heatmap Gallery Modal) -->
+  <div class="timeline-modal-overlay" id="heatmap-gallery-modal" onclick="closeHeatmapGalleryOnBg(event)">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 90%; max-width: 820px; max-height: 82vh;">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">🔥</span>
+          <span style="font-weight: 700; font-size: 14px;">52 周年度知识心流沉淀大画廊</span>
+          <span class="brand-pill" id="heatmap-modal-badge" style="background: rgba(16, 185, 129, 0.2); color: var(--emerald-mint);">365 天年轮</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="exportHeatmapCard()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="生成高保真年度知识贡献长图并在外部图片查看器秒开">📸 导出长图</button>
+          <button class="pref-btn" onclick="copyHeatmapSvgCode()" style="font-size: 11px; padding: 3px 10px;" title="复制矢量 SVG 代码">📋 复制 SVG</button>
+          <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleHeatmapGalleryModal()">✕</button>
+        </div>
+      </div>
+      <!-- Stats Strip -->
+      <div id="heatmap-stats-strip" style="display: flex; gap: 16px; padding: 10px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; flex-wrap: wrap; font-size: 11.5px;">
+        <div>🌱 年度总沉淀: <b id="hm-total-blocks" style="color: var(--emerald-mint); font-size: 13px;">--</b> 块</div>
+        <div>📅 活跃天数: <b id="hm-active-days" style="color: var(--cyber-sky); font-size: 13px;">--</b> 天</div>
+        <div>🔥 沉淀峰值: <b id="hm-peak-blocks" style="color: var(--tech-amber); font-size: 13px;">--</b> 块/天</div>
+        <div>🏆 当前连续: <b id="hm-streak-days" style="color: var(--rose-agent); font-size: 13px;">--</b> 天</div>
+      </div>
+      <!-- SVG Body Container -->
+      <div id="heatmap-modal-body" style="padding: 18px; overflow-x: auto; display: flex; justify-content: center; align-items: center; min-height: 220px; background: #0f172a;">
+        <div style="text-align: center; color: var(--text-muted); font-size: 12px;">正在生成 52 周年度矢量热力图...</div>
+      </div>
+      <!-- Bottom Footer -->
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+        <span>💡 纯原生 SQLite 纳秒级聚合全库块创建时序，0 外部重依赖生成矢量年轮</span>
+        <span>对标 GitHub / flomo 心流激励</span>
       </div>
     </div>
   </div>
@@ -5110,9 +5183,9 @@
         return;
       }
 
-      // 呼出全景待办视界
+      // 呼出全景待办视界与四象限看板大盘
       if (item.id === "sytask") {
-        insertPrefix("t:");
+        toggleTasksKanbanModal();
         return;
       }
 
@@ -8085,9 +8158,24 @@
       `;
     };
 
+    let rawKanbanReport = null;
+    let currentKanbanViewMode = 'matrix'; // 'matrix' | 'status' | 'list'
+    let currentKanbanFilterKeyword = '';
+
     window.onTasksHorizonLoaded = function(res) {
       if (!res || !res.data) return;
       const rep = res.data;
+      rawKanbanReport = rep;
+
+      // 更新顶栏与弹窗待办计数
+      const topPillText = document.getElementById("telemetry-tasks-text");
+      if (topPillText) topPillText.innerText = `待办 ${rep.TotalTasks || 0}`;
+      const kbCount = document.getElementById("kanban-modal-count");
+      if (kbCount) kbCount.innerText = `${rep.TotalTasks || 0} 项待办`;
+
+      // 同步刷新四象限与看板独立视窗
+      renderKanbanBoard();
+
       const banner = document.getElementById("intent-banner");
       if (banner) {
         banner.style.display = "flex";
@@ -8096,6 +8184,7 @@
             <span>🔥 今日必办: <b>${rep.TodayTasks ? rep.TodayTasks.length : 0}</b> · ⚡ 重点: <b>${rep.PriorityTasks ? rep.PriorityTasks.length : 0}</b> · 📋 全库待办: <b>${rep.TotalTasks || 0}</b> 项</span>
             <div style="display: flex; gap: 6px;">
               <button class="card-launch-btn" style="padding: 2px 8px; font-size: 11px;" onclick="copyToClipboard('${escapeQuote(rep.FormattedChecklist)}', '今日Checklist已复制！')">📋 复制Checklist</button>
+              <button class="card-launch-btn" style="padding: 2px 8px; font-size: 11px;" onclick="toggleTasksKanbanModal()">🎴 展开大看板</button>
             </div>
           </div>
         `;
@@ -8130,6 +8219,208 @@
         }
       }
     };
+
+    function toggleTasksKanbanModal() {
+      const modal = document.getElementById("tasks-kanban-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) {
+        loadKanbanData();
+      }
+    }
+
+    function closeTasksKanbanOnBg(e) {
+      if (e.target && e.target.id === "tasks-kanban-modal") {
+        toggleTasksKanbanModal();
+      }
+    }
+
+    function loadKanbanData() {
+      const body = document.getElementById("kanban-modal-body");
+      if (body) body.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:12px;">正在加载待办数据...</div>';
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'getTasksHorizon', keyword: '' }));
+      }
+    }
+
+    function switchKanbanViewMode(mode) {
+      currentKanbanViewMode = mode;
+      ["matrix", "status", "list"].forEach(m => {
+        const btn = document.getElementById("kb-view-" + m);
+        if (btn) btn.classList.toggle("active", m === mode);
+      });
+      renderKanbanBoard();
+    }
+
+    function handleKanbanLiveFilter(val) {
+      currentKanbanFilterKeyword = (val || "").trim().toLowerCase();
+      renderKanbanBoard();
+    }
+
+    function renderKanbanBoard() {
+      const body = document.getElementById("kanban-modal-body");
+      const countBadge = document.getElementById("kanban-modal-count");
+      const statBadge = document.getElementById("kanban-modal-stat");
+      if (!body) return;
+
+      if (!rawKanbanReport) {
+        body.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);">暂无待办数据</div>';
+        return;
+      }
+
+      let allTasks = [];
+      if (Array.isArray(rawKanbanReport.TodayTasks)) allTasks.push(...rawKanbanReport.TodayTasks);
+      if (Array.isArray(rawKanbanReport.PriorityTasks)) allTasks.push(...rawKanbanReport.PriorityTasks);
+      if (Array.isArray(rawKanbanReport.NormalTasks)) allTasks.push(...rawKanbanReport.NormalTasks);
+
+      if (currentKanbanFilterKeyword) {
+        allTasks = allTasks.filter(t =>
+          (t.CleanTask && t.CleanTask.toLowerCase().includes(currentKanbanFilterKeyword)) ||
+          (t.DocTitle && t.DocTitle.toLowerCase().includes(currentKanbanFilterKeyword)) ||
+          (t.Priority && t.Priority.toLowerCase().includes(currentKanbanFilterKeyword)) ||
+          (t.DueDate && t.DueDate.toLowerCase().includes(currentKanbanFilterKeyword))
+        );
+      }
+
+      if (countBadge) countBadge.innerText = `${allTasks.length} 项待办`;
+      if (statBadge) statBadge.innerText = `显示 ${allTasks.length} / 共 ${rawKanbanReport.TotalTasks || allTasks.length} 项`;
+
+      if (allTasks.length === 0) {
+        body.innerHTML = `
+          <div style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
+            <div style="font-size: 32px; margin-bottom: 8px;">🎉</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">当前无待办任务</div>
+            <div style="font-size: 11px;">所有任务已妥善攻坚完成，或输入关键词未匹配到相关项</div>
+          </div>
+        `;
+        return;
+      }
+
+      if (currentKanbanViewMode === "matrix") {
+        const p1Tasks = allTasks.filter(t => t.Priority === "P1");
+        const p2Tasks = allTasks.filter(t => t.Priority === "P2");
+        const todayTasks = allTasks.filter(t => (t.IsDueToday || t.IsOverdue) && t.Priority !== "P1" && t.Priority !== "P2");
+        const normalTasks = allTasks.filter(t => t.Priority !== "P1" && t.Priority !== "P2" && !t.IsDueToday && !t.IsOverdue);
+
+        body.innerHTML = `
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px;">
+            ${renderKanbanColumn("🔥 紧急重要 (P1)", "var(--rose-agent)", "rgba(244,63,94,0.12)", p1Tasks)}
+            ${renderKanbanColumn("⚡ 核心规划 (P2)", "var(--tech-amber)", "rgba(245,158,11,0.12)", p2Tasks)}
+            ${renderKanbanColumn("⏳ 今日攻坚 / 逾期", "var(--cyber-sky)", "rgba(56,189,248,0.12)", todayTasks)}
+            ${renderKanbanColumn("📥 收集箱与日常", "var(--indigo-light)", "rgba(99,102,241,0.12)", normalTasks)}
+          </div>
+        `;
+      } else if (currentKanbanViewMode === "status") {
+        const activeTimerId = (window.__CURRENT_FOCUS_STATUS__ && window.__CURRENT_FOCUS_STATUS__.TaskBlockId) || "";
+        const inFocusTasks = allTasks.filter(t => t.BlockId && t.BlockId === activeTimerId);
+        const todoTasks = allTasks.filter(t => !activeTimerId || t.BlockId !== activeTimerId);
+
+        body.innerHTML = `
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+            ${renderKanbanColumn("📋 待办清单 (To-Do)", "var(--cyber-sky)", "rgba(56,189,248,0.12)", todoTasks)}
+            ${renderKanbanColumn("🍅 心流进行中 (In Focus)", "var(--rose-agent)", "rgba(244,63,94,0.15)", inFocusTasks, "当前专注锁定此任务")}
+            ${renderKanbanColumn("✓ 今日已完成 (Done Today)", "var(--emerald-mint)", "rgba(16,185,129,0.12)", [], "专注到期自动结绳归流")}
+          </div>
+        `;
+      } else {
+        body.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${allTasks.map(t => renderSingleKanbanCard(t, true)).join('')}
+          </div>
+        `;
+      }
+    }
+
+    function renderKanbanColumn(title, accentColor, bgSubtle, tasks, emptyHint = "暂无待办") {
+      return `
+        <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-hairline); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 280px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1.5px solid ${accentColor};">
+            <span style="font-weight: 750; font-size: 12px; color: var(--text-primary);">${title}</span>
+            <span class="badge-native" style="font-size: 10px; padding: 1px 6px;">${tasks.length}</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; overflow-y: auto; max-height: 48vh; padding-right: 2px;">
+            ${tasks.length === 0 ? `<div style="text-align: center; color: var(--text-muted); font-size: 11px; padding: 24px 8px;">${emptyHint}</div>` : tasks.map(t => renderSingleKanbanCard(t, false)).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSingleKanbanCard(t, isCompact = false) {
+      let prioCls = "badge-bridge";
+      if (t.Priority === "P1") prioCls = "badge-stale";
+      else if (t.Priority === "P2") prioCls = "badge-native";
+
+      const overdueBadge = t.IsOverdue ? `<span style="color:var(--rose-agent);font-weight:700;font-size:10px;">⚠️逾期</span>` : (t.IsDueToday ? `<span style="color:var(--tech-amber);font-weight:700;font-size:10px;">今日</span>` : "");
+      const dueStr = t.DueDate ? `<span style="font-size:10.5px;color:var(--text-muted);">${t.DueDate}</span>` : "";
+
+      return `
+        <div style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px; transition: all 0.15s ease; box-shadow: var(--card-shadow);" onmouseenter="this.style.borderColor='var(--border-selected)'" onmouseleave="this.style.borderColor='var(--border-hairline)'">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 6px;">
+            <div style="display: flex; align-items: flex-start; gap: 6px; flex: 1;">
+              <input type="checkbox" onclick="event.stopPropagation(); toggleTaskCompleteNow('${escapeQuote(t.BlockId)}');" style="cursor: pointer; margin-top: 2.5px;" title="标记任务为完成" />
+              <div style="font-size: 12px; font-weight: 650; color: var(--text-primary); line-height: 1.45; word-break: break-all;">
+                ${escapeHtml(t.CleanTask)}
+              </div>
+            </div>
+            <span class="${prioCls}" style="font-size: 10px; padding: 1px 5px; flex-shrink: 0;">${t.Priority}</span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted); gap: 6px;">
+            <a href="javascript:void(0)" onclick="openBlockById('${escapeQuote(t.RootId)}')" style="color: var(--cyber-sky); text-decoration: underline; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="打开归属文档《${escapeHtml(t.DocTitle)}》">《${escapeHtml(t.DocTitle)}》</a>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              ${overdueBadge}
+              ${dueStr}
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border-hairline); padding-top: 6px; margin-top: 2px;">
+            <button class="card-launch-btn" style="padding: 1.5px 6px; font-size: 10px;" onclick="event.stopPropagation(); startTaskFocusSession('${escapeQuote(t.BlockId)}', '${escapeQuote(t.CleanTask)}', '${escapeQuote(t.DocTitle)}', 25)" title="开启 25 分钟番茄专注，到期自动结绳完成">🍅 25m 专注</button>
+            <div style="display: flex; gap: 4px;">
+              <button class="card-launch-btn" style="padding: 1.5px 6px; font-size: 10px;" onclick="event.stopPropagation(); openBlockById('${escapeQuote(t.BlockId)}')" title="在思源中定位此块">🎯 定位</button>
+              <button class="card-launch-btn" style="padding: 1.5px 6px; font-size: 10px;" onclick="event.stopPropagation(); copyBlockRefToClipboard('${escapeQuote(t.BlockId)}', '${escapeQuote(t.CleanTask)}')">📋 双链</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function promptCreateNewTaskModal() {
+      const title = prompt("请输入新待办任务内容:", "");
+      if (!title) return;
+      const prio = prompt("优先级 (P1/P2/P3):", "P2") || "P2";
+      const due = prompt("截止日期 (yyyy-MM-dd，可选):", "") || "";
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'createTaskFromContext',
+          title: title,
+          priority: prio,
+          dueDate: due
+        }));
+        showToast("✓ 待办任务已成功创建！");
+        setTimeout(loadKanbanData, 600);
+      }
+    }
+
+    function copyChecklistFromKanban() {
+      if (rawKanbanReport && rawKanbanReport.FormattedChecklist) {
+        copyToClipboard(rawKanbanReport.FormattedChecklist, "已复制全景待办 Checklist 清单！");
+      } else {
+        showToast("暂无可复制的待办清单");
+      }
+    }
+
+    function dumpKanbanChecklistToDaily() {
+      if (rawKanbanReport && rawKanbanReport.FormattedChecklist) {
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({
+            op: 'quickNote',
+            text: rawKanbanReport.FormattedChecklist
+          }));
+          showToast("✓ 全景待办已沉淀入今日日记！");
+        }
+      }
+    }
 
     function inspectTaskItem(t) {
       if (!t) return;
@@ -9113,15 +9404,68 @@
       }
     }
 
+    let latestHeatmapSvg = "";
+
     function triggerHeatmap() {
       if (window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({ op: 'getHabitHeatmap' }));
       }
     }
 
+    function toggleHeatmapGalleryModal() {
+      const modal = document.getElementById("heatmap-gallery-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) {
+        triggerHeatmap();
+      }
+    }
+
+    function closeHeatmapGalleryOnBg(e) {
+      if (e.target && e.target.id === "heatmap-gallery-modal") {
+        toggleHeatmapGalleryModal();
+      }
+    }
+
+    function copyHeatmapSvgCode() {
+      if (!latestHeatmapSvg) {
+        showToast("暂无可复制的热力图内容");
+        return;
+      }
+      copyToClipboard(latestHeatmapSvg, "已复制 52 周矢量 SVG 热力图代码！");
+    }
+
+    function exportHeatmapCard() {
+      const total = document.getElementById("hm-total-blocks")?.innerText || '--';
+      const streak = document.getElementById("hm-streak-days")?.innerText || '--';
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'exportCardSvg',
+          text: `过去 365 天在思源笔记中持续心流创作，累计沉淀 ${total} 块知识资产，连续沉淀记录 ${streak} 天。复利沉淀，厚积薄发。`,
+          title: "思源外骨骼 · 年度知识心流年轮",
+          author: "SiYuan Exoskeleton"
+        }));
+      }
+    }
+
     window.onHeatmapLoaded = function(res) {
       if (!res || !res.data) return;
       const rep = res.data;
+      latestHeatmapSvg = rep.SvgContent;
+
+      // 1. 同步更新大画廊独立视窗
+      const hmTotal = document.getElementById("hm-total-blocks");
+      if (hmTotal) hmTotal.innerText = rep.TotalBlocksThisYear;
+      const hmActive = document.getElementById("hm-active-days");
+      if (hmActive) hmActive.innerText = rep.ActiveDaysThisYear;
+      const hmPeak = document.getElementById("hm-peak-blocks");
+      if (hmPeak) hmPeak.innerText = rep.PeakBlocksInDay || Math.max(1, Math.round(rep.TotalBlocksThisYear / Math.max(1, rep.ActiveDaysThisYear)));
+      const hmStreak = document.getElementById("hm-streak-days");
+      if (hmStreak) hmStreak.innerText = rep.CurrentStreak;
+      const hmBody = document.getElementById("heatmap-modal-body");
+      if (hmBody) hmBody.innerHTML = rep.SvgContent;
+
+      // 2. 更新右侧抽屉
       const inspector = document.getElementById("search-inspector-pane");
       if (!inspector) return;
 
@@ -9144,7 +9488,7 @@
         </div>
         <div class="inspector-dock">
           <div class="inspector-dock-actions" style="display: flex; gap: 8px;">
-            <button class="inspector-dock-btn primary" onclick="triggerHeatmap()">🔄 刷新热力图</button>
+            <button class="inspector-dock-btn primary" onclick="toggleHeatmapGalleryModal()">🖼️ 展开全景大画廊</button>
             <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(rep.SvgContent)}', '热力图SVG已复制！')">📋 复制SVG</button>
           </div>
         </div>

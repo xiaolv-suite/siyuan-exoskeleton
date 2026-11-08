@@ -3528,6 +3528,72 @@ async function main() {
                                 panelContent.includes("📊 展开表格大矩阵");
   logStep("Step 7.188: 搜索结果抽屉表格卡片与透视矩阵大工作台深度联动断言", hasInspectorTableLink, `抽屉表格展开大矩阵联动: ${hasInspectorTableLink}`);
 
+  // Step 7.189: Test Code Studio Modal UI Template Integrity in panel.html
+  const hasCodeModal = panelContent.includes('id="code-studio-modal"') &&
+                       panelContent.includes('id="cs-modal-count"') &&
+                       panelContent.includes('id="cs-lang-filters"') &&
+                       panelContent.includes('id="cs-snippet-list"') &&
+                       panelContent.includes('id="cs-code-display"');
+  logStep("Step 7.189: 全库代码片段与纯净源码工作台 (code-studio-modal) 模版架构断言", hasCodeModal, `代码工作台模版完整性: ${hasCodeModal}`);
+
+  // Step 7.190: Test Topbar Code Button & Intent Chip Linkage in panel.html
+  const hasCodeTopLink = panelContent.includes('id="code-btn"') &&
+                         panelContent.includes('toggleCodeStudioModal()') &&
+                         panelContent.includes('<b>⌨️</b> 代码工作台');
+  logStep("Step 7.190: 顶栏 ⌨️ 代码按钮与横向流式意图胶囊直达断言", hasCodeTopLink, `顶栏代码入口联动: ${hasCodeTopLink}`);
+
+  // Step 7.191: Test Code Studio CSS Styles & Language Badges in panel.html
+  const hasCodeCss = panelContent.includes('.code-studio-container') &&
+                     panelContent.includes('.code-studio-left') &&
+                     panelContent.includes('.code-studio-right') &&
+                     panelContent.includes('.code-snippet-card') &&
+                     panelContent.includes('.code-lang-pill');
+  logStep("Step 7.191: 代码工作台左右双栏布局与多语言徽标样式规范断言", hasCodeCss, `代码工作台样式规范: ${hasCodeCss}`);
+
+  // Step 7.192: Test Code Studio Frontend Functions in panel.html
+  const hasCodeJs = panelContent.includes('function toggleCodeStudioModal') &&
+                    panelContent.includes('function switchCodeStudioLang') &&
+                    panelContent.includes('openCurrentCodeSnippetExternally') &&
+                    panelContent.includes('copyCleanCodeSnippet') &&
+                    panelContent.includes('dumpCodeSnippetToDaily');
+  logStep("Step 7.192: 代码工作台多语言过滤、纯净直贴与日记沉淀驱动逻辑断言", hasCodeJs, `前端驱动函数完整性: ${hasCodeJs}`);
+
+  // Step 7.193: Test ExternalApiBridge Code Snippet Webhook Suite (GET /api/code/snippets & POST /api/code/open)
+  let webhookCodeResp;
+  try {
+    const getResp = await fetch("http://127.0.0.1:43990/api/code/snippets?lang=all");
+    const getJson = await getResp.json();
+    const openResp = await fetch("http://127.0.0.1:43990/api/code/open", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: "def test_e2e_code():\n    return 'pure_source'",
+        lang: "python",
+        title: "e2e_test_snippet"
+      })
+    });
+    const openJson = await openResp.json();
+    webhookCodeResp = {
+      getCode: getJson.code,
+      hasSnippets: Array.isArray(getJson.data),
+      openCode: openJson.code,
+      hasPath: !!openJson.path
+    };
+  } catch (err) {
+    webhookCodeResp = { error: err.message };
+  }
+  const isWebhookCodeOk = webhookCodeResp &&
+                          webhookCodeResp.getCode === 0 &&
+                          webhookCodeResp.hasSnippets &&
+                          webhookCodeResp.openCode === 0 &&
+                          webhookCodeResp.hasPath;
+  logStep("Step 7.193: 极速调用桥代码检索与源文件秒开接口 (GET/POST /api/code) 断言", isWebhookCodeOk, `代码接口响应: ${JSON.stringify(webhookCodeResp)}`);
+
+  // Step 7.194: Test Search Routing Linkage for code/snip prefix in panel.html
+  const hasCodeSearchLink = panelContent.includes('q === "code" || q === "snip"') &&
+                            panelContent.includes('toggleCodeStudioModal();');
+  logStep("Step 7.194: 检索前缀 code/snip 与代码工作台呼出深度联动断言", hasCodeSearchLink, `代码工作台呼出联动: ${hasCodeSearchLink}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

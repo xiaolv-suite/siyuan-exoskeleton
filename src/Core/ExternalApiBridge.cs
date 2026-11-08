@@ -336,12 +336,26 @@ namespace XiaoLv.Desktop.Core
 										                    return;
 										                }
 
-										                // Z. 表格导出为标准 Excel: /api/table/export
-										                if (rawPath.Equals("/api/table/export", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/table/export", StringComparison.OrdinalIgnoreCase))
-										                {
-										                    HandleTableExportRequest(req, resp);
-										                    return;
-										                }
+											                // Z. 表格导出为标准 Excel: /api/table/export
+											                if (rawPath.Equals("/api/table/export", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/table/export", StringComparison.OrdinalIgnoreCase))
+											                {
+											                    HandleTableExportRequest(req, resp);
+											                    return;
+											                }
+
+											                // AA. 全库代码片段检索: /api/code/snippets
+											                if (rawPath.Equals("/api/code/snippets", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/code/snippets", StringComparison.OrdinalIgnoreCase))
+											                {
+											                    HandleCodeSnippetsRequest(req, resp);
+											                    return;
+											                }
+
+											                // AB. 纯净源码生成并在外部 IDE 秒开: /api/code/open
+											                if (rawPath.Equals("/api/code/open", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/code/open", StringComparison.OrdinalIgnoreCase))
+											                {
+											                    HandleCodeOpenRequest(req, resp);
+											                    return;
+											                }
 
 			                // 未匹配到路由
 			                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
@@ -1303,15 +1317,97 @@ namespace XiaoLv.Desktop.Core
 						            {
 						                var parsed = TableToAvConverter.ParseTable(md);
 						                string outPath = TableToAvConverter.ExportToXlsxAndOpen(parsed, title);
-						                WriteJsonResponse(resp, 200, new { code = 0, msg = "导出成功", path = outPath });
-						            }
-						            catch (Exception ex)
-						            {
-						                WriteJsonResponse(resp, 500, new { code = 500, msg = "导出 Excel 异常: " + ex.Message });
-						            }
-						        }
+							                WriteJsonResponse(resp, 200, new { code = 0, msg = "导出成功", path = outPath });
+							            }
+							            catch (Exception ex)
+							            {
+							                WriteJsonResponse(resp, 500, new { code = 500, msg = "导出 Excel 异常: " + ex.Message });
+							            }
+							        }
 
-						        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
+							        private static void HandleCodeSnippetsRequest(HttpListenerRequest req, HttpListenerResponse resp)
+							        {
+							            string kw = GetQueryStringUtf8(req, "q");
+							            string langFilter = GetQueryStringUtf8(req, "lang").ToLowerInvariant().Trim();
+
+							            ThreadPool.QueueUserWorkItem(async s =>
+							            {
+							                try
+							                {
+							                    string safeLike = (kw ?? "").Replace("'", "''");
+							                    string sql = string.IsNullOrEmpty(safeLike)
+							                        ? "SELECT id, root_id, content, markdown, hpath, updated FROM blocks WHERE type='c' ORDER BY updated DESC LIMIT 40"
+							                        : "SELECT id, root_id, content, markdown, hpath, updated FROM blocks WHERE type='c' AND (content LIKE '%" + safeLike + "%' OR markdown LIKE '%" + safeLike + "%') ORDER BY updated DESC LIMIT 40";
+
+							                    var rows = await SiYuanClient.SqlAsync(sql);
+							                    var snippets = new List<CodeSnippetItem>();
+							                    if (rows != null)
+							                    {
+							                        foreach (var r in rows)
+							                        {
+							                            string rawCode = JsonHelper.GetString(r, "content");
+							                            string rawMd = JsonHelper.GetString(r, "markdown");
+							                            string detectedLang;
+							                            string cleanCode = CodeSnippetManager.ExtractCleanCode(!string.IsNullOrEmpty(rawMd) ? rawMd : rawCode, out detectedLang);
+
+							                            if (!string.IsNullOrEmpty(langFilter) && langFilter != "all" && !detectedLang.Equals(langFilter, StringComparison.OrdinalIgnoreCase))
+							                            {
+							                                continue;
+							                            }
+
+							                            string hpath = JsonHelper.GetString(r, "hpath");
+							                            string docTitle = Path.GetFileName(hpath);
+							                            if (string.IsNullOrEmpty(docTitle)) docTitle = "未命名笔记";
+
+							                            snippets.Add(new CodeSnippetItem
+							                            {
+							                                BlockId = JsonHelper.GetString(r, "id"),
+							                                RootId = JsonHelper.GetString(r, "root_id"),
+							                                DocTitle = docTitle,
+							                                Language = detectedLang,
+							                                Code = cleanCode,
+							                                LineCount = cleanCode.Split('\n').Length,
+							                                FileExtension = CodeSnippetManager.ResolveExtension(detectedLang)
+							                            });
+							                        }
+							                    }
+
+							                    WriteJsonResponse(resp, 200, new { code = 0, count = snippets.Count, data = snippets });
+							                }
+							                catch (Exception ex)
+							                {
+							                    WriteJsonResponse(resp, 500, new { code = 500, msg = "检索代码片段异常: " + ex.Message });
+							                }
+							            });
+							        }
+
+							        private static void HandleCodeOpenRequest(HttpListenerRequest req, HttpListenerResponse resp)
+							        {
+							            string body = ReadRequestBody(req);
+							            var dict = JsonHelper.ParseDict(body);
+							            string code = JsonHelper.GetString(dict, "code");
+							            string lang = JsonHelper.GetString(dict, "lang", "text");
+							            string title = JsonHelper.GetString(dict, "title", "snippet");
+
+							            if (string.IsNullOrEmpty(code))
+							            {
+							                WriteJsonResponse(resp, 400, new { code = 400, msg = "code 参数不能为空" });
+							                return;
+							            }
+
+							            try
+							            {
+							                string targetPath = CodeSnippetManager.ExportAndOpenSourceFile(code, lang, title);
+							                bool ok = !string.IsNullOrEmpty(targetPath);
+							                WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, msg = ok ? "已生成源文件并在外部编辑器秒开" : "打开失败", path = targetPath });
+							            }
+							            catch (Exception ex)
+							            {
+							                WriteJsonResponse(resp, 500, new { code = 500, msg = "生成代码文件异常: " + ex.Message });
+							            }
+							        }
+
+							        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
         {
             try
             {

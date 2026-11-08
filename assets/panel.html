@@ -2925,6 +2925,58 @@
       color: var(--text-muted);
     }
 
+    /* Code Studio Modal Styles */
+    .code-studio-container {
+      display: flex;
+      gap: 14px;
+      height: 58vh;
+    }
+    .code-studio-left {
+      width: 36%;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 4px;
+    }
+    .code-studio-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .code-snippet-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+    .code-snippet-card:hover {
+      border-color: rgba(99, 102, 241, 0.45);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .code-snippet-card.selected {
+      border-color: var(--cyber-sky);
+      background: rgba(56, 189, 248, 0.08);
+    }
+    .code-lang-pill {
+      font-size: 9.5px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--cyber-sky);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
   </style>
 </head>
 <body>
@@ -3000,11 +3052,14 @@
       <button class="theme-toggle-btn" id="table-btn" onclick="toggleTableGridModal()" title="全库数据表格与属性视图透视矩阵 (📊)" style="position: relative;">
         <span>📊</span>
       </button>
+      <button class="theme-toggle-btn" id="code-btn" onclick="toggleCodeStudioModal()" title="全库代码片段与多语言纯净源码工作台 (⌨️)" style="position: relative;">
+        <span>⌨️</span>
+      </button>
       <button class="theme-toggle-btn" id="notice-btn" onclick="toggleNotificationCenterModal()" title="全景通知与生命事件中心 (🔔)" style="position: relative;">
         <span>🔔</span>
         <span class="badge-dot" id="notice-badge-dot" style="display: none; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--rose-agent);"></span>
       </button>
-      <button class="theme-toggle-btn" id="help-btn" onclick="toggleCheatsheet()" title="快捷心流与语法罗盘 (?)">⌨️</button>
+      <button class="theme-toggle-btn" id="help-btn" onclick="toggleCheatsheet()" title="快捷心流与语法罗盘 (?)">❓</button>
       <button class="theme-toggle-btn" id="customize-btn" onclick="togglePreferencesModal()" title="设置中枢 (⚙)">⚙️</button>
       <button class="theme-toggle-btn" id="theme-btn" onclick="toggleTheme()" title="切换浅色/深色主题">🌓</button>
       <button class="theme-toggle-btn" id="zen-btn" onclick="toggleMaximizeWindow()" title="沉浸式全屏 / 窗口化切换 (F11)">⛶</button>
@@ -3053,7 +3108,7 @@
       <span class="chip-divider"></span>
       <span class="intent-chip" onclick="insertPrefix('b:')" title="输入 b: 毫秒级检索思源正文块并直接复制/回贴双链"><b>b:</b> 块级秒搜</span>
       <span class="intent-chip" onclick="insertPrefix('d:')" title="输入 d: 检索思源全库文档"><b>d:</b> 文档</span>
-      <span class="intent-chip" onclick="insertPrefix('code:')" title="输入 code: 穿透检索全库代码片段并一键纯净直贴或导出秒开"><b>⌨️</b> 代码秒搜</span>
+      <span class="intent-chip" onclick="toggleCodeStudioModal()" title="全库代码片段与多语言纯净源码工作台，支持语言筛选、纯净直贴与VS Code秒开"><b>⌨️</b> 代码工作台</span>
       <span class="intent-chip" onclick="insertPrefix('tag:')" title="输入 tag: 聚合检索全库标签与聚合笔记流"><b>#</b> 标签</span>
       <span class="intent-chip" onclick="insertPrefix('att:')" title="输入 att: 穿透检索全库 PDF 文献与附件资产秒查坞"><b>att:</b> 附件秒查</span>
       <span class="intent-chip" onclick="insertPrefix('office:')" title="输入 office: 检索与透视本地 Word/Excel/PPT 大纲与批注"><b>🏢</b> Office</span>
@@ -4142,6 +4197,70 @@
     </div>
   </div>
 
+  <!-- 全库代码片段与纯净源码工作台 (Code Studio Modal) -->
+  <div class="timeline-modal-overlay" id="code-studio-modal" onclick="closeCodeStudioOnBg(event)">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 95%; max-width: 980px; max-height: 88vh;">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">⌨️</span>
+          <span style="font-weight: 700; font-size: 14px;">全库代码片段与纯净源码工作台</span>
+          <span class="brand-pill" id="cs-modal-count">0 处代码块</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="openCurrentCodeSnippetExternally()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="自动剥离反引号生成标准源文件并在本地 VS Code / IDE 中 0ms 秒开">⚡ 外部原位秒开</button>
+          <button class="pref-btn" onclick="pasteCleanCodeToCaret()" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.4);" title="将纯净代码内容直接注入外部活动光标处 (Shift+Enter)">⚡ 穿透直贴</button>
+          <button class="pref-btn" onclick="copyCleanCodeSnippet()" style="font-size: 11px; padding: 3px 10px;" title="复制 100% 纯净代码 (无 Markdown 围栏)">📋 复制纯代码</button>
+          <button class="pref-btn" onclick="copyCodeBlockMarkdown()" style="font-size: 11px; padding: 3px 10px;" title="复制带语言高亮围栏的 Markdown 代码块">📋 复制 MD 块</button>
+          <button class="pref-btn" onclick="dumpCodeSnippetToDaily()" style="font-size: 11px; padding: 3px 10px;" title="将此代码片段追加写入今日日记">📥 存入日记</button>
+          <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleCodeStudioModal()">✕</button>
+        </div>
+      </div>
+
+      <!-- Language Filter & Search Toolbar -->
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div class="timeline-filters" id="cs-lang-filters" style="display: flex; gap: 5px; overflow-x: auto; padding: 0;">
+          <button class="cat-btn active" id="cs-lang-all" onclick="switchCodeStudioLang('all')">🌟 全部</button>
+          <button class="cat-btn" id="cs-lang-python" onclick="switchCodeStudioLang('python')">🐍 Python</button>
+          <button class="cat-btn" id="cs-lang-csharp" onclick="switchCodeStudioLang('csharp')">⚡ C#</button>
+          <button class="cat-btn" id="cs-lang-javascript" onclick="switchCodeStudioLang('javascript')">🌐 JS/TS</button>
+          <button class="cat-btn" id="cs-lang-sql" onclick="switchCodeStudioLang('sql')">🗄️ SQL</button>
+          <button class="cat-btn" id="cs-lang-bash" onclick="switchCodeStudioLang('bash')">🐚 Bash</button>
+          <button class="cat-btn" id="cs-lang-rust" onclick="switchCodeStudioLang('rust')">🦀 Rust/Go</button>
+          <button class="cat-btn" id="cs-lang-html" onclick="switchCodeStudioLang('html')">🎨 HTML/CSS</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <input type="text" id="cs-code-filter" placeholder="在代码正文或文档标题中检索..." oninput="handleCodeStudioLiveFilter(this.value)" style="width: 210px; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-primary);" />
+        </div>
+      </div>
+
+      <!-- Studio Dual-Pane Body -->
+      <div class="code-studio-container" style="padding: 14px 18px; overflow: hidden;">
+        <!-- Left: Code Snippet Card List -->
+        <div class="code-studio-left" id="cs-snippet-list">
+          <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在穿透检索全库代码片段...</div>
+        </div>
+
+        <!-- Right: Code Editor & Canvas -->
+        <div class="code-studio-right">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+            <div id="cs-preview-meta" style="font-family: var(--font-mono); font-size: 11px; color: var(--cyber-sky); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 440px;">未选择代码块</div>
+            <div style="display: flex; gap: 8px;">
+              <button class="launchpad-mini-btn" onclick="openCurrentCodeBlockInSiYuan()" title="在思源大窗中原位定位此块">🔗 思源定位</button>
+              <button class="launchpad-mini-btn primary" onclick="copyCleanCodeSnippet()" title="复制纯净代码">📋 复制代码</button>
+            </div>
+          </div>
+          <pre id="cs-code-display" style="flex: 1; padding: 14px; background: #070d18; border-radius: 8px; border: 1px solid var(--border-hairline); overflow: auto; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; color: var(--titanium-cyan); white-space: pre; margin: 0; outline: none;" contenteditable="true" spellcheck="false">请在左侧点击任一代码片段，即可在此查看 100% 纯净源码并就地调试...</pre>
+        </div>
+      </div>
+
+      <!-- Bottom Footer -->
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+        <span>💡 <b>开发者特性</b>: 自动剥离 Markdown 围栏 ``` 与零宽字符；支持 1 键生成本地临时源码文件并在 VS Code 秒开调试</span>
+        <span id="cs-modal-status">代码工作台已就绪</span>
+      </div>
+    </div>
+  </div>
+
   <!-- 离岸应急缓冲队列详情弹窗 -->
   <div class="help-modal-overlay" id="offline-queue-modal" onclick="closeOfflineQueueModal(event)">
     <div class="help-modal-box" onclick="event.stopPropagation()" style="max-width: 580px;">
@@ -5198,7 +5317,11 @@
       }
 
       // code: 或 snip: 模式：全库代码片段秒搜与纯净源码提取
-      if (q.startsWith("code:") || q.startsWith("code：") || q.startsWith("snip:") || q.startsWith("snip：")) {
+      if (q.startsWith("code:") || q.startsWith("code：") || q.startsWith("snip:") || q.startsWith("snip：") || q === "code" || q === "snip") {
+        if (q === "code" || q === "snip") {
+          toggleCodeStudioModal();
+          return;
+        }
         const subKw = q.replace(/^(code:|code：|snip:|snip：)/, "").trim();
         if (window.chrome && window.chrome.webview) {
           window.chrome.webview.postMessage(JSON.stringify({ op: 'searchCodeSnippets', keyword: subKw }));
@@ -8910,7 +9033,8 @@
         </div>
         <div class="inspector-dock">
           <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="inspector-dock-btn primary" onclick="pasteAtCursor('${escapeQuote(s.Code)}')" title="在外部活动光标处原位粘贴 100% 纯净代码 (Shift+Enter)">⚡ Shift+↵ 纯净直贴</button>
+            <button class="inspector-dock-btn primary" onclick="toggleCodeStudioModal('${s.BlockId}')" title="展开 980px 全库代码片段与纯净源码工作台">⌨️ 展开代码工作台</button>
+            <button class="inspector-dock-btn" onclick="pasteAtCursor('${escapeQuote(s.Code)}')" title="在外部活动光标处原位粘贴 100% 纯净代码 (Shift+Enter)">⚡ Shift+↵ 纯净直贴</button>
             <button class="inspector-dock-btn" onclick="exportCodeFile('${escapeQuote(s.Code)}', '${escapeQuote(s.Language)}', '${escapeQuote(s.DocTitle)}')" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="自动按扩展名生成本地源码文件并在 VS Code / IDE 中秒开">💾 本地源码秒开</button>
             <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(s.Code)}', '已复制纯净代码！')">📋 复制代码</button>
             <button class="inspector-dock-btn" onclick="openBlockById('${s.BlockId}')" title="在思源中定位跳转到该代码块">🌐 思源中定位</button>
@@ -13822,6 +13946,268 @@
         return;
       }
       openBlockById(currentTableBlockId);
+    }
+
+    // ==========================================================
+    // 全库代码片段与多语言纯净源码工作台 (Code Studio Modal)
+    // ==========================================================
+    let currentCodeStudioLang = "all";
+    let currentCodeStudioFilterKeyword = "";
+    let allLoadedCodeSnippets = [];
+    let currentSelectedCodeSnippet = null;
+
+    function toggleCodeStudioModal(initialBlockId) {
+      const modal = document.getElementById("code-studio-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) {
+        requestCodeSnippetsForStudio(initialBlockId);
+      }
+    }
+
+    function closeCodeStudioOnBg(e) {
+      if (e.target && e.target.id === "code-studio-modal") {
+        toggleCodeStudioModal();
+      }
+    }
+
+    function requestCodeSnippetsForStudio(autoSelectBlockId) {
+      const listContainer = document.getElementById("cs-snippet-list");
+      if (listContainer) {
+        listContainer.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:12px;">正在穿透检索全库代码片段...</div>';
+      }
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'searchCodeSnippets',
+          keyword: currentCodeStudioFilterKeyword
+        }));
+      } else {
+        setTimeout(() => {
+          if (window.onCodeSnippetsLoaded) {
+            window.onCodeSnippetsLoaded({
+              code: 0,
+              data: [
+                { BlockId: "blk_cs_1", DocTitle: "架构规范", Language: "csharp", Code: "public static class Exoskeleton\n{\n    public static void Launch() => Console.WriteLine(\"Ready\");\n}", LineCount: 4, FileExtension: ".cs" },
+                { BlockId: "blk_cs_2", DocTitle: "数据清洗", Language: "python", Code: "def clean_text(text: str) -> str:\n    return text.strip()", LineCount: 2, FileExtension: ".py" }
+              ]
+            });
+          }
+        }, 120);
+      }
+    }
+
+    const _origOnCodeSnippetsLoaded = window.onCodeSnippetsLoaded;
+    window.onCodeSnippetsLoaded = function(res) {
+      if (_origOnCodeSnippetsLoaded) _origOnCodeSnippetsLoaded(res);
+      if (!res || !Array.isArray(res.data)) return;
+
+      allLoadedCodeSnippets = res.data;
+
+      const countPill = document.getElementById("cs-modal-count");
+      if (countPill) countPill.innerText = `${allLoadedCodeSnippets.length} 处代码块`;
+
+      const statusSpan = document.getElementById("cs-modal-status");
+      if (statusSpan) statusSpan.innerText = `已检索到 ${allLoadedCodeSnippets.length} 处多语言纯净代码块`;
+
+      renderCodeStudioList();
+
+      if (!currentSelectedCodeSnippet && allLoadedCodeSnippets.length > 0) {
+        selectCodeSnippetItem(allLoadedCodeSnippets[0]);
+      }
+    };
+
+    function switchCodeStudioLang(lang) {
+      currentCodeStudioLang = lang;
+      const langs = ["all", "python", "csharp", "javascript", "sql", "bash", "rust", "html"];
+      langs.forEach(l => {
+        const btn = document.getElementById("cs-lang-" + l);
+        if (btn) btn.classList.toggle("active", l === lang);
+      });
+      renderCodeStudioList();
+    }
+
+    function handleCodeStudioLiveFilter(val) {
+      currentCodeStudioFilterKeyword = (val || "").trim().toLowerCase();
+      renderCodeStudioList();
+    }
+
+    function renderCodeStudioList() {
+      const listContainer = document.getElementById("cs-snippet-list");
+      if (!listContainer) return;
+
+      let list = allLoadedCodeSnippets;
+      if (currentCodeStudioLang !== "all") {
+        list = list.filter(s => {
+          const l = (s.Language || "").toLowerCase();
+          if (currentCodeStudioLang === "javascript") return l.includes("js") || l.includes("ts") || l.includes("javascript") || l.includes("typescript");
+          if (currentCodeStudioLang === "bash") return l.includes("bash") || l.includes("sh") || l.includes("shell") || l.includes("ps1");
+          if (currentCodeStudioLang === "rust") return l.includes("rust") || l.includes("go") || l.includes("golang");
+          if (currentCodeStudioLang === "html") return l.includes("html") || l.includes("css") || l.includes("xml");
+          return l.includes(currentCodeStudioLang);
+        });
+      }
+
+      if (currentCodeStudioFilterKeyword) {
+        list = list.filter(s => {
+          const doc = (s.DocTitle || "").toLowerCase();
+          const code = (s.Code || "").toLowerCase();
+          const lang = (s.Language || "").toLowerCase();
+          return doc.includes(currentCodeStudioFilterKeyword) || code.includes(currentCodeStudioFilterKeyword) || lang.includes(currentCodeStudioFilterKeyword);
+        });
+      }
+
+      if (list.length === 0) {
+        listContainer.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:12px;">未匹配到符合条件的代码片段</div>';
+        return;
+      }
+
+      let html = "";
+      list.forEach((s, idx) => {
+        const isSelected = currentSelectedCodeSnippet && currentSelectedCodeSnippet.BlockId === s.BlockId;
+        const codePreview = (s.Code || "").split('\n').slice(0, 2).join(' ').trim();
+
+        html += `
+          <div class="code-snippet-card ${isSelected ? 'selected' : ''}" onclick="selectCodeSnippetItemByIndex(${idx})">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="code-lang-pill">${escapeHtml(s.Language || 'TEXT')}</span>
+              <span style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">${s.LineCount || 1} 行</span>
+            </div>
+            <div style="font-size:11.5px; font-weight:700; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              《${escapeHtml(s.DocTitle)}》
+            </div>
+            <div style="font-size:10.5px; font-family:var(--font-mono); color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              ${escapeHtml(codePreview || '代码块')}
+            </div>
+          </div>
+        `;
+      });
+
+      listContainer.innerHTML = html;
+    }
+
+    function selectCodeSnippetItemByIndex(idx) {
+      const list = getFilteredCodeSnippets();
+      if (idx >= 0 && idx < list.length) {
+        selectCodeSnippetItem(list[idx]);
+      }
+    }
+
+    function getFilteredCodeSnippets() {
+      let list = allLoadedCodeSnippets;
+      if (currentCodeStudioLang !== "all") {
+        list = list.filter(s => {
+          const l = (s.Language || "").toLowerCase();
+          if (currentCodeStudioLang === "javascript") return l.includes("js") || l.includes("ts");
+          if (currentCodeStudioLang === "bash") return l.includes("bash") || l.includes("sh") || l.includes("ps1");
+          if (currentCodeStudioLang === "rust") return l.includes("rust") || l.includes("go");
+          if (currentCodeStudioLang === "html") return l.includes("html") || l.includes("css");
+          return l.includes(currentCodeStudioLang);
+        });
+      }
+      if (currentCodeStudioFilterKeyword) {
+        list = list.filter(s => {
+          const doc = (s.DocTitle || "").toLowerCase();
+          const code = (s.Code || "").toLowerCase();
+          return doc.includes(currentCodeStudioFilterKeyword) || code.includes(currentCodeStudioFilterKeyword);
+        });
+      }
+      return list;
+    }
+
+    function selectCodeSnippetItem(snippet) {
+      currentSelectedCodeSnippet = snippet;
+      renderCodeStudioList();
+
+      const metaLabel = document.getElementById("cs-preview-meta");
+      if (metaLabel) {
+        metaLabel.innerText = `《${snippet.DocTitle}》 · ${(snippet.Language || 'TEXT').toUpperCase()} · ${snippet.LineCount} 行`;
+      }
+
+      const display = document.getElementById("cs-code-display");
+      if (display) {
+        display.innerText = snippet.Code || "";
+      }
+    }
+
+    function openCurrentCodeSnippetExternally() {
+      if (!currentSelectedCodeSnippet) {
+        showToast("请先选择一段代码！");
+        return;
+      }
+      const code = getEditorCodeText();
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'openCodeSnippetSourceFile',
+          code: code,
+          language: currentSelectedCodeSnippet.Language || 'text',
+          docTitle: currentSelectedCodeSnippet.DocTitle || 'snippet'
+        }));
+        showToast(`⚡ 正在生成本地 ${currentSelectedCodeSnippet.FileExtension || '.txt'} 源码并在外部 IDE 秒开...`);
+      }
+    }
+
+    function getEditorCodeText() {
+      const display = document.getElementById("cs-code-display");
+      return display ? (display.innerText || "") : (currentSelectedCodeSnippet ? currentSelectedCodeSnippet.Code : "");
+    }
+
+    function copyCleanCodeSnippet() {
+      const code = getEditorCodeText();
+      if (!code) {
+        showToast("暂无可复制的代码！");
+        return;
+      }
+      copyToClipboard(code, "✓ 100% 纯净代码已复制 (无反引号)！");
+    }
+
+    function copyCodeBlockMarkdown() {
+      if (!currentSelectedCodeSnippet) {
+        showToast("请先选择一段代码！");
+        return;
+      }
+      const code = getEditorCodeText();
+      const lang = currentSelectedCodeSnippet.Language || "";
+      const md = "```" + lang + "\n" + code + "\n```";
+      copyToClipboard(md, `✓ 带语言高亮的 ${lang} 代码块已复制！`);
+    }
+
+    function pasteCleanCodeToCaret() {
+      const code = getEditorCodeText();
+      if (!code) {
+        showToast("暂无可直贴的代码！");
+        return;
+      }
+      pasteAtCursor(code);
+      toggleCodeStudioModal();
+      showToast("⚡ 纯净代码已穿透贴入活动光标处！");
+    }
+
+    function dumpCodeSnippetToDaily() {
+      if (!currentSelectedCodeSnippet) {
+        showToast("请先选择一段代码！");
+        return;
+      }
+      const code = getEditorCodeText();
+      const lang = currentSelectedCodeSnippet.Language || "";
+      const title = currentSelectedCodeSnippet.DocTitle || "代码片段";
+      const md = `### ⌨️ 《${title}》源码片段\n\n\`\`\`${lang}\n${code}\n\`\`\`\n{: custom-type="code-snippet-ref" custom-ref-block="${currentSelectedCodeSnippet.BlockId}" }`;
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'recordMiniInput',
+          text: md
+        }));
+        showToast("🎉 代码片段已成功沉淀至今日日记！");
+      }
+    }
+
+    function openCurrentCodeBlockInSiYuan() {
+      if (!currentSelectedCodeSnippet || !currentSelectedCodeSnippet.BlockId) {
+        showToast("暂无可定位的目标块！");
+        return;
+      }
+      openBlockById(currentSelectedCodeSnippet.BlockId);
     }
 
     function closeWindow() {

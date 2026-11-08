@@ -19,6 +19,28 @@ namespace XiaoLv.Desktop.UI
         private string _dialogUrl = "";
         private TaskCompletionSource<string> _tcs;
 
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool ReleaseCapture();
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool BringWindowToTop(IntPtr hWnd);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_SHOWWINDOW = 0x0040;
+        private const int WM_NCLBUTTONDOWN = 0x00A1;
+        private const int HTCAPTION = 0x0002;
+
         public DialogWindow()
         {
             Title = "思源外骨骼 · 交互工作台";
@@ -122,7 +144,20 @@ namespace XiaoLv.Desktop.UI
                 }
                 else if (action == "dragWindow")
                 {
-                    try { DragMove(); } catch { }
+                    try
+                    {
+                        ReleaseCapture();
+                        var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+                        if (hwnd != IntPtr.Zero)
+                        {
+                            SendMessage(hwnd, WM_NCLBUTTONDOWN, (IntPtr)HTCAPTION, IntPtr.Zero);
+                        }
+                        else
+                        {
+                            DragMove();
+                        }
+                    }
+                    catch { }
                 }
             }
             catch { }
@@ -153,9 +188,23 @@ namespace XiaoLv.Desktop.UI
             if (_isInitialized && _webView.CoreWebView2 != null)
             {
                 _webView.CoreWebView2.Navigate(_dialogUrl);
+                try { _webView.CoreWebView2.ExecuteScriptAsync("if(window.initState) setTimeout(window.initState, 20);"); } catch { }
             }
 
             Show();
+            Topmost = false;
+            Topmost = true;
+            try
+            {
+                var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+                if (hwnd != IntPtr.Zero)
+                {
+                    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+                    BringWindowToTop(hwnd);
+                    SetForegroundWindow(hwnd);
+                }
+            }
+            catch { }
             Activate();
             Focus();
             _webView.Focus();

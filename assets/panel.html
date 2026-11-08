@@ -82,6 +82,8 @@
       --border-card-bottom: #94A3B8;
       --b3-font-color: #0F172A;
       --bg-editor-well: #F8FAFC;
+      --bg-inset: #F1F5F9;
+      --bg-inset-deep: #E2E8F0;
 
       --radius-sm: 6px;
       --radius-md: 10px;
@@ -153,6 +155,8 @@
       --border-card-bottom: #0284C7;
       --b3-font-color: #FFFFFF;
       --bg-editor-well: rgba(0, 0, 0, 0.3);
+      --bg-inset: rgba(0, 0, 0, 0.18);
+      --bg-inset-deep: rgba(0, 0, 0, 0.28);
 
       --radius-sm: 6px;
       --radius-md: 10px;
@@ -3449,8 +3453,15 @@
     </div>
   </div>
 
-
-    
+  <!-- 卡片显隐自定义编辑模式工具栏 -->
+  <div class="edit-toolbar" id="edit-toolbar">
+    <span>✏️ <b>卡片显隐编辑模式</b>：点击任意卡片或按 Enter 切换显示/隐藏</span>
+    <span class="edit-count" id="edit-count">编辑中：31 显示 / 0 隐藏</span>
+    <div style="margin-left: auto; display: flex; gap: 8px;">
+      <button type="button" onclick="showAllCards()">👁 恢复显示全部卡片</button>
+      <button type="button" class="done-btn" onclick="toggleEditMode()" style="color: #fff;">✓ 完成编辑 (Esc)</button>
+    </div>
+  </div>
 
   <main class="view-container" id="view-container">
     <!-- Rendered via JavaScript -->
@@ -3480,7 +3491,7 @@
       </div>
 
       <!-- Settings Tab Bar (设置分类导航标签) -->
-      <div class="pref-tabs-nav" style="display: flex; gap: 8px; padding: 10px 20px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.18); overflow-x: auto; flex-shrink: 0;">
+      <div class="pref-tabs-nav" style="display: flex; gap: 8px; padding: 10px 20px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); overflow-x: auto; flex-shrink: 0;">
         <button class="cat-btn active" id="pref-tab-btn-status" onclick="switchPrefTab('status')">📡 探针与服务</button>
         <button class="cat-btn" id="pref-tab-btn-hotkeys" onclick="switchPrefTab('hotkeys')">⚡ 快捷键与输入</button>
         <button class="cat-btn" id="pref-tab-btn-clip-ai" onclick="switchPrefTab('clip-ai')">🌐 剪藏与AI提炼</button>
@@ -3529,7 +3540,7 @@
               <button class="pref-btn" onclick="triggerTrimMemory()" style="color: var(--indigo-light); border-color: rgba(99,102,241,0.35);">⚡ 深度压缩常驻内存</button>
               <button class="pref-btn" onclick="cleanOrphanTestKernels()" style="background: rgba(244, 63, 94, 0.12); border-color: rgba(244, 63, 94, 0.35); color: var(--rose-agent);">🧹 清扫遗留靶场内核</button>
             </div>
-            <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 12px; background: rgba(0,0,0,0.22); border-radius: 6px; border: 1px solid var(--border-hairline);">
+            <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 12px; background: var(--bg-inset); border-radius: 6px; border: 1px solid var(--border-hairline);">
               <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
                 <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
                   <span>📁 数据存储模式：</span>
@@ -3596,7 +3607,7 @@
               </div>
             </div>
             <!-- 快捷键健康度与冲突自愈诊断 (Hotkey Doctor) -->
-            <div style="margin-top: 12px; padding: 10px 12px; background: rgba(0,0,0,0.22); border-radius: 8px; border: 1px solid var(--border-hairline);">
+            <div style="margin-top: 12px; padding: 10px 12px; background: var(--bg-inset); border-radius: 8px; border: 1px solid var(--border-hairline);">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
                 <span style="font-size: 12px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
                   <span>🩺</span> 快捷键冲突探测与智能自愈建议
@@ -3655,7 +3666,7 @@
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 12px; background: rgba(0,0,0,0.18); border-radius: 6px; border: 1px solid var(--border-hairline);">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 12px; background: var(--bg-inset); border-radius: 6px; border: 1px solid var(--border-hairline);">
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
               <input type="checkbox" id="pref-desktop-autofloat" style="accent-color: var(--indigo-primary);" />
               <span>✨ 划选自动浮窗 (PopClip模式)</span>
@@ -3686,7 +3697,7 @@
         <!-- Tab 3: Web Clip & Pre-Ingestion AI Refiner -->
         <div id="pref-tab-page-clip-ai" style="display: none; flex-direction: column; gap: 14px;">
           <!-- 网页剪藏配置 -->
-          <div style="border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px; background: rgba(0,0,0,0.18);">
+          <div style="border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px; background: var(--bg-inset);">
             <div class="help-sec-title"><span>🌐 网页双态剪藏设置 (Alt+Shift+G)</span></div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
               <div>
@@ -3719,7 +3730,7 @@
           </div>
 
           <!-- Pre-Ingestion AI Refiner -->
-          <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px;">
+          <div style="background: var(--bg-inset); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px;">
             <div class="help-sec-title"><span>🤖 国内与本地大模型前置提炼清洗 (Ollama / Qwen / DeepSeek / 豆包)</span></div>
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; margin-top: 6px;">
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; font-weight: 700;">
@@ -3751,7 +3762,7 @@
         <!-- Tab 4: Snippets, Appearance & Maintenance -->
         <div id="pref-tab-page-snippets" style="display: none; flex-direction: column; gap: 14px;">
           <!-- Custom Snippets Expansion -->
-          <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px;">
+          <div style="background: var(--bg-inset); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
               <span class="help-sec-title" style="margin: 0;"><span>⌨️ 自定义简码扩词 (:简码)</span></span>
               <button class="pref-btn" type="button" onclick="addNewSnippetRow()" style="font-size: 11px; padding: 2px 8px;">➕ 新增简码</button>
@@ -3765,7 +3776,7 @@
           </div>
 
           <!-- Appearance & Layout Preferences -->
-          <div style="border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px; background: rgba(0,0,0,0.18);">
+          <div style="border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px; background: var(--bg-inset);">
             <div class="help-sec-title"><span>🎨 界面与排版偏好</span></div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
               <div class="pref-row">
@@ -3788,7 +3799,7 @@
           </div>
 
           <!-- Cards Visibility & Customization -->
-          <div style="border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px; background: rgba(0,0,0,0.18);">
+          <div style="border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px; background: var(--bg-inset);">
             <div class="help-sec-title"><span>🎴 动作卡片个性化管理与维护</span></div>
             <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
               <button class="pref-btn pref-btn-primary" onclick="toggleEditModeFromPref()">✏️ 进入卡片显隐编辑模式 (按 E)</button>
@@ -3803,7 +3814,7 @@
       </div>
 
       <!-- Fixed Modal Footer -->
-      <div class="pref-modal-footer" style="padding: 10px 20px; border-top: 1px solid var(--border-hairline); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.22); flex-shrink: 0;">
+      <div class="pref-modal-footer" style="padding: 10px 20px; border-top: 1px solid var(--border-hairline); display: flex; justify-content: space-between; align-items: center; background: var(--bg-inset); flex-shrink: 0;">
         <span style="font-size: 11px; color: var(--text-muted);">💡 快捷提示：按 <b>Ctrl+S</b> 亦可随时保存并立即生效设置，按 <b>Esc</b> 关闭</span>
         <div style="display: flex; gap: 8px;">
           <button class="pref-btn" onclick="togglePreferencesModal()" style="font-size: 11.5px; padding: 4px 12px;">取消</button>
@@ -3939,11 +3950,11 @@
         </div>
       </div>
       <!-- 7-Day Date Shuttle Strip (7 天日历穿梭条) -->
-      <div class="timeline-date-shuttle" id="timeline-date-shuttle" style="display: flex; gap: 6px; padding: 6px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); align-items: center; overflow-x: auto;">
+      <div class="timeline-date-shuttle" id="timeline-date-shuttle" style="display: flex; gap: 6px; padding: 6px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); align-items: center; overflow-x: auto;">
         <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; white-space: nowrap;">📅 日期穿梭:</span>
         <div id="shuttle-buttons-wrap" style="display: flex; gap: 6px; flex-wrap: nowrap;"></div>
       </div>
-      <div class="timeline-filters" style="display: flex; gap: 6px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); overflow-x: auto;">
+      <div class="timeline-filters" style="display: flex; gap: 6px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); overflow-x: auto;">
         <button class="cat-btn active" id="tl-filter-all" onclick="filterTimeline('all')">全部</button>
         <button class="cat-btn" id="tl-filter-todo" onclick="filterTimeline('todo')">📋 待办</button>
         <button class="cat-btn" id="tl-filter-card" onclick="filterTimeline('card')">🧠 闪卡</button>
@@ -3973,7 +3984,7 @@
         </div>
       </div>
       <!-- Filters and Search Toolbar -->
-      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); align-items: center; justify-content: space-between; flex-wrap: wrap;">
         <div class="timeline-filters" style="display: flex; gap: 6px; overflow-x: auto; padding: 0;">
           <button class="cat-btn active" id="nc-filter-all" onclick="filterNotificationCenter('all')">全部</button>
           <button class="cat-btn" id="nc-filter-error" onclick="filterNotificationCenter('error')">🔴 仅看错误</button>
@@ -3990,7 +4001,7 @@
         <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在加载通知历史...</div>
       </div>
       <!-- Bottom Footer -->
-      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 深度记录思源弹窗、系统消息、开发回执与心流达成</span>
         <span id="notif-modal-stat">已加载 0 笔</span>
       </div>
@@ -4014,7 +4025,7 @@
         </div>
       </div>
       <!-- Mode Switcher Toolbar -->
-      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); align-items: center; justify-content: space-between; flex-wrap: wrap;">
         <div class="timeline-filters" style="display: flex; gap: 6px; overflow-x: auto; padding: 0;">
           <button class="cat-btn active" id="kb-view-matrix" onclick="switchKanbanViewMode('matrix')">🎴 四象限矩阵</button>
           <button class="cat-btn" id="kb-view-status" onclick="switchKanbanViewMode('status')">📊 状态看板</button>
@@ -4029,7 +4040,7 @@
         <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在加载待办数据...</div>
       </div>
       <!-- Bottom Footer -->
-      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 支持点击任一待办卡片一键【🍅 开启心流】，专注完成自动打勾结绳并记录时序</span>
         <span id="kanban-modal-stat">加载中...</span>
       </div>
@@ -4052,7 +4063,7 @@
         </div>
       </div>
       <!-- Stats Strip -->
-      <div id="heatmap-stats-strip" style="display: flex; gap: 16px; padding: 10px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; flex-wrap: wrap; font-size: 11.5px;">
+      <div id="heatmap-stats-strip" style="display: flex; gap: 16px; padding: 10px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); align-items: center; flex-wrap: wrap; font-size: 11.5px;">
         <div>🌱 年度总沉淀: <b id="hm-total-blocks" style="color: var(--emerald-mint); font-size: 13px;">--</b> 块</div>
         <div>📅 活跃天数: <b id="hm-active-days" style="color: var(--cyber-sky); font-size: 13px;">--</b> 天</div>
         <div>🔥 沉淀峰值: <b id="hm-peak-blocks" style="color: var(--tech-amber); font-size: 13px;">--</b> 块/天</div>
@@ -4063,7 +4074,7 @@
         <div style="text-align: center; color: var(--text-muted); font-size: 12px;">正在生成 52 周年度矢量热力图...</div>
       </div>
       <!-- Bottom Footer -->
-      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 纯原生 SQLite 纳秒级聚合全库块创建时序，0 外部重依赖生成矢量年轮</span>
         <span>对标 GitHub / flomo 心流激励</span>
       </div>
@@ -4087,7 +4098,7 @@
         </div>
       </div>
       <!-- Mode Switcher & Filter Toolbar -->
-      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); align-items: center; justify-content: space-between; flex-wrap: wrap;">
         <div class="timeline-filters" id="launchpad-category-bar" style="display: flex; gap: 6px; overflow-x: auto; padding: 0;">
           <button class="cat-btn active" id="lp-tab-all" onclick="switchLaunchpadTab('all')">🌟 全部综合</button>
           <button class="cat-btn" id="lp-tab-web" onclick="switchLaunchpadTab('web')">🌐 网站导航</button>
@@ -4102,7 +4113,7 @@
         <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在加载启动台项目...</div>
       </div>
       <!-- Bottom Footer -->
-      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>快捷操作</b>: 键入数字 <code>1~9</code> 直接秒开对应磁贴 · <code>Enter</code> 秒开第 1 项 · <code>Esc</code> 关闭</span>
         <span id="launchpad-modal-stat">已加载 0 个网站 · 0 个文件夹</span>
       </div>
@@ -4128,7 +4139,7 @@
       </div>
 
       <!-- Controls Toolbar: Left Selection & Right Template Modes -->
-      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); align-items: center; justify-content: space-between; flex-wrap: wrap;">
         <!-- Left Pane Controls -->
         <div style="display: flex; gap: 6px; align-items: center;">
           <button class="cat-btn" id="cs-btn-select-all" onclick="toggleClipStudioSelectAll()">☑️ 全选</button>
@@ -4164,12 +4175,12 @@
             </div>
             <span id="cs-preview-meta">已拼版 0 段 · 0 字</span>
           </div>
-          <textarea id="cs-preview-textarea" placeholder="在此实时预览拼版结果，支持二次手工修改润色..." style="flex: 1; width: 100%; border: 1px solid var(--border-hairline); border-radius: 8px; background: rgba(0,0,0,0.3); color: var(--text-primary); font-family: var(--font-mono); font-size: 12px; line-height: 1.6; padding: 12px; resize: none; outline: none;"></textarea>
+          <textarea id="cs-preview-textarea" placeholder="在此实时预览拼版结果，支持二次手工修改润色..." style="flex: 1; width: 100%; border: 1px solid var(--border-hairline); border-radius: 8px; background: var(--bg-inset-deep); color: var(--text-primary); font-family: var(--font-mono); font-size: 12px; line-height: 1.6; padding: 12px; resize: none; outline: none;"></textarea>
         </div>
       </div>
 
       <!-- Bottom Footer -->
-      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>操作指南</b>: 在左侧勾选多段碎片，点击 ⬆️/⬇️ 微调先后顺序，右侧自由切换 7 套模板实时拼版，支持原地修改润色</span>
         <span id="clip-studio-stat">已就绪</span>
       </div>
@@ -4195,7 +4206,7 @@
       </div>
 
       <!-- Graph Toolbar & Stats Strip -->
-      <div style="display: flex; gap: 12px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.25); align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: 11.5px;">
+      <div style="display: flex; gap: 12px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset-deep); align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: 11.5px;">
         <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
           <div>⬅️ 反向反链: <b id="gm-in-count" style="color: var(--emerald-mint); font-size: 12.5px;">--</b> 篇</div>
           <div>➡️ 正向出链: <b id="gm-out-count" style="color: var(--cyber-sky); font-size: 12.5px;">--</b> 篇</div>
@@ -4212,7 +4223,7 @@
       </div>
 
       <!-- Bottom Footer -->
-      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>交互指南</b>: 单击绿色/蓝色卫星节点可无缝重新聚类漫游 · 双击在思源大窗中原位打开 · 纯原生计算 0ms 渲染</span>
         <span id="graph-modal-status">星轨拓扑就绪</span>
       </div>
@@ -4237,7 +4248,7 @@
       </div>
 
       <!-- Filters & Search Toolbar -->
-      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); align-items: center; justify-content: space-between; flex-wrap: wrap;">
         <div class="timeline-filters" id="ph-type-filters" style="display: flex; gap: 6px; overflow-x: auto; padding: 0;">
           <button class="cat-btn active" id="ph-tab-all" onclick="switchProfileHubTab('all')">🌟 全部预设</button>
           <button class="cat-btn" id="ph-tab-s3" onclick="switchProfileHubTab('s3')">☁️ S3 存储桶</button>
@@ -4255,7 +4266,7 @@
       </div>
 
       <!-- Bottom Footer -->
-      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>隐私安全铁律</b>: 所有凭据（AccessKey / SecretKey / ApiKey / 密码）均已执行安全脱敏屏蔽，随时复制标准参数蓝图</span>
         <span id="profile-modal-stat">已加载 0 个预设</span>
       </div>
@@ -4281,7 +4292,7 @@
       </div>
 
       <!-- 4 Core Health Indicators Stats Strip -->
-      <div id="doctor-stats-strip" style="display: flex; gap: 16px; padding: 10px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.18); align-items: center; flex-wrap: wrap; font-size: 11.5px;">
+      <div id="doctor-stats-strip" style="display: flex; gap: 16px; padding: 10px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); align-items: center; flex-wrap: wrap; font-size: 11.5px;">
         <div>🔗 悬空失效死链: <b id="doc-stat-dead" style="color: var(--rose-agent); font-size: 13px;">--</b> 处</div>
         <div>👻 幽灵空白碎片: <b id="doc-stat-empty" style="color: var(--tech-amber); font-size: 13px;">--</b> 处</div>
         <div>🗑️ 游离无主附件: <b id="doc-stat-orphan" style="color: var(--cyber-sky); font-size: 13px;">--</b> 篇 (<span id="doc-stat-orphan-size" style="color: var(--text-muted);">0 B</span>)</div>
@@ -4289,7 +4300,7 @@
       </div>
 
       <!-- Mode Switcher Toolbar -->
-      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.12); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); align-items: center; justify-content: space-between; flex-wrap: wrap;">
         <div class="timeline-filters" id="doctor-tab-bar" style="display: flex; gap: 6px; overflow-x: auto; padding: 0;">
           <button class="cat-btn active" id="doc-tab-deadlinks" onclick="switchDoctorTab('deadlinks')">🔗 悬空死链修复</button>
           <button class="cat-btn" id="doc-tab-orphans" onclick="switchDoctorTab('orphans')">🗑️ 孤儿附件清道夫</button>
@@ -4307,7 +4318,7 @@
       </div>
 
       <!-- Bottom Footer -->
-      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>安全铁律</b>: 孤儿附件支持 <code>.quarantine</code> 隔离区安全移入与打捞复原；双链自愈仅在同名精确匹配时替换</span>
         <span id="doctor-modal-status">诊断引擎已就绪</span>
       </div>
@@ -4335,10 +4346,10 @@
       </div>
 
       <!-- Path & Filter Toolbar -->
-      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); align-items: center; justify-content: space-between; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); flex: 1; min-width: 200px;">
           <span>📂 镜像目录:</span>
-          <code id="vm-current-dir" style="color: var(--cyber-sky); font-family: var(--font-mono); font-size: 11.5px; background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-hairline);">D:\思源插件</code>
+          <code id="vm-current-dir" style="color: var(--cyber-sky); font-family: var(--font-mono); font-size: 11.5px; background: var(--bg-inset-deep); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-hairline);">D:\思源插件</code>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
           <input type="text" id="vm-search-input" placeholder="实时过滤外部文件名/大纲标题..." oninput="handleVaultLiveFilter(this.value)" style="width: 220px; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-primary);" />
@@ -4361,12 +4372,12 @@
               <button class="launchpad-mini-btn" onclick="copyCurrentVaultFilePath()" title="复制物理绝对路径">📋 复制路径</button>
             </div>
           </div>
-          <div id="vm-markdown-preview" contenteditable="true" spellcheck="false" style="flex: 1; padding: 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid var(--border-hairline); overflow-y: auto; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; color: var(--text-primary); white-space: pre-wrap; outline: none;">请在左侧点击任一 Markdown 文档，即可在此流式研读或就地编辑 (Ctrl+S 保存回磁盘)...</div>
+          <div id="vm-markdown-preview" contenteditable="true" spellcheck="false" style="flex: 1; padding: 14px; background: var(--bg-inset-deep); border-radius: 8px; border: 1px solid var(--border-hairline); overflow-y: auto; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; color: var(--text-primary); white-space: pre-wrap; outline: none;">请在左侧点击任一 Markdown 文档，即可在此流式研读或就地编辑 (Ctrl+S 保存回磁盘)...</div>
         </div>
       </div>
 
       <!-- Bottom Footer -->
-      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>镜像透视特性</b>: 纯流式透视，零物理拷贝，不污染思源 SQLite 与 assets 附件库，支持一键按需切片直投日记</span>
         <span id="vault-modal-status">镜像透视已就绪</span>
       </div>
@@ -4393,7 +4404,7 @@
       </div>
 
       <!-- Mode & Filter Toolbar -->
-      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); align-items: center; justify-content: space-between; flex-wrap: wrap;">
         <div class="timeline-filters" id="omm-view-tabs" style="display: flex; gap: 6px; overflow-x: auto; padding: 0;">
           <button class="cat-btn active" id="omm-tab-split" onclick="switchOutlineMindmapView('split')">🌟 双栏全景 (大纲+导图)</button>
           <button class="cat-btn" id="omm-tab-mindmap" onclick="switchOutlineMindmapView('mindmap')">🗺️ 导图独占大画布</button>
@@ -4426,7 +4437,7 @@
       </div>
 
       <!-- Bottom Footer -->
-      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>交互指南</b>: 单击左侧小节可在右侧导图高亮聚焦；双击小节/导图节点在思源大窗中原位打开；纯原生动态矢量渲染</span>
         <span id="omm-modal-status">大纲与导图就绪</span>
       </div>
@@ -4454,7 +4465,7 @@
       </div>
 
       <!-- Controls & Row Filter Toolbar -->
-      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); align-items: center; justify-content: space-between; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 11px; color: var(--text-muted);">📑 切换表格:</span>
           <select id="tg-table-picker" onchange="switchTableGridFromSelect(this.value)" style="max-width: 260px; font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-primary); outline: none;">
@@ -4474,7 +4485,7 @@
       </div>
 
       <!-- Bottom Footer -->
-      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>交互操作</b>: 点击表头可升降序排序 · 双击单元格直接就地修改 · 支持 1 键零依赖导出标准 Excel (.xlsx)</span>
         <span id="tg-modal-status">表格矩阵已就绪</span>
       </div>
@@ -4502,7 +4513,7 @@
       </div>
 
       <!-- Language Filter & Search Toolbar -->
-      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-inset); align-items: center; justify-content: space-between; flex-wrap: wrap;">
         <div class="timeline-filters" id="cs-lang-filters" style="display: flex; gap: 5px; overflow-x: auto; padding: 0;">
           <button class="cat-btn active" id="cs-lang-all" onclick="switchCodeStudioLang('all')">🌟 全部</button>
           <button class="cat-btn" id="cs-lang-python" onclick="switchCodeStudioLang('python')">🐍 Python</button>
@@ -4539,7 +4550,7 @@
       </div>
 
       <!-- Bottom Footer -->
-      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>开发者特性</b>: 自动剥离 Markdown 围栏 ``` 与零宽字符；支持 1 键生成本地临时源码文件并在 VS Code 秒开调试</span>
         <span id="cs-modal-status">代码工作台已就绪</span>
       </div>
@@ -4591,7 +4602,7 @@
       <div id="onboarding-modal-body" style="padding: 16px 18px; overflow-y: auto; max-height: 68vh; display: flex; flex-direction: column; gap: 14px;">
         <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在执行本机思源内核、6大热键、本地效率软件与DPAPI保险箱 4 维探针自检...</div>
       </div>
-      <div style="padding: 10px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.22); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+      <div style="padding: 10px 18px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>零配置设计</b>: 自动发现思源端口与工作区、自动联动 Everything/Listary/PixPin、支持一键冲突热键自愈</span>
         <div style="display: flex; align-items: center; gap: 10px;">
           <span id="ob-modal-status">探针已就绪</span>
@@ -4682,7 +4693,7 @@
         <button class="theme-toggle-btn" style="width: 24px; height: 24px; font-size: 11px;" onclick="closeInlineFormModal()">✕</button>
       </div>
       <div id="ifm-body" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; max-height: 62vh; overflow-y: auto;"></div>
-      <div style="padding: 10px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.22); display: flex; justify-content: flex-end; gap: 8px;">
+      <div style="padding: 10px 18px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: flex-end; gap: 8px;">
         <button type="button" class="pref-btn" onclick="closeInlineFormModal()" style="font-size: 11.5px; padding: 5px 14px;">取消 (Esc)</button>
         <button type="button" class="pref-btn" id="ifm-submit-btn" onclick="submitInlineFormModal()" style="font-size: 11.5px; padding: 5px 16px; background: var(--indigo-primary); color: #fff; border-color: var(--indigo-primary); font-weight: 600;">确认提交 (Enter)</button>
       </div>
@@ -5094,6 +5105,9 @@
           if (e.key === "?" || (e.shiftKey && e.key === "/")) {
             e.preventDefault();
             toggleCheatsheet();
+          } else if ((e.key === "e" || e.key === "E") && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            e.preventDefault();
+            toggleEditMode();
           }
         }
       });
@@ -6528,6 +6542,12 @@
     }
 
     function executeSelected(preferPluginLaunch = false) {
+      if (editMode) {
+        if (filteredItems.length > 0 && filteredItems[selectedIndex]) {
+          toggleCardVisibility(filteredItems[selectedIndex].id);
+        }
+        return;
+      }
       const searchInput = document.getElementById("search-input");
       const queryVal = searchInput ? searchInput.value.trim() : "";
 
@@ -6602,6 +6622,18 @@
       }
     }
 
+    function triggerWebClipWithAi(mode) {
+      showToast("🤖 正在调用大模型提炼网页要点并剪藏...");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'executeWebClipWithAi',
+          mode: mode || 'card'
+        }));
+      } else {
+        showToast("已请求 AI 提炼剪藏");
+      }
+    }
+
     let isExecutingItem = false;
     function executeItem(item, customText = "") {
       if (!item) return;
@@ -6636,18 +6668,6 @@
         }
         return;
       }
-
-    function triggerWebClipWithAi(mode) {
-      showToast("🤖 正在调用大模型提炼网页要点并剪藏...");
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({
-          op: 'executeWebClipWithAi',
-          mode: mode || 'card'
-        }));
-      } else {
-        showToast("已请求 AI 提炼剪藏");
-      }
-    }
 
       // 附件资产本地秒开分支 (灵感 Ⅰ)
       if (item.isAssetItem && item.assetData) {
@@ -7129,7 +7149,7 @@
             </div>
           ` : `
             <div style="font-size: 11px; color: var(--text-dim); padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px dashed var(--border-hairline); margin-top: 8px;">
-              💡 提示：在输入框直接键入 <code style="color: var(--cyber-sky); background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 3px;">g: 你的思考批注</code>，即可在剪藏同时自动附带即时研读笔记！
+              💡 提示：在输入框直接键入 <code style="color: var(--cyber-sky); background: var(--bg-inset-deep); padding: 1px 4px; border-radius: 3px;">g: 你的思考批注</code>，即可在剪藏同时自动附带即时研读笔记！
             </div>
           `}
           <div style="font-size: 11px; color: var(--text-muted); margin-top: 10px; padding: 6px 10px; background: rgba(16,185,129,0.06); border-radius: 6px;">
@@ -7178,7 +7198,7 @@
             <div style="padding: 14px; background: rgba(56, 189, 248, 0.08); border: 1px dashed var(--border-glow); border-radius: 8px; margin-bottom: 12px;">
               <div style="font-size: 11.5px; font-weight: 700; color: var(--cyber-sky); margin-bottom: 4px;">💡 桌面单行直投语法秘诀：</div>
               <div style="font-size: 12px; line-height: 1.6; color: var(--text-secondary);">
-                在输入框直接键入：<code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; color: var(--cyber-sky);">av:${escapeHtml(item.avName || '表名')} 你的新记录</code><br>
+                在输入框直接键入：<code style="background: var(--bg-inset-deep); padding: 2px 6px; border-radius: 4px; color: var(--cyber-sky);">av:${escapeHtml(item.avName || '表名')} 你的新记录</code><br>
                 敲击回车瞬间向该数据库追加一行，全程无需切换进入思源大界面！
               </div>
             </div>
@@ -8707,7 +8727,7 @@
                     <span>⏱️ ${c.Date ? new Date(c.Date).toLocaleDateString() : ''}</span>
                   </div>
                   <div style="font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">${escapeHtml(c.CommentText)}</div>
-                  ${c.AnchorQuoteText ? `<div style="font-size: 11px; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 4px 6px; border-radius: 4px; margin-bottom: 4px;">引文: 「${escapeHtml(c.AnchorQuoteText)}」</div>` : ''}
+                  ${c.AnchorQuoteText ? `<div style="font-size: 11px; color: var(--text-muted); background: var(--bg-inset); padding: 4px 6px; border-radius: 4px; margin-bottom: 4px;">引文: 「${escapeHtml(c.AnchorQuoteText)}」</div>` : ''}
                   <div style="display: flex; justify-content: flex-end;">
                     <button class="card-launch-btn" style="padding: 1.5px 6px; font-size: 10px; color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" onclick="importSingleCommentDaily('${escapeQuote(c.Author || '审阅人')}', '${escapeQuote(c.CommentText)}', '${escapeQuote(c.AnchorQuoteText || '')}')">📥 仅转此条待办</button>
                   </div>
@@ -8730,7 +8750,7 @@
                   <button class="card-launch-btn" style="padding: 2px 6px; font-size: 10px; color: var(--tech-amber); border-color: rgba(245,158,11,0.4);" onclick="importSingleSheetToAv('${escapeQuote(sh.SampleMarkdownTable)}')">📥 入属性视图</button>
                 </div>
               </div>
-              <div style="font-size: 11px; overflow-x: auto; max-height: 200px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-hairline); border-radius: 6px; padding: 8px; white-space: pre; font-family: Consolas, monospace;">${escapeHtml(sh.SampleMarkdownTable)}</div>
+              <div style="font-size: 11px; overflow-x: auto; max-height: 200px; background: var(--bg-inset); border: 1px solid var(--border-hairline); border-radius: 6px; padding: 8px; white-space: pre; font-family: Consolas, monospace;">${escapeHtml(sh.SampleMarkdownTable)}</div>
             </div>
           `).join("");
         } else {
@@ -8922,7 +8942,7 @@
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
             <span style="font-size: 12px; font-weight: 700; color: var(--text-primary);">📑 章节大纲与页码直达 (${outlines.length} 处):</span>
             <div style="display: flex; align-items: center; gap: 6px;">
-              <input type="number" id="pdf-jump-page-input" placeholder="页码" min="1" max="${summary.PageCount || 9999}" style="width: 55px; padding: 2px 6px; font-size: 11px; border: 1px solid var(--border-hairline); border-radius: 4px; background: rgba(0,0,0,0.2); color: var(--text-primary); text-align: center;" />
+              <input type="number" id="pdf-jump-page-input" placeholder="页码" min="1" max="${summary.PageCount || 9999}" style="width: 55px; padding: 2px 6px; font-size: 11px; border: 1px solid var(--border-hairline); border-radius: 4px; background: var(--bg-inset); color: var(--text-primary); text-align: center;" />
               <button class="card-launch-btn" style="padding: 2px 6px; font-size: 10px;" onclick="jumpToCustomPdfPage()">📖 直达</button>
             </div>
           </div>
@@ -9177,7 +9197,7 @@
           </div>
 
           ${currentXMindTab === 'mindmap' ? `
-            <div style="border: 1px solid var(--border-hairline); border-radius: 6px; overflow: auto; max-height: 290px; background: rgba(0,0,0,0.25);">
+            <div style="border: 1px solid var(--border-hairline); border-radius: 6px; overflow: auto; max-height: 290px; background: var(--bg-inset-deep);">
               ${generateMindmapSvg(summary.Title || summary.FileName, flatHeadings)}
             </div>
           ` : `
@@ -9440,7 +9460,7 @@
             <span>💻 <b>语法语言</b>: <code>${escapeHtml(s.Language)}</code></span>
             <span>📝 <b>默认扩展名</b>: <code>${escapeHtml(s.FileExtension)}</code></span>
           </div>
-          <pre style="margin: 0; padding: 12px; background: rgba(0,0,0,0.35); border: 1px solid var(--border-hairline); border-radius: 6px; font-family: Consolas, 'Cascadia Code', monospace; font-size: 12px; line-height: 1.5; color: var(--text-primary); overflow-x: auto; white-space: pre;"><code>${escapeHtml(s.Code)}</code></pre>
+          <pre style="margin: 0; padding: 12px; background: var(--bg-inset-deep); border: 1px solid var(--border-hairline); border-radius: 6px; font-family: Consolas, 'Cascadia Code', monospace; font-size: 12px; line-height: 1.5; color: var(--text-primary); overflow-x: auto; white-space: pre;"><code>${escapeHtml(s.Code)}</code></pre>
         </div>
         <div class="inspector-dock">
           <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -9528,7 +9548,7 @@
           <div style="font-size: 11px; padding: 8px 10px; background: rgba(56,189,248,0.06); border-radius: 6px; border: 1px dashed var(--border-hairline); margin-bottom: 10px; line-height: 1.6;">
             <div>🏷️ <b>字段类型智能推导</b>: ${colChips || '<span style="color:var(--text-muted);">空表格</span>'}</div>
           </div>
-          <div style="max-height: 280px; overflow: auto; border: 1px solid var(--border-hairline); border-radius: 6px; background: rgba(0,0,0,0.25);">
+          <div style="max-height: 280px; overflow: auto; border: 1px solid var(--border-hairline); border-radius: 6px; background: var(--bg-inset-deep);">
             <table style="width: 100%; border-collapse: collapse; font-size: 11.5px; text-align: left;">
               <thead>
                 <tr style="background: rgba(255,255,255,0.06); border-bottom: 1px solid var(--border-hairline);">
@@ -9600,7 +9620,7 @@
             <span>⏱️ <b>记录时间</b>: <code>${escapeHtml(item.CreatedTime || '')}</code></span>
             <span style="color: #fbbf24; font-weight: 700;">${escapeHtml(item.TimeAgoDescription || '')}</span>
           </div>
-          <div style="padding: 14px; background: rgba(0,0,0,0.28); border-left: 3px solid #f59e0b; border-radius: 6px; font-size: 13px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap;">${escapeHtml(item.Content)}</div>
+          <div style="padding: 14px; background: var(--bg-inset-deep); border-left: 3px solid #f59e0b; border-radius: 6px; font-size: 13px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap;">${escapeHtml(item.Content)}</div>
           <div style="margin-top: 14px;">
             <input type="text" id="flashback-thought-input" class="search-input" style="height: 32px; width: 100%; font-size: 12px; padding: 0 10px; border-radius: 6px;" placeholder="在此输入重温思考，按回车原位追加..." onkeydown="if(event.key==='Enter') submitFlashbackThought('${item.BlockId}')" />
           </div>
@@ -9855,7 +9875,7 @@
 
     function renderKanbanColumn(title, accentColor, bgSubtle, tasks, emptyHint = "暂无待办") {
       return `
-        <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-hairline); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 280px;">
+        <div style="background: var(--bg-inset); border: 1px solid var(--border-hairline); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 280px;">
           <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1.5px solid ${accentColor};">
             <span style="font-weight: 750; font-size: 12px; color: var(--text-primary);">${title}</span>
             <span class="badge-native" style="font-size: 10px; padding: 1px 6px;">${tasks.length}</span>
@@ -9970,7 +9990,7 @@
             <div>📄 <b>归属文档</b>: <a href="javascript:void(0)" onclick="openBlockById('${t.RootId}')" style="color: var(--cyber-sky); text-decoration: underline;">《${escapeHtml(t.DocTitle)}》</a></div>
             <div style="margin-top: 4px; color: var(--text-muted);">🆔 <b>块 ID</b>: <code>${t.BlockId}</code></div>
           </div>
-          <div style="padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 11.5px; color: var(--text-secondary); line-height: 1.6;">
+          <div style="padding: 10px 12px; background: var(--bg-inset-deep); border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 11.5px; color: var(--text-secondary); line-height: 1.6;">
             💡 <b>Actionable PKM 闭环</b>: 点击下方【开启 25m 专注】，番茄钟倒计时结束时，外骨骼将<b>自动将该任务标记为已完成 (- [x])</b>，并将成果时序写入今日日记！
           </div>
         </div>
@@ -10105,7 +10125,7 @@
             <div>🔗 <b>规范网址</b>: <code style="word-break: break-all;">${escapeHtml(b.CleanUrl || b.Url)}</code></div>
             ${b.DateAddedFormatted ? `<div style="margin-top: 4px;">📅 <b>收藏时间</b>: ${b.DateAddedFormatted}</div>` : ''}
           </div>
-          <div style="padding: 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-hairline); border-radius: 6px;">
+          <div style="padding: 12px; background: var(--bg-inset-deep); border: 1px solid var(--border-hairline); border-radius: 6px;">
             <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Markdown 超链接语法预览:</div>
             <code style="display: block; font-size: 12px; color: var(--cyber-sky); word-break: break-all;">${escapeHtml(mdLink)}</code>
           </div>
@@ -10225,7 +10245,7 @@
             ${b.Notes ? `<div style="margin-top: 4px;">📝 <b>备忘备注</b>: ${escapeHtml(b.Notes)}</div>` : ''}
             <div style="margin-top: 4px; color: var(--text-muted);">💾 <b>存储终态</b>: 思源原生文档 <code>/收藏夹/网站导航</code></div>
           </div>
-          <div style="padding: 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-hairline); border-radius: 6px;">
+          <div style="padding: 12px; background: var(--bg-inset-deep); border: 1px solid var(--border-hairline); border-radius: 6px;">
             <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Markdown 双链超链接语法:</div>
             <code style="display: block; font-size: 12px; color: var(--emerald-mint); word-break: break-all;">${escapeHtml(mdLink)}</code>
           </div>
@@ -10409,7 +10429,7 @@
             ${f.SiyuanDocTitle ? `<div style="margin-top: 4px;">🔗 <b>关联思源工程</b>: <a href="javascript:void(0)" onclick="openBlockById('${f.SiyuanDocId}')" style="color: var(--cyber-sky); text-decoration: underline;">《${escapeHtml(f.SiyuanDocTitle)}》</a></div>` : ''}
             <div style="margin-top: 4px; color: var(--text-muted);">💾 <b>存储终态</b>: 思源原生文档 <code>/资源/文件夹导航</code></div>
           </div>
-          <div style="padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 11.5px; color: var(--text-secondary); line-height: 1.5;">
+          <div style="padding: 10px 12px; background: var(--bg-inset-deep); border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 11.5px; color: var(--text-secondary); line-height: 1.5;">
             💡 <b>Listary 穿透黑科技</b>: 若当前外部前台是 Windows 打开/保存文件窗口 (#32770)，点击下方【穿透秒跳】将直接在对话框中秒开此目录！
           </div>
         </div>
@@ -10586,7 +10606,7 @@
             <div style="margin-top: 4px; color: var(--emerald-mint);">🛡️ <b>隐私凭据脱敏</b>: AccessKey / SecretKey / ApiKey 已安全屏蔽，零密钥外泄风险</div>
             <div style="margin-top: 4px; color: var(--text-muted);">💾 <b>存储终态</b>: 思源原生文档 <code>/配置预设</code></div>
           </div>
-          <div style="padding: 10px 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-hairline); border-radius: 6px;">
+          <div style="padding: 10px 12px; background: var(--bg-inset-deep); border: 1px solid var(--border-hairline); border-radius: 6px;">
             <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">配置参数 JSON 蓝图:</div>
             <pre style="margin: 0; font-size: 11.5px; color: var(--cyber-sky); font-family: monospace; white-space: pre-wrap; word-break: break-all;">${escapeHtml(jsonStr)}</pre>
           </div>
@@ -10904,7 +10924,7 @@
               ${escapeHtml(n.Message)}
             </div>
           </div>
-          <div style="padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 11.5px; color: var(--text-secondary); line-height: 1.5;">
+          <div style="padding: 10px 12px; background: var(--bg-inset-deep); border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 11.5px; color: var(--text-secondary); line-height: 1.5;">
             💡 <b>广义通知聚合</b>: 该通知中枢不仅监听思源弹窗，还记录 Windows 外部自动化工具 (Quicker/AHK)、编译构建、心流番茄与凭据安全警报。
           </div>
         </div>
@@ -10968,7 +10988,7 @@
           <div style="font-size: 11px; padding: 6px 10px; background: rgba(16,185,129,0.08); border-radius: 6px; border: 1px dashed var(--emerald-mint); margin-bottom: 12px; color: var(--emerald-mint);">
             ✓ 已自动完成去重、去噪与盘古中英空格排版！
           </div>
-          <pre style="margin: 0; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 12px; line-height: 1.6; color: var(--text-primary); white-space: pre-wrap; word-break: break-all;">${escapeHtml(md)}</pre>
+          <pre style="margin: 0; padding: 12px; background: var(--bg-inset-deep); border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 12px; line-height: 1.6; color: var(--text-primary); white-space: pre-wrap; word-break: break-all;">${escapeHtml(md)}</pre>
         </div>
         <div class="inspector-dock">
           <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -11218,7 +11238,7 @@
             <div>📍 <b>物理路径</b>: <code style="word-break: break-all;">${escapeHtml(n.FilePath)}</code></div>
             <div style="margin-top: 4px;">📦 <b>文件体积</b>: ${n.FileSizeFormatted} · <b>修改时间</b>: ${new Date(n.LastModified).toLocaleString()}</div>
           </div>
-          <div style="padding: 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-hairline); border-radius: 6px;">
+          <div style="padding: 12px; background: var(--bg-inset-deep); border: 1px solid var(--border-hairline); border-radius: 6px;">
             <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.6;">此文档位于外部目录，支持 1 键结构化导入今日日记、外部原位打开或导出为独立 HTML 网页。</div>
           </div>
         </div>
@@ -11469,17 +11489,17 @@
 
           <div style="margin-bottom: 12px;">
             <div style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">📑 绑定的思源项目文档</div>
-            <div style="background: rgba(0,0,0,0.2); border-radius: 6px; padding: 6px 10px; font-size: 12px;">${docsHtml}</div>
+            <div style="background: var(--bg-inset); border-radius: 6px; padding: 6px 10px; font-size: 12px;">${docsHtml}</div>
           </div>
 
           <div style="margin-bottom: 12px;">
             <div style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">📁 关联的本地文献与工程资产</div>
-            <div style="background: rgba(0,0,0,0.2); border-radius: 6px; padding: 6px 10px; font-size: 11.5px;">${filesHtml}</div>
+            <div style="background: var(--bg-inset); border-radius: 6px; padding: 6px 10px; font-size: 11.5px;">${filesHtml}</div>
           </div>
 
           <div style="margin-bottom: 14px;">
             <div style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">🌐 参考网页与研读链接</div>
-            <div style="background: rgba(0,0,0,0.2); border-radius: 6px; padding: 6px 10px; font-size: 11.5px;">${urlsHtml}</div>
+            <div style="background: var(--bg-inset); border-radius: 6px; padding: 6px 10px; font-size: 11.5px;">${urlsHtml}</div>
           </div>
 
           <div style="display: flex; gap: 8px; align-items: center; padding-top: 10px; border-top: 1px dashed var(--border-hairline);">
@@ -13698,7 +13718,7 @@
             <span>全库发现 <b>${empties.length}</b> 处空白幽灵块 (无文本无引用的残留碎块):</span>
             <button class="launchpad-mini-btn danger" onclick="cleanDoctorEmptyBlocksAction()">🧹 安全释放前50处空块</button>
           </div>
-          <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; background: rgba(0,0,0,0.25); border-radius: 6px; border: 1px solid var(--border-hairline); max-height: 280px; overflow-y: auto;">
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; background: var(--bg-inset-deep); border-radius: 6px; border: 1px solid var(--border-hairline); max-height: 280px; overflow-y: auto;">
         `;
         empties.slice(0, 50).forEach(id => {
           html += `<span class="launchpad-card-pill" style="font-family: var(--font-mono); font-size: 10.5px;">${escapeHtml(id)}</span>`;
@@ -13707,7 +13727,7 @@
         body.innerHTML = html;
       } else if (currentDoctorTab === "report") {
         body.innerHTML = `
-          <div style="padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid var(--border-hairline);">
+          <div style="padding: 12px; background: var(--bg-inset-deep); border-radius: 8px; border: 1px solid var(--border-hairline);">
             <pre style="margin: 0; font-size: 11.5px; color: var(--text-primary); font-family: var(--font-mono); white-space: pre-wrap; line-height: 1.6;">${escapeHtml(d.ReportMarkdown || '暂无报告')}</pre>
           </div>
         `;
@@ -15171,6 +15191,10 @@
     // 全局四级丝滑 Esc 回退总线 (供前端与 C# PreviewKeyDown 统一调用)
     window.handleGlobalEscapeKey = function() {
       if (ModalStackManager.closeTopmostModal()) {
+        return true;
+      }
+      if (typeof editMode !== "undefined" && editMode) {
+        toggleEditMode();
         return true;
       }
       const si = document.getElementById("search-input");

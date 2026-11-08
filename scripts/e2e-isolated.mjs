@@ -3997,6 +3997,45 @@ async function main() {
                                capsuleHtmlContent.includes("cmd: op, text: currentText");
   logStep("Step 7.225: 随身划笔微胶囊 1~8 盲打动作嵌套 data 字典与顶层原子指令双通道解析断言", hasCapsuleNestedData, `微胶囊双通道指令解析: ${hasCapsuleNestedData}`);
 
+  // Step 7.226: Test Card Visibility Edit Mode Toolbar (#edit-toolbar) & Escape Recovery + Global triggerWebClipWithAi
+  const hasEditToolbarAndGlobalClipAi = panelContent.includes('<div class="edit-toolbar" id="edit-toolbar">') &&
+                                        panelContent.includes('id="edit-count"') &&
+                                        panelContent.includes('if (typeof editMode !== "undefined" && editMode)') &&
+                                        panelContent.indexOf('function triggerWebClipWithAi') < panelContent.indexOf('function executeItem');
+  logStep("Step 7.226: 卡片显隐编辑模式工具栏 (#edit-toolbar) 挂载、Esc 退出闭环与 triggerWebClipWithAi 顶层作用域断言", hasEditToolbarAndGlobalClipAi, `编辑模式工具栏与全局函数闭环: ${hasEditToolbarAndGlobalClipAi}`);
+
+  // Step 7.227: Test Light/Dark Semantic Inset Background Tokens (--bg-inset / --bg-inset-deep)
+  const bodyAfterStyle = panelContent.substring(panelContent.indexOf('</style>'));
+  const remainingHardcodedRgbaBlack = (bodyAfterStyle.match(/background:\s*rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\.\d+\s*\)/g) || []).length;
+  const hasSemanticInsetTokens = panelContent.includes('--bg-inset: #F1F5F9;') &&
+                                 panelContent.includes('--bg-inset-deep: #E2E8F0;') &&
+                                 remainingHardcodedRgbaBlack === 0;
+  logStep("Step 7.227: 浅色/深色双主题内嵌容器背景令牌 (--bg-inset) 100% 替换内联黑底 (65处清零) 断言", hasSemanticInsetTokens, `残留内联rgba黑底数: ${remainingHardcodedRgbaBlack}`);
+
+  // Step 7.228: Test QuickDialog hashchange Multi-Invocation Refresh, Capsule Radar Tag Reset & Win32 Drag/Topmost
+  const quickDialogHtml = fs.readFileSync(path.join(ROOT, 'assets', 'quick-dialog.html'), 'utf8');
+  const dialogCsContent = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'DialogWindow.cs'), 'utf8');
+  const hasDialogAndCapsuleFixes = quickDialogHtml.includes('window.addEventListener("hashchange", initState)') &&
+                                   dialogCsContent.includes('ReleaseCapture()') &&
+                                   dialogCsContent.includes('HWND_TOPMOST') &&
+                                   capsuleHtmlContent.includes('.badge-link') &&
+                                   capsuleHtmlContent.includes('tag.textContent = "盲打分发"') &&
+                                   capsuleCsContent.includes('JsonHelper.ToJson(new { hitId = hitId');
+  logStep("Step 7.228: 快捷弹窗 hashchange 二次唤醒刷新、随身划笔雷达标签重置与 JSON 安全序列化断言", hasDialogAndCapsuleFixes, `快捷弹窗与划笔状态重置闭环: ${hasDialogAndCapsuleFixes}`);
+
+  // Step 7.229: Test MiniInputWindow Sticky Note Anti-Deactivate, Snipping High-DPI PointToScreen, FSRS Flip & SystemTray Menu
+  const miniInputCs = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'MiniInputWindow.cs'), 'utf8');
+  const snippingCs = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'SnippingOverlayWindow.cs'), 'utf8');
+  const fsrsCs = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'FSRSCapsuleWindow.cs'), 'utf8');
+  const trayCs = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'SystemTray.cs'), 'utf8');
+  const hasNativeWinFixes = miniInputCs.includes('if (_isStickyMode) return;') &&
+                            miniInputCs.includes('Grid.SetRow(_inputGrid, 1)') &&
+                            snippingCs.includes('PointToScreen(new Point(') &&
+                            fsrsCs.includes('_flipHintText.Text = "[ 按空格键或点击卡片翻看答案 ]"') &&
+                            trayCs.includes('_menu.Items.Add(itemSticky)') &&
+                            trayCs.includes('_menu.Items.Add(itemFlashback)');
+  logStep("Step 7.229: 图钉便签失焦常驻与双行全宽编辑、高分屏 PointToScreen 截屏、FSRS 翻面提示与托盘菜单断言", hasNativeWinFixes, `原生窗体与DPI闭环: ${hasNativeWinFixes}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

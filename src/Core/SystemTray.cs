@@ -86,7 +86,7 @@ namespace XiaoLv.Desktop.Core
                 var itCapture = new ToolStripMenuItem("📸 捕获当前现场并管理 (ws:)");
                 itCapture.Click += (s_c, e_c) =>
                 {
-                    if (OnOpenPanelClicked != null) OnOpenPanelClicked();
+                    XiaoLv.Desktop.Program.ShowMasterPanel("ws:");
                 };
                 itemWorkspaces.DropDownItems.Add(itCapture);
             };
@@ -212,10 +212,12 @@ namespace XiaoLv.Desktop.Core
             _menu.Items.Add(itemPen);
             _menu.Items.Add(itemOcr);
             _menu.Items.Add(itemQuick);
+            _menu.Items.Add(itemSticky);
             _menu.Items.Add(itemVoice);
             _menu.Items.Add(itemWorkspaces);
             _menu.Items.Add(itemFsrs);
             _menu.Items.Add(itemWebClip);
+            _menu.Items.Add(itemFlashback);
             _menu.Items.Add(itemSearchTool);
             _menu.Items.Add(itemZotero);
             _menu.Items.Add(itemSync);

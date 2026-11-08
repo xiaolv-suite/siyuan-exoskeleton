@@ -29,6 +29,19 @@ namespace XiaoLv.Desktop.UI
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
 
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool BringWindowToTop(IntPtr hWnd);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_SHOWWINDOW = 0x0040;
         private const int WM_NCLBUTTONDOWN = 0x00A1;
         private const int HTCAPTION = 0x0002;
 
@@ -283,7 +296,8 @@ namespace XiaoLv.Desktop.UI
                             {
                                 if (_isPageLoaded && _webView != null && _webView.CoreWebView2 != null)
                                 {
-                                    _webView.CoreWebView2.ExecuteScriptAsync(string.Format("if(window.onRadarMatch) window.onRadarMatch({{ hitId: '{0}', docTitle: '{1}', term: '{2}' }});", hitId, SafeContext.EscapeJson(docTitle), SafeContext.EscapeJson(term)));
+                                    string payload = JsonHelper.ToJson(new { hitId = hitId, docTitle = docTitle, term = term });
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onRadarMatch) window.onRadarMatch(" + payload + ");");
                                 }
                             });
                         }
@@ -303,7 +317,8 @@ namespace XiaoLv.Desktop.UI
                                     {
                                         if (_isPageLoaded && _webView != null && _webView.CoreWebView2 != null)
                                         {
-                                            _webView.CoreWebView2.ExecuteScriptAsync(string.Format("if(window.onContactMatch) window.onContactMatch({{ contactId: '{0}', name: '{1}' }});", contactId, SafeContext.EscapeJson(contactName)));
+                                            string payload = JsonHelper.ToJson(new { contactId = contactId, name = contactName });
+                                            _webView.CoreWebView2.ExecuteScriptAsync("if(window.onContactMatch) window.onContactMatch(" + payload + ");");
                                         }
                                     });
                                 }
@@ -338,7 +353,8 @@ namespace XiaoLv.Desktop.UI
                                 {
                                     if (_isPageLoaded && _webView != null && _webView.CoreWebView2 != null)
                                     {
-                                        _webView.CoreWebView2.ExecuteScriptAsync(string.Format("if(window.onSmartUrlDetected) window.onSmartUrlDetected({{ url: '{0}', text: '{1}' }});", SafeContext.EscapeJson(cleanUrl), SafeContext.EscapeJson(term)));
+                                        string payload = JsonHelper.ToJson(new { url = cleanUrl, text = term });
+                                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onSmartUrlDetected) window.onSmartUrlDetected(" + payload + ");");
                                     }
                                 });
                             }
@@ -376,6 +392,17 @@ namespace XiaoLv.Desktop.UI
             Show();
             Topmost = false;
             Topmost = true;
+            try
+            {
+                var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+                if (hwnd != IntPtr.Zero)
+                {
+                    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+                    BringWindowToTop(hwnd);
+                    SetForegroundWindow(hwnd);
+                }
+            }
+            catch { }
             Activate();
             Focus();
             _webView.Focus();

@@ -24,6 +24,9 @@ namespace XiaoLv.Desktop.UI
         private TextBlock _intentLabelText;
         private Border _statusBadge;
         private TextBlock _statusBadgeText;
+        private Grid _headerGrid;
+        private Grid _inputGrid;
+        private StackPanel _headerActionStack;
         private StackPanel _suggestionPanel;
         private StackPanel _lifelogChipsPanel;
         private readonly System.Collections.Generic.List<string> _suggestions = new System.Collections.Generic.List<string>();
@@ -113,6 +116,9 @@ namespace XiaoLv.Desktop.UI
             {
                 Margin = new Thickness(10, 0, 12, 0)
             };
+            _headerGrid = grid;
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -160,6 +166,8 @@ namespace XiaoLv.Desktop.UI
 
             // 2. 占位提示与输入框容器
             var inputGrid = new Grid();
+            _inputGrid = inputGrid;
+            Grid.SetRow(inputGrid, 0);
             Grid.SetColumn(inputGrid, 1);
 
             string placeholderText = "随手一记... 支持 ¥账目、~专注、mood:心情、+打卡、!待办";
@@ -256,6 +264,7 @@ namespace XiaoLv.Desktop.UI
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(6, 0, 0, 0)
             };
+            _headerActionStack = headerActionStack;
 
             // 快捷一键盖当前时间戳按钮 (🕒 14:35)
             var timeBtn = CreateHeaderActionButton("🕒 " + DateTime.Now.ToString("HH:mm"), "点击一键在输入框前置盖上当前时间戳 (快捷键: Ctrl+T)", () =>
@@ -294,10 +303,10 @@ namespace XiaoLv.Desktop.UI
             headerActionStack.Children.Add(aiBtn);
             headerActionStack.Children.Add(_statusBadge);
 
+            Grid.SetRow(headerActionStack, 0);
             Grid.SetColumn(headerActionStack, 2);
             grid.Children.Add(headerActionStack);
 
-            grid.Height = 48;
             _suggestionPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -378,6 +387,11 @@ namespace XiaoLv.Desktop.UI
                     Close();
                     e.Handled = true;
                 }
+                else if (e.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+                {
+                    PasteAndCleanClipboard();
+                    e.Handled = true;
+                }
                 else if (e.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
                     if (Clipboard.ContainsImage())
@@ -407,6 +421,11 @@ namespace XiaoLv.Desktop.UI
                         }
                         catch { }
                     }
+                }
+                else if (e.Key == Key.M && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                {
+                    TriggerVoiceMode();
+                    e.Handled = true;
                 }
                 else if (e.Key == Key.T && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
@@ -453,11 +472,6 @@ namespace XiaoLv.Desktop.UI
                 else if (e.Key == Key.J && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
                     TriggerAiRefine("takeaways");
-                    e.Handled = true;
-                }
-                else if (e.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
-                {
-                    PasteAndCleanClipboard();
                     e.Handled = true;
                 }
                 else if (e.Key == Key.Up && _suggestions.Count == 0 && (!_isScratchpadMode || _inputBox.CaretIndex == 0))
@@ -549,6 +563,7 @@ namespace XiaoLv.Desktop.UI
 
             Deactivated += (s, e) =>
             {
+                if (_isStickyMode) return;
                 saveDraftAction();
                 Close();
             };
@@ -559,8 +574,8 @@ namespace XiaoLv.Desktop.UI
             Loaded += (s, e) =>
             {
                 _inputBox.Focus();
-                // 自动恢复未完成的草稿，防误关丢灵感
-                if (!string.IsNullOrEmpty(_savedDraft))
+                // 自动恢复未完成的草稿，防误关丢灵感 (图钉便签模式独立维护内容，不混用瞬时速记草稿)
+                if (!_isStickyMode && !string.IsNullOrEmpty(_savedDraft))
                 {
                     if (_savedDraft.Contains("\n"))
                     {
@@ -581,12 +596,30 @@ namespace XiaoLv.Desktop.UI
         {
             if (_isScratchpadMode) return;
             _isScratchpadMode = true;
-            Height = 175;
+            Height = _isStickyMode ? 280 : 185;
+            if (_inputGrid != null)
+            {
+                Grid.SetRow(_inputGrid, 1);
+                Grid.SetColumn(_inputGrid, 0);
+                Grid.SetColumnSpan(_inputGrid, 3);
+                _inputGrid.Margin = new Thickness(2, 4, 2, 10);
+            }
+            if (_headerActionStack != null)
+            {
+                Grid.SetRow(_headerActionStack, 0);
+                Grid.SetColumn(_headerActionStack, 1);
+                Grid.SetColumnSpan(_headerActionStack, 2);
+                _headerActionStack.HorizontalAlignment = HorizontalAlignment.Right;
+            }
+            _placeholder.VerticalAlignment = VerticalAlignment.Top;
+            _placeholder.Margin = new Thickness(4, 6, 0, 0);
             _inputBox.AcceptsReturn = true;
             _inputBox.TextWrapping = TextWrapping.Wrap;
             _inputBox.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
-            _inputBox.Height = 85;
+            _inputBox.Height = _isStickyMode ? 205 : 112;
             _inputBox.VerticalAlignment = VerticalAlignment.Stretch;
+            _inputBox.VerticalContentAlignment = VerticalAlignment.Top;
+            _inputBox.Padding = new Thickness(4, 6, 4, 6);
             _statusBadgeText.Text = "↵ 批量解包入库";
             _statusBadge.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#064e3b"));
             _statusBadge.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10b981"));
@@ -1161,7 +1194,7 @@ namespace XiaoLv.Desktop.UI
             win._isStickyMode = true;
             win._stickyBlockId = blockId ?? "";
             win.Title = "思源外骨骼 · 桌面图钉便签: " + (string.IsNullOrEmpty(title) ? "参考便签" : title);
-            win.Width = 480;
+            win.Width = 600;
             win.Height = 280;
             win.Opacity = 0.96;
             win._rootBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0f172ae6"));

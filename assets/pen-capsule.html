@@ -252,6 +252,7 @@
     .badge-lifelog { background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
     .badge-todo { background: rgba(245, 158, 11, 0.18); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); }
     .badge-card { background: rgba(168, 85, 247, 0.18); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
+    .badge-link { background: rgba(6, 182, 212, 0.18); color: #06b6d4; border: 1px solid rgba(6, 182, 212, 0.4); }
 
     /* 底栏提示 */
     .capsule-footer {
@@ -291,7 +292,7 @@
     <span id="preview-text">正在捕获选区...</span>
     <span id="preview-count" class="preview-count"></span>
   </div>
-  <input id="input-fallback" class="input-fallback" type="text" placeholder="未选中文本，请直接输入内容后按 1~6 分发..." />
+  <input id="input-fallback" class="input-fallback" type="text" placeholder="未选中文本，输入内容后回车或点 1~8 / Alt+1~8 分发..." />
 
   <!-- 3D 拟物微键盘矩阵 (全新功能直达) -->
   <div class="key-grid">
@@ -358,7 +359,7 @@
       activeRadarHit = info;
       const tag = document.querySelector(".header-tag");
       if (tag) {
-        tag.innerHTML = `🔗 已收录: 《${info.docTitle || '相关笔记'}》 (Shift+↵ 贴双链)`;
+        tag.textContent = `🔗 已收录: 《${info.docTitle || '相关笔记'}》 (Shift+↵ 贴双链)`;
         tag.style.background = "rgba(16, 185, 129, 0.28)";
         tag.style.borderColor = "#10b981";
         tag.style.color = "#10b981";
@@ -383,7 +384,7 @@
       activeContactHit = info;
       const tag = document.querySelector(".header-tag");
       if (tag) {
-        tag.innerHTML = `👤 联系人: 《${info.name || '人脉档案'}》 (Shift+↵ 贴档案)`;
+        tag.textContent = `👤 联系人: 《${info.name || '人脉档案'}》 (Shift+↵ 贴档案)`;
         tag.style.background = "rgba(56, 189, 248, 0.28)";
         tag.style.borderColor = "#38bdf8";
         tag.style.color = "#38bdf8";
@@ -408,7 +409,7 @@
       activeSmartUrl = info;
       const tag = document.querySelector(".header-tag");
       if (tag) {
-        tag.innerHTML = `🔗 嵌入超链: [${info.text || '链接'}] (Shift+↵)`;
+        tag.textContent = `🔗 嵌入超链: [${info.text || '链接'}] (Shift+↵)`;
         tag.style.background = "rgba(14, 165, 233, 0.28)";
         tag.style.borderColor = "#0ea5e9";
         tag.style.color = "#38bdf8";
@@ -457,6 +458,16 @@
 
     function updateUIWithText(txt) {
       currentText = (txt || "").trim();
+      activeRadarHit = null;
+      activeContactHit = null;
+      activeSmartUrl = null;
+      const tag = document.querySelector(".header-tag");
+      if (tag) {
+        tag.textContent = "盲打分发";
+        tag.style.cssText = "";
+        tag.title = "";
+        tag.onclick = null;
+      }
       const pCard = document.getElementById("preview-card");
       const pText = document.getElementById("preview-text");
       const pCount = document.getElementById("preview-count");

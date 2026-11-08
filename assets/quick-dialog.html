@@ -694,7 +694,6 @@
       border-color: #818CF8;
       color: #312E81;
     }
-    }
   </style>
 </head>
 <body>
@@ -775,6 +774,15 @@
     let selectedIndex = 0;
     let filteredItems = [];
 
+    function escapeHtml(str) {
+      return String(str == null ? "" : str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     function decodeBase64Utf8(str) {
       try {
         const binary = atob(str);
@@ -790,13 +798,28 @@
 
     // Initialize State from URL Hash or Defaults
     function initState() {
+      selectedIndex = 0;
       if (window.location.hash && window.location.hash.length > 1) {
         try {
           const rawHash = window.location.hash.substring(1);
           const jsonText = decodeBase64Utf8(rawHash);
           if (jsonText) {
             const parsed = JSON.parse(jsonText);
-            state = { ...state, ...parsed };
+            state = {
+              title: "思源小驴",
+              subtitle: "快捷交互",
+              badge: "小驴交互",
+              icon: "⚡",
+              mode: "select",
+              outputVar: "选中值",
+              stats: "",
+              items: [],
+              tags: [],
+              defaultValue: "",
+              multiline: false,
+              placeholder: "在此输入内容...",
+              ...parsed
+            };
           }
         } catch (e) {
           console.error("State parse error:", e);
@@ -814,17 +837,19 @@
 
       const iconEl = document.getElementById("dialog-icon");
       if (state.icon && (state.icon.includes('/') || state.icon.endsWith('.png') || state.icon.endsWith('.svg'))) {
-        iconEl.innerHTML = `<img src="${state.icon}" class="brand-logo-img" alt="" onerror="this.outerHTML='⚡';" />`;
+        iconEl.innerHTML = `<img src="${escapeHtml(state.icon)}" class="brand-logo-img" alt="" onerror="this.outerHTML='⚡';" />`;
       } else if (state.icon) {
         iconEl.textContent = state.icon;
       } else {
         iconEl.innerHTML = `<img src="icons/xiaolv-master-logo.svg" alt="思源小驴" class="brand-logo-img" onerror="this.outerHTML='⚡';" />`;
       }
 
+      const sEl = document.getElementById("dialog-stats");
       if (state.stats) {
-        const sEl = document.getElementById("dialog-stats");
         sEl.textContent = state.stats;
         sEl.style.display = "flex";
+      } else if (sEl) {
+        sEl.style.display = "none";
       }
 
       if (state.mode === "input") {
@@ -833,6 +858,7 @@
         renderSelectMode();
       }
     }
+    window.initState = initState;
 
     // ==========================================
     // RENDER: SELECT MODE
@@ -845,8 +871,9 @@
       renderCards();
 
       const searchInput = document.getElementById("search-input");
+      searchInput.value = "";
       if (state.placeholder) searchInput.placeholder = state.placeholder;
-      searchInput.addEventListener("input", (e) => {
+      searchInput.oninput = (e) => {
         const val = e.target.value.trim().toLowerCase();
         if (!val) {
           filteredItems = [...(state.items || [])];
@@ -860,7 +887,7 @@
         }
         selectedIndex = 0;
         renderCards();
-      });
+      };
 
       searchInput.focus();
     }
@@ -875,20 +902,20 @@
       let html = "";
       filteredItems.forEach((it, idx) => {
         const isSel = idx === selectedIndex;
-        let iconHtml = it.icon || "⚡";
+        let iconHtml = escapeHtml(it.icon || "⚡");
         if (it.icon && (it.icon.includes('/') || it.icon.endsWith('.png') || it.icon.endsWith('.svg'))) {
-          iconHtml = `<img src="${it.icon}" class="plugin-icon-img" alt="" onerror="this.outerHTML='⚡';" />`;
+          iconHtml = `<img src="${escapeHtml(it.icon)}" class="plugin-icon-img" alt="" onerror="this.outerHTML='⚡';" />`;
         }
-        const badgeHtml = it.badge ? `<span class="badge ${it.badgeCls || 'badge-plugin'}">${it.badge}</span>` : "";
-        const hotkeyHtml = it.hotkey ? `<span class="hotkey-pill">${it.hotkey}</span>` : (idx < 9 ? `<span class="hotkey-pill">${idx + 1}</span>` : "");
+        const badgeHtml = it.badge ? `<span class="badge ${escapeHtml(it.badgeCls || 'badge-plugin')}">${escapeHtml(it.badge)}</span>` : "";
+        const hotkeyHtml = it.hotkey ? `<span class="hotkey-pill">${escapeHtml(it.hotkey)}</span>` : (idx < 9 ? `<span class="hotkey-pill">${idx + 1}</span>` : "");
 
         html += `
           <div class="bento-card ${isSel ? 'selected' : ''}" data-idx="${idx}" onclick="selectItemByIdx(${idx})">
             <div class="card-left">
               <div class="card-icon">${iconHtml}</div>
               <div class="card-text">
-                <div class="card-title">${it.title}</div>
-                ${it.desc ? `<div class="card-desc">${it.desc}</div>` : ''}
+                <div class="card-title">${escapeHtml(it.title)}</div>
+                ${it.desc ? `<div class="card-desc">${escapeHtml(it.desc)}</div>` : ''}
               </div>
             </div>
             <div class="card-right">
@@ -917,31 +944,39 @@
       inputWrap.style.display = "flex";
 
       // Render Tags
+      const tagContainer = document.getElementById("tag-chips-container");
       if (state.tags && state.tags.length > 0) {
-        const tagContainer = document.getElementById("tag-chips-container");
         tagContainer.style.display = "flex";
-        tagContainer.innerHTML = state.tags.map(t => `<button class="chip-btn" onclick="insertTag('${t}')">${t}</button>`).join("");
+        tagContainer.innerHTML = state.tags.map((t, i) => `<button class="chip-btn" onclick="insertTagByIdx(${i})">${escapeHtml(t)}</button>`).join("");
+      } else if (tagContainer) {
+        tagContainer.style.display = "none";
+        tagContainer.innerHTML = "";
       }
 
       // Render Main Input
       const container = document.getElementById("input-container");
       if (state.multiline) {
-        container.innerHTML = `<textarea class="main-input" id="main-text" placeholder="${state.placeholder || ''}" rows="6">${state.defaultValue || ''}</textarea>`;
+        container.innerHTML = `<textarea class="main-input" id="main-text" placeholder="${escapeHtml(state.placeholder || '')}" rows="6">${escapeHtml(state.defaultValue || '')}</textarea>`;
       } else {
-        container.innerHTML = `<input type="text" class="main-input" id="main-text" placeholder="${state.placeholder || ''}" value="${state.defaultValue || ''}" />`;
+        container.innerHTML = `<input type="text" class="main-input" id="main-text" placeholder="${escapeHtml(state.placeholder || '')}" value="${escapeHtml(state.defaultValue || '')}" />`;
       }
 
       const inputEl = document.getElementById("main-text");
       inputEl.focus();
 
-      inputEl.addEventListener("keydown", (e) => {
+      inputEl.onkeydown = (e) => {
         if (e.key === "Enter") {
           if (!state.multiline || e.ctrlKey) {
             e.preventDefault();
             submitInput();
           }
         }
-      });
+      };
+    }
+
+    function insertTagByIdx(idx) {
+      if (!state.tags || idx < 0 || idx >= state.tags.length) return;
+      insertTag(state.tags[idx]);
     }
 
     function insertTag(tag) {
@@ -1031,6 +1066,7 @@
     }
 
     window.addEventListener("DOMContentLoaded", initState);
+    window.addEventListener("hashchange", initState);
   </script>
 </body>
 </html>

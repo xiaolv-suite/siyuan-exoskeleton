@@ -152,8 +152,10 @@ namespace XiaoLv.Desktop.UI
                 Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#f8fafc")),
                 TextWrapping = TextWrapping.Wrap,
                 LineHeight = 22,
-                Margin = new Thickness(4, 8, 4, 12)
+                Margin = new Thickness(4, 8, 4, 12),
+                Cursor = Cursors.Hand
             };
+            _questionText.MouseLeftButtonDown += (s, e) => FlipCard();
             cardBody.Children.Add(_questionText);
 
             _flipHintText = new TextBlock
@@ -310,7 +312,7 @@ namespace XiaoLv.Desktop.UI
 
                 Task.Delay(1400).ContinueWith(t =>
                 {
-                    Dispatcher.Invoke(() => Close());
+                    Dispatcher.Invoke(() => { try { if (IsLoaded) Close(); } catch { } });
                 });
                 return;
             }
@@ -323,6 +325,7 @@ namespace XiaoLv.Desktop.UI
             _answerText.Text = card.Answer;
 
             _isAnswerFlipped = false;
+            _flipHintText.Text = "[ 按空格键或点击卡片翻看答案 ]";
             _flipHintText.Visibility = Visibility.Visible;
             _answerBox.Visibility = Visibility.Collapsed;
             _ratingPanel.Visibility = Visibility.Collapsed;

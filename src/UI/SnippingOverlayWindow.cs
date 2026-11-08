@@ -124,10 +124,26 @@ namespace XiaoLv.Desktop.UI
                 ReleaseMouseCapture();
 
                 var endPoint = e.GetPosition(this);
-                int screenX = (int)(Left + Math.Min(_startPoint.X, endPoint.X));
-                int screenY = (int)(Top + Math.Min(_startPoint.Y, endPoint.Y));
-                int width = (int)Math.Abs(endPoint.X - _startPoint.X);
-                int height = (int)Math.Abs(endPoint.Y - _startPoint.Y);
+                double dipX1 = Math.Min(_startPoint.X, endPoint.X);
+                double dipY1 = Math.Min(_startPoint.Y, endPoint.Y);
+                double dipX2 = Math.Max(_startPoint.X, endPoint.X);
+                double dipY2 = Math.Max(_startPoint.Y, endPoint.Y);
+
+                int screenX = (int)(Left + dipX1);
+                int screenY = (int)(Top + dipY1);
+                int width = (int)Math.Abs(dipX2 - dipX1);
+                int height = (int)Math.Abs(dipY2 - dipY1);
+
+                try
+                {
+                    var p1 = PointToScreen(new Point(dipX1, dipY1));
+                    var p2 = PointToScreen(new Point(dipX2, dipY2));
+                    screenX = (int)Math.Round(p1.X);
+                    screenY = (int)Math.Round(p1.Y);
+                    width = (int)Math.Round(Math.Abs(p2.X - p1.X));
+                    height = (int)Math.Round(Math.Abs(p2.Y - p1.Y));
+                }
+                catch { }
 
                 Close();
 

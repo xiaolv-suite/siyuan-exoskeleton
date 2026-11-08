@@ -1354,6 +1354,81 @@ async function main() {
   const isWebhookIngestOk = captureResp && captureResp.code === 0 && !!webhookNoteRow;
   logStep("Step 7.57: Quicker/AHK 本地 Webhook 免切窗速记入库 (POST /api/capture) 断言", isWebhookIngestOk, `入库块 ID: ${webhookNoteRow?.id} · 响应: ${JSON.stringify(captureResp)}`);
 
+  // Step 7.58: Test TableToAvConverter (Markdown/TSV Parsing, Column Type Deduction & AV Schema Mapping)
+  const tableScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $conv = $asm.GetType('XiaoLv.Desktop.Core.TableToAvConverter');
+
+    $t = [char]9;
+    $crlf = [Environment]::NewLine;
+    $rawTable = '姓名' + $t + '年龄' + $t + '入职日期' + $t + '已转正' + $t + '个人主页' + $crlf + '张三' + $t + '28' + $t + '2024-03-15' + $t + '是' + $t + 'https://example.com/zhang' + $crlf + '李四' + $t + '32' + $t + '2022-08-01' + $t + 'true' + $t + 'https://example.com/li';
+    $mParse = $conv.GetMethod('ParseTable', [System.Reflection.BindingFlags]'Public,Static');
+    $struct = $mParse.Invoke($null, @($rawTable));
+    
+    $cols = $struct.Columns;
+    $types = ($cols[0].DetectedType + '|' + $cols[1].DetectedType + '|' + $cols[2].DetectedType + '|' + $cols[3].DetectedType + '|' + $cols[4].DetectedType);
+
+    $mFmt = $conv.GetMethod('FormatBeautifulMarkdownTable', [System.Reflection.BindingFlags]'Public,Static');
+    $prettyMd = $mFmt.Invoke($null, @($struct));
+
+    $mAv = $conv.GetMethod('BuildSiYuanAvDataJson', [System.Reflection.BindingFlags]'Public,Static');
+    $avDict = $mAv.Invoke($null, @($struct, '人员数据视图'));
+    $hasAvCols = $avDict.ContainsKey('columns') -and ($avDict['columns'].Count -eq 5);
+
+    $okTypes = ($types -eq 'text|number|date|checkbox|url');
+    $okAlign = $prettyMd.Contains('---:') -and $prettyMd.Contains(':---:') -and $prettyMd.Contains(':---');
+    Write-Output ($okTypes.ToString() + '|' + $okAlign.ToString() + '|' + $hasAvCols.ToString());
+  `;
+  const tableRes = runPs(tableScript);
+  const isTableOk = tableRes.includes("True|True|True");
+  logStep("Step 7.58: 表格智能解析、列类型推导(数值/日期/布尔/超链)与属性视图AV映射断言", isTableOk, `解析与对齐断言: ${tableRes.trim()}`);
+
+  // Step 7.59: Test Academic PDF Context Perception & Deep Jump Citation Anchor
+  const pdfCtxScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $snapType = $asm.GetType('XiaoLv.Desktop.Core.ContextSnapshot');
+    $snap = [Activator]::CreateInstance($snapType);
+    $snap.AppDisplayName = 'SumatraPDF';
+    $snap.PdfPath = 'D:\\Papers\\Transformer_Attention.pdf';
+    $snap.PdfPage = 7;
+    $citation = $snap.FormattedCitation;
+
+    $okPdfCitation = $citation.Contains('Transformer_Attention.pdf') -and $citation.Contains('第 7 页') -and $citation.Contains('siyuan-exoskeleton://open-pdf?path=') -and $citation.Contains('page=7');
+    Write-Output ($okPdfCitation.ToString());
+  `;
+  const pdfCtxRes = runPs(pdfCtxScript);
+  const isPdfCtxOk = pdfCtxRes.includes("True");
+  logStep("Step 7.59: 本地学术 PDF 路径与页码深度感知与原位跳转深链生成断言", isPdfCtxOk, `PDF深度引用断言: ${pdfCtxRes.trim()}`);
+
+  // Step 7.60: Test CLI Dispatcher Flag Routing (-todo / -card / -panel / -status)
+  const cliScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $prog = $asm.GetType('XiaoLv.Desktop.Program');
+    $mParse = $prog.GetMethod('ParseCommandLineOrProtocol', [System.Reflection.BindingFlags]'NonPublic,Static');
+
+    $arrTodo = [string[]]@('-todo', '提交金雨茂物自查表');
+    $resTodo = $mParse.Invoke($null, (,$arrTodo));
+    $arrCard = [string[]]@('-card', '什么是自注意力机制 // 矩阵点积计算');
+    $resCard = $mParse.Invoke($null, (,$arrCard));
+    $arrPanel = [string[]]@('-panel');
+    $resPanel = $mParse.Invoke($null, (,$arrPanel));
+    $arrStatus = [string[]]@('-status');
+    $resStatus = $mParse.Invoke($null, (,$arrStatus));
+
+    $okTodo = $resTodo.Contains('\"cmd\":\"SYS\"') -and $resTodo.Contains('!提交金雨茂物自查表');
+    $okCard = $resCard.Contains('\"cmd\":\"SYS\"') -and $resCard.Contains('?什么是自注意力机制');
+    $okPanel = ($resPanel -eq 'open_panel');
+    $okStatus = ($resStatus -eq 'status');
+
+    Write-Output ($okTodo.ToString() + '|' + $okCard.ToString() + '|' + $okPanel.ToString() + '|' + $okStatus.ToString());
+  `;
+  const cliRes = runPs(cliScript);
+  const isCliOk = cliRes.includes("True|True|True|True");
+  logStep("Step 7.60: 命令行 CLI 极速调度器 (-todo / -card / -panel / -status) 路由穿透断言", isCliOk, `CLI调度断言: ${cliRes.trim()}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

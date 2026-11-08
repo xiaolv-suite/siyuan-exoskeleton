@@ -2560,7 +2560,8 @@
       <span class="intent-chip" onclick="insertPrefix('xmind:')" title="输入 xmind: 检索本地思维导图并流式透视层级树生成思源大纲"><b>🧠</b> XMind</span>
       <span class="intent-chip" onclick="insertPrefix('listary:')" title="直通本地 Listary 极速全盘文件检索"><b>🔍</b> Listary</span>
       <span class="intent-chip" onclick="insertPrefix('zotero:')" title="唤起本地 Zotero 学术文献管理库"><b>📖</b> Zotero</span>
-      <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
+	      <span class="intent-chip" onclick="insertPrefix('tab:')" title="输入 tab: 检索全库数据表格，支持排版美化与1键导出Excel"><b>📊</b> 表格透视</span>
+	      <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
       <span class="intent-chip" onclick="insertPrefix('c:')" title="输入 c: 实时查看并调用最近 30 条清洗剪贴板；支持 c:url/c:code/c:table/c:cite/c:math/c:img 分类筛选"><b>c:</b> 剪贴板</span>
       <span class="intent-chip" onclick="insertPrefix(':')" title="输入 : 快速调用简码扩词与动态模板变量"><b>:</b> 简码</span>
@@ -4134,6 +4135,18 @@
         return;
       }
 
+      // tab: 或 table: 模式：全库表格与属性视图秒搜与排版转换
+      if (q.startsWith("tab:") || q.startsWith("tab：") || q.startsWith("table:") || q.startsWith("table：")) {
+        const subKw = q.replace(/^(tab:|tab：|table:|table：)/, "").trim();
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'searchTables', keyword: subKw }));
+        } else {
+          filteredItems = [];
+          renderItems();
+        }
+        return;
+      }
+
       // office: / word: / excel: / ppt: / pdf: / epub: / xmind: 模式：全库本地文档极速检索与穿透
       if (q.startsWith("office:") || q.startsWith("office：") || q.startsWith("word:") || q.startsWith("word：") || q.startsWith("excel:") || q.startsWith("excel：") || q.startsWith("ppt:") || q.startsWith("ppt：") || q.startsWith("pdf:") || q.startsWith("pdf：") || q.startsWith("epub:") || q.startsWith("epub：") || q.startsWith("xmind:") || q.startsWith("xmind：")) {
         let subKw = q.replace(/^(office:|office：|word:|word：|excel:|excel：|ppt:|ppt：|pdf:|pdf：|epub:|epub：|xmind:|xmind：)/, "").trim();
@@ -5140,6 +5153,10 @@
       }
       if (item.id === "syh") {
         renderHealthDoctorInspector(item);
+        return;
+      }
+      if (item.isTableBlock) {
+        inspectTableBlock(item);
         return;
       }
       if (item.isCodeSnippet) {
@@ -7565,6 +7582,115 @@
     function exportCodeFile(code, lang, title) {
       if (window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({ op: 'exportSourceFile', code: code, lang: lang, docTitle: title }));
+      }
+    }
+
+    window.onTablesLoaded = function(resp) {
+      if (!resp || !Array.isArray(resp.data)) return;
+      const items = resp.data;
+      filteredItems = items.map(tbl => {
+        const isAv = tbl.type === 'av';
+        const rawContent = (tbl.content || tbl.markdown || "").trim();
+        const firstLine = rawContent.split('\n')[0] || "表格数据块";
+        const cleanTitle = firstLine.replace(/\|/g, " ").trim();
+        return {
+          id: `tab_${tbl.id}`,
+          group: "search",
+          title: (isAv ? "📊 [属性视图] " : "📑 [数据表格] ") + (cleanTitle.length > 36 ? cleanTitle.substring(0, 36) + "..." : cleanTitle),
+          desc: `文档: ${tbl.hpath || '未命名'} · 块ID: ${tbl.id} (回车透视，Shift+↵ 原位回贴)`,
+          hotkey: "Enter",
+          iconType: isAv ? "database" : "table",
+          iconColor: "var(--cyber-sky)",
+          badge: isAv ? "AV" : "Table",
+          badgeCls: "badge-native",
+          isTableBlock: true,
+          blockId: tbl.id,
+          rootId: tbl.root_id,
+          tableData: tbl
+        };
+      });
+      selectedIndex = 0;
+      renderItems();
+      if (filteredItems.length > 0) {
+        inspectTableBlock(filteredItems[0]);
+      }
+    };
+
+    function inspectTableBlock(item) {
+      if (!item || !item.tableData) return;
+      const tbl = item.tableData;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'parseTableData',
+          rawText: tbl.markdown || tbl.content || "",
+          title: item.title || "数据表格"
+        }));
+      }
+    }
+
+    window.onTableDataParsed = function(res) {
+      if (!res || !res.data) return;
+      const d = res.data;
+      const struct = d.structure || {};
+      const cols = struct.Columns || [];
+      const rows = struct.Rows || [];
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+
+      const colChips = cols.map(c => `<span style="display: inline-block; padding: 2px 6px; font-size: 10px; border-radius: 4px; background: rgba(56,189,248,0.12); color: var(--cyber-sky); margin-right: 4px; border: 1px solid rgba(56,189,248,0.25);"><b>${escapeHtml(c.Header)}</b> (${c.DetectedType})</span>`).join("");
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">📊 数据表格与属性视图透视</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${cols.length} 列 · ${rows.length} 行</span>
+          </div>
+          <div class="inspector-doc-title">📑 结构大纲透视 (${cols.length} 字段)</div>
+        </div>
+        <div class="inspector-body" style="padding: 12px; max-height: 400px; overflow-y: auto;">
+          <div style="font-size: 11px; padding: 8px 10px; background: rgba(56,189,248,0.06); border-radius: 6px; border: 1px dashed var(--border-hairline); margin-bottom: 10px; line-height: 1.6;">
+            <div>🏷️ <b>字段类型智能推导</b>: ${colChips || '<span style="color:var(--text-muted);">空表格</span>'}</div>
+          </div>
+          <div style="max-height: 280px; overflow: auto; border: 1px solid var(--border-hairline); border-radius: 6px; background: rgba(0,0,0,0.25);">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11.5px; text-align: left;">
+              <thead>
+                <tr style="background: rgba(255,255,255,0.06); border-bottom: 1px solid var(--border-hairline);">
+                  ${cols.map(c => `<th style="padding: 6px 10px; font-weight: 600; color: var(--cyber-sky);">${escapeHtml(c.Header)}</th>`).join("")}
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.slice(0, 50).map((r, ri) => `
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); ${ri % 2 === 1 ? 'background: rgba(255,255,255,0.02);' : ''}">
+                    ${cols.map((c, ci) => `<td style="padding: 5px 10px; color: var(--text-primary); white-space: nowrap;">${escapeHtml(r[ci] || "")}</td>`).join("")}
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="pasteAtCursor('${escapeQuote(d.beautifulMarkdown)}')" title="在外部活动光标处原位粘贴美化对齐的标准 Markdown 表格 (Shift+Enter)">⚡ Shift+↵ 贴美化表格</button>
+            <button class="inspector-dock-btn" onclick="exportTableToXlsx('${escapeQuote(d.beautifulMarkdown)}')" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="1 键逆向生成标准 Excel .xlsx 文件并在外部秒开">📊 导出Excel秒开</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(d.beautifulMarkdown)}', '已复制标准 Markdown 表格！')">📋 复制表格</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(d.csv)}', '已复制 CSV 数据！')">📑 复制CSV</button>
+            <button class="inspector-dock-btn" onclick="appendTableToDailyNote('${escapeQuote(d.beautifulMarkdown)}')" title="将此表格追加记录进今日日记">📥 写入今日日记</button>
+          </div>
+        </div>
+      `;
+    };
+
+    function exportTableToXlsx(markdown) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'exportTableStructureXlsx', rawText: markdown, title: '数据表格' }));
+      }
+    }
+
+    function appendTableToDailyNote(markdown) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'quickNote', text: markdown }));
+        showToast("✓ 表格已追加至今日日记！");
       }
     }
 

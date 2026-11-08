@@ -427,45 +427,61 @@ namespace XiaoLv.Desktop
                     return;
                 }
 
-                if (clean.Equals("open_panel", StringComparison.OrdinalIgnoreCase) || clean.Equals("open", StringComparison.OrdinalIgnoreCase))
-                {
-                    _bentoWindow.ShowPanel();
-                    return;
-                }
-                if (clean.Equals("open_pen", StringComparison.OrdinalIgnoreCase) || clean.Equals("pen", StringComparison.OrdinalIgnoreCase))
-                {
-                    string selected = SelectionHelper.CaptureSelectedText(200);
-                    _capsuleWindow.ShowNearCursor(selected);
-                    return;
-                }
+	                if (clean.Equals("open_panel", StringComparison.OrdinalIgnoreCase) || clean.Equals("open", StringComparison.OrdinalIgnoreCase) || clean.Equals("panel", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    _bentoWindow.ShowPanel();
+	                    return;
+	                }
+	                if (clean.Equals("open_pen", StringComparison.OrdinalIgnoreCase) || clean.Equals("pen", StringComparison.OrdinalIgnoreCase) || clean.Equals("context_pen", StringComparison.OrdinalIgnoreCase) || clean.Equals("capsule", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    string selected = SelectionHelper.CaptureSelectedText(200);
+	                    _capsuleWindow.ShowNearCursor(selected);
+	                    return;
+	                }
 
-                if (clean.Equals("ocr", StringComparison.OrdinalIgnoreCase) || clean.Equals("syocr", StringComparison.OrdinalIgnoreCase))
-                {
-                    StartSnippingAndOcr();
-                    return;
-                }
-                if (clean.Equals("quick", StringComparison.OrdinalIgnoreCase))
-                {
-                    PromptQuickCapture();
-                    return;
-                }
-                if (clean.Equals("fsrs", StringComparison.OrdinalIgnoreCase) || clean.Equals("review", StringComparison.OrdinalIgnoreCase))
-                {
-                    StartFsrsReview();
-                    return;
-                }
-                if (clean.Equals("toast", StringComparison.OrdinalIgnoreCase))
-                {
-                    ShowInteractiveToast();
-                    return;
-                }
-                if (clean.Equals("webclip", StringComparison.OrdinalIgnoreCase) || clean.Equals("clip", StringComparison.OrdinalIgnoreCase) || clean.Equals("g", StringComparison.OrdinalIgnoreCase))
-                {
-                    StartWebClip();
-                    return;
-                }
+	                if (clean.Equals("ocr", StringComparison.OrdinalIgnoreCase) || clean.Equals("syocr", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    StartSnippingAndOcr();
+	                    return;
+	                }
+	                if (clean.Equals("quick", StringComparison.OrdinalIgnoreCase) || clean.Equals("quick_note", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    PromptQuickCapture();
+	                    return;
+	                }
+	                if (clean.Equals("fsrs", StringComparison.OrdinalIgnoreCase) || clean.Equals("review", StringComparison.OrdinalIgnoreCase) || clean.Equals("fsrs_review", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    StartFsrsReview();
+	                    return;
+	                }
+	                if (clean.Equals("toast", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    ShowInteractiveToast();
+	                    return;
+	                }
+	                if (clean.Equals("webclip", StringComparison.OrdinalIgnoreCase) || clean.Equals("clip", StringComparison.OrdinalIgnoreCase) || clean.Equals("web_clip", StringComparison.OrdinalIgnoreCase) || clean.Equals("g", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    StartWebClip();
+	                    return;
+	                }
+	                if (clean.Equals("status", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    SafeNotify("思源外骨骼", "✓ 桌面助手常驻运行中 (PID=" + System.Diagnostics.Process.GetCurrentProcess().Id + ")，思源内核=" + (SiYuanGuardian.IsAlive ? "在线" : "离线"));
+	                    return;
+	                }
+	                if (clean.Equals("sync_siyuan", StringComparison.OrdinalIgnoreCase) || clean.Equals("sync", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    ThreadPool.QueueUserWorkItem(async s =>
+	                    {
+	                        var res = await SiYuanClient.PostAsync("/api/sync/performSync", new { });
+	                        bool ok = res != null && res.Success;
+	                        if (ok) SoundPlayerHelper.PlayFeedback();
+	                        SafeNotify("思源外骨骼 · 云同步", ok ? "✓ 思源云端增量数据同步已完成！" : "⚠️ 同步响应超时或离线");
+	                    });
+	                    return;
+	                }
 
-                // 支持 siyuan-exoskeleton:// 与 xiaolv:// 外部协议或直接传递指令码
+	                // 支持 siyuan-exoskeleton:// 与 xiaolv:// 外部协议或直接传递指令码
                 var cmd = clean;
                 string text = "";
                 if (clean.StartsWith("siyuan-exoskeleton://", StringComparison.OrdinalIgnoreCase) || clean.StartsWith("xiaolv://", StringComparison.OrdinalIgnoreCase))
@@ -722,11 +738,13 @@ namespace XiaoLv.Desktop
                             ctx.SetVarValue("来源标题", snapshot.CleanTitle);
                             ctx.SetVarValue("来源链接", snapshot.Url);
                             ctx.SetVarValue("项目名称", snapshot.ProjectName);
-                            ctx.SetVarValue("活动文件", snapshot.ActiveFileName);
-                            ctx.SetVarValue("Git分支", snapshot.GitBranch);
-                            ctx.SetVarValue("Git仓库", snapshot.GitRepo);
-                        }
-                        ctx.OnNotificationRequested += (t, m) => SafeNotify(t, m);
+	                            ctx.SetVarValue("活动文件", snapshot.ActiveFileName);
+	                            ctx.SetVarValue("Git分支", snapshot.GitBranch);
+	                            ctx.SetVarValue("Git仓库", snapshot.GitRepo);
+	                            if (snapshot.PdfPage > 0) ctx.SetVarValue("PDF页码", snapshot.PdfPage);
+	                            if (!string.IsNullOrEmpty(snapshot.PdfPath)) ctx.SetVarValue("PDF路径", snapshot.PdfPath);
+	                        }
+	                        ctx.OnNotificationRequested += (t, m) => SafeNotify(t, m);
                         SmartCaptureMain.Exec(ctx);
                     }
                 });
@@ -845,10 +863,58 @@ namespace XiaoLv.Desktop
             {
                 return "sendfile:" + args[1].Trim();
             }
-            if ((arg.Equals("-inspect", StringComparison.OrdinalIgnoreCase) || arg.Equals("--inspect", StringComparison.OrdinalIgnoreCase) || arg.Equals("-preview", StringComparison.OrdinalIgnoreCase)) && args.Length > 1)
-            {
-                return "inspect:" + args[1].Trim();
-            }
+	            if ((arg.Equals("-inspect", StringComparison.OrdinalIgnoreCase) || arg.Equals("--inspect", StringComparison.OrdinalIgnoreCase) || arg.Equals("-preview", StringComparison.OrdinalIgnoreCase)) && args.Length > 1)
+	            {
+	                return "inspect:" + args[1].Trim();
+	            }
+
+	            // 快捷 CLI 单标志指令映射
+	            if (arg.Equals("-panel", StringComparison.OrdinalIgnoreCase) || arg.Equals("--panel", StringComparison.OrdinalIgnoreCase) ||
+	                arg.Equals("-master", StringComparison.OrdinalIgnoreCase) || arg.Equals("--master", StringComparison.OrdinalIgnoreCase))
+	            {
+	                return "open_panel";
+	            }
+	            if (arg.Equals("-pen", StringComparison.OrdinalIgnoreCase) || arg.Equals("--pen", StringComparison.OrdinalIgnoreCase) ||
+	                arg.Equals("-capsule", StringComparison.OrdinalIgnoreCase) || arg.Equals("--capsule", StringComparison.OrdinalIgnoreCase))
+	            {
+	                return "context_pen";
+	            }
+	            if (arg.Equals("-quick", StringComparison.OrdinalIgnoreCase) || arg.Equals("--quick", StringComparison.OrdinalIgnoreCase))
+	            {
+	                return "quick_note";
+	            }
+	            if (arg.Equals("-fsrs", StringComparison.OrdinalIgnoreCase) || arg.Equals("--fsrs", StringComparison.OrdinalIgnoreCase))
+	            {
+	                return "fsrs_review";
+	            }
+	            if (arg.Equals("-clip", StringComparison.OrdinalIgnoreCase) || arg.Equals("--clip", StringComparison.OrdinalIgnoreCase))
+	            {
+	                return "web_clip";
+	            }
+	            if (arg.Equals("-sync", StringComparison.OrdinalIgnoreCase) || arg.Equals("--sync", StringComparison.OrdinalIgnoreCase))
+	            {
+	                return "sync_siyuan";
+	            }
+	            if (arg.Equals("-status", StringComparison.OrdinalIgnoreCase) || arg.Equals("--status", StringComparison.OrdinalIgnoreCase))
+	            {
+	                return "status";
+	            }
+
+	            // 快捷 CLI 带参数指令映射 (-note / -todo / -card)
+	            if ((arg.Equals("-note", StringComparison.OrdinalIgnoreCase) || arg.Equals("--note", StringComparison.OrdinalIgnoreCase) ||
+	                 arg.Equals("-add", StringComparison.OrdinalIgnoreCase) || arg.Equals("--add", StringComparison.OrdinalIgnoreCase)) && args.Length > 1)
+	            {
+	                return JsonHelper.ToJson(new { cmd = "SYS", text = args[1].Trim() });
+	            }
+	            if ((arg.Equals("-todo", StringComparison.OrdinalIgnoreCase) || arg.Equals("--todo", StringComparison.OrdinalIgnoreCase) ||
+	                 arg.Equals("-task", StringComparison.OrdinalIgnoreCase) || arg.Equals("--task", StringComparison.OrdinalIgnoreCase)) && args.Length > 1)
+	            {
+	                return JsonHelper.ToJson(new { cmd = "SYS", text = "!" + args[1].Trim() });
+	            }
+	            if ((arg.Equals("-card", StringComparison.OrdinalIgnoreCase) || arg.Equals("--card", StringComparison.OrdinalIgnoreCase)) && args.Length > 1)
+	            {
+	                return JsonHelper.ToJson(new { cmd = "SYS", text = "?" + args[1].Trim() });
+	            }
 
             string cmd = "";
             string paramText = "";

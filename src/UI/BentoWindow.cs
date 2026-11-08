@@ -535,25 +535,106 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
-                // 3.45 纯净代码片段本地临时导出秒开
-                if (op.Equals("exportSourceFile", StringComparison.OrdinalIgnoreCase))
-                {
-                    string code = JsonHelper.GetString(msg, "code");
-                    string lang = JsonHelper.GetString(msg, "lang");
-                    string title = JsonHelper.GetString(msg, "docTitle");
+	                // 3.45 纯净代码片段本地临时导出秒开
+	                if (op.Equals("exportSourceFile", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    string code = JsonHelper.GetString(msg, "code");
+	                    string lang = JsonHelper.GetString(msg, "lang");
+	                    string title = JsonHelper.GetString(msg, "docTitle");
 
-                    ThreadPool.QueueUserWorkItem(s =>
-                    {
-                        string target = CodeSnippetManager.ExportAndOpenSourceFile(code, lang, title);
-                        if (!string.IsNullOrEmpty(target) && OnNotificationRequested != null)
-                        {
-                            OnNotificationRequested("思源外骨骼 · 源码秒开", "✓ 已生成 " + Path.GetFileName(target) + " 并在本地开发工具中秒开！");
-                        }
-                    });
-                    return;
-                }
+	                    ThreadPool.QueueUserWorkItem(s =>
+	                    {
+	                        string target = CodeSnippetManager.ExportAndOpenSourceFile(code, lang, title);
+	                        if (!string.IsNullOrEmpty(target) && OnNotificationRequested != null)
+	                        {
+	                            OnNotificationRequested("思源外骨骼 · 源码秒开", "✓ 已生成 " + Path.GetFileName(target) + " 并在本地开发工具中秒开！");
+	                        }
+	                    });
+	                    return;
+	                }
 
-                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
+	                // 3.48 全库表格与属性视图秒搜与解析 (tab: / table: 语法)
+	                if (op.Equals("searchTables", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    string kw = JsonHelper.GetString(msg, "keyword");
+	                    ThreadPool.QueueUserWorkItem(async s =>
+	                    {
+	                        try
+	                        {
+	                            string safeLike = (kw ?? "").Replace("'", "''");
+	                            string sql = string.IsNullOrEmpty(safeLike)
+	                                ? "SELECT id, root_id, content, markdown, hpath, type, updated FROM blocks WHERE type IN ('t', 'av') ORDER BY updated DESC LIMIT 25"
+	                                : "SELECT id, root_id, content, markdown, hpath, type, updated FROM blocks WHERE type IN ('t', 'av') AND (content LIKE '%" + safeLike + "%' OR markdown LIKE '%" + safeLike + "%') ORDER BY updated DESC LIMIT 25";
+
+	                            var rows = await SiYuanClient.SqlAsync(sql);
+	                            Dispatcher.Invoke(() =>
+	                            {
+	                                if (_webView != null && _webView.CoreWebView2 != null)
+	                                {
+	                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onTablesLoaded) window.onTablesLoaded(" + JsonHelper.ToJson(new { code = 0, data = rows }) + ");");
+	                                }
+	                            });
+	                        }
+	                        catch { }
+	                    });
+	                    return;
+	                }
+
+		                // 3.49 表格数据结构解析与美化转换 (parseTableData)
+		                if (op.Equals("parseTableData", StringComparison.OrdinalIgnoreCase))
+		                {
+		                    string rawTableText = JsonHelper.GetString(msg, "rawText");
+		                    string title = JsonHelper.GetString(msg, "title", "数据表格");
+		                    ThreadPool.QueueUserWorkItem(s =>
+		                    {
+		                        try
+		                        {
+		                            var parsed = TableToAvConverter.ParseTable(rawTableText);
+		                            string beautifulMd = TableToAvConverter.FormatBeautifulMarkdownTable(parsed);
+		                            string foldable = TableToAvConverter.ConvertToFoldableList(parsed, title);
+		                            string csv = TableToAvConverter.ConvertToCsv(parsed);
+
+		                            var payload = new Dictionary<string, object>();
+		                            payload["structure"] = parsed;
+		                            payload["beautifulMarkdown"] = beautifulMd;
+		                            payload["foldableList"] = foldable;
+		                            payload["csv"] = csv;
+
+		                            Dispatcher.Invoke(() =>
+		                            {
+		                                if (_webView != null && _webView.CoreWebView2 != null)
+		                                {
+		                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onTableDataParsed) window.onTableDataParsed(" + JsonHelper.ToJson(new { code = 0, data = payload }) + ");");
+		                                }
+		                            });
+		                        }
+		                        catch { }
+		                    });
+		                    return;
+		                }
+
+		                // 3.50 表格 1 键导出 Excel.xlsx 并本地秒开
+		                if (op.Equals("exportTableStructureXlsx", StringComparison.OrdinalIgnoreCase))
+		                {
+		                    string rawTableText2 = JsonHelper.GetString(msg, "rawText");
+		                    string title = JsonHelper.GetString(msg, "title", "表格导出");
+		                    ThreadPool.QueueUserWorkItem(s =>
+		                    {
+		                        try
+		                        {
+		                            var parsed = TableToAvConverter.ParseTable(rawTableText2);
+	                            string outPath = TableToAvConverter.ExportToXlsxAndOpen(parsed, title);
+	                            if (!string.IsNullOrEmpty(outPath) && OnNotificationRequested != null)
+	                            {
+	                                OnNotificationRequested("思源外骨骼 · 表格导出", "✓ 已成功将表格转为标准 Excel 工作簿并在外部秒开！");
+	                            }
+	                        }
+	                        catch { }
+	                    });
+	                    return;
+	                }
+
+	                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
                 if (op.Equals("searchDocs", StringComparison.OrdinalIgnoreCase))
                 {
                     string kw = JsonHelper.GetString(msg, "keyword");

@@ -833,10 +833,14 @@ public static class SmartCaptureMain
                 string activeFile = SafeContext.GetString(context, "活动文件");
                 string gitBranch = SafeContext.GetString(context, "Git分支");
                 string gitRepo = SafeContext.GetString(context, "Git仓库");
+                string pdfPath = SafeContext.GetString(context, "PDF路径");
+                int pdfPage = SafeContext.GetInt(context, "PDF页码");
                 if (!string.IsNullOrEmpty(projName)) attrs["custom-project-name"] = projName;
                 if (!string.IsNullOrEmpty(activeFile)) attrs["custom-active-file"] = activeFile;
                 if (!string.IsNullOrEmpty(gitBranch)) attrs["custom-git-branch"] = gitBranch;
                 if (!string.IsNullOrEmpty(gitRepo)) attrs["custom-git-repo"] = gitRepo;
+                if (!string.IsNullOrEmpty(pdfPath)) attrs["custom-pdf-path"] = pdfPath;
+                if (pdfPage > 0) attrs["custom-pdf-page"] = pdfPage.ToString();
                 if (attrs.Count > 0)
                 {
                     SyKernelRequest.DoRequest(syUrl, token, "/api/attr/setBlockAttrs", JsonHelper.ToJson(new { id = createdId, attrs = attrs }));

@@ -36,6 +36,8 @@ namespace XiaoLv.Desktop.Core
         public string ActiveFileName { get; set; }
         public string GitBranch { get; set; }
         public string GitRepo { get; set; }
+        public string PdfPath { get; set; }
+        public int PdfPage { get; set; }
 
         public bool HasUrl
         {
@@ -55,6 +57,14 @@ namespace XiaoLv.Desktop.Core
                 if (string.IsNullOrEmpty(title)) title = AppDisplayName;
 
                 string gitBadge = !string.IsNullOrEmpty(GitBranch) ? string.Format(" [🌿 #{0}]", GitBranch.Replace("/", "-")) : "";
+
+                // 学术 PDF 原生深度锚点优先
+                if (!string.IsNullOrEmpty(PdfPath) && PdfPage > 0)
+                {
+                    string pdfName = Path.GetFileName(PdfPath);
+                    return string.Format("[📄 {0} (第 {1} 页)](siyuan-exoskeleton://open-pdf?path={2}&page={1}) ({3})",
+                        pdfName, PdfPage, Uri.EscapeDataString(PdfPath), AppDisplayName);
+                }
 
                 if (HasUrl)
                 {
@@ -241,6 +251,20 @@ namespace XiaoLv.Desktop.Core
                             snap.GitRepo = git.RepoName;
                         }
                     }
+
+                    // 嗅探本地 PDF 阅读器 (SumatraPDF / Acrobat / Foxit) 页码特征
+                    if (snap.ProcessName == "sumatrapdf" || snap.ProcessName == "acrobat" || snap.ProcessName == "foxitreader")
+                    {
+                        var mPage = Regex.Match(snap.FullTitle, @"(?:\[page|\(|p\.)\s*(\d+)(?:/\d+)?(?:\)|\])?", RegexOptions.IgnoreCase);
+                        if (mPage.Success)
+                        {
+                            int p;
+                            if (int.TryParse(mPage.Groups[1].Value, out p) && p > 0)
+                            {
+                                snap.PdfPage = p;
+                            }
+                        }
+                    }
                 }
                 catch { }
             }
@@ -269,6 +293,32 @@ namespace XiaoLv.Desktop.Core
                     }
                 }
                 catch { }
+            }
+
+            // 嗅探浏览器或本地 URL 中的 PDF 路径与页码锚点 (#page=N)
+            if (!string.IsNullOrEmpty(snap.Url) && snap.Url.IndexOf(".pdf", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                var mUrlPage = Regex.Match(snap.Url, @"[#&?]page=(\d+)", RegexOptions.IgnoreCase);
+                if (mUrlPage.Success)
+                {
+                    int p;
+                    if (int.TryParse(mUrlPage.Groups[1].Value, out p) && p > 0)
+                    {
+                        snap.PdfPage = p;
+                    }
+                }
+                if (snap.Url.StartsWith("file:///", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        string localPath = new Uri(snap.Url.Split('#')[0]).LocalPath;
+                        if (File.Exists(localPath))
+                        {
+                            snap.PdfPath = localPath;
+                        }
+                    }
+                    catch { }
+                }
             }
             return snap;
         }

@@ -374,6 +374,18 @@
   - `📑 规范诊断报告` ➔ 实时生成标准结构化体检报告，一键沉淀写入今日日记；
 - **极速调用桥 Webhook 接口**：`GET /api/doctor/diagnose` 提供外部自动化体检接口。
 
+### 57. ★ 外部知识库与 Markdown 目录镜像透视工作台 (`vault-mirror-modal` · `vault:` / 顶栏 `🗄️`)
+- **960px 左右双栏自适应镜像研读工作台**：彻底打破跨笔记应用壁垒（Obsidian 库、Logseq 仓库、学术综述目录、本地代码 Markdown 文档）；
+- **纯流式透视零污染**：零数据物理冗余拷贝，不污染思源 SQLite 数据库与 assets 附件库；
+- **动态知识库切换与文档树透视**：点击「📁 更换镜像目录」自由切换任意磁盘目录（如 `D:\ObsidianVault`），毫秒级流式遍历提取首行 H1 标题、相对路径、体积与修改时间；
+- **右侧实时 Markdown 研读画布与四重操作流水**：
+  - 点击左侧任意文档卡片，右侧瞬时流式呈现 Markdown 源码与结构；
+  - `📥 存入今日日记` ➔ 结构化生成带相对路径与源文件引用的 Markdown 块，按需精准切片沉淀；
+  - `⚡ 原位外部秒开` ➔ 调用系统关联应用（VS Code / Typora / 系统默认编辑器）秒开；
+  - `⚡ 穿透直贴` ➔ Shift+Enter 原位贴入外部活动光标处；
+  - `📋 复制 MD` ➔ 复制全文 Markdown 源码；
+- **极速调用桥 Webhook 接口**：`GET /api/vault/notes?path=...` 与 `GET /api/vault/read?path=...` 为外部自动化脚本提供极速访问。
+
 ---
 
 ## 三、 全局快捷键「六剑客」
@@ -513,7 +525,7 @@ pnpm e2e:isolated
 | **`cfg:` / `profile:`** | 配置预设大看板 | 唤起 920px 宽幅配置预设大看板，S3 存储桶与 AI 大模型脱敏参数矩阵一目了然 |
 | **`notice:关键词`** | 通知与事件流 | 全景通知历史与四级过滤，汇总思源弹窗与系统事件，1键沉淀日记 |
 | **`bm:关键词`** | 浏览器书签 | 0 依赖穿透检索 Edge/Chrome 本地书签与收藏夹，支持直贴与剪藏 |
-| **`vault:关键词`** | 外部知识库 | 免导入物理拷贝，流式穿透检索外部 Obsidian 库或本地 Markdown 目录 |
+| **`vault:` / `dir:`** | 外部库镜像工作台 | 唤起 960px 双栏镜像透视工作台，动态换库、流式文档树与研读画布 |
 | **`>>小节名 内容`** | 动态换轨 | 动态在今日日记的指定小节下追加，无该小节时智能自动创建 |
 | **`>@文档名 内容`** | 跨文档直投 | 跨文档免切窗追加内容至指定命中文档中 |
 | **`:简码`** | 动态扩词 | `:date`、`:time`、`:todo`、`:thx` 等动态展开 |
@@ -535,7 +547,7 @@ pnpm e2e:isolated
 pnpm e2e:isolated
 ```
 
-- **187 项核心能力断言 100% PASS**：覆盖冷启动、30秒粘滞防碎块、上下文环境注水、意图分流（待办/闪卡）、FSRS 评级闭环、原生块检索、双链认知雷达、健康体检、全库附件检索、3D PDF 断行自愈、6大平台去噪、Office/EPUB/XMind流式透视、音视频时间戳笔记、纯净代码提取、Quicker Webhook 回路、数据表格类型推导与AV映射、本地PDF页码锚点感知、CLI 调度器、异构笔记语法对齐(Obsidian/Logseq)、智能超链嵌入(Smart Paste URL)、变量命名法转换、双向反链与图谱雷达、全景待办视界与Checklist导出、浮墨漫游回顾、离线队列管理、本地浏览器书签穿透检索、学术文献国标著录(GB/T 7714 & APA)与BibTeX生成、桌面心流计时器与自动时序沉淀、剪贴板历史批量合并排版、悬空死链深度诊断、外部Markdown与CSV直投、多语言源码结构化入库、双链自动重定向自愈、独立HTML网页导出、Word批注逆向注入与回写、PPT演讲备注晚绑定监听、桌面边缘托放中枢智能路由、活便签智能粘贴管道、外部富文本图文无损复制(CF_HTML与Base64图片内嵌)、双击Ctrl极速呼出微控激活器、长文认知阅读字数与耗时智能预估、知识卡片SVG长图生成、多屏幕多DPI自愈吸附、外部Markdown知识库镜像透视、知识库隐私敏感脱敏(PrivacySanitizer)、全库52周时序热力图(HabitHeatmapGenerator)、双向知识网络星轨拓扑图谱(GraphVisualizer)、全景网站收藏中枢(WebBookmarkHub)、本地文件夹收藏与#32770对话框秒跳穿透(FolderBookmarkHub)、底栏番茄钟生态感知(DockTomatoBridge)、Actionable PKM任务专注结绳闭环、思源脱敏配置预设管理(SiYuanProfileHub)、全景通知事件流与15s去重(OmniNotificationHub)、全景待办四象限大看板(tasks-kanban-modal)、52周年度热力大画廊(heatmap-gallery-modal)、通知中心独立视窗(notification-center-modal)、全景网站与工程文件夹大图标启动台(launchpad-modal)、剪贴板多选碎片拼版工作台(clip-studio-modal)、双向知识网络星轨拓扑全景大视窗(graph-modal)、思源常用配置预设与大模型驱动中枢(profile-hub-modal)、系统全库综合体检与死链清道夫(system-doctor-modal)及断网离线队列回写；
+- **193 项核心能力断言 100% PASS**：覆盖冷启动、30秒粘滞防碎块、上下文环境注水、意图分流（待办/闪卡）、FSRS 评级闭环、原生块检索、双链认知雷达、健康体检、全库附件检索、3D PDF 断行自愈、6大平台去噪、Office/EPUB/XMind流式透视、音视频时间戳笔记、纯净代码提取、Quicker Webhook 回路、数据表格类型推导与AV映射、本地PDF页码锚点感知、CLI 调度器、异构笔记语法对齐(Obsidian/Logseq)、智能超链嵌入(Smart Paste URL)、变量命名法转换、双向反链与图谱雷达、全景待办视界与Checklist导出、浮墨漫游回顾、离线队列管理、本地浏览器书签穿透检索、学术文献国标著录(GB/T 7714 & APA)与BibTeX生成、桌面心流计时器与自动时序沉淀、剪贴板历史批量合并排版、悬空死链深度诊断、外部Markdown与CSV直投、多语言源码结构化入库、双链自动重定向自愈、独立HTML网页导出、Word批注逆向注入与回写、PPT演讲备注晚绑定监听、桌面边缘托放中枢智能路由、活便签智能粘贴管道、外部富文本图文无损复制(CF_HTML与Base64图片内嵌)、双击Ctrl极速呼出微控激活器、长文认知阅读字数与耗时智能预估、知识卡片SVG长图生成、多屏幕多DPI自愈吸附、外部Markdown知识库镜像透视、知识库隐私敏感脱敏(PrivacySanitizer)、全库52周时序热力图(HabitHeatmapGenerator)、双向知识网络星轨拓扑图谱(GraphVisualizer)、全景网站收藏中枢(WebBookmarkHub)、本地文件夹收藏与#32770对话框秒跳穿透(FolderBookmarkHub)、底栏番茄钟生态感知(DockTomatoBridge)、Actionable PKM任务专注结绳闭环、思源脱敏配置预设管理(SiYuanProfileHub)、全景通知事件流与15s去重(OmniNotificationHub)、全景待办四象限大看板(tasks-kanban-modal)、52周年度热力大画廊(heatmap-gallery-modal)、通知中心独立视窗(notification-center-modal)、全景网站与工程文件夹大图标启动台(launchpad-modal)、剪贴板多选碎片拼版工作台(clip-studio-modal)、双向知识网络星轨拓扑全景大视窗(graph-modal)、思源常用配置预设与大模型驱动中枢(profile-hub-modal)、系统全库综合体检与死链清道夫(system-doctor-modal)、外部知识库与Markdown目录镜像透视工作台(vault-mirror-modal)及断网离线队列回写；
 - **真实守护进程保护**：测试全程在独立沙箱与避让端口执行，自动化完成后即刻无感恢复生产版守护进程。
 
 ---

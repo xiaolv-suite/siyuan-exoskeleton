@@ -294,12 +294,26 @@ namespace XiaoLv.Desktop.Core
 							                    return;
 							                }
 
-							                // T. 全库知识体检与系统诊断: /api/doctor/diagnose
-							                if (rawPath.Equals("/api/doctor/diagnose", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/doctor/diagnose", StringComparison.OrdinalIgnoreCase))
-							                {
-							                    HandleDoctorDiagnoseRequest(req, resp);
-							                    return;
-							                }
+								                // T. 全库知识体检与系统诊断: /api/doctor/diagnose
+								                if (rawPath.Equals("/api/doctor/diagnose", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/doctor/diagnose", StringComparison.OrdinalIgnoreCase))
+								                {
+								                    HandleDoctorDiagnoseRequest(req, resp);
+								                    return;
+								                }
+
+								                // U. 外部知识库镜像列表: /api/vault/notes
+								                if (rawPath.Equals("/api/vault/notes", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/vault/notes", StringComparison.OrdinalIgnoreCase))
+								                {
+								                    HandleVaultNotesRequest(req, resp);
+								                    return;
+								                }
+
+								                // V. 外部知识库笔记读取: /api/vault/read
+								                if (rawPath.Equals("/api/vault/read", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/vault/read", StringComparison.OrdinalIgnoreCase))
+								                {
+								                    HandleVaultReadRequest(req, resp);
+								                    return;
+								                }
 
 			                // 未匹配到路由
 			                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
@@ -1043,17 +1057,50 @@ namespace XiaoLv.Desktop.Core
 			                    {
 			                        code = 0,
 			                        msg = "ok",
-			                        data = result
-			                    });
-			                }
-			                catch (Exception ex)
-			                {
-			                    WriteJsonResponse(resp, 500, new { code = 500, msg = "体检诊断异常: " + ex.Message });
-			                }
-			            });
-			        }
+				                        data = result
+				                    });
+				                }
+				                catch (Exception ex)
+				                {
+				                    WriteJsonResponse(resp, 500, new { code = 500, msg = "体检诊断异常: " + ex.Message });
+				                }
+				            });
+				        }
 
-			        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
+				        private static void HandleVaultNotesRequest(HttpListenerRequest req, HttpListenerResponse resp)
+				        {
+				            string dir = GetQueryStringUtf8(req, "path");
+				            if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) dir = @"D:\思源插件";
+				            string q = GetQueryStringUtf8(req, "q");
+
+				            ThreadPool.QueueUserWorkItem(s =>
+				            {
+				                try
+				                {
+				                    var notes = VaultMirrorInspector.ScanVaultDirectory(dir, q);
+				                    WriteJsonResponse(resp, 200, new { code = 0, count = notes.Count, path = dir, data = notes });
+				                }
+				                catch (Exception ex)
+				                {
+				                    WriteJsonResponse(resp, 500, new { code = 500, msg = "扫描外部库异常: " + ex.Message });
+				                }
+				            });
+				        }
+
+				        private static void HandleVaultReadRequest(HttpListenerRequest req, HttpListenerResponse resp)
+				        {
+				            string path = GetQueryStringUtf8(req, "path");
+				            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+				            {
+				                WriteJsonResponse(resp, 400, new { code = 400, msg = "path 参数无效或文件不存在" });
+				                return;
+				            }
+
+				            string content = VaultMirrorInspector.ReadNoteContent(path);
+				            WriteJsonResponse(resp, 200, new { code = 0, path = path, content = content });
+				        }
+
+				        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
         {
             try
             {

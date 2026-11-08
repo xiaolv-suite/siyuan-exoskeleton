@@ -104,6 +104,24 @@ namespace XiaoLv.Desktop.Core
             return results;
         }
 
+        public static string ReadNoteContent(string filePath, int maxChars = 50000)
+        {
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return "";
+            try
+            {
+                using (var sr = new StreamReader(filePath, Encoding.UTF8))
+                {
+                    char[] buffer = new char[maxChars];
+                    int read = sr.ReadBlock(buffer, 0, maxChars);
+                    return new string(buffer, 0, read);
+                }
+            }
+            catch (Exception ex)
+            {
+                return "读取外部文件失败: " + ex.Message;
+            }
+        }
+
         private static string FormatFileSize(long bytes)
         {
             if (bytes < 1024) return bytes + " B";

@@ -1142,25 +1142,43 @@ namespace XiaoLv.Desktop.UI
 							                        vaultDir = @"D:\思源插件";
 							                    }
 
-							                    ThreadPool.QueueUserWorkItem(s =>
-							                    {
-							                        try
-							                        {
-							                            var notes = VaultMirrorInspector.ScanVaultDirectory(vaultDir, kw);
-							                            Dispatcher.Invoke(() =>
-							                            {
-							                                if (_webView != null && _webView.CoreWebView2 != null)
-							                                {
-							                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onVaultNotesLoaded) window.onVaultNotesLoaded(" + JsonHelper.ToJson(new { code = 0, path = vaultDir, data = notes }) + ");");
-							                                }
-							                            });
-								                        }
-								                        catch { }
-								                    });
-								                    return;
-								                }
+								                    ThreadPool.QueueUserWorkItem(s =>
+								                    {
+								                        try
+								                        {
+								                            var notes = VaultMirrorInspector.ScanVaultDirectory(vaultDir, kw);
+								                            Dispatcher.Invoke(() =>
+								                            {
+								                                if (_webView != null && _webView.CoreWebView2 != null)
+								                                {
+								                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onVaultNotesLoaded) window.onVaultNotesLoaded(" + JsonHelper.ToJson(new { code = 0, path = vaultDir, data = notes }) + ");");
+								                                }
+								                            });
+									                        }
+									                        catch { }
+									                    });
+									                    return;
+									                }
 
-								                // 3.67 全库笔记时序热力图 (heat: / habit:)
+									                // 3.66B 外部知识库笔记内容读取 (readVaultNote)
+									                if (op.Equals("readVaultNote", StringComparison.OrdinalIgnoreCase))
+									                {
+									                    string filePath = JsonHelper.GetString(msg, "filePath");
+									                    ThreadPool.QueueUserWorkItem(s =>
+									                    {
+									                        string content = VaultMirrorInspector.ReadNoteContent(filePath);
+									                        Dispatcher.Invoke(() =>
+									                        {
+									                            if (_webView != null && _webView.CoreWebView2 != null)
+									                            {
+									                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onVaultNoteContentLoaded) window.onVaultNoteContentLoaded(" + JsonHelper.ToJson(new { code = 0, filePath = filePath, content = content }) + ");");
+									                            }
+									                        });
+									                    });
+									                    return;
+									                }
+
+									                // 3.67 全库笔记时序热力图 (heat: / habit:)
 								                if (op.Equals("getHabitHeatmap", StringComparison.OrdinalIgnoreCase))
 								                {
 								                    ThreadPool.QueueUserWorkItem(async s =>

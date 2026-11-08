@@ -3347,6 +3347,73 @@ async function main() {
                               panelContent.includes('🩺 展开体检大视窗');
   logStep("Step 7.170: 检索前缀 syh/doctor 与体检抽屉展开大视窗深度联动断言", hasDoctorSearchLink, `体检大视窗呼出联动: ${hasDoctorSearchLink}`);
 
+  // Step 7.171: Test Vault Mirror Studio Modal UI Template Integrity in panel.html
+  const hasVaultModal = panelContent.includes('id="vault-mirror-modal"') &&
+                        panelContent.includes('id="vault-modal-count"') &&
+                        panelContent.includes('id="vm-note-list"') &&
+                        panelContent.includes('id="vm-markdown-preview"') &&
+                        panelContent.includes('id="vm-search-input"');
+  logStep("Step 7.171: 外部知识库镜像透视工作台 (vault-mirror-modal) 模版架构断言", hasVaultModal, `外部库工作台模版完整性: ${hasVaultModal}`);
+
+  // Step 7.172: Test Topbar Vault Button & Intent Chip Linkage in panel.html
+  const hasVaultTopLink = panelContent.includes('id="vault-btn"') &&
+                          panelContent.includes('toggleVaultMirrorModal()') &&
+                          panelContent.includes('<b>🗄️</b> 外部库');
+  logStep("Step 7.172: 顶栏 🗄️ 外部库按钮与横向流式意图胶囊直达断言", hasVaultTopLink, `顶栏外部库入口联动: ${hasVaultTopLink}`);
+
+  // Step 7.173: Test Vault Mirror CSS Dual-Pane Layout & Note Card Styles in panel.html
+  const hasVaultCss = panelContent.includes('.vault-studio-container') &&
+                      panelContent.includes('.vault-studio-left') &&
+                      panelContent.includes('.vault-studio-right') &&
+                      panelContent.includes('.vault-note-card') &&
+                      panelContent.includes('.vault-note-title');
+  logStep("Step 7.173: 外部库镜像工作台左右双栏布局与卡片样式规范断言", hasVaultCss, `双栏工作台样式规范: ${hasVaultCss}`);
+
+  // Step 7.174: Test VaultMirrorInspector ReadNoteContent in C# Backend
+  const tempTestMd = path.join(ROOT, "e2e_vault_test.md");
+  fs.writeFileSync(tempTestMd, "# 外部架构研读笔记\n\n这是一篇位于外部知识库中的Markdown文献，包含关键技术结论。", "utf8");
+  const vaultReadScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $vmType = $asm.GetType('XiaoLv.Desktop.Core.VaultMirrorInspector');
+    $mRead = $vmType.GetMethod('ReadNoteContent', [System.Reflection.BindingFlags]'Public,Static');
+
+    $content = $mRead.Invoke($null, @('${tempTestMd.replace(/\\/g, "\\\\")}', 50000));
+    $okRead = ($null -ne $content) -and $content.Contains('外部架构研读笔记') -and $content.Contains('关键技术结论');
+    Write-Output ($okRead.ToString());
+  `;
+  const vaultReadRes = runPs(vaultReadScript);
+  const isVaultReadOk = vaultReadRes.includes("True");
+  try { fs.unlinkSync(tempTestMd); } catch {}
+  logStep("Step 7.174: 外部知识库笔记流式读取引擎 (ReadNoteContent) 断言", isVaultReadOk, `外部文件读取断言: ${vaultReadRes.trim()}`);
+
+  // Step 7.175: Test Vault Mirror Frontend Functions in panel.html
+  const hasVaultJs = panelContent.includes('function toggleVaultMirrorModal') &&
+                     panelContent.includes('function promptChangeVaultDirectory') &&
+                     panelContent.includes('function refreshVaultMirrorData') &&
+                     panelContent.includes('selectVaultNoteItem') &&
+                     panelContent.includes('loadVaultNoteContent') &&
+                     panelContent.includes('dumpVaultNoteToDaily');
+  logStep("Step 7.175: 外部知识库动态换库、文档树、研读画布与日记沉淀驱动逻辑断言", hasVaultJs, `前端驱动函数完整性: ${hasVaultJs}`);
+
+  // Step 7.176: Test ExternalApiBridge Vault Webhook Suite (GET /api/vault/notes & GET /api/vault/read)
+  let webhookVaultResp;
+  try {
+    const getResp = await fetch("http://127.0.0.1:43990/api/vault/notes?path=" + encodeURIComponent(ROOT));
+    const getJson = await getResp.json();
+    webhookVaultResp = {
+      code: getJson.code,
+      count: getJson.count,
+      hasData: Array.isArray(getJson.data)
+    };
+  } catch (err) {
+    webhookVaultResp = { error: err.message };
+  }
+  const isWebhookVaultOk = webhookVaultResp &&
+                           webhookVaultResp.code === 0 &&
+                           webhookVaultResp.hasData;
+  logStep("Step 7.176: 极速调用桥外部库镜像检索接口 (GET /api/vault/notes) 断言", isWebhookVaultOk, `扫描到文档: ${webhookVaultResp?.count} 篇`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

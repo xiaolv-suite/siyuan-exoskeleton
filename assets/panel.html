@@ -2763,6 +2763,63 @@
       justify-content: flex-end;
     }
 
+    /* Vault Mirror Modal Styles */
+    .vault-studio-container {
+      display: flex;
+      gap: 14px;
+      height: 56vh;
+    }
+    .vault-studio-left {
+      width: 38%;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 4px;
+    }
+    .vault-studio-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .vault-note-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+    .vault-note-card:hover {
+      border-color: rgba(245, 158, 11, 0.4);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .vault-note-card.selected {
+      border-color: var(--tech-amber);
+      background: rgba(245, 158, 11, 0.08);
+    }
+    .vault-note-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .vault-note-relpath {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
   </style>
 </head>
 <body>
@@ -2828,6 +2885,9 @@
       </button>
       <button class="theme-toggle-btn" id="doctor-btn" onclick="toggleSystemDoctorModal()" title="系统全库综合体检与死链清道夫 (🩺)" style="position: relative;">
         <span>🩺</span>
+      </button>
+      <button class="theme-toggle-btn" id="vault-btn" onclick="toggleVaultMirrorModal()" title="外部知识库与 Markdown 目录镜像透视 (🗄️)" style="position: relative;">
+        <span>🗄️</span>
       </button>
       <button class="theme-toggle-btn" id="notice-btn" onclick="toggleNotificationCenterModal()" title="全景通知与生命事件中心 (🔔)" style="position: relative;">
         <span>🔔</span>
@@ -2896,9 +2956,9 @@
 					      <span class="intent-chip" onclick="insertPrefix('fold:')" title="输入 fold: 打开本地文件夹导航中枢，支持 #32770 对话框原位穿透与思源工程锚定"><b>📂</b> 文件夹导航</span>
 						      <span class="intent-chip" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台，大图标磁贴平铺与 1~9 盲打秒开"><b>🚀</b> 启动台</span>
 						      <span class="intent-chip" onclick="toggleProfileHubModal()" title="查看与管理思源 S3 存储桶、AI 大模型与常用配置预设 (大看板)"><b>⚙️</b> 配置预设</span>
-						      <span class="intent-chip" onclick="insertPrefix('notice:')" title="输入 notice: 查看全景系统与思源应用通知事件流，支持一键沉淀日记"><b>📢</b> 通知历史</span>
-					      <span class="intent-chip" onclick="insertPrefix('vault:')" title="输入 vault: 穿透检索外部 Markdown 知识库与本地目录"><b>🗄️</b> 外部库</span>
-	      <span class="intent-chip" onclick="insertPrefix('tab:')" title="输入 tab: 检索全库数据表格，支持排版美化与1键导出Excel"><b>📊</b> 表格透视</span>
+							      <span class="intent-chip" onclick="insertPrefix('notice:')" title="输入 notice: 查看全景系统与思源应用通知事件流，支持一键沉淀日记"><b>📢</b> 通知历史</span>
+						      <span class="intent-chip" onclick="toggleVaultMirrorModal()" title="外部知识库与 Markdown 目录镜像透视工作台 (大视窗)"><b>🗄️</b> 外部库</span>
+		      <span class="intent-chip" onclick="insertPrefix('tab:')" title="输入 tab: 检索全库数据表格，支持排版美化与1键导出Excel"><b>📊</b> 表格透视</span>
 	      <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
       <span class="intent-chip" onclick="insertPrefix('c:')" title="输入 c: 实时查看并调用最近 30 条清洗剪贴板；支持 c:url/c:code/c:table/c:cite/c:math/c:img 分类筛选"><b>c:</b> 剪贴板</span>
@@ -3801,6 +3861,64 @@
       <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>安全铁律</b>: 孤儿附件支持 <code>.quarantine</code> 隔离区安全移入与打捞复原；双链自愈仅在同名精确匹配时替换</span>
         <span id="doctor-modal-status">诊断引擎已就绪</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 外部知识库与 Markdown 目录镜像透视工作台 (Vault Mirror Studio Modal) -->
+  <div class="timeline-modal-overlay" id="vault-mirror-modal" onclick="closeVaultMirrorOnBg(event)">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 95%; max-width: 980px; max-height: 88vh;">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">🗄️</span>
+          <span style="font-weight: 700; font-size: 14px;">外部知识库与 Markdown 目录镜像透视工作台</span>
+          <span class="brand-pill" id="vault-modal-count">0 篇文档</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="promptChangeVaultDirectory()" style="font-size: 11px; padding: 3px 10px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.4);" title="自由更换外部知识库或本地 Markdown 扫描物理目录">📁 更换镜像目录</button>
+          <button class="pref-btn" onclick="refreshVaultMirrorData()" style="font-size: 11px; padding: 3px 10px;" title="重新扫描当前镜像目录">🔄 刷新</button>
+          <button class="pref-btn" onclick="pasteVaultNoteToCaret()" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.4);" title="将当前选中外部文档内容贴入外部活动光标处 (Shift+Enter)">⚡ 穿透直贴</button>
+          <button class="pref-btn" onclick="dumpVaultNoteToDaily()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="结构化解析并将当前文档引用存入今日日记">📥 存入日记</button>
+          <button class="pref-btn" onclick="copyVaultNoteMarkdown()" style="font-size: 11px; padding: 3px 10px;" title="复制当前文档 Markdown 源码">📋 复制 MD</button>
+          <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleVaultMirrorModal()">✕</button>
+        </div>
+      </div>
+
+      <!-- Path & Filter Toolbar -->
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); flex: 1; min-width: 200px;">
+          <span>📂 镜像目录:</span>
+          <code id="vm-current-dir" style="color: var(--cyber-sky); font-family: var(--font-mono); font-size: 11.5px; background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-hairline);">D:\思源插件</code>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <input type="text" id="vm-search-input" placeholder="实时过滤外部文件名/大纲标题..." oninput="handleVaultLiveFilter(this.value)" style="width: 220px; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-primary);" />
+        </div>
+      </div>
+
+      <!-- Studio Dual-Pane Body -->
+      <div class="vault-studio-container" style="padding: 14px 18px; overflow: hidden;">
+        <!-- Left: Note List -->
+        <div class="vault-studio-left" id="vm-note-list">
+          <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在流式扫描外部目录...</div>
+        </div>
+
+        <!-- Right: Realtime Canvas Preview -->
+        <div class="vault-studio-right">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+            <div id="vm-preview-filepath" style="font-family: var(--font-mono); font-size: 11px; color: var(--tech-amber); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 420px;">未选择文档</div>
+            <div style="display: flex; gap: 8px;">
+              <button class="launchpad-mini-btn" onclick="openCurrentVaultFileExternally()" title="使用外部系统关联编辑器秒开此文档">⚡ 外部原位秒开</button>
+              <button class="launchpad-mini-btn" onclick="copyCurrentVaultFilePath()" title="复制物理绝对路径">📋 复制路径</button>
+            </div>
+          </div>
+          <div id="vm-markdown-preview" style="flex: 1; padding: 14px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid var(--border-hairline); overflow-y: auto; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; color: var(--text-primary); white-space: pre-wrap;">请在左侧点击任一 Markdown 文档，即可在此流式研读全文预览...</div>
+        </div>
+      </div>
+
+      <!-- Bottom Footer -->
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+        <span>💡 <b>镜像透视特性</b>: 纯流式透视，零物理拷贝，不污染思源 SQLite 与 assets 附件库，支持一键按需切片直投日记</span>
+        <span id="vault-modal-status">镜像透视已就绪</span>
       </div>
     </div>
   </div>
@@ -10260,7 +10378,8 @@
         </div>
         <div class="inspector-dock">
           <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="inspector-dock-btn primary" onclick="importVaultNoteToDaily('${escapeQuote(n.FilePath)}')" title="将该外部 Markdown 文件结构化解析并导入今日日记">📥 导入今日日记</button>
+            <button class="inspector-dock-btn primary" onclick="toggleVaultMirrorModal('${escapeQuote(n.FilePath)}')" title="展开 960px 外部知识库镜像透视工作台">🗄️ 展开镜像工作台</button>
+            <button class="inspector-dock-btn" onclick="importVaultNoteToDaily('${escapeQuote(n.FilePath)}')" title="将该外部 Markdown 文件结构化解析并导入今日日记">📥 导入今日日记</button>
             <button class="inspector-dock-btn" onclick="openAssetLocalFile('${escapeQuote(n.FilePath)}')" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="使用系统关联默认应用秒开此文件">⚡ 原位秒开</button>
             <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(n.FilePath)}', '文件路径已复制！')">📋 复制路径</button>
           </div>
@@ -12689,6 +12808,234 @@
         return;
       }
       copyToClipboard(d.ReportMarkdown, "✓ 体检诊断报告 Markdown 源码已复制！");
+    }
+
+    // ==========================================================
+    // 外部知识库与 Markdown 目录镜像透视工作台 (Vault Mirror Studio)
+    // ==========================================================
+    let currentVaultDir = "D:\\思源插件";
+    let currentVaultNotes = [];
+    let currentSelectedVaultNote = null;
+    let currentVaultFilterKeyword = "";
+    let currentVaultNoteContent = "";
+
+    function toggleVaultMirrorModal(initialFilePath) {
+      const modal = document.getElementById("vault-mirror-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) {
+        if (initialFilePath) {
+          try {
+            const dir = initialFilePath.substring(0, Math.max(initialFilePath.lastIndexOf('\\'), initialFilePath.lastIndexOf('/')));
+            if (dir) currentVaultDir = dir;
+          } catch(e) {}
+        }
+        refreshVaultMirrorData(initialFilePath);
+      }
+    }
+
+    function closeVaultMirrorOnBg(e) {
+      if (e.target && e.target.id === "vault-mirror-modal") {
+        toggleVaultMirrorModal();
+      }
+    }
+
+    function refreshVaultMirrorData(autoSelectFilePath) {
+      const dirLabel = document.getElementById("vm-current-dir");
+      if (dirLabel) dirLabel.innerText = currentVaultDir;
+
+      const listContainer = document.getElementById("vm-note-list");
+      if (listContainer) {
+        listContainer.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:12px;">正在流式扫描外部目录...</div>';
+      }
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'searchVaultNotes',
+          path: currentVaultDir,
+          keyword: currentVaultFilterKeyword
+        }));
+      }
+
+      if (autoSelectFilePath) {
+        setTimeout(() => {
+          loadVaultNoteContent(autoSelectFilePath);
+        }, 150);
+      }
+    }
+
+    function promptChangeVaultDirectory() {
+      const newDir = prompt("请输入外部知识库或本地 Markdown 扫描物理目录绝对路径:", currentVaultDir);
+      if (!newDir || newDir.trim() === "") return;
+      currentVaultDir = newDir.trim();
+      currentSelectedVaultNote = null;
+      currentVaultNoteContent = "";
+      refreshVaultMirrorData();
+    }
+
+    function handleVaultLiveFilter(val) {
+      currentVaultFilterKeyword = (val || "").trim().toLowerCase();
+      renderVaultNotesList();
+    }
+
+    window.onVaultNotesLoaded = function(res) {
+      if (!res || !Array.isArray(res.data)) return;
+      currentVaultNotes = res.data;
+      if (res.path) currentVaultDir = res.path;
+      const dirLabel = document.getElementById("vm-current-dir");
+      if (dirLabel) dirLabel.innerText = currentVaultDir;
+
+      const countPill = document.getElementById("vault-modal-count");
+      if (countPill) countPill.innerText = `${currentVaultNotes.length} 篇文档`;
+
+      const statusSpan = document.getElementById("vault-modal-status");
+      if (statusSpan) statusSpan.innerText = `已扫描到 ${currentVaultNotes.length} 篇外部 Markdown 文档`;
+
+      renderVaultNotesList();
+
+      if (!currentSelectedVaultNote && currentVaultNotes.length > 0) {
+        selectVaultNoteItem(currentVaultNotes[0]);
+      }
+    };
+
+    function renderVaultNotesList() {
+      const listContainer = document.getElementById("vm-note-list");
+      if (!listContainer) return;
+
+      let list = currentVaultNotes;
+      if (currentVaultFilterKeyword) {
+        list = list.filter(n => {
+          const t = (n.Title || "").toLowerCase();
+          const p = (n.RelativePath || "").toLowerCase();
+          const f = (n.FileName || "").toLowerCase();
+          return t.includes(currentVaultFilterKeyword) || p.includes(currentVaultFilterKeyword) || f.includes(currentVaultFilterKeyword);
+        });
+      }
+
+      if (list.length === 0) {
+        listContainer.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:12px;">未匹配到 Markdown 文档，请检查目录或过滤词。</div>';
+        return;
+      }
+
+      let html = "";
+      list.forEach((n, idx) => {
+        const isSelected = currentSelectedVaultNote && currentSelectedVaultNote.FilePath === n.FilePath;
+        const timeStr = n.LastModified ? (typeof n.LastModified === "string" ? n.LastModified.split("T")[0] : "") : "";
+
+        html += `
+          <div class="vault-note-card ${isSelected ? 'selected' : ''}" onclick="selectVaultNoteItemByIndex(${idx})">
+            <div class="vault-note-title" title="${escapeHtml(n.Title)}">📑 ${escapeHtml(n.Title)}</div>
+            <div class="vault-note-relpath" title="${escapeHtml(n.RelativePath)}">${escapeHtml(n.RelativePath)}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; color:var(--text-muted); margin-top:2px;">
+              <span>${n.FileSizeFormatted || '0 KB'}</span>
+              <span>${timeStr}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      listContainer.innerHTML = html;
+    }
+
+    function selectVaultNoteItemByIndex(idx) {
+      if (idx >= 0 && idx < currentVaultNotes.length) {
+        selectVaultNoteItem(currentVaultNotes[idx]);
+      }
+    }
+
+    function selectVaultNoteItem(note) {
+      currentSelectedVaultNote = note;
+      renderVaultNotesList();
+
+      const pathLabel = document.getElementById("vm-preview-filepath");
+      if (pathLabel) pathLabel.innerText = note.FilePath;
+
+      loadVaultNoteContent(note.FilePath);
+    }
+
+    function loadVaultNoteContent(filePath) {
+      const previewArea = document.getElementById("vm-markdown-preview");
+      if (previewArea) previewArea.innerText = "正在读取文档内容...";
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'readVaultNote',
+          filePath: filePath
+        }));
+      } else {
+        setTimeout(() => {
+          if (window.onVaultNoteContentLoaded) {
+            window.onVaultNoteContentLoaded({
+              code: 0,
+              filePath: filePath,
+              content: `# ${currentSelectedVaultNote ? currentSelectedVaultNote.Title : '外部笔记'}\n\n此文档位于外部目录。\n\n- 物理路径: ${filePath}\n- 纯流式透视，零数据污染。`
+            });
+          }
+        }, 120);
+      }
+    }
+
+    window.onVaultNoteContentLoaded = function(res) {
+      if (!res) return;
+      currentVaultNoteContent = res.content || "";
+      const previewArea = document.getElementById("vm-markdown-preview");
+      if (previewArea) {
+        previewArea.innerText = currentVaultNoteContent;
+      }
+    };
+
+    function openCurrentVaultFileExternally() {
+      if (!currentSelectedVaultNote || !currentSelectedVaultNote.FilePath) {
+        showToast("请先选择一篇文档！");
+        return;
+      }
+      openAssetLocalFile(currentSelectedVaultNote.FilePath);
+    }
+
+    function copyCurrentVaultFilePath() {
+      if (!currentSelectedVaultNote || !currentSelectedVaultNote.FilePath) {
+        showToast("请先选择一篇文档！");
+        return;
+      }
+      copyToClipboard(currentSelectedVaultNote.FilePath, "✓ 外部文档绝对路径已复制！");
+    }
+
+    function copyVaultNoteMarkdown() {
+      if (!currentVaultNoteContent) {
+        showToast("暂无可复制的 Markdown 内容！");
+        return;
+      }
+      copyToClipboard(currentVaultNoteContent, "✓ 外部文档 Markdown 源码已复制！");
+    }
+
+    function pasteVaultNoteToCaret() {
+      if (!currentVaultNoteContent) {
+        showToast("暂无可直贴的文档内容！");
+        return;
+      }
+      pasteAtCursor(currentVaultNoteContent);
+      toggleVaultMirrorModal();
+      showToast("⚡ 已穿透直贴至外部前台光标处！");
+    }
+
+    function dumpVaultNoteToDaily() {
+      if (!currentSelectedVaultNote || !currentVaultNoteContent) {
+        showToast("请先选择一篇外部文档！");
+        return;
+      }
+      const title = currentSelectedVaultNote.Title || currentSelectedVaultNote.FileName;
+      const relPath = currentSelectedVaultNote.RelativePath || currentSelectedVaultNote.FilePath;
+      const snippet = currentVaultNoteContent.length > 500 ? currentVaultNoteContent.substring(0, 500) + "..." : currentVaultNoteContent;
+
+      const md = `### 🗄️ 《${title}》外部镜像引用\n\n> 📍 外部来源: \`${relPath}\`\n\n${snippet}\n\n{: custom-type="vault-mirror-ref" custom-path="${escapeQuote(currentSelectedVaultNote.FilePath)}" }`;
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'recordMiniInput',
+          text: md
+        }));
+        showToast("🎉 外部文档已成功结构化引用至今日日记！");
+      }
     }
 
     function closeWindow() {

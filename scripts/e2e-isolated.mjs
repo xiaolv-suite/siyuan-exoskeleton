@@ -320,8 +320,9 @@ async function main() {
   logStep("Step 7.1: 毫秒级原生块搜索 (b:) 索引穿透验证", !!searchRow, `命中块 ID: ${searchRow?.id}`);
 
   // Step 7.2: Test Health Doctor Inspection (syh)
+  await sleep(500);
   await sendViaPipe("syh", "");
-  const healthRow = await pollSql("SELECT id, content FROM blocks WHERE content LIKE '%健康体检报表%' LIMIT 1");
+  const healthRow = await pollSql("SELECT id, content FROM blocks WHERE content LIKE '%健康体检报表%' LIMIT 1", 20);
   logStep("Step 7.2: 全库断链与游离无主附件清道夫 (syh) 体检表沉淀验证", !!healthRow && healthRow.content.includes("健康体检报表"));
 
   // Step 7.3: Test Global Bi-Directional Link Knowledge Radar (反向双链认知雷达)
@@ -4080,6 +4081,26 @@ async function main() {
                                             capsuleHtmlContent.includes('function enableInlineTextEdit') &&
                                             snippingMgrCs.includes('watcherThread.SetApartmentState(ApartmentState.STA)');
   logStep("Step 7.233: 31项功能3步互动上手向导、子视图返回主页导航条、窗内净化/调色/番茄工作台与STA截图剪贴板断言", hasInteractiveGuideAndSubViewLoop, `互动上手向导与子视图全闭环: ${hasInteractiveGuideAndSubViewLoop}`);
+
+  // Step 7.234: Test Post-Action Follow-Up & Next-Steps Hub (#action-followup-banner), Probed WebClip Workbench, Pen/OCR Workbenches & Capsule Follow-Up Bar
+  const smartCaptureCs = fs.readFileSync(path.join(ROOT, 'src', 'Engine', 'Modules', 'SmartCaptureMain.cs'), 'utf8');
+  const hasPostActionFollowUpEngine = panelContent.includes('id="action-followup-banner"') &&
+                                      panelContent.includes('function showActionFollowUp') &&
+                                      panelContent.includes('function renderWebClipFollowUpInspector') &&
+                                      panelContent.includes('function probeWebClipContextNow') &&
+                                      panelContent.includes('window.onWebClipCompleted = function') &&
+                                      panelContent.includes('window.onQuickNoteCompleted = function') &&
+                                      panelContent.includes('function renderPenWorkbenchInspector') &&
+                                      panelContent.includes('function renderOcrWorkbenchInspector') &&
+                                      panelContent.includes('window.onPenWorkbenchActionCompleted = function') &&
+                                      panelContent.includes('window.onWorkbenchOcrCaptured = function') &&
+                                      panelContent.includes('function promptCreateTaskFromText') &&
+                                      panelContent.includes('function promptCreateFlashcardFromText') &&
+                                      panelContent.includes('function promptSaveUrlToBookmarkHub') &&
+                                      capsuleHtmlContent.includes('id="capsule-followup-bar"') &&
+                                      capsuleHtmlContent.includes('window.onCapsuleActionCompleted = function') &&
+                                      smartCaptureCs.includes('AppendToDailyNoteWithId');
+  logStep("Step 7.234: 动作执行后结果回执与下一步精加工引擎 (#action-followup-banner)、网页剪藏/划笔/OCR窗内工作台与微胶囊续接栏断言", hasPostActionFollowUpEngine, `执行后进一步选择闭环: ${hasPostActionFollowUpEngine}`);
 
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");

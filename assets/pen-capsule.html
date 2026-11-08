@@ -356,7 +356,8 @@
     </div>
   </div>
 
-  <!-- 底栏提示 -->
+    <!-- 底栏提示 -->
+  <div id="capsule-followup-bar" style="display: none; align-items: center; justify-content: space-between; gap: 5px; padding: 5px 8px; margin-bottom: 5px; border-radius: 7px; background: rgba(16, 185, 129, 0.16); border: 1px solid rgba(16, 185, 129, 0.45); font-size: 11px;"></div>
   <div class="capsule-footer">
     <div class="footer-left" id="capsule-hint-text">
       <span>按键盘 <b style="color: var(--text-main);">1 ~ 8</b> 直接执行</span>
@@ -520,6 +521,8 @@
         tag.title = "";
         tag.onclick = null;
       }
+      const fBar = document.getElementById("capsule-followup-bar");
+      if (fBar) fBar.style.display = "none";
       const pCard = document.getElementById("preview-card");
       const pText = document.getElementById("preview-text");
       const pCount = document.getElementById("preview-count");
@@ -702,16 +705,50 @@
         currentText = iFallback.value.trim();
       }
 
+      const mustClose = (op === "q" || op.startsWith("6") || op === "case");
+
       if (window.chrome && window.chrome.webview) {
         if (currentText) {
           window.chrome.webview.postMessage(JSON.stringify({ op: 'setVar', text: currentText, data: { name: '输入文本', value: currentText } }));
         }
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'setVar', cmd: op, text: currentText, data: { name: '操作指令', value: op } }));
-        setTimeout(() => window.chrome.webview.postMessage(JSON.stringify({ op: 'close' })), 120);
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'setVar', cmd: op, text: currentText, keepOpen: !mustClose, data: { name: '操作指令', value: op } }));
+        if (mustClose) {
+          setTimeout(() => window.chrome.webview.postMessage(JSON.stringify({ op: 'close' })), 120);
+        }
       } else {
-        alert("执行指令: " + op + " | 内容: " + currentText);
+        window.onCapsuleActionCompleted({ cmd: op, text: currentText });
       }
     }
+
+    window.onCapsuleActionCompleted = function(res) {
+      if (!res) return;
+      const baseCmd = String(res.cmd || "1").split(":")[0];
+      const names = {
+        "1": "已记入今日日记",
+        "2": "已生成 FSRS 闪卡",
+        "3": "已转为待办任务",
+        "4": "已存入稍后读库",
+        "5": "已纯净复制",
+        "7": "已提炼要点入库",
+        "8": "已钉为桌面便签"
+      };
+      const doneLabel = names[baseCmd] || "已完成操作";
+      const fBar = document.getElementById("capsule-followup-bar");
+      if (fBar) {
+        fBar.style.display = "flex";
+        fBar.innerHTML = `
+          <span style="color: #10b981; font-weight: 700; white-space: nowrap;">✓ ${doneLabel}！继续：</span>
+          <div style="display: flex; gap: 4px; align-items: center; flex-wrap: nowrap;">
+            ${baseCmd !== "2" ? `<button type="button" onclick="choose('2')" style="padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(168,85,247,0.45); background: rgba(168,85,247,0.18); color: #c084fc; font-size: 10.5px; font-weight: 700; cursor: pointer;">2 制闪卡</button>` : ""}
+            ${baseCmd !== "3" ? `<button type="button" onclick="choose('3')" style="padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245,158,11,0.45); background: rgba(245,158,11,0.18); color: #fbbf24; font-size: 10.5px; font-weight: 700; cursor: pointer;">3 派任务</button>` : ""}
+            ${baseCmd !== "8" ? `<button type="button" onclick="choose('8')" style="padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.45); background: rgba(56,189,248,0.18); color: #38bdf8; font-size: 10.5px; font-weight: 700; cursor: pointer;">8 钉便签</button>` : ""}
+            <button type="button" onclick="choose('q')" style="padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.45); background: rgba(16,185,129,0.18); color: #34d399; font-size: 10.5px; font-weight: 700; cursor: pointer;">Q 进总控</button>
+            <button type="button" onclick="choose('close')" style="padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(148,163,184,0.4); background: transparent; color: var(--text-main); font-size: 10.5px; cursor: pointer;">✓ 完成</button>
+          </div>
+        `;
+      }
+      showKeyHint(`✓ ${doneLabel}！可继续点上方关联操作，或按 Esc / 点击外部完成退出`);
+    };
 
     window.addEventListener("keydown", (e) => {
       const isInputFocused = (document.activeElement === document.getElementById("input-fallback"));

@@ -54,7 +54,7 @@ namespace XiaoLv.Desktop.UI
         {
             Title = "思源外骨骼 · 随身划笔微胶囊";
             Width = 440;
-            Height = 188;
+            Height = 204;
             WindowStyle = WindowStyle.None;
             AllowsTransparency = true;
             Background = Brushes.Transparent;
@@ -243,7 +243,9 @@ namespace XiaoLv.Desktop.UI
 
                 if (!string.IsNullOrEmpty(cmd))
                 {
-                    Hide();
+                    bool mustHideForPaste = cmd.StartsWith("6", StringComparison.OrdinalIgnoreCase) || cmd.Equals("case", StringComparison.OrdinalIgnoreCase);
+                    bool keepOpen = !mustHideForPaste && JsonHelper.GetBool(msg, "keepOpen", true);
+                    if (!keepOpen) Hide();
                     if (OnCapsuleCommandWithImage != null && !string.IsNullOrEmpty(_pendingImagePath))
                     {
                         OnCapsuleCommandWithImage(cmd, inputTxt, _pendingImagePath);
@@ -251,6 +253,10 @@ namespace XiaoLv.Desktop.UI
                     else if (OnCapsuleCommand != null)
                     {
                         OnCapsuleCommand(cmd, inputTxt);
+                    }
+                    if (keepOpen && _webView != null && _webView.CoreWebView2 != null)
+                    {
+                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onCapsuleActionCompleted) window.onCapsuleActionCompleted(" + JsonHelper.ToJson(new { cmd = cmd, text = inputTxt }) + ");");
                     }
                 }
             }

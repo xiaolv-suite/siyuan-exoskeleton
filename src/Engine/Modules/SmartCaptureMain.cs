@@ -873,6 +873,20 @@ public static class SmartCaptureMain
     /// </summary>
     public static void ExecuteWebClip(Action<string, string> notify, string userAnnotation, string clipMode)
     {
+        ExecuteWebClip(notify, userAnnotation, clipMode, "", "", "", false, "常用", null);
+    }
+
+    public static void ExecuteWebClip(
+        Action<string, string> notify,
+        string userAnnotation,
+        string clipMode,
+        string customTitle,
+        string customUrl,
+        string customExcerpt,
+        bool alsoBookmark,
+        string bookmarkCategory,
+        Action<Dictionary<string, object>> onCompleted)
+    {
         if (string.IsNullOrEmpty(clipMode)) clipMode = "card";
         ThreadPool.QueueUserWorkItem(state =>
         {
@@ -884,19 +898,19 @@ public static class SmartCaptureMain
                     ? ContextPerception.CaptureForegroundContext(prevHwnd)
                     : ContextPerception.CaptureForegroundContext();
 
-                if (snap == null)
-                {
-                    if (notify != null) notify("思源外骨骼", "⚠️ 未能探测到活动窗口上下文");
-                    return;
-                }
+                string rawUrl = !string.IsNullOrEmpty(customUrl) ? customUrl : (snap != null ? snap.Url : "");
+                string url = TextCleaner.PurifyUrl(rawUrl);
+                string rawTitle = !string.IsNullOrEmpty(customTitle)
+                    ? customTitle
+                    : (snap != null ? (!string.IsNullOrEmpty(snap.CleanTitle) ? snap.CleanTitle : snap.FullTitle) : "网页研读摘录");
+                if (string.IsNullOrEmpty(rawTitle)) rawTitle = "网页研读摘录";
 
-                string url = TextCleaner.PurifyUrl(snap.Url);
-                string rawTitle = !string.IsNullOrEmpty(snap.CleanTitle) ? snap.CleanTitle : snap.FullTitle;
                 string title, author, siteName;
                 TextCleaner.ParseSiteMetadata(url, rawTitle, out title, out author, out siteName);
+                if (!string.IsNullOrEmpty(customTitle)) title = customTitle.Trim();
 
-                // 2. 抓取选中文本
-                string selected = SelectionHelper.CaptureSelectedText(150);
+                // 2. 抓取选中文本或使用前端编辑的摘录正文
+                string selected = !string.IsNullOrEmpty(customExcerpt) ? customExcerpt : SelectionHelper.CaptureSelectedText(150);
                 if (string.IsNullOrEmpty(selected) && ClipboardWatcher.IsEnabled && ClipboardWatcher.LatestItem != null)
                 {
                     var clip = ClipboardWatcher.LatestItem;
@@ -905,7 +919,7 @@ public static class SmartCaptureMain
                         selected = clip.EnrichedMarkdown;
                     }
                 }
-                else if (!string.IsNullOrEmpty(selected))
+                else if (string.IsNullOrEmpty(customExcerpt) && !string.IsNullOrEmpty(selected))
                 {
                     // 若选区包含超链接/加粗等富文本，优先通过 HTML 提取高保真 Markdown (对标 Obsidian Web Clipper)
                     try
@@ -929,9 +943,30 @@ public static class SmartCaptureMain
                 // 3. 网站定制化去噪与清洗 (微信/知乎/链滴/微博/小红书/B站)
                 if (!string.IsNullOrEmpty(selected))
                 {
-                    selected = TextCleaner.CleanSiteSpecific(selected, url, out siteName);
+                    string detectedSite;
+                    selected = TextCleaner.CleanSiteSpecific(selected, url, out detectedSite);
+                    if (!string.IsNullOrEmpty(detectedSite) && string.IsNullOrEmpty(siteName)) siteName = detectedSite;
                     selected = TextCleaner.RemoveWebGarbageTail(selected);
                     selected = TextCleaner.EnrichCodeBlocks(selected);
+                }
+
+                // 若勾选了「顺便加入全景网站收藏夹 (fav:)」，同步写入 WebBookmarkHub
+                bool bookmarkedOk = false;
+                if (alsoBookmark && !string.IsNullOrEmpty(url))
+                {
+                    try
+                    {
+                        var bmEntry = new WebBookmarkEntry
+                        {
+                            Title = !string.IsNullOrEmpty(title) ? title : url,
+                            Url = url,
+                            Category = !string.IsNullOrEmpty(bookmarkCategory) ? bookmarkCategory : "常用",
+                            Tags = !string.IsNullOrEmpty(siteName) ? siteName : "剪藏",
+                            Notes = !string.IsNullOrEmpty(userAnnotation) ? userAnnotation : "网页剪藏同步收藏"
+                        };
+                        bookmarkedOk = WebBookmarkHub.SaveBookmarkAsync(bmEntry).GetAwaiter().GetResult();
+                    }
+                    catch { }
                 }
 
                 // 4. 环境连接自愈
@@ -964,6 +999,7 @@ public static class SmartCaptureMain
 
                 string timeStr = DateTime.Now.ToString("HH:mm");
                 string shortTitle = title.Length > 24 ? title.Substring(0, 24) + "..." : title;
+                string appDisplay = (snap != null && !string.IsNullOrEmpty(snap.AppDisplayName)) ? snap.AppDisplayName : "浏览器";
 
                 // =============================================================
                 // 模式分支 B: 另存为独立研读专页 (Full Article Doc Mode)
@@ -1026,6 +1062,24 @@ public static class SmartCaptureMain
 
                         SoundPlayerHelper.PlayFeedback();
                         if (notify != null) notify("思源外骨骼 · 研读专页", "✓ 已新建独立研读专页: 《" + shortTitle + "》");
+                        if (onCompleted != null)
+                        {
+                            var resDict = new Dictionary<string, object>();
+                            resDict["success"] = true;
+                            resDict["mode"] = "doc";
+                            resDict["blockId"] = createdDocId ?? "";
+                            resDict["docId"] = createdDocId ?? "";
+                            resDict["docPath"] = docPath;
+                            resDict["title"] = title ?? "";
+                            resDict["url"] = url ?? "";
+                            resDict["siteName"] = siteName ?? "";
+                            resDict["author"] = author ?? "";
+                            resDict["excerpt"] = selected ?? "";
+                            resDict["annotation"] = userAnnotation ?? "";
+                            resDict["markdown"] = fullMd ?? "";
+                            resDict["alsoBookmarked"] = bookmarkedOk;
+                            onCompleted(resDict);
+                        }
                         return;
                     }
                     else
@@ -1044,17 +1098,17 @@ public static class SmartCaptureMain
                     string safeTitle = title.Replace("[", "【").Replace("]", "】");
                     if (!string.IsNullOrEmpty(url))
                     {
-                        string meta = string.Format("⏱️ 摘录于 {0} · {1}{2}", timeStr, siteName, !string.IsNullOrEmpty(author) ? " · 作者: " + author : "");
+                        string meta = string.Format("⏱️ 摘录于 {0} · {1}{2}", timeStr, !string.IsNullOrEmpty(siteName) ? siteName : appDisplay, !string.IsNullOrEmpty(author) ? " · 作者: " + author : "");
                         cardMd = string.Format("* 📑 [{0}]({1})\n  * {2}", safeTitle, url, meta);
                     }
                     else
                     {
-                        cardMd = string.Format("* 📑 {0}\n  * ⏱️ 记录于 {1} · {2}", safeTitle, timeStr, snap.AppDisplayName);
+                        cardMd = string.Format("* 📑 {0}\n  * ⏱️ 记录于 {1} · {2}", safeTitle, timeStr, appDisplay);
                     }
                 }
                 else
                 {
-                    cardMd = TextCleaner.BuildNestedListItem(selected, title, url, snap.AppDisplayName, timeStr);
+                    cardMd = TextCleaner.BuildNestedListItem(selected, title, url, appDisplay, timeStr);
                 }
 
                 // 若用户附带即时思考/批注，以缩进子列表挂载
@@ -1088,8 +1142,26 @@ public static class SmartCaptureMain
 
                 if (r.Success)
                 {
+                    string createdBlockId = ExtractCreatedBlockId(r.Text);
                     SoundPlayerHelper.PlayFeedback();
                     if (notify != null) notify("思源外骨骼 · 极速剪藏", "✓ 已收录文献卡: 《" + shortTitle + "》");
+                    if (onCompleted != null)
+                    {
+                        var resDict = new Dictionary<string, object>();
+                        resDict["success"] = true;
+                        resDict["mode"] = "card";
+                        resDict["blockId"] = !string.IsNullOrEmpty(createdBlockId) ? createdBlockId : targetDoc;
+                        resDict["docId"] = targetDoc;
+                        resDict["title"] = title ?? "";
+                        resDict["url"] = url ?? "";
+                        resDict["siteName"] = siteName ?? "";
+                        resDict["author"] = author ?? "";
+                        resDict["excerpt"] = selected ?? "";
+                        resDict["annotation"] = userAnnotation ?? "";
+                        resDict["markdown"] = cardMd;
+                        resDict["alsoBookmarked"] = bookmarkedOk;
+                        onCompleted(resDict);
+                    }
                 }
                 else
                 {
@@ -1109,36 +1181,41 @@ public static class SmartCaptureMain
     /// </summary>
     public static void ExecuteWebClipWithAi(Action<string, string> notify, string clipMode)
     {
+        ExecuteWebClipWithAi(notify, clipMode, "", "", "", false, "常用", null);
+    }
+
+    public static void ExecuteWebClipWithAi(
+        Action<string, string> notify,
+        string clipMode,
+        string customTitle,
+        string customUrl,
+        string customExcerpt,
+        bool alsoBookmark,
+        string bookmarkCategory,
+        Action<Dictionary<string, object>> onCompleted)
+    {
         ThreadPool.QueueUserWorkItem(state =>
         {
             try
             {
-                IntPtr prevHwnd = XiaoLv.Desktop.UI.BentoWindow.LastExternalForegroundHwnd;
-                var snap = (prevHwnd != IntPtr.Zero)
-                    ? ContextPerception.CaptureForegroundContext(prevHwnd)
-                    : ContextPerception.CaptureForegroundContext();
-
-                string selected = SelectionHelper.CaptureSelectedText(150);
+                string selected = !string.IsNullOrEmpty(customExcerpt) ? customExcerpt : SelectionHelper.CaptureSelectedText(150);
                 if (string.IsNullOrEmpty(selected) && ClipboardWatcher.IsEnabled && ClipboardWatcher.LatestItem != null)
                 {
                     selected = ClipboardWatcher.LatestItem.RawText;
                 }
 
-                if (string.IsNullOrEmpty(selected))
-                {
-                    if (notify != null) notify("思源外骨骼 · AI 剪藏", "⚠️ 请先在网页中划选需要 AI 提炼的核心正文段落");
-                    return;
-                }
-
-                if (notify != null) notify("思源外骨骼 · AI 剪藏", "🤖 正在调用大模型提炼核心要点...");
-                var aiRes = AiRefiner.Refine(AiRefiner.PromptKeyPoints, selected);
                 string annotation = "";
-                if (aiRes != null && aiRes.Success && !string.IsNullOrEmpty(aiRes.Content))
+                if (!string.IsNullOrEmpty(selected))
                 {
-                    annotation = "【AI 核心结论】\n" + aiRes.Content;
+                    if (notify != null) notify("思源外骨骼 · AI 剪藏", "🤖 正在调用大模型提炼核心要点...");
+                    var aiRes = AiRefiner.Refine(AiRefiner.PromptKeyPoints, selected);
+                    if (aiRes != null && aiRes.Success && !string.IsNullOrEmpty(aiRes.Content))
+                    {
+                        annotation = "【AI 核心结论】\n" + aiRes.Content;
+                    }
                 }
 
-                ExecuteWebClip(notify, annotation, clipMode);
+                ExecuteWebClip(notify, annotation, clipMode, customTitle, customUrl, selected, alsoBookmark, bookmarkCategory, onCompleted);
             }
             catch (Exception ex)
             {
@@ -1152,6 +1229,13 @@ public static class SmartCaptureMain
     /// </summary>
     public static bool AppendToDailyNote(string syUrl, string token, string markdown)
     {
+        string createdBlockId;
+        return AppendToDailyNoteWithId(syUrl, token, markdown, out createdBlockId);
+    }
+
+    public static bool AppendToDailyNoteWithId(string syUrl, string token, string markdown, out string createdBlockId)
+    {
+        createdBlockId = "";
         if (string.IsNullOrEmpty(syUrl) || string.IsNullOrEmpty(markdown)) return false;
         string diaryNotebookId = SafeContext.GetDiaryNotebookId(null, syUrl, token);
         var dailyBody = "{\"notebook\":\"" + SafeContext.EscapeJson(diaryNotebookId) + "\",\"dataType\":\"markdown\",\"data\":\"" + SafeContext.EscapeJson(markdown) + "\"}";
@@ -1160,6 +1244,10 @@ public static class SmartCaptureMain
         {
             Thread.Sleep(300);
             res = SyKernelRequest.DoRequest(syUrl, token, "/api/block/appendDailyNoteBlock", dailyBody);
+        }
+        if (res.Success)
+        {
+            createdBlockId = ExtractCreatedBlockId(res.Text);
         }
         return res.Success;
     }

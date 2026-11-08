@@ -3645,6 +3645,102 @@
       transform: translateY(-1px);
     }
 
+    /* 执行结果回执与下一步精加工中心 (Post-Action Follow-Up & Next-Steps Banner) */
+    .action-followup-banner {
+      margin-top: 8px;
+      padding: 10px 14px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(56, 189, 248, 0.1));
+      border: 1.5px solid rgba(16, 185, 129, 0.45);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      animation: modalEnter 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .followup-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .followup-status-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex: 1;
+    }
+    .followup-badge {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: var(--emerald-mint);
+      color: #0b1120;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .followup-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .followup-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .followup-actions-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+    .followup-step-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--cyber-sky);
+      margin-right: 2px;
+      white-space: nowrap;
+    }
+    .followup-choice-btn {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.14s ease;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .followup-choice-btn:hover {
+      border-color: var(--cyber-sky);
+      color: var(--cyber-sky);
+      transform: translateY(-1px);
+    }
+    .followup-choice-btn.primary {
+      background: var(--indigo-primary);
+      border-color: var(--indigo-primary);
+      color: #ffffff;
+    }
+    .followup-choice-btn.primary:hover {
+      background: var(--cyber-sky);
+      border-color: var(--cyber-sky);
+      color: #0b1120;
+    }
+
   </style>
 </head>
 <body>
@@ -3825,6 +3921,7 @@
     </div>
 
     <div id="intent-banner" class="intent-banner" style="display: none;"></div>
+    <div id="action-followup-banner" class="action-followup-banner" style="display: none;"></div>
     <div id="pinned-dock" class="pinned-dock" style="display: none;"></div>
   </section>
 
@@ -6167,6 +6264,12 @@
       } else if (q.startsWith("color:") || q.startsWith("color：") || q.startsWith("style:") || q === "color" || q === "syp") {
         banner.style.display = "flex";
         banner.innerHTML = renderModeBanner("🎨 原色高亮美化", "【怎么用】点击右侧思源原生 B3 色板，一键对思源选中文字上色/高亮，或生成带配色的笔记块写入日记", "↵ 应用配色");
+      } else if (q.startsWith("pen:") || q.startsWith("pen：") || q.startsWith("sypen:") || q === "pen" || q === "sypen") {
+        banner.style.display = "flex";
+        banner.innerHTML = renderModeBanner("✏️ 随身划笔工作台", "【怎么用】在右侧查看/编辑当前选中文本或剪贴板文字，点击 1~8 按钮执行处理并可继续选择下一步流转；或点「弹出独立微胶囊」", "↵ 执行选中动作");
+      } else if (q.startsWith("ocr:") || q.startsWith("ocr：") || q.startsWith("img:") || q.startsWith("syimg:") || q === "ocr" || q === "syimg") {
+        banner.style.display = "flex";
+        banner.innerHTML = renderModeBanner("📸 截屏与离线 OCR 工作台", "【怎么用】点「立即框选屏幕截图识字」或「识别剪贴板图片」，识别结果将显示在右侧供编辑与选择下一步入库方式", "↵ 立即截屏识字");
       } else if (q.startsWith("cfg:") || q.startsWith("cfg：") || q.startsWith("s3:") || q.startsWith("s3：") || q.startsWith("ai:") || q.startsWith("ai：")) {
         banner.style.display = "flex";
         banner.innerHTML = renderModeBanner("⚙️ 配置预设中枢", "脱敏管理与一键切换 S3 存储桶、AI 大模型及系统预设", "↵ 查看详情 · 复制配置");
@@ -6853,22 +6956,24 @@
         return;
       }
 
-      // g: 模式：触发网页免扩展双态剪藏 (支持文献卡片 vs 独立研读专页 + 即时思考批注)
+      // g: 模式：触发网页免扩展双态剪藏与收藏工作台 (支持自动探测前台网页 + 文献卡/研读专页/网站收藏夹/AI提炼 + 剪藏后进一步选择)
       if (q.startsWith("g:") || q.startsWith("g：") || q === "g") {
         const subKw = raw.replace(/^(g:|g：)/i, "").trim();
-        activeIntentAction = "webclip";
+        activeIntentAction = null;
         banner.style.display = "flex";
         banner.innerHTML = renderModeBanner(
-          "🌐 网页双态剪藏",
-          `<span>① 确保浏览器打开了目标网页 ➔ ② 在右侧输入批注或直接点按钮入库${subKw ? ` (当前批注: “<b>${escapeHtml(subKw)}</b>”)` : ''}</span>`,
+          "🌐 网页剪藏与收藏工作台",
+          `<span>已自动嗅探当前浏览器网页 · 可在右侧修改标题/摘录/分类标签，剪藏后可继续选择转闪卡、派待办或加入收藏夹</span>
+           <span class="scope-switch-pill" onclick="probeWebClipContextNow()">🔄 重新抓取当前网页</span>
+           <span class="scope-switch-pill" onclick="insertPrefix('fav:')">⭐ 查看已收藏网站</span>`,
           "↵ 存文献卡 · ⇧↵ 建专页"
         );
         filteredItems = [
           {
             id: "syg_card",
-            title: "📑 存为文献卡片 (记入日记/收集箱)",
-            desc: subKw ? `附带即时批注: “${subKw}” · 智能打标并以嵌套列表沉淀` : "0ms 抓取前台网页标题与网址，网站定制脱敏清洗，以嵌套大纲形态归档",
-            badge: "文献卡",
+            title: "📑 方式 1：存为文献卡片 (记入今日日记)",
+            desc: subKw ? `附带即时批注: “${subKw}” · 智能打标并以嵌套列表沉淀` : "自动抓取前台网页标题、净化链接与划选正文，以嵌套列表归档至今日日记",
+            badge: "文献卡片",
             badgeCls: "badge-native",
             iconType: "share",
             iconColor: "var(--cyber-sky)",
@@ -6878,13 +6983,37 @@
           },
           {
             id: "syg_doc",
-            title: "📄 另存为研读专页 (新建独立文档)",
-            desc: subKw ? `在读库建立独立专页 · 附带批注: “${subKw}” · 自动转存防盗链图片` : "在读库中建立整篇独立研读笔记，生成文献看板并自动转存外链防盗链图片",
-            badge: "研读专页",
+            title: "📄 方式 2：另存为独立研读专页 (新建文档)",
+            desc: subKw ? `在读库建立独立专页 · 附带批注: “${subKw}” · 自动转存防盗链图片` : "在 /读库/ 中建立整篇独立研读笔记，生成 Callout 来源看板并本地化防盗链图片",
+            badge: "独立专页",
             badgeCls: "badge-plugin",
             iconType: "folder",
             iconColor: "var(--cyber-purple)",
             clipMode: "doc",
+            userAnnotation: subKw,
+            isWebClipItem: true
+          },
+          {
+            id: "syg_fav",
+            title: "⭐ 方式 3：收藏到「全景网站导航 (fav:)」",
+            desc: "将该网页设定分类（常用/开发/学术/设计）与标签存入思源《/收藏夹/网站导航》与大图标启动台",
+            badge: "网站收藏夹",
+            badgeCls: "badge-bridge",
+            iconType: "globe",
+            iconColor: "var(--emerald-mint)",
+            clipMode: "fav",
+            userAnnotation: subKw,
+            isWebClipItem: true
+          },
+          {
+            id: "syg_ai",
+            title: "🤖 方式 4：AI 提炼 3 条核心要点后入库",
+            desc: "先调用大模型提炼当前网页正文的 3 条核心结论，再自动注入批注区完成剪藏",
+            badge: "AI智能提炼",
+            badgeCls: "badge-native",
+            iconType: "sparkles",
+            iconColor: "var(--tech-amber)",
+            clipMode: "ai_card",
             userAnnotation: subKw,
             isWebClipItem: true
           }
@@ -6892,6 +7021,41 @@
         selectedIndex = 0;
         renderItems();
         renderWebClipInspector(filteredItems[0]);
+        probeWebClipContextNow();
+        return;
+      }
+
+      // pen: / sypen 模式：窗内随身划笔与文本精加工工作台 (1~8 全动作可视预览 + 执行后下一步流转)
+      if (q.startsWith("pen:") || q.startsWith("pen：") || q.startsWith("sypen:") || q === "pen" || q === "sypen") {
+        const subText = raw.replace(/^(pen:|pen：|sypen:)/i, "").trim();
+        filteredItems = [
+          { id: "pen_op_1", group: "capture", title: "1 📝 结构入库 (记入思源今日日记)", desc: "将右侧文本附带来源窗口与时间戳写入思源今日日记", hotkey: "1 / Enter", iconType: "edit", iconColor: "var(--emerald-mint)", badge: "入日记", badgeCls: "badge-native", isPenWorkbenchItem: true, penCode: "1", customInput: subText },
+          { id: "pen_op_2", group: "capture", title: "2 🧠 制作为 FSRS 问答闪卡", desc: "将文本转化为思源原生 FSRS 复习闪卡 (支持 问题 // 答案 分隔)", hotkey: "2", iconType: "brain", iconColor: "var(--cyber-purple)", badge: "制闪卡", badgeCls: "badge-plugin", isPenWorkbenchItem: true, penCode: "2", customInput: subText },
+          { id: "pen_op_3", group: "capture", title: "3 📋 转化为待办任务 (- [ ] Todo)", desc: "将文本转为未完成待办事项写入今日日记并同步至四象限待办看板", hotkey: "3", iconType: "check", iconColor: "var(--tech-amber)", badge: "派任务", badgeCls: "badge-native", isPenWorkbenchItem: true, penCode: "3", customInput: subText },
+          { id: "pen_op_4", group: "capture", title: "4 📥 存入稍后读收件箱", desc: "将网页链接或重点段落存入稍后读库，支持后续深度研读", hotkey: "4", iconType: "inbox", iconColor: "var(--cyber-sky)", badge: "稍后读", badgeCls: "badge-bridge", isPenWorkbenchItem: true, penCode: "4", customInput: subText },
+          { id: "pen_op_5", group: "capture", title: "5 ✨ 净复制 (清洗断行与块属性)", desc: "自动缝合 PDF 断行、剥离思源 {: id} 属性后复制到剪贴板", hotkey: "5", iconType: "share", iconColor: "var(--indigo-light)", badge: "净复制", badgeCls: "badge-native", isPenWorkbenchItem: true, penCode: "5", customInput: subText },
+          { id: "pen_op_6", group: "capture", title: "6 🔗 检索匹配块并粘贴 ((双链))", desc: "在思源库中检索匹配笔记块，生成 ((id \"锚文本\")) 双链贴回光标处", hotkey: "6", iconType: "search", iconColor: "var(--cyber-sky)", badge: "贴双链", badgeCls: "badge-bridge", isPenWorkbenchItem: true, penCode: "6", customInput: subText },
+          { id: "pen_op_7", group: "capture", title: "7 🤖 AI 提炼核心要点后入库", desc: "调用大模型提炼核心要点或润色翻译后写入今日日记", hotkey: "7", iconType: "sparkles", iconColor: "var(--tech-amber)", badge: "AI提炼", badgeCls: "badge-plugin", isPenWorkbenchItem: true, penCode: "7", customInput: subText },
+          { id: "pen_op_8", group: "capture", title: "8 📌 钉在桌面作为置顶参考便签", desc: "弹出独立置顶活便签窗口，方便对照阅读与随时 Ctrl+S 写回思源", hotkey: "8", iconType: "window-restore", iconColor: "var(--rose-agent)", badge: "钉便签", badgeCls: "badge-native", isPenWorkbenchItem: true, penCode: "8", customInput: subText },
+          { id: "pen_op_float", group: "capture", title: "🪟 弹出独立「随身划笔」鼠标旁悬浮微窗", desc: "在屏幕光标旁呼出轻量 1~8 键微胶囊窗 (日常在外部软件可直接按 Alt+Shift+W)", hotkey: "Alt+Shift+W", iconType: "bolt", iconColor: "var(--emerald-mint)", badge: "独立微窗", badgeCls: "badge-system", isPenWorkbenchItem: true, penCode: "float", customInput: subText }
+        ];
+        selectedIndex = 0;
+        renderItems();
+        renderPenWorkbenchInspector(filteredItems[0]);
+        return;
+      }
+
+      // ocr: / img: / syimg 模式：窗内截屏与剪贴板图文离线 OCR 工作台
+      if (q.startsWith("ocr:") || q.startsWith("ocr：") || q.startsWith("img:") || q.startsWith("syimg:") || q === "ocr" || q === "syimg") {
+        const subText = raw.replace(/^(ocr:|ocr：|img:|syimg:)/i, "").trim();
+        filteredItems = [
+          { id: "ocr_snip_screen", group: "capture", title: "📸 方式 1：立即框选屏幕截图并离线识字", desc: "框选屏幕任意区域（如 PDF/视频字幕/禁复制网页），识别完成后自动回到此工作台选择入库方式", hotkey: "Enter", iconType: "camera", iconColor: "var(--emerald-mint)", badge: "框选截屏", badgeCls: "badge-native", isOcrWorkbenchItem: true, ocrAction: "snip", customInput: subText },
+          { id: "ocr_clip_img", group: "capture", title: "🖼️ 方式 2：直接识别当前剪贴板中的图片", desc: "若你刚用 Win+Shift+S / 微信 / PixPin 截了图，点此直接提取剪贴板图片中的文字", hotkey: "点击识别", iconType: "bolt", iconColor: "var(--cyber-sky)", badge: "剪贴板识图", badgeCls: "badge-bridge", isOcrWorkbenchItem: true, ocrAction: "clipboard", customInput: subText },
+          { id: "ocr_float_snip", group: "capture", title: "🪟 方式 3：框选截屏后弹出鼠标旁微胶囊", desc: "截屏识别后在鼠标旁弹出 1~8 键微胶囊，按 1 直接图文并茂存入今日日记", hotkey: "Alt+Shift+C", iconType: "window-restore", iconColor: "var(--cyber-purple)", badge: "微胶囊流转", badgeCls: "badge-plugin", isOcrWorkbenchItem: true, ocrAction: "float", customInput: subText }
+        ];
+        selectedIndex = 0;
+        renderItems();
+        renderOcrWorkbenchInspector(filteredItems[0]);
         return;
       }
 
@@ -7221,7 +7385,9 @@
         "vault:", "vault：", "dir:", "dir：",
         "pom:", "pom：", "timer:", "timer：",
         "x:", "x：", "clean:", "syx:",
-        "color:", "color：", "style:", "syp:"
+        "color:", "color：", "style:", "syp:",
+        "pen:", "pen：", "sypen:",
+        "ocr:", "ocr：", "img:", "syimg:"
       ];
       return prefixes.some(p => str.toLowerCase().startsWith(p));
     }
@@ -7583,13 +7749,35 @@
 
     function triggerWebClipWithAi(mode) {
       showToast("🤖 正在调用大模型提炼网页要点并剪藏...");
+      const customTitle = document.getElementById("webclip-title-input")?.value.trim() || "";
+      const customUrl = document.getElementById("webclip-url-input")?.value.trim() || "";
+      const customExcerpt = document.getElementById("webclip-excerpt-input")?.value.trim() || "";
+      const alsoBookmark = Boolean(document.getElementById("webclip-also-bookmark")?.checked);
+      const bookmarkCategory = document.getElementById("webclip-bookmark-category")?.value || "常用";
       if (window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({
           op: 'executeWebClipWithAi',
-          mode: mode || 'card'
+          mode: mode || 'card',
+          customTitle: customTitle,
+          customUrl: customUrl,
+          customExcerpt: customExcerpt,
+          alsoBookmark: alsoBookmark,
+          bookmarkCategory: bookmarkCategory,
+          keepOpen: true
         }));
       } else {
-        showToast("已请求 AI 提炼剪藏");
+        if (window.onWebClipCompleted) {
+          window.onWebClipCompleted({
+            success: true,
+            mode: mode || 'card',
+            title: customTitle || "AI提炼网页研读笔记",
+            url: customUrl || "https://ld246.com",
+            excerpt: customExcerpt || "AI 已自动提炼 3 条核心要点...",
+            annotation: "【AI 核心结论】已自动提炼",
+            markdown: `* 📑 [${customTitle || 'AI提炼网页研读笔记'}](${customUrl || 'https://ld246.com'})\n  * 💡 【AI 核心结论】已提炼核心要点`,
+            alsoBookmarked: alsoBookmark
+          });
+        }
       }
     }
 
@@ -7685,6 +7873,18 @@
         return;
       }
 
+      // 随身划笔窗内工作台条目点击执行 1~8 动作
+      if (item.isPenWorkbenchItem) {
+        executePenWorkbenchItem(item);
+        return;
+      }
+
+      // 截屏与离线 OCR 窗内工作台条目点击执行
+      if (item.isOcrWorkbenchItem) {
+        executeOcrWorkbenchItem(item);
+        return;
+      }
+
       // Zotero 文献库调动分支
       if (item.actionType === "zotero-open") {
         if (window.chrome && window.chrome.webview) {
@@ -7693,6 +7893,18 @@
         } else {
           showToast("已请求调动 Zotero 文献库");
         }
+        return;
+      }
+
+      // 主页点击「随身划笔 (sypen)」进入窗内随身划笔与文本精加工工作台 (pen:)
+      if (item.id === "sypen" && !customText) {
+        insertPrefix("pen:");
+        return;
+      }
+
+      // 主页点击「截屏与离线 OCR (syimg)」进入窗内图文识别工作台 (ocr:)
+      if (item.id === "syimg" && !customText) {
+        insertPrefix("ocr:");
         return;
       }
 
@@ -7714,17 +7926,51 @@
         return;
       }
 
-      // 网页双态剪藏执行分支 (文献卡片 vs 独立研读专页)
-      if (item.isWebClipItem || item.clipMode || item.id === "syg_card" || item.id === "syg_doc") {
-        const mode = item.clipMode || (item.id === "syg_doc" ? "doc" : "card");
+      // 网页双态剪藏与收藏执行分支 (文献卡片 / 独立研读专页 / 仅收藏网址 / AI提炼剪藏)
+      if (item.isWebClipItem || item.clipMode || item.id === "syg_card" || item.id === "syg_doc" || item.id === "syg_fav" || item.id === "syg_ai") {
+        const mode = item.clipMode || (item.id === "syg_doc" ? "doc" : (item.id === "syg_fav" ? "fav" : (item.id === "syg_ai" ? "ai_card" : "card")));
         const inlineAnnoEl = document.getElementById("webclip-inline-annotation");
         const inlineAnno = inlineAnnoEl ? inlineAnnoEl.value.trim() : "";
         const annotation = inlineAnno || item.userAnnotation || customText || "";
+        const customTitle = document.getElementById("webclip-title-input")?.value.trim() || "";
+        const customUrl = document.getElementById("webclip-url-input")?.value.trim() || "";
+        const customExcerpt = document.getElementById("webclip-excerpt-input")?.value.trim() || "";
+        const alsoBookmark = Boolean(document.getElementById("webclip-also-bookmark")?.checked);
+        const bookmarkCategory = document.getElementById("webclip-bookmark-category")?.value || "常用";
+
+        if (mode === "fav") {
+          saveWebBookmarkFromClipInspector();
+          return;
+        }
+        if (mode === "ai_card" || mode === "ai_doc") {
+          triggerWebClipWithAi(mode === "ai_doc" ? "doc" : "card");
+          return;
+        }
         if (window.chrome && window.chrome.webview) {
           window.chrome.webview.postMessage({
             op: 'executeWebClip',
             mode: mode,
-            annotation: annotation
+            annotation: annotation,
+            customTitle: customTitle,
+            customUrl: customUrl,
+            customExcerpt: customExcerpt,
+            alsoBookmark: alsoBookmark,
+            bookmarkCategory: bookmarkCategory,
+            keepOpen: true
+          });
+        } else if (window.onWebClipCompleted) {
+          window.onWebClipCompleted({
+            success: true,
+            mode: mode,
+            blockId: "20261109120000-webclip",
+            docId: "20261109120000-webdoc",
+            title: customTitle || "当前浏览器活动网页",
+            url: customUrl || "https://ld246.com",
+            siteName: "链滴社区",
+            excerpt: customExcerpt || "网页核心正文摘录内容...",
+            annotation: annotation,
+            markdown: `* 📑 [${customTitle || '当前浏览器活动网页'}](${customUrl || 'https://ld246.com'})\n  * ⏱️ 摘录于 12:00 · 链滴社区${annotation ? `\n  * 💡 思考批注: ${annotation}` : ''}`,
+            alsoBookmarked: alsoBookmark
           });
         }
         return;
@@ -8067,14 +8313,15 @@
 
     function isSplitSearchModeActive() {
       const q = document.getElementById("search-input") ? document.getElementById("search-input").value.trim().toLowerCase() : "";
-      if (hasPrefixSearch(q) || q === "g" || q === "x" || q === "syx" || q === "color" || q === "syp" || q === "voice" || (q.startsWith("#") && !q.includes(" ") && q.length > 1)) {
+      if (hasPrefixSearch(q) || q === "g" || q === "x" || q === "syx" || q === "color" || q === "syp" || q === "pen" || q === "sypen" || q === "ocr" || q === "syimg" || q === "voice" || (q.startsWith("#") && !q.includes(" ") && q.length > 1)) {
         return true;
       }
       if (filteredItems.length > 0 && filteredItems.every(it =>
         it.blockId || it.docId || it.isAssetItem || it.isRescueItem || it.isWorkspaceItem ||
         it.isVoiceItem || it.isWebClipItem || it.favData || it.folderData || it.isBookmarkItem ||
         it.profileData || it.notifData || it.isCodeSnippet || it.isTableBlock || it.isTagItem ||
-        it.taskData || it.isFlowTimerItem || it.isCleanMdItem || it.isColorStyleItem || it.isClipItem
+        it.taskData || it.isFlowTimerItem || it.isCleanMdItem || it.isColorStyleItem || it.isClipItem ||
+        it.isPenWorkbenchItem || it.isOcrWorkbenchItem
       )) {
         return true;
       }
@@ -8084,8 +8331,16 @@
     let blockContextDebounceTimer = null;
     function requestBlockContext(item) {
       if (!item) return;
-      if (item.isWebClipItem || item.id === "syg" || item.id === "syg_card" || item.id === "syg_doc") {
+      if (item.isWebClipItem || item.id === "syg" || item.id === "syg_card" || item.id === "syg_doc" || item.id === "syg_fav" || item.id === "syg_ai") {
         renderWebClipInspector(item);
+        return;
+      }
+      if (item.isPenWorkbenchItem) {
+        renderPenWorkbenchInspector(item);
+        return;
+      }
+      if (item.isOcrWorkbenchItem) {
+        renderOcrWorkbenchInspector(item);
         return;
       }
       if (item.isFlowTimerItem) {
@@ -8260,57 +8515,748 @@
       }
     }
 
+    // ==========================================================
+    // 全局动作执行回执与「下一步选择」精加工引擎 (Post-Action Follow-Up & Next-Steps Engine)
+    // ==========================================================
+    window._followUpActionCallbacks = {};
+    let _followUpAutoTimer = null;
+
+    function closeActionFollowUpBanner() {
+      const el = document.getElementById("action-followup-banner");
+      if (el) el.style.display = "none";
+      if (_followUpAutoTimer) {
+        clearTimeout(_followUpAutoTimer);
+        _followUpAutoTimer = null;
+      }
+    }
+
+    function invokeFollowUpChoice(idx) {
+      const fn = window._followUpActionCallbacks && window._followUpActionCallbacks[idx];
+      if (typeof fn === "function") fn();
+    }
+
+    function showActionFollowUp(config) {
+      if (!config) return;
+      const banner = document.getElementById("action-followup-banner");
+      if (!banner) return;
+
+      window._followUpActionCallbacks = {};
+      const actions = Array.isArray(config.actions) ? config.actions : [];
+      const buttonsHtml = actions.map((act, idx) => {
+        window._followUpActionCallbacks[idx] = act.onClick;
+        return `<button type="button" class="followup-choice-btn ${act.primary ? 'primary' : ''}" onclick="invokeFollowUpChoice(${idx})">${escapeHtml(act.label)}</button>`;
+      }).join("");
+
+      banner.style.display = "flex";
+      banner.innerHTML = `
+        <div class="followup-top-row">
+          <div class="followup-status-wrap">
+            <span class="followup-badge">✓ ${escapeHtml(config.badge || '执行成功')}</span>
+            <span class="followup-title">${escapeHtml(config.title || '操作已完成')}</span>
+            ${config.summary ? `<span class="followup-sub">· ${escapeHtml(config.summary)}</span>` : ''}
+          </div>
+          <button type="button" class="theme-toggle-btn" style="width: 22px; height: 22px; font-size: 11px; flex-shrink: 0;" onclick="closeActionFollowUpBanner()" title="收起提示">✕</button>
+        </div>
+        ${actions.length > 0 ? `
+          <div class="followup-actions-row">
+            <span class="followup-step-label">🧭 下一步你可以继续选择：</span>
+            ${buttonsHtml}
+          </div>
+        ` : ''}
+      `;
+
+      if (_followUpAutoTimer) clearTimeout(_followUpAutoTimer);
+      _followUpAutoTimer = setTimeout(() => {
+        closeActionFollowUpBanner();
+      }, 28000);
+
+      // 若当前在双栏子视图且指定同步渲染右侧详情结果卡，则在右侧 Inspector 呈现结构化回执与进一步选择
+      if (config.renderInInspector) {
+        const inspector = document.getElementById("search-inspector-pane");
+        if (inspector) {
+          inspector.innerHTML = `
+            <div class="inspector-header">
+              <div class="inspector-breadcrumbs">
+                <span class="breadcrumb-crumb">🎉 动作已完成</span>
+                <span class="breadcrumb-sep">/</span>
+                <span class="breadcrumb-crumb">${escapeHtml(config.badge || '执行成功')}</span>
+              </div>
+              <div class="inspector-doc-title">✓ ${escapeHtml(config.title || '操作已生效')}</div>
+            </div>
+            <div class="inspector-body" style="gap: 10px;">
+              ${config.summary ? `
+                <div style="font-size: 12px; color: var(--emerald-mint); font-weight: 600; padding: 8px 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 7px;">
+                  ${escapeHtml(config.summary)}
+                </div>
+              ` : ''}
+              ${config.previewMarkdown ? `
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">📄 实际处理 / 入库内容预览：</span>
+                  <div class="inspector-preview-card" style="border-left-color: var(--emerald-mint); font-size: 12px; max-height: 150px; overflow-y: auto;">${escapeHtml(config.previewMarkdown)}</div>
+                </div>
+              ` : ''}
+              <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px; padding: 10px 12px; background: var(--bg-inset); border: 1px solid var(--border-hairline); border-radius: 8px;">
+                <div style="font-size: 12px; font-weight: 700; color: var(--cyber-sky);">🧭 下一步你可以继续选择（无需重头再来）：</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                  ${buttonsHtml}
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }
+    }
+
+    function promptCreateTaskFromText(defaultText, sourceTitle) {
+      const cleanTask = String(defaultText || "").replace(/^[-*]\s*\[[ xX]?\]\s*/, "").replace(/^[!！?？@#＃¥￥~～+＋]+\s*/, "").trim();
+      showInlineFormModal({
+        title: "将内容转化为【四象限待办任务】",
+        icon: "📋",
+        fields: [
+          { key: "title", label: "待办任务内容 *", placeholder: "输入任务事项...", value: cleanTask || (sourceTitle ? `跟进研读《${sourceTitle}》` : "新待办事项"), required: true },
+          { key: "priority", label: "选择四象限优先级", type: "select", value: "P1", options: ["P1", "P2", "P3"] },
+          { key: "dueDate", label: "截止日期 (可选，如 yyyy-MM-dd)", placeholder: new Date().toISOString().slice(0, 10), value: new Date().toISOString().slice(0, 10) }
+        ],
+        onSubmit: (vals) => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({
+              op: 'createTaskFromContext',
+              title: vals.title,
+              priority: vals.priority || "P1",
+              dueDate: vals.dueDate || ""
+            }));
+          }
+          showToast(`✓ 已创建 ${vals.priority || 'P1'} 待办：【${vals.title}】`);
+          showActionFollowUp({
+            badge: "待办已创建",
+            title: `已加入待办池：【${vals.title}】(${vals.priority || 'P1'})`,
+            summary: vals.dueDate ? `截止日: ${vals.dueDate}` : "已记入今日日记待办池",
+            actions: [
+              { label: "🍅 立即为此任务开启 25m 专注", primary: true, onClick: () => startTaskFocusSession("", vals.title, "今日日记", 25) },
+              { label: "🎴 打开四象限待办看板查看", onClick: () => toggleTasksKanbanModal() },
+              { label: "📅 查看今日日记时间轴", onClick: () => toggleTodayTimeline() },
+              { label: "📌 钉在桌面作为置顶提醒", onClick: () => pinAsStickyNote("待办提醒", `- [ ] [${vals.priority || 'P1'}] ${vals.title}`, "") }
+            ]
+          });
+        }
+      });
+    }
+
+    function promptCreateFlashcardFromText(defaultQuestion, defaultAnswer) {
+      const raw = String(defaultQuestion || "").trim();
+      let qVal = raw;
+      let aVal = String(defaultAnswer || "").trim();
+      if (!aVal && raw.includes("//")) {
+        const parts = raw.split("//");
+        qVal = parts[0].replace(/^[?？]\s*/, "").trim();
+        aVal = parts.slice(1).join("//").trim();
+      }
+      showInlineFormModal({
+        title: "将内容制作为【FSRS 问答复习闪卡】",
+        icon: "🧠",
+        fields: [
+          { key: "question", label: "闪卡正面（问题 / 核心概念）*", placeholder: "输入提示问题...", value: qVal || "核心知识点问题", required: true },
+          { key: "answer", label: "闪卡背面（答案解析 / 摘录要点）*", type: "textarea", placeholder: "输入详细答案解析...", value: aVal || raw || "待补充答案要点", required: true }
+        ],
+        onSubmit: (vals) => {
+          const cardCmd = `? ${vals.question.trim()} // ${vals.answer.trim()}`;
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({
+              op: 'executeCommand',
+              cmd: 'sys',
+              text: cardCmd,
+              keepOpen: true
+            }));
+          }
+          showToast(`🧠 已生成 FSRS 闪卡：【${vals.question}】`);
+          showActionFollowUp({
+            badge: "闪卡已入库",
+            title: `已生成 FSRS 复习闪卡：【${vals.question}】`,
+            summary: `答案: ${vals.answer.substring(0, 50)}`,
+            actions: [
+              { label: "🧠 立即打开桌面刷卡微舱复习", primary: true, onClick: () => executeItem({ id: "syfsrs", title: "闪卡复习微舱" }) },
+              { label: "🪟 打开思源闪卡中心大面板", onClick: () => launchPluginDirectItem("syfsrs") },
+              { label: "📅 查看今日日记时间轴", onClick: () => toggleTodayTimeline() },
+              { label: "➕ 继续制作下一张闪卡", onClick: () => promptCreateFlashcardFromText("", "") }
+            ]
+          });
+        }
+      });
+    }
+
+    function promptSaveUrlToBookmarkHub(defaultTitle, defaultUrl, defaultNotes) {
+      showInlineFormModal({
+        title: "收藏网址到「全景网站导航中枢 (fav:)」",
+        icon: "⭐",
+        fields: [
+          { key: "title", label: "网站标题 *", value: defaultTitle || defaultUrl || "精选网页", required: true },
+          { key: "url", label: "网址链接 URL *", value: defaultUrl || "https://", required: true },
+          { key: "category", label: "选择收藏分类", type: "select", value: "常用", options: ["常用", "开发", "学术", "设计", "工具", "生活"] },
+          { key: "tags", label: "标签 (逗号分隔，可选)", placeholder: "AI, 文献, 工具", value: "精选" },
+          { key: "notes", label: "备注说明 (可选)", value: defaultNotes || "" }
+        ],
+        onSubmit: (vals) => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({
+              op: 'saveWebBookmark',
+              title: vals.title,
+              url: vals.url,
+              category: vals.category || "常用",
+              tags: vals.tags || "",
+              notes: vals.notes || ""
+            }));
+          } else if (window.onWebBookmarkSaved) {
+            window.onWebBookmarkSaved({
+              code: 0,
+              success: true,
+              entry: { Title: vals.title, Url: vals.url, Category: vals.category || "常用", Tags: vals.tags || "", Notes: vals.notes || "" }
+            });
+          }
+        }
+      });
+    }
+
+    window._probedWebClipContext = null;
+
+    function probeWebClipContextNow() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'probeWebClipContext' }));
+      }
+    }
+
+    window.onWebClipContextProbed = function(data) {
+      if (!data) return;
+      window._probedWebClipContext = data;
+      const tEl = document.getElementById("webclip-title-input");
+      const uEl = document.getElementById("webclip-url-input");
+      const eEl = document.getElementById("webclip-excerpt-input");
+      const sEl = document.getElementById("webclip-probed-source-pill");
+      if (tEl && !tEl.dataset.userEdited && data.title) tEl.value = data.title;
+      if (uEl && !uEl.dataset.userEdited && data.url) uEl.value = data.url;
+      if (eEl && !eEl.dataset.userEdited && data.excerpt) eEl.value = data.excerpt;
+      if (sEl) {
+        sEl.innerText = data.url ? `🟢 已抓取 ${data.siteName || data.app || '浏览器'}` : `🟡 未检测到前台浏览器网址（可手动粘贴）`;
+      }
+    };
+
+    function appendWebClipTag(tagStr) {
+      const inp = document.getElementById("webclip-inline-annotation");
+      if (!inp) return;
+      const cur = inp.value.trim();
+      inp.value = cur ? `${cur} ${tagStr}` : tagStr;
+      inp.focus();
+    }
+
+    function saveWebBookmarkFromClipInspector() {
+      const title = document.getElementById("webclip-title-input")?.value.trim() || (window._probedWebClipContext && window._probedWebClipContext.title) || "";
+      const url = document.getElementById("webclip-url-input")?.value.trim() || (window._probedWebClipContext && window._probedWebClipContext.url) || "";
+      const notes = document.getElementById("webclip-inline-annotation")?.value.trim() || "";
+      promptSaveUrlToBookmarkHub(title, url, notes);
+    }
+
     function renderWebClipInspector(item) {
       const inspector = document.getElementById("search-inspector-pane");
       if (!inspector) return;
       const annotation = item ? (item.userAnnotation || "") : "";
-      const isDocMode = item && item.clipMode === "doc";
+      const clipMode = (item && item.clipMode) || "card";
+      const probed = window._probedWebClipContext || {};
+      const initTitle = probed.title || "";
+      const initUrl = probed.url || "";
+      const initExcerpt = probed.excerpt || "";
 
       inspector.innerHTML = `
         <div class="inspector-header">
           <div class="inspector-breadcrumbs">
-            <span class="breadcrumb-crumb">🌐 极速网页剪藏</span>
+            <span class="breadcrumb-crumb">🌐 网页剪藏与收藏工作台</span>
             <span class="breadcrumb-sep">/</span>
-            <span class="breadcrumb-crumb">${isDocMode ? '📄 独立研读专页' : '📑 文献卡片流'}</span>
+            <span class="breadcrumb-crumb" id="webclip-probed-source-pill">${initUrl ? `🟢 已抓取 ${escapeHtml(probed.siteName || probed.app || '浏览器')}` : '🔍 自动嗅探前台浏览器中...'}</span>
           </div>
-          <div class="inspector-doc-title">🌐 网页双态剪藏与智能研读看板</div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div class="inspector-doc-title">🌐 确认网页信息并选择入库/收藏方式</div>
+            <button type="button" class="card-howto-btn" onclick="probeWebClipContextNow()" title="重新嗅探前台浏览器当前打开的网页标题与网址">🔄 重新抓取</button>
+          </div>
         </div>
-        <div class="inspector-body">
-          <div class="inspector-preview-card" style="font-size: 12px; border-left-color: var(--cyber-sky); line-height: 1.6;">
-            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">🎯 怎么用（免装浏览器扩展，2 步剪藏）：</div>
-            <div style="font-size: 11.5px; color: var(--text-secondary); margin-bottom: 8px;">
-              ① 先在浏览器（Edge/Chrome/Firefox）打开你想保存的网页（可选中重点段落）；<br/>
-              ② 在下方输入你的阅读批注（可留空），点击底部按钮即可存入思源！
+        <div class="inspector-body" style="gap: 8px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary);">📌 网页标题 (可修改)：</label>
+              <input type="text" id="webclip-title-input" class="search-input" style="height: 29px; width: 100%; font-size: 12px; padding: 0 8px; border-radius: 6px; background: var(--bg-card);" value="${escapeQuote(initTitle)}" placeholder="自动抓取前台网页标题..." oninput="this.dataset.userEdited='1'" />
             </div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div style="padding: 6px 10px; border-radius: 6px; background: ${!isDocMode ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.03)'}; border: 1px solid ${!isDocMode ? 'rgba(56,189,248,0.4)' : 'var(--border-hairline)'}; cursor: pointer;" onclick="executeItem({ isWebClipItem: true, clipMode: 'card', userAnnotation: document.getElementById('webclip-inline-annotation')?.value || '' })">
-                <div style="font-weight: 700; color: var(--cyber-sky);">📑 模式 1: 存为文献卡片 (记入今日日记) · 默认 [Enter]</div>
-                <div style="font-size: 11px; opacity: 0.85; margin-top: 2px;">将网页标题、网址、划选段落按嵌套列表注入今日日记，适合碎片阅读与要点摘抄。</div>
-              </div>
-              <div style="padding: 6px 10px; border-radius: 6px; background: ${isDocMode ? 'rgba(168,85,247,0.15)' : 'rgba(255,255,255,0.03)'}; border: 1px solid ${isDocMode ? 'rgba(168,85,247,0.4)' : 'var(--border-hairline)'}; cursor: pointer;" onclick="executeItem({ isWebClipItem: true, clipMode: 'doc', userAnnotation: document.getElementById('webclip-inline-annotation')?.value || '' })">
-                <div style="font-weight: 700; color: var(--cyber-purple);">📄 模式 2: 另存为独立研读专页 (新建文档) [Shift+Enter]</div>
-                <div style="font-size: 11px; opacity: 0.85; margin-top: 2px;">在读库中建立整篇独立笔记，生成 Callout 来源看板并自动将微信/知乎防盗链图片转存至本地资产库。</div>
-              </div>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary);">🔗 网页网址 URL (自动去追踪参数)：</label>
+              <input type="text" id="webclip-url-input" class="search-input" style="height: 29px; width: 100%; font-size: 11.5px; font-family: var(--font-mono); padding: 0 8px; border-radius: 6px; background: var(--bg-card);" value="${escapeQuote(initUrl)}" placeholder="https://..." oninput="this.dataset.userEdited='1'" />
             </div>
           </div>
-          <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 5px;">
-            <label style="font-size: 11.5px; font-weight: 700; color: var(--indigo-light);">✍️ 附带阅读批注 / 个人思考 (可选)：</label>
-            <input type="text" id="webclip-inline-annotation" class="search-input" style="height: 32px; width: 100%; font-size: 12px; padding: 0 10px; border-radius: 6px; background: var(--bg-card);" value="${escapeQuote(annotation)}" placeholder="在此输入你的批注或感悟，剪藏时将自动附带写入..." onkeydown="if(event.key==='Enter'){ event.preventDefault(); executeItem({ isWebClipItem: true, clipMode: event.shiftKey ? 'doc' : 'card', userAnnotation: this.value }); }" />
+
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary);">📝 摘录正文 / 网页划选段落 (可选，支持粘贴重点段落)：</label>
+            <textarea id="webclip-excerpt-input" class="search-input" style="height: 58px; width: 100%; font-size: 11.5px; line-height: 1.45; padding: 6px 8px; border-radius: 6px; resize: vertical; background: var(--bg-card);" placeholder="若在浏览器中选中了文字或复制了段落会自动填入，也可在此直接粘贴或留空仅存链接..." oninput="this.dataset.userEdited='1'">${escapeHtml(initExcerpt)}</textarea>
           </div>
-          <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px; padding: 6px 10px; background: rgba(16,185,129,0.06); border-radius: 6px;">
-            🛡️ <b>全平台支持</b>：日常浏览网页时，无需打开本面板，直接按全局快捷键 <span class="hint-kbd">Alt+Shift+G</span> 即可秒速剪藏！
+
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+              <label style="font-size: 11px; font-weight: 700; color: var(--indigo-light);">✍️ 附带阅读批注与标签 (可选，点击标签快速打标)：</label>
+              <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                <span class="scope-switch-pill" onclick="appendWebClipTag('#必读精选#')">#必读精选#</span>
+                <span class="scope-switch-pill" onclick="appendWebClipTag('#技术方案#')">#技术方案#</span>
+                <span class="scope-switch-pill" onclick="appendWebClipTag('#待深读#')">#待深读#</span>
+                <span class="scope-switch-pill" onclick="appendWebClipTag('#项目参考#')">#项目参考#</span>
+              </div>
+            </div>
+            <input type="text" id="webclip-inline-annotation" class="search-input" style="height: 30px; width: 100%; font-size: 12px; padding: 0 10px; border-radius: 6px; background: var(--bg-card);" value="${escapeQuote(annotation)}" placeholder="输入你的阅读感悟或为什么收藏这篇网页..." onkeydown="if(event.key==='Enter'){ event.preventDefault(); executeItem({ isWebClipItem: true, clipMode: event.shiftKey ? 'doc' : 'card', userAnnotation: this.value }); }" />
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px; background: var(--bg-inset); border: 1px solid var(--border-hairline); border-radius: 7px; flex-wrap: wrap;">
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: var(--text-primary); cursor: pointer;">
+              <input type="checkbox" id="webclip-also-bookmark" style="accent-color: var(--emerald-mint);" checked />
+              <span>⭐ 剪藏入库的同时，顺便收藏该网址到「全景网站导航 (fav:)」</span>
+            </label>
+            <div style="display: flex; align-items: center; gap: 5px;">
+              <span style="font-size: 11px; color: var(--text-muted);">分类:</span>
+              <select id="webclip-bookmark-category" class="search-input" style="height: 24px; font-size: 11px; padding: 0 6px; border-radius: 5px; background: var(--bg-card); color: var(--text-primary);">
+                <option value="常用">📌 常用</option>
+                <option value="开发">💻 开发</option>
+                <option value="学术">🎓 学术</option>
+                <option value="设计">🎨 设计</option>
+                <option value="工具">🛠️ 工具</option>
+                <option value="生活">🌿 生活</option>
+              </select>
+            </div>
           </div>
         </div>
         <div class="inspector-dock">
-          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="inspector-dock-btn primary" onclick="executeItem({ isWebClipItem: true, clipMode: 'card', userAnnotation: document.getElementById('webclip-inline-annotation')?.value || '${escapeQuote(annotation)}' })" title="保存为文献卡片存入日记 (Enter)">📑 存为文献卡片 (Enter)</button>
-            <button class="inspector-dock-btn" style="background: rgba(168,85,247,0.18); border-color: rgba(168,85,247,0.5); color: #c084fc; font-weight: 700;" onclick="executeItem({ isWebClipItem: true, clipMode: 'doc', userAnnotation: document.getElementById('webclip-inline-annotation')?.value || '${escapeQuote(annotation)}' })" title="新建独立研读专页笔记 (Shift+Enter)">📄 新建研读专页 (Shift+↵)</button>
-            <button class="inspector-dock-btn" style="background: rgba(56,189,248,0.14); border-color: rgba(56,189,248,0.45); color: var(--cyber-sky); font-weight: 700;" onclick="triggerWebClipWithAi('card')" title="自动调用大模型提炼核心要点后存入今日日记">🤖 AI提炼后存卡</button>
-            <button class="inspector-dock-btn" style="background: rgba(99,102,241,0.14); border-color: rgba(99,102,241,0.45); color: #a5b4fc; font-weight: 700;" onclick="triggerWebClipWithAi('doc')" title="自动调用大模型提炼核心要点后建立独立专页">🤖 AI提炼建专页</button>
+          <div class="inspector-dock-actions" style="display: flex; gap: 7px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="executeItem({ isWebClipItem: true, clipMode: 'card', userAnnotation: document.getElementById('webclip-inline-annotation')?.value || '' })" title="存为文献卡片记入今日日记 (Enter)">📑 存为文献卡片 (Enter)</button>
+            <button class="inspector-dock-btn" style="background: rgba(168,85,247,0.18); border-color: rgba(168,85,247,0.5); color: #c084fc; font-weight: 700;" onclick="executeItem({ isWebClipItem: true, clipMode: 'doc', userAnnotation: document.getElementById('webclip-inline-annotation')?.value || '' })" title="在 /读库/ 新建独立研读专页文档 (Shift+Enter)">📄 新建研读专页 (Shift+↵)</button>
+            <button class="inspector-dock-btn" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.45); font-weight: 700;" onclick="saveWebBookmarkFromClipInspector()" title="将该网页设定分类与标签加入全景网站收藏夹">⭐ 仅收藏到网站导航</button>
+            <button class="inspector-dock-btn" style="background: rgba(56,189,248,0.14); border-color: rgba(56,189,248,0.45); color: var(--cyber-sky); font-weight: 700;" onclick="triggerWebClipWithAi('card')" title="调用大模型提炼核心要点后存入今日日记">🤖 AI提炼后存卡</button>
+            <button class="inspector-dock-btn" style="background: rgba(99,102,241,0.14); border-color: rgba(99,102,241,0.45); color: #a5b4fc; font-weight: 700;" onclick="triggerWebClipWithAi('doc')" title="调用大模型提炼核心要点后建立独立专页">🤖 AI提炼建专页</button>
           </div>
         </div>
       `;
     }
+
+    window.onWebClipCompleted = function(res) {
+      if (!res) return;
+      const title = res.title || "网页剪藏笔记";
+      const url = res.url || "";
+      const blockId = res.blockId || res.docId || "";
+      const isDoc = res.mode === "doc";
+      const modeName = isDoc ? "独立研读专页 (/读库/)" : "今日日记文献卡片";
+
+      showActionFollowUp({
+        badge: isDoc ? "专页已创建" : "网页已剪藏",
+        title: `《${title}》已存入【${modeName}】${res.alsoBookmarked ? ' + 已同步加入网站收藏夹' : ''}`,
+        summary: url,
+        previewMarkdown: res.markdown || "",
+        renderInInspector: false,
+        actions: [
+          ...(blockId ? [{ label: "🪟 在思源中打开查看", primary: true, onClick: () => openBlockById(blockId) }] : []),
+          ...(!res.alsoBookmarked && url ? [{ label: "⭐ 顺便加入网站收藏夹 (fav:)", onClick: () => promptSaveUrlToBookmarkHub(title, url, res.annotation || "") }] : [{ label: "🚀 打开网站收藏夹查看", onClick: () => insertPrefix("fav:") }]),
+          ...(!isDoc ? [{ label: "📄 另存一份为【独立研读专页】", onClick: () => executeItem({ isWebClipItem: true, clipMode: "doc", userAnnotation: res.annotation || "" }) }] : []),
+          { label: "🧠 将此网页要点转为【FSRS 闪卡】", onClick: () => promptCreateFlashcardFromText(`《${title}》的核心要点是什么？`, res.excerpt || res.annotation || url) },
+          { label: "📋 衍生一条【跟进待办任务】", onClick: () => promptCreateTaskFromText(`深入研读并整理《${title}》`, title) },
+          ...(blockId ? [{ label: "🔗 复制思源双链 ((id))", onClick: () => copyBlockRef(blockId, title) }] : []),
+          { label: "📌 钉在桌面作为置顶便签", onClick: () => pinAsStickyNote(title, res.markdown || `${title}\n${url}`, blockId) }
+        ]
+      });
+
+      renderWebClipFollowUpInspector(res);
+    };
+
+    function renderWebClipFollowUpInspector(res) {
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector || !res) return;
+      const title = res.title || "网页剪藏笔记";
+      const url = res.url || "";
+      const blockId = res.blockId || res.docId || "";
+      const isDoc = res.mode === "doc";
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">🎉 网页剪藏已完成</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${isDoc ? '📄 已建独立研读专页' : '📑 已入今日日记文献卡'}</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div class="inspector-doc-title">✓ 《${escapeHtml(title)}》已成功入库！</div>
+            <button type="button" class="card-howto-btn" onclick="renderWebClipInspector(filteredItems[selectedIndex] || { isWebClipItem: true, clipMode: 'card' })">⬅️ 返回剪藏台</button>
+          </div>
+        </div>
+        <div class="inspector-body" style="gap: 10px;">
+          <div style="padding: 9px 12px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px; font-size: 12px; line-height: 1.6;">
+            <div style="font-weight: 700; color: var(--emerald-mint);">✅ 入库位置：${isDoc ? `思源读库专页 (${escapeHtml(res.docPath || '/读库/')})` : '思源今日日记'} ${res.alsoBookmarked ? '· ⭐ 已同步收录至全景网站收藏夹 (fav:)' : ''}</div>
+            ${url ? `<div style="font-size: 11px; color: var(--text-secondary); font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">🔗 ${escapeHtml(url)}</div>` : ''}
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">📄 刚写入思源的 Markdown 内容预览：</span>
+            <div class="inspector-preview-card" style="border-left-color: var(--emerald-mint); font-size: 11.5px; max-height: 115px; overflow-y: auto;">${escapeHtml(res.markdown || title)}</div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; background: var(--bg-inset); border: 1px solid var(--border-hairline); border-radius: 8px;">
+            <div style="font-size: 12px; font-weight: 700; color: var(--cyber-sky);">🧭 剪藏之后，你还可以选择以下进一步操作：</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 7px;">
+              ${blockId ? `<button type="button" class="followup-choice-btn primary" onclick="openBlockById('${escapeQuote(blockId)}')">🪟 1. 在思源中打开查看该笔记</button>` : ''}
+              <button type="button" class="followup-choice-btn" onclick="promptSaveUrlToBookmarkHub('${escapeQuote(title)}', '${escapeQuote(url)}', '${escapeQuote(res.annotation || '')}')">⭐ 2. 分类收藏到「网站导航 (fav:)」</button>
+              ${!isDoc ? `<button type="button" class="followup-choice-btn" onclick="executeItem({ isWebClipItem: true, clipMode: 'doc', userAnnotation: '${escapeQuote(res.annotation || '')}' })">📄 3. 另存一份为【独立研读专页】</button>` : `<button type="button" class="followup-choice-btn" onclick="executeItem({ isWebClipItem: true, clipMode: 'card', userAnnotation: '${escapeQuote(res.annotation || '')}' })">📑 3. 同时在【今日日记】记张卡片</button>`}
+              <button type="button" class="followup-choice-btn" onclick="promptCreateFlashcardFromText('《${escapeQuote(title)}》的核心观点是什么？', '${escapeQuote(res.excerpt || res.annotation || url)}')">🧠 4. 将要点制作为【FSRS 闪卡】</button>
+              <button type="button" class="followup-choice-btn" onclick="promptCreateTaskFromText('深入研读并输出《${escapeQuote(title)}》总结', '${escapeQuote(title)}')">📋 5. 衍生一条【跟进待办任务】</button>
+              <button type="button" class="followup-choice-btn" onclick="pinAsStickyNote('${escapeQuote(title)}', '${escapeQuote(res.markdown || title)}', '${escapeQuote(blockId)}')">📌 6. 钉在桌面作为置顶参考便签</button>
+              ${blockId ? `<button type="button" class="followup-choice-btn" onclick="copyBlockRef('${escapeQuote(blockId)}', '${escapeQuote(title)}')">🔗 7. 复制思源块双链 ((id))</button>` : ''}
+              ${url ? `<button type="button" class="followup-choice-btn" onclick="pasteAtCursor('[${escapeQuote(title)}](${escapeQuote(url)})')">⚡ 8. 将超链接贴到外部窗口光标</button>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==========================================================
+    // 随身划笔窗内工作台 (pen:) 与执行后下一步选择
+    // ==========================================================
+    function renderPenWorkbenchInspector(item) {
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+      const latestClip = (window.__OMNI_RUNTIME__ && window.__OMNI_RUNTIME__.latestClipboard && window.__OMNI_RUNTIME__.latestClipboard.markdown) || "";
+      const initText = (item && item.customInput) || latestClip || "在此输入或粘贴需要处理的文字段落，然后点击下方 1~8 任意动作按钮...";
+      const curCode = (item && item.penCode) || "1";
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">✏️ 随身划笔工作台</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">1~8 多向流转与深加工</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div class="inspector-doc-title">✏️ 编辑待处理文本并选择 1~8 处理方式</div>
+            <button type="button" class="card-howto-btn" onclick="popOutFloatingPenCapsule()" title="弹出独立鼠标旁随身划笔悬浮窗 (Alt+Shift+W)">🪟 弹出独立悬浮微窗</button>
+          </div>
+        </div>
+        <div class="inspector-body" style="gap: 8px;">
+          <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.5;">
+            <b>【怎么用】</b>：① 下方已自动载入剪贴板最新文字（可自由修改）；② 点击下方 <b>1~8 任意按钮</b>立即执行，执行后将展示入库结果并提供进一步延伸操作！
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-size: 11px; font-weight: 700; color: var(--emerald-mint);">📝 待处理的文字内容 (可直接修改)：</label>
+            <textarea id="pen-workbench-textarea" class="search-input" style="height: 92px; width: 100%; font-size: 12.5px; line-height: 1.55; padding: 8px 10px; border-radius: 6px; resize: vertical; background: var(--bg-card);">${escapeHtml(initText)}</textarea>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 2px;">
+            <button type="button" class="b3-swatch-btn" style="${curCode === '1' ? 'border-color: var(--emerald-mint);' : ''} color: var(--emerald-mint);" onclick="runPenWorkbenchCode('1')">1 📝 入日记</button>
+            <button type="button" class="b3-swatch-btn" style="${curCode === '2' ? 'border-color: var(--cyber-purple);' : ''} color: var(--cyber-purple);" onclick="runPenWorkbenchCode('2')">2 🧠 制闪卡</button>
+            <button type="button" class="b3-swatch-btn" style="${curCode === '3' ? 'border-color: var(--tech-amber);' : ''} color: var(--tech-amber);" onclick="runPenWorkbenchCode('3')">3 📋 派待办</button>
+            <button type="button" class="b3-swatch-btn" style="${curCode === '4' ? 'border-color: var(--cyber-sky);' : ''} color: var(--cyber-sky);" onclick="runPenWorkbenchCode('4')">4 📥 稍后读</button>
+            <button type="button" class="b3-swatch-btn" style="${curCode === '5' ? 'border-color: var(--indigo-light);' : ''} color: var(--indigo-light);" onclick="runPenWorkbenchCode('5')">5 ✨ 净复制</button>
+            <button type="button" class="b3-swatch-btn" style="${curCode === '6' ? 'border-color: var(--cyber-sky);' : ''} color: var(--cyber-sky);" onclick="runPenWorkbenchCode('6')">6 🔗 贴双链</button>
+            <button type="button" class="b3-swatch-btn" style="${curCode === '7' ? 'border-color: var(--tech-amber);' : ''} color: var(--tech-amber);" onclick="runPenWorkbenchCode('7')">7 🤖 AI提炼</button>
+            <button type="button" class="b3-swatch-btn" style="${curCode === '8' ? 'border-color: var(--rose-agent);' : ''} color: var(--rose-agent);" onclick="runPenWorkbenchCode('8')">8 📌 钉便签</button>
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="runPenWorkbenchCode('${escapeQuote(curCode === 'float' ? '1' : curCode)}')">▶️ 立即执行当前选中动作 (Enter)</button>
+            <button class="inspector-dock-btn" onclick="popOutFloatingPenCapsule()" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);">🪟 弹出鼠标旁独立随身划笔胶囊 (Alt+Shift+W)</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function popOutFloatingPenCapsule() {
+      const txt = document.getElementById("pen-workbench-textarea")?.value.trim() || "";
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage({ op: 'executeCommand', cmd: 'sypen', text: txt, keepOpen: false });
+      } else {
+        showToast("🪟 已呼出独立随身划笔悬浮胶囊");
+      }
+    }
+
+    function executePenWorkbenchItem(item) {
+      if (!item) return;
+      if (item.penCode === "float") {
+        popOutFloatingPenCapsule();
+        return;
+      }
+      runPenWorkbenchCode(item.penCode || "1");
+    }
+
+    function runPenWorkbenchCode(code) {
+      const area = document.getElementById("pen-workbench-textarea");
+      const txt = area ? area.value.trim() : "";
+      if (code === "8") {
+        pinAsStickyNote("随身划笔参考便签", txt, "");
+        window.onPenWorkbenchActionCompleted({ success: true, code: "8", text: txt, feedback: "📌 已将文本钉在桌面作为置顶活便签！" });
+        return;
+      }
+      if (code === "5") {
+        const cleaned = cleanSiYuanMarkdownToPlain(txt);
+        copyToClipboard(cleaned, "✨ 已去除断行与块属性并纯净复制！");
+        window.onPenWorkbenchActionCompleted({ success: true, code: "5", text: cleaned, feedback: "✨ 已完成纯净复制并写入系统剪贴板！" });
+        return;
+      }
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'executePenWorkbenchAction',
+          code: code,
+          text: txt
+        }));
+      } else {
+        window.onPenWorkbenchActionCompleted({
+          success: true,
+          code: code,
+          text: txt,
+          feedback: `✓ 已执行随身划笔 [${code}] 号动作！`
+        });
+      }
+    }
+
+    window.onPenWorkbenchActionCompleted = function(res) {
+      if (!res) return;
+      const txt = res.text || "";
+      const codeMap = {
+        "1": "记入今日日记",
+        "2": "制作 FSRS 闪卡",
+        "3": "转为待办任务",
+        "4": "存入稍后读库",
+        "5": "纯净复制",
+        "6": "检索并贴双链",
+        "7": "AI 提炼入库",
+        "8": "钉为桌面便签"
+      };
+      const actionLabel = codeMap[res.code] || "随身划笔动作";
+
+      showActionFollowUp({
+        badge: `划笔 [${res.code}] 已完成`,
+        title: `${actionLabel}：${res.feedback || '已成功执行'}`,
+        summary: txt.substring(0, 60),
+        previewMarkdown: txt,
+        renderInInspector: true,
+        actions: [
+          { label: "📅 查看今日日记时间轴", primary: true, onClick: () => toggleTodayTimeline() },
+          ...(res.code !== "2" ? [{ label: "🧠 顺便制作为【FSRS 闪卡】", onClick: () => promptCreateFlashcardFromText(txt, "") }] : []),
+          ...(res.code !== "3" ? [{ label: "📋 顺便转化为【四象限待办】", onClick: () => promptCreateTaskFromText(txt, "") }] : []),
+          { label: "🍅 以此开启 25 分钟番茄专注", onClick: () => startTaskFocusSession("", txt.substring(0, 36) || "心流专注", "今日日记", 25) },
+          { label: "📌 钉在桌面作为置顶便签", onClick: () => pinAsStickyNote("随身划笔便签", txt, "") },
+          { label: "⚡ 粘贴到外部窗口光标处", onClick: () => pasteAtCursor(txt) },
+          { label: "⬅️ 返回划笔工作台继续处理", onClick: () => renderPenWorkbenchInspector({ penCode: res.code, customInput: txt }) }
+        ]
+      });
+    };
+
+    // ==========================================================
+    // 截屏与离线 OCR 窗内工作台 (ocr:) 与识别后进一步选择
+    // ==========================================================
+    window._lastOcrResult = { text: "", imagePath: "", source: "" };
+
+    function renderOcrWorkbenchInspector(item) {
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+      const last = window._lastOcrResult || {};
+      const latestClip = (window.__OMNI_RUNTIME__ && window.__OMNI_RUNTIME__.latestClipboard && window.__OMNI_RUNTIME__.latestClipboard.markdown) || "";
+      const initText = last.text || (item && item.customInput) || latestClip || "";
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">📸 截屏与离线 OCR 工作台</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb" id="ocr-workbench-source-crumb">${escapeHtml(last.source || '准备识图')}</span>
+          </div>
+          <div class="inspector-doc-title">📸 框选截屏或识别剪贴板图片 · 识别后自由选择流转</div>
+        </div>
+        <div class="inspector-body" style="gap: 8px;">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="pref-btn pref-btn-primary" style="background: var(--emerald-mint); color: #0b1120; font-weight: 700; padding: 6px 12px;" onclick="startScreenSnipForWorkbench()">📸 1. 立即框选屏幕截图并识别文字</button>
+            <button type="button" class="pref-btn" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.45); font-weight: 700; padding: 6px 12px;" onclick="ocrClipboardImageNow()">🖼️ 2. 直接识别当前剪贴板图片</button>
+            <button type="button" class="pref-btn" onclick="triggerFloatingOcrSnip()">🪟 框选后弹出微胶囊</button>
+          </div>
+          ${last.imagePath ? `
+            <div style="font-size: 11px; color: var(--emerald-mint); padding: 5px 10px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.35); border-radius: 6px;">
+              🖼️ 已捕获截图文件：<code>${escapeHtml(last.imagePath)}</code>（点下方「图文一并记入日记」会自动上传图片至思源 assets 库）
+            </div>
+          ` : ''}
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary);">📝 识别出的文字结果 (可在此直接校对修改)：</label>
+            <textarea id="ocr-workbench-textarea" class="search-input" style="height: 105px; width: 100%; font-size: 12.5px; line-height: 1.55; padding: 8px 10px; border-radius: 6px; resize: vertical; background: var(--bg-card);" placeholder="点击上方「立即框选屏幕截图」或「识别当前剪贴板图片」，识别出的文字将显示在这里供你校对和选择下一步操作...">${escapeHtml(initText)}</textarea>
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 7px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="submitOcrResultToDaily(true)" title="将截图图片与识别出的文字一并写入思源今日日记">📥 图文一并记入日记</button>
+            <button class="inspector-dock-btn" onclick="submitOcrResultToDaily(false)" title="仅将识别出的纯文字记入今日日记">📝 仅文字记入日记</button>
+            <button class="inspector-dock-btn" onclick="copyOcrWorkbenchText()">📋 复制识别文字</button>
+            <button class="inspector-dock-btn" onclick="pasteOcrWorkbenchText()">⚡ Shift+↵ 贴到外部光标</button>
+            <button class="inspector-dock-btn" onclick="promptCreateFlashcardFromText(document.getElementById('ocr-workbench-textarea')?.value || '', '')" style="color: var(--cyber-purple); border-color: rgba(168,85,247,0.4);">🧠 转为 FSRS 闪卡</button>
+            <button class="inspector-dock-btn" onclick="promptCreateTaskFromText(document.getElementById('ocr-workbench-textarea')?.value || '', '截图OCR')" style="color: var(--tech-amber); border-color: rgba(245,158,11,0.4);">📋 转为待办任务</button>
+            <button class="inspector-dock-btn" onclick="pinAsStickyNote('OCR 识别便签', document.getElementById('ocr-workbench-textarea')?.value || '', '')">📌 钉为桌面便签</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function executeOcrWorkbenchItem(item) {
+      if (!item) return;
+      if (item.ocrAction === "clipboard") {
+        ocrClipboardImageNow();
+      } else if (item.ocrAction === "float") {
+        triggerFloatingOcrSnip();
+      } else {
+        startScreenSnipForWorkbench();
+      }
+    }
+
+    function startScreenSnipForWorkbench() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'startScreenSnipForWorkbench' }));
+      } else {
+        window.onWorkbenchOcrCaptured({
+          success: true,
+          text: "这是屏幕截图离线 OCR 识别出的示例文字内容。",
+          imagePath: "C:\\Temp\\xiaolv_snip_demo.png",
+          source: "屏幕框选截屏"
+        });
+      }
+    }
+
+    function ocrClipboardImageNow() {
+      showToast("🖼️ 正在识别当前剪贴板中的图片与文字...");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'ocrClipboardImage' }));
+      } else {
+        window.onWorkbenchOcrCaptured({
+          success: true,
+          text: "这是从系统剪贴板图片中识别出的文字内容。",
+          imagePath: "",
+          source: "剪贴板图片 OCR"
+        });
+      }
+    }
+
+    function triggerFloatingOcrSnip() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage({ op: 'executeCommand', cmd: 'syimg', text: '', keepOpen: false });
+      }
+    }
+
+    window.onWorkbenchOcrCaptured = function(res) {
+      if (!res) return;
+      window._lastOcrResult = {
+        text: res.text || "",
+        imagePath: res.imagePath || "",
+        source: res.source || "OCR 识别"
+      };
+      renderOcrWorkbenchInspector({ isOcrWorkbenchItem: true, customInput: res.text || "" });
+      showActionFollowUp({
+        badge: "OCR 识别完成",
+        title: `已从【${res.source || '截图'}】识别出 ${(res.text || '').length} 字`,
+        summary: res.text ? res.text.substring(0, 60) : "请在右侧面板查看并选择入库方式",
+        renderInInspector: false,
+        actions: [
+          { label: "📥 图文一并记入今日日记", primary: true, onClick: () => submitOcrResultToDaily(true) },
+          { label: "📝 仅文字记入日记", onClick: () => submitOcrResultToDaily(false) },
+          { label: "📋 复制识别文字", onClick: () => copyOcrWorkbenchText() },
+          { label: "⚡ 贴到外部窗口光标", onClick: () => pasteOcrWorkbenchText() },
+          { label: "🧠 制作为 FSRS 闪卡", onClick: () => promptCreateFlashcardFromText(res.text || "", "") },
+          { label: "📌 钉为桌面便签", onClick: () => pinAsStickyNote("OCR 识别便签", res.text || "", "") }
+        ]
+      });
+    };
+
+    function copyOcrWorkbenchText() {
+      const txt = document.getElementById("ocr-workbench-textarea")?.value.trim() || "";
+      copyToClipboard(txt, "📋 已复制 OCR 识别文字！");
+    }
+
+    function pasteOcrWorkbenchText() {
+      const txt = document.getElementById("ocr-workbench-textarea")?.value.trim() || "";
+      pasteAtCursor(txt);
+    }
+
+    function submitOcrResultToDaily(includeImage) {
+      const txt = document.getElementById("ocr-workbench-textarea")?.value.trim() || "";
+      const imgPath = (window._lastOcrResult && window._lastOcrResult.imagePath) || "";
+      let md = txt;
+      if (includeImage && imgPath) {
+        md = `![截图](${imgPath})\n${txt ? `> 📸 **OCR 识字**: ${txt}` : ''}`;
+      }
+      if (!md) {
+        showToast("⚠️ 识别内容为空，请先截屏或输入文字");
+        return;
+      }
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: ' executeCommand'.trim(),
+          cmd: 'sys',
+          text: md,
+          keepOpen: true
+        }));
+      } else if (window.onQuickNoteCompleted) {
+        window.onQuickNoteCompleted({ success: true, text: md, sourceLabel: "截图 OCR 入库" });
+      }
+    }
+
+    // ==========================================================
+    // 速记 / 模板 / 数据库 / 回收站 执行完成后的全局回执与下一步选择
+    // ==========================================================
+    window.onQuickNoteCompleted = function(res) {
+      if (!res) return;
+      const text = res.text || "";
+      const blockId = res.blockId || "";
+      const label = res.sourceLabel || "速记已入库";
+
+      showActionFollowUp({
+        badge: label,
+        title: res.feedback || `已成功写入思源今日日记 (${res.time || '刚刚'})`,
+        summary: text.substring(0, 75),
+        previewMarkdown: text,
+        renderInInspector: false,
+        actions: [
+          { label: "📅 查看今日日记时间轴", primary: true, onClick: () => toggleTodayTimeline() },
+          ...(blockId ? [
+            { label: "🪟 在思源中定位此块", onClick: () => openBlockById(blockId) },
+            { label: "🔗 复制块双链 ((id))", onClick: () => copyBlockRef(blockId, text.substring(0, 32)) }
+          ] : []),
+          { label: "📋 顺便转为【四象限待办】", onClick: () => promptCreateTaskFromText(text, "") },
+          { label: "🧠 顺便制作为【FSRS 闪卡】", onClick: () => promptCreateFlashcardFromText(text, "") },
+          { label: "🍅 开启 25m 番茄专注", onClick: () => startTaskFocusSession(blockId, text.substring(0, 36) || "心流专注", "今日日记", 25) },
+          { label: "📌 钉为桌面置顶便签", onClick: () => pinAsStickyNote("今日速记便签", text, blockId) },
+          { label: "✍️ 继续记下一笔", onClick: () => promptQuickNoteInlineModal() }
+        ]
+      });
+    };
+
+    window.onAvRowInserted = function(res) {
+      if (!res || !res.success) return;
+      showActionFollowUp({
+        badge: "数据库已录入",
+        title: `已向属性视图【${res.avName || '数据库'}】追加记录：「${res.title || ''}」`,
+        summary: `AV ID: ${res.avId || ''}`,
+        renderInInspector: true,
+        actions: [
+          ...(res.blockId ? [{ label: "🪟 在思源中打开该数据库表格", primary: true, onClick: () => openBlockById(res.blockId) }] : []),
+          { label: "📊 打开全库表格透视矩阵工作台", onClick: () => toggleTableGridModal() },
+          ...(res.blockId ? [{ label: "🔗 复制数据库块双链", onClick: () => copyBlockRef(res.blockId, res.avName || "属性视图") }] : []),
+          { label: "➕ 继续向该表追加下一条记录", onClick: () => setSearchInputValue(`av:${res.avName || ''} `) }
+        ]
+      });
+    };
+
+    window.onRescueRestored = function(res) {
+      if (!res) return;
+      showActionFollowUp({
+        badge: "历史快照已打捞",
+        title: `《${res.title || '历史笔记'}》已成功恢复至今日日记！`,
+        summary: `快照时间: ${res.time || ''}`,
+        previewMarkdown: res.markdown || "",
+        renderInInspector: true,
+        actions: [
+          { label: "📅 打开今日日记时间轴查看恢复内容", primary: true, onClick: () => toggleTodayTimeline() },
+          { label: "📋 复制恢复的全文 Markdown", onClick: () => copyToClipboard(res.markdown || "", "已复制恢复全文！") },
+          { label: "🪟 打开思源官方数据历史大窗", onClick: () => openNativeDataHistory() },
+          { label: "📌 钉在桌面作为对照便签", onClick: () => pinAsStickyNote(res.title || "恢复笔记", res.markdown || "", "") }
+        ]
+      });
+    };
 
     function renderFlowTimerInspector(item) {
       const inspector = document.getElementById("search-inspector-pane");
@@ -8375,6 +9321,18 @@
         window.chrome.webview.postMessage(JSON.stringify({ op: 'startFlowTimer', minutes: mins, task: task }));
       }
       showToast(`🍅 已开启 ${mins} 分钟专注：【${task}】！`);
+      showActionFollowUp({
+        badge: `${mins}m 专注进行中`,
+        title: `正在专注：【${task}】(${mins} 分钟倒计时已启动)`,
+        summary: "倒计时将在顶栏实时跳动，专注结束自动将时序记录写入思源今日日记",
+        renderInInspector: true,
+        actions: [
+          { label: "📌 将当前专注目标钉在桌面置顶提醒", primary: true, onClick: () => pinAsStickyNote(`🍅 专注：${task}`, `当前专注事项：${task}\n计划时长：${mins} 分钟`, "") },
+          { label: "🎴 打开四象限待办看板", onClick: () => toggleTasksKanbanModal() },
+          { label: "📅 查看今日日记时间轴", onClick: () => toggleTodayTimeline() },
+          { label: "⏹️ 提前结束并结算专注记录", onClick: () => stopFlowTimerFromInspector() }
+        ]
+      });
     }
 
     function startCustomFlowTimerFromInspector() {
@@ -8382,10 +9340,7 @@
       const taskEl = document.getElementById("flow-timer-task-input");
       const mins = (minsEl ? parseInt(minsEl.value, 10) : 25) || 25;
       const task = (taskEl && taskEl.value.trim()) ? taskEl.value.trim() : "心流专注";
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'startFlowTimer', minutes: mins, task: task }));
-      }
-      showToast(`🍅 已开启 ${mins} 分钟专注：【${task}】！`);
+      executeFlowTimerAction({ timerMins: mins, timerTask: task });
     }
 
     function stopFlowTimerFromInspector() {
@@ -8393,6 +9348,17 @@
         window.chrome.webview.postMessage(JSON.stringify({ op: 'stopFlowTimer', recordPartial: true }));
       }
       showToast("⏹️ 已停止专注计时并结算记录！");
+      showActionFollowUp({
+        badge: "专注已结算",
+        title: "本次番茄专注已停止并结算记入今日日记",
+        summary: "可在今日日记时间轴中查看本次专注时序记录",
+        renderInInspector: true,
+        actions: [
+          { label: "📅 打开今日日记时间轴查看专注记录", primary: true, onClick: () => toggleTodayTimeline() },
+          { label: "✍️ 写一条本次专注的复盘收获", onClick: () => promptQuickNoteInlineModal() },
+          { label: "🍅 重新开启下一轮专注", onClick: () => renderFlowTimerInspector({ timerMins: 25, timerTask: "心流专注" }) }
+        ]
+      });
     }
 
     function cleanSiYuanMarkdownToPlain(rawText) {
@@ -8474,6 +9440,21 @@
       } else {
         copyToClipboard(cleaned, "📋 已复制剥离属性与双链后的纯净 Markdown！");
       }
+
+      showActionFollowUp({
+        badge: mode === "richtext" ? "富文本已复制" : (mode === "privacy" ? "脱敏文本已复制" : "纯净MD已就绪"),
+        title: "文本净化完成并已写入系统剪贴板",
+        summary: `共 ${cleaned.length} 字 · 已剥离 {: id} 属性与 ((双链)) 括号`,
+        previewMarkdown: cleaned,
+        renderInInspector: false,
+        actions: [
+          { label: "⚡ 立即粘贴到外部窗口光标处", primary: true, onClick: () => pasteAtCursor(cleaned) },
+          { label: "📥 将净化后文本记入思源今日日记", onClick: () => { if (window.chrome && window.chrome.webview) window.chrome.webview.postMessage(JSON.stringify({ op: 'appendToDailyNote', text: cleaned, keepOpen: true })); else if (window.onQuickNoteCompleted) window.onQuickNoteCompleted({ success: true, text: cleaned }); } },
+          { label: "🌐 导出为单文件 HTML 网页打开", onClick: () => exportCurrentToHtml(cleaned, "思源纯净导出") },
+          { label: "📸 生成高颜值矢量 SVG 分享长图", onClick: () => exportCardSvgImage(cleaned, "思源精选摘录") },
+          { label: "📌 钉在桌面作为置顶便签", onClick: () => pinAsStickyNote("纯净 Markdown 便签", cleaned, "") }
+        ]
+      });
     }
 
     function renderColorStyleInspector(item) {
@@ -8537,6 +9518,19 @@
       const txt = inp ? inp.value.trim() : "重点高亮内容";
       const kram = b3Style ? `${txt}\n{: style="${b3Style}" }` : txt;
       copyToClipboard(kram, `🎨 已切换为【${label}】并复制思源原生配色语法！`);
+      showActionFollowUp({
+        badge: `已选配色：${label}`,
+        title: `已生成思源原生【${label}】语法并复制到剪贴板`,
+        summary: kram,
+        previewMarkdown: kram,
+        renderInInspector: false,
+        actions: [
+          { label: "📥 将此彩色块直接记入今日日记", primary: true, onClick: () => submitB3ColoredBlockToDaily() },
+          { label: "⚡ 贴入思源当前光标处 (Shift+↵)", onClick: () => pasteB3ColoredBlockToCaret() },
+          { label: "🪟 弹出悬浮调色盘给思源选中文字上色", onClick: () => openNativeSypDialog() },
+          { label: "📌 钉在桌面作为置顶便签", onClick: () => pinAsStickyNote(label, txt, "") }
+        ]
+      });
     }
 
     function buildB3ColoredKramdown() {
@@ -9722,12 +10716,25 @@
       const si = document.getElementById("search-input");
       const val = si ? si.value.trim() : "";
       if (val) {
+        const hasIntentPrefix = /^([!！?？@#＃¥￥~～+＋]|>>|》》|>@|》@)/.test(val);
         if (window.chrome && window.chrome.webview) {
-          window.chrome.webview.postMessage(JSON.stringify({
-            op: "appendToDailyNote",
-            text: val,
-            keepOpen: true
-          }));
+          if (hasIntentPrefix) {
+            window.chrome.webview.postMessage(JSON.stringify({
+              op: "executeCommand",
+              cmd: "sys",
+              text: val,
+              keepOpen: true
+            }));
+          } else {
+            window.chrome.webview.postMessage(JSON.stringify({
+              op: "appendToDailyNote",
+              text: val,
+              sourceLabel: "搜索框速记",
+              keepOpen: true
+            }));
+          }
+        } else if (window.onQuickNoteCompleted) {
+          window.onQuickNoteCompleted({ success: true, text: val, sourceLabel: "搜索框速记" });
         }
         showToast("📥 已记入今日日记: " + val.substring(0, 24));
         if (si) {
@@ -9781,12 +10788,25 @@
           else if (tp.startsWith("+") && !txt.startsWith("+")) txt = "+" + txt;
           else if (tp.startsWith("@") && !txt.startsWith("@")) txt = "@" + txt;
 
+          const hasIntentPrefix = /^([!！?？@#＃¥￥~～+＋]|>>|》》|>@|》@)/.test(txt);
           if (window.chrome && window.chrome.webview) {
-            window.chrome.webview.postMessage(JSON.stringify({
-              op: "appendToDailyNote",
-              text: txt,
-              keepOpen: true
-            }));
+            if (hasIntentPrefix) {
+              window.chrome.webview.postMessage(JSON.stringify({
+                op: "executeCommand",
+                cmd: "sys",
+                text: txt,
+                keepOpen: true
+              }));
+            } else {
+              window.chrome.webview.postMessage(JSON.stringify({
+                op: "appendToDailyNote",
+                text: txt,
+                sourceLabel: tp || "多态速记",
+                keepOpen: true
+              }));
+            }
+          } else if (window.onQuickNoteCompleted) {
+            window.onQuickNoteCompleted({ success: true, text: txt, sourceLabel: tp || "多态速记" });
           }
           showToast("✓ 已写入思源今日日记！");
         }
@@ -11995,13 +13015,34 @@
 
     window.onWebBookmarkSaved = function(res) {
       if (res && res.success) {
-        showToast("🎉 网站已成功沉淀至思源专属文档与本地缓存！");
+        const entry = res.entry || {};
+        const title = entry.Title || entry.title || "收藏网页";
+        const url = entry.CleanUrl || entry.Url || entry.url || "";
+        const cat = entry.Category || entry.category || "常用";
+        showToast(`🎉 网站【${title}】已成功收藏至《/收藏夹/网站导航》！`);
+
         const lpModal = document.getElementById("launchpad-modal");
         if (lpModal && lpModal.classList.contains("open")) {
           refreshLaunchpadData();
-        } else {
+        } else if (hasActiveSearchPrefix(["fav", "url"])) {
           insertPrefix('fav:');
         }
+
+        showActionFollowUp({
+          badge: "网址已收藏",
+          title: `已收录至【${cat}】分类：《${title}》`,
+          summary: url,
+          previewMarkdown: `* 🌐 [${title}](${url}) · 分类: ${cat}`,
+          renderInInspector: true,
+          actions: [
+            ...(url ? [{ label: "🚀 在浏览器中打开此网页", primary: true, onClick: () => openWebBookmarkUrl(url) }] : []),
+            { label: "📑 进一步将该网页剪藏为【今日日记文献卡】", onClick: () => appendBookmarkToDaily(title, url) },
+            { label: "📄 进一步将该网页新建为【独立研读专页】", onClick: () => executeItem({ isWebClipItem: true, clipMode: "doc", userAnnotation: entry.Notes || "" }) },
+            ...(url ? [{ label: "⚡ 将超链 [标题](url) 贴到外部光标", onClick: () => pasteAtCursor(`[${title}](${url})`) }] : []),
+            { label: "📋 为该网页衍生一条【待办任务】", onClick: () => promptCreateTaskFromText(`访问并研读《${title}》`, title) },
+            { label: "🚀 打开大图标启动台查看", onClick: () => toggleLaunchpadModal('web') }
+          ]
+        });
       }
     };
 
@@ -12172,13 +13213,31 @@
 
     window.onFolderBookmarkSaved = function(res) {
       if (res && res.success) {
-        showToast("🎉 文件夹导航已成功沉淀至思源专属文档与本地缓存！");
+        const entry = res.entry || {};
+        const alias = entry.Alias || entry.alias || "工程目录";
+        const path = entry.Path || entry.path || "";
+        showToast(`🎉 文件夹【${alias}】已成功沉淀至思源导航中枢！`);
         const lpModal = document.getElementById("launchpad-modal");
         if (lpModal && lpModal.classList.contains("open")) {
           refreshLaunchpadData();
-        } else {
+        } else if (hasActiveSearchPrefix(["fold", "folder", "dir", "f"])) {
           insertPrefix('fold:');
         }
+
+        showActionFollowUp({
+          badge: "目录已收藏",
+          title: `已登记工程目录：【${alias}】`,
+          summary: path,
+          previewMarkdown: `* 📂 **${alias}**: \`${path}\``,
+          renderInInspector: true,
+          actions: [
+            ...(path ? [{ label: "🚀 立即在资源管理器 / 对话框中穿透打开", primary: true, onClick: () => navigateFolderBookmarkPath(path) }] : []),
+            ...(path ? [{ label: "🗄️ 用「外部知识库工作台」扫描该目录 Markdown", onClick: () => toggleVaultMirrorModal(path + "\\README.md") }] : []),
+            ...(path ? [{ label: "⚡ 将目录物理路径粘贴到外部光标", onClick: () => pasteAtCursor(path) }] : []),
+            { label: "📥 在今日日记记录该工程目录索引", onClick: () => { if (window.chrome && window.chrome.webview) window.chrome.webview.postMessage(JSON.stringify({ op: 'appendToDailyNote', text: `* 📂 **工程目录 [${alias}]**: \`${path}\``, keepOpen: true })); } },
+            { label: "🚀 打开大图标启动台查看", onClick: () => toggleLaunchpadModal('folder') }
+          ]
+        });
       }
     };
 
@@ -17716,7 +18775,7 @@
     function getCardModeMeta(item) {
       if (!item) return { label: "⚡ 直接执行", cls: "mode-exec", title: "点击或回车立即执行" };
       const studioIds = ["sytask", "syo", "syprofile", "synotice", "syh", "syoff", "syd"];
-      const scopeIds = ["syf", "syfav", "syfold", "sypom", "syatt", "sytag", "sycmd", "sytrash", "syws", "syvoice", "syg", "syx", "syp"];
+      const scopeIds = ["syf", "syfav", "syfold", "sypom", "syatt", "sytag", "sycmd", "sytrash", "syws", "syvoice", "syg", "syx", "syp", "sypen", "syimg"];
       if (studioIds.includes(item.id)) {
         return { label: "🎛️ 独立视窗", cls: "mode-studio", title: "点击打开独立全景工作台大视窗" };
       }

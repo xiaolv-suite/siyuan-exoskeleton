@@ -1567,10 +1567,10 @@ namespace XiaoLv.Desktop.UI
 									                            bool ok = await WebBookmarkHub.SaveBookmarkAsync(entry);
 									                            Dispatcher.Invoke(() =>
 									                            {
-									                                if (_webView != null && _webView.CoreWebView2 != null)
-									                                {
-									                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onWebBookmarkSaved) window.onWebBookmarkSaved(" + JsonHelper.ToJson(new { code = 0, success = ok }) + ");");
-									                                }
+										                                if (_webView != null && _webView.CoreWebView2 != null)
+										                                {
+										                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onWebBookmarkSaved) window.onWebBookmarkSaved(" + JsonHelper.ToJson(new { code = 0, success = ok, entry = entry }) + ");");
+										                                }
 									                            });
 									                            if (ok && OnNotificationRequested != null)
 									                            {
@@ -1679,10 +1679,10 @@ namespace XiaoLv.Desktop.UI
 									                            bool ok = await FolderBookmarkHub.SaveFolderAsync(entry);
 									                            Dispatcher.Invoke(() =>
 									                            {
-									                                if (_webView != null && _webView.CoreWebView2 != null)
-									                                {
-									                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onFolderBookmarkSaved) window.onFolderBookmarkSaved(" + JsonHelper.ToJson(new { code = 0, success = ok }) + ");");
-									                                }
+										                                if (_webView != null && _webView.CoreWebView2 != null)
+										                                {
+										                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onFolderBookmarkSaved) window.onFolderBookmarkSaved(" + JsonHelper.ToJson(new { code = 0, success = ok, entry = entry }) + ");");
+										                                }
 									                            });
 									                            if (ok && OnNotificationRequested != null)
 									                            {
@@ -2236,7 +2236,9 @@ namespace XiaoLv.Desktop.UI
                 {
                     string cmd = JsonHelper.GetString(msg, "cmd").Trim();
                     string text = JsonHelper.GetString(msg, "text").Trim();
-                    bool keepOpen = JsonHelper.GetBool(msg, "keepOpen", false);
+                    bool isSmartCapture = cmd.Equals("sys", StringComparison.OrdinalIgnoreCase) ||
+                                          cmd.Equals("d7f12ada-92bc-4713-9f76-d08e2ff55fce", StringComparison.OrdinalIgnoreCase);
+                    bool keepOpen = JsonHelper.GetBool(msg, "keepOpen", isSmartCapture && !string.IsNullOrEmpty(text));
                     if (!keepOpen) Hide();
                     if (!string.IsNullOrEmpty(cmd))
                     {
@@ -2250,11 +2252,82 @@ namespace XiaoLv.Desktop.UI
                             XiaoLv.Desktop.Program.OpenPenCapsule(text);
                             return;
                         }
+                        if (isSmartCapture && !string.IsNullOrEmpty(text) && keepOpen)
+                        {
+                            ThreadPool.QueueUserWorkItem(s =>
+                            {
+                                try
+                                {
+                                    var ctx = new DesktopStepContext("SYS", text);
+                                    ctx.OnNotificationRequested += (t, m) =>
+                                    {
+                                        if (OnNotificationRequested != null) OnNotificationRequested(t, m);
+                                    };
+                                    SmartCaptureMain.Exec(ctx);
+                                    bool ok = SafeContext.GetBool(ctx, "是否成功", true);
+                                    string fb = SafeContext.GetString(ctx, "通知反馈", "✓ 已成功分流写入思源！");
+                                    if (ok) SoundPlayerHelper.PlayFeedback();
+                                    Dispatcher.Invoke(() =>
+                                    {
+                                        if (_webView != null && _webView.CoreWebView2 != null)
+                                        {
+                                            var payload = new Dictionary<string, object>();
+                                            payload["success"] = ok;
+                                            payload["blockId"] = "";
+                                            payload["text"] = text;
+                                            payload["feedback"] = fb;
+                                            payload["sourceLabel"] = "多态速记与智能分流";
+                                            payload["time"] = DateTime.Now.ToString("HH:mm");
+                                            _webView.CoreWebView2.ExecuteScriptAsync("if(window.onQuickNoteCompleted) window.onQuickNoteCompleted(" + JsonHelper.ToJson(payload) + ");");
+                                        }
+                                    });
+                                }
+                                catch { }
+                            });
+                            return;
+                        }
                         if (OnSubActionRequested != null)
                         {
                             OnSubActionRequested(cmd, text);
                         }
                     }
+                    return;
+                }
+
+                // 6.2 专用于窗内随身划笔工作台 (pen:) 的无阻断 1~8 键动作执行与结果回执
+                if (op.Equals("executePenWorkbenchAction", StringComparison.OrdinalIgnoreCase))
+                {
+                    string penCode = JsonHelper.GetString(msg, "code", "1").Trim();
+                    string penText = JsonHelper.GetString(msg, "text").Trim();
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        try
+                        {
+                            var ctx = new DesktopStepContext(penCode, penText);
+                            ctx.OnNotificationRequested += (t, m) =>
+                            {
+                                if (OnNotificationRequested != null) OnNotificationRequested(t, m);
+                            };
+                            ContextPenMain.Exec(ctx);
+                            bool ok = SafeContext.GetBool(ctx, "是否成功", true);
+                            string fb = SafeContext.GetString(ctx, "通知反馈", "✓ 随身划笔指令已执行！");
+                            if (ok) SoundPlayerHelper.PlayFeedback();
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    var payload = new Dictionary<string, object>();
+                                    payload["success"] = ok;
+                                    payload["code"] = penCode;
+                                    payload["text"] = penText;
+                                    payload["feedback"] = fb;
+                                    payload["time"] = DateTime.Now.ToString("HH:mm");
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onPenWorkbenchActionCompleted) window.onPenWorkbenchActionCompleted(" + JsonHelper.ToJson(payload) + ");");
+                                }
+                            });
+                        }
+                        catch { }
+                    });
                     return;
                 }
 
@@ -2264,6 +2337,7 @@ namespace XiaoLv.Desktop.UI
                     op.Equals("quickNote", StringComparison.OrdinalIgnoreCase))
                 {
                     string text = JsonHelper.GetString(msg, "text").Trim();
+                    string sourceLabel = JsonHelper.GetString(msg, "sourceLabel", "速记");
                     bool keepOpen = JsonHelper.GetBool(msg, "keepOpen", true);
                     if (!keepOpen) Hide();
 
@@ -2274,7 +2348,8 @@ namespace XiaoLv.Desktop.UI
                             try
                             {
                                 var conn = SiYuanClient.GetConnectionInfo(false);
-                                bool ok = SmartCaptureMain.AppendToDailyNote(conn.Url, conn.Token, text);
+                                string createdBlockId;
+                                bool ok = SmartCaptureMain.AppendToDailyNoteWithId(conn.Url, conn.Token, text, out createdBlockId);
                                 if (ok)
                                 {
                                     SoundPlayerHelper.PlayFeedback();
@@ -2282,6 +2357,19 @@ namespace XiaoLv.Desktop.UI
                                     {
                                         OnNotificationRequested("思源外骨骼", "✓ 已成功写入今日日记！");
                                     }
+                                    Dispatcher.Invoke(() =>
+                                    {
+                                        if (_webView != null && _webView.CoreWebView2 != null)
+                                        {
+                                            var payload = new Dictionary<string, object>();
+                                            payload["success"] = true;
+                                            payload["blockId"] = createdBlockId ?? "";
+                                            payload["text"] = text;
+                                            payload["sourceLabel"] = sourceLabel;
+                                            payload["time"] = DateTime.Now.ToString("HH:mm");
+                                            _webView.CoreWebView2.ExecuteScriptAsync("if(window.onQuickNoteCompleted) window.onQuickNoteCompleted(" + JsonHelper.ToJson(payload) + ");");
+                                        }
+                                    });
                                 }
                             }
                             catch { }
@@ -2359,9 +2447,11 @@ namespace XiaoLv.Desktop.UI
                 if (op.Equals("insertAvRow", StringComparison.OrdinalIgnoreCase))
                 {
                     string avId = JsonHelper.GetString(msg, "avId");
+                    string blockId = JsonHelper.GetString(msg, "blockId");
                     string avName = JsonHelper.GetString(msg, "avName", "属性视图");
                     string rowContent = JsonHelper.GetString(msg, "title");
-                    Hide();
+                    bool keepOpen = JsonHelper.GetBool(msg, "keepOpen", true);
+                    if (!keepOpen) Hide();
                     ThreadPool.QueueUserWorkItem(s =>
                     {
                         try
@@ -2370,6 +2460,7 @@ namespace XiaoLv.Desktop.UI
                             var res = WebToAvDatabaseMain.InsertAvRow(conn.Url, conn.Token, avId, rowContent);
                             if (res.Success)
                             {
+                                SoundPlayerHelper.PlayFeedback();
                                 if (OnNotificationRequested != null)
                                 {
                                     OnNotificationRequested("思源外骨骼 · 数据库直投", "✓ 已成功录入至属性视图【" + avName + "】！");
@@ -2382,6 +2473,13 @@ namespace XiaoLv.Desktop.UI
                                     OnNotificationRequested("思源外骨骼", "⚠️ 数据库录入失败: " + res.Error);
                                 }
                             }
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onAvRowInserted) window.onAvRowInserted(" + JsonHelper.ToJson(new { success = res.Success, avId = avId, blockId = blockId, avName = avName, title = rowContent, error = res.Error }) + ");");
+                                }
+                            });
                         }
                         catch (Exception ex)
                         {
@@ -3391,6 +3489,13 @@ namespace XiaoLv.Desktop.UI
                         {
                             if (OnNotificationRequested != null) OnNotificationRequested(t, m);
                         });
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onRescueRestored) window.onRescueRestored(" + JsonHelper.ToJson(new { success = true, title = docTitle, time = snapTime, markdown = markdown }) + ");");
+                            }
+                        });
                     });
                     return;
                 }
@@ -3437,19 +3542,79 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
-                // 22. 触发网页极速剪藏卡 (支持双态剪藏与即时思考批注)
+                // 22.0 嗅探前台浏览器完整上下文供窗内网页剪藏工作台实时展示与编辑 (probeWebClipContext)
+                if (op.Equals("probeWebClipContext", StringComparison.OrdinalIgnoreCase))
+                {
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        try
+                        {
+                            var snap = (LastExternalForegroundHwnd != IntPtr.Zero)
+                                ? ContextPerception.CaptureForegroundContext(LastExternalForegroundHwnd)
+                                : ContextPerception.CaptureForegroundContext();
+                            string url = snap != null ? TextCleaner.PurifyUrl(snap.Url) : "";
+                            string rawTitle = snap != null ? (!string.IsNullOrEmpty(snap.CleanTitle) ? snap.CleanTitle : snap.FullTitle) : "";
+                            string title, author, siteName;
+                            TextCleaner.ParseSiteMetadata(url, rawTitle, out title, out author, out siteName);
+
+                            string excerpt = "";
+                            if (ClipboardWatcher.IsEnabled && ClipboardWatcher.LatestItem != null)
+                            {
+                                excerpt = !string.IsNullOrEmpty(ClipboardWatcher.LatestItem.EnrichedMarkdown)
+                                    ? ClipboardWatcher.LatestItem.EnrichedMarkdown
+                                    : ClipboardWatcher.LatestItem.RawText;
+                            }
+
+                            var payload = new Dictionary<string, object>();
+                            payload["code"] = 0;
+                            payload["title"] = title ?? "";
+                            payload["url"] = url ?? "";
+                            payload["siteName"] = siteName ?? "";
+                            payload["author"] = author ?? "";
+                            payload["app"] = snap != null ? (snap.AppDisplayName ?? "浏览器") : "浏览器";
+                            payload["excerpt"] = excerpt ?? "";
+
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onWebClipContextProbed) window.onWebClipContextProbed(" + JsonHelper.ToJson(payload) + ");");
+                                }
+                            });
+                        }
+                        catch { }
+                    });
+                    return;
+                }
+
+                // 22. 触发网页极速剪藏卡 (支持双态剪藏、自定义标题/网址/摘录、顺便收藏网址及剪藏后进一步选择回执)
                 if (op.Equals("webClip", StringComparison.OrdinalIgnoreCase) || op.Equals("executeWebClip", StringComparison.OrdinalIgnoreCase))
                 {
                     string mode = JsonHelper.GetString(msg, "mode");
                     if (string.IsNullOrEmpty(mode)) mode = "card";
                     string annotation = JsonHelper.GetString(msg, "annotation");
                     if (string.IsNullOrEmpty(annotation)) annotation = JsonHelper.GetString(msg, "text");
+                    string customTitle = JsonHelper.GetString(msg, "customTitle");
+                    string customUrl = JsonHelper.GetString(msg, "customUrl");
+                    string customExcerpt = JsonHelper.GetString(msg, "customExcerpt");
+                    bool alsoBookmark = JsonHelper.GetBool(msg, "alsoBookmark", false);
+                    string bookmarkCategory = JsonHelper.GetString(msg, "bookmarkCategory", "常用");
+                    bool keepOpen = JsonHelper.GetBool(msg, "keepOpen", true);
 
-                    Hide();
+                    if (!keepOpen) Hide();
                     SmartCaptureMain.ExecuteWebClip((t, m) =>
                     {
                         if (OnNotificationRequested != null) OnNotificationRequested(t, m);
-                    }, annotation, mode);
+                    }, annotation, mode, customTitle, customUrl, customExcerpt, alsoBookmark, bookmarkCategory, (resDict) =>
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onWebClipCompleted) window.onWebClipCompleted(" + JsonHelper.ToJson(resDict) + ");");
+                            }
+                        });
+                    });
                     return;
                 }
 
@@ -3458,11 +3623,120 @@ namespace XiaoLv.Desktop.UI
                 {
                     string mode = JsonHelper.GetString(msg, "mode");
                     if (string.IsNullOrEmpty(mode)) mode = "card";
-                    Hide();
+                    string customTitle = JsonHelper.GetString(msg, "customTitle");
+                    string customUrl = JsonHelper.GetString(msg, "customUrl");
+                    string customExcerpt = JsonHelper.GetString(msg, "customExcerpt");
+                    bool alsoBookmark = JsonHelper.GetBool(msg, "alsoBookmark", false);
+                    string bookmarkCategory = JsonHelper.GetString(msg, "bookmarkCategory", "常用");
+                    bool keepOpen = JsonHelper.GetBool(msg, "keepOpen", true);
+
+                    if (!keepOpen) Hide();
                     SmartCaptureMain.ExecuteWebClipWithAi((t, m) =>
                     {
                         if (OnNotificationRequested != null) OnNotificationRequested(t, m);
-                    }, mode);
+                    }, mode, customTitle, customUrl, customExcerpt, alsoBookmark, bookmarkCategory, (resDict) =>
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onWebClipCompleted) window.onWebClipCompleted(" + JsonHelper.ToJson(resDict) + ");");
+                            }
+                        });
+                    });
+                    return;
+                }
+
+                // 22.6 窗内截屏与离线 OCR 工作台联动 (截图完成后自动回到总控面板展示识别结果与下一步操作选择)
+                if (op.Equals("startScreenSnipForWorkbench", StringComparison.OrdinalIgnoreCase))
+                {
+                    Hide();
+                    SnippingManager.TriggerCapture((recognized, bmp) =>
+                    {
+                        string imagePath = "";
+                        if (bmp != null)
+                        {
+                            try
+                            {
+                                var tmpFile = Path.Combine(Path.GetTempPath(), "xiaolv_snip_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".png");
+                                bmp.Save(tmpFile, System.Drawing.Imaging.ImageFormat.Png);
+                                imagePath = tmpFile;
+                            }
+                            catch { }
+                            try { bmp.Dispose(); } catch { }
+                        }
+
+                        Dispatcher.Invoke(() =>
+                        {
+                            ShowPanel("ocr:");
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                var payload = new Dictionary<string, object>();
+                                payload["success"] = true;
+                                payload["text"] = recognized ?? "";
+                                payload["imagePath"] = imagePath ?? "";
+                                payload["source"] = "屏幕框选截屏";
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onWorkbenchOcrCaptured) window.onWorkbenchOcrCaptured(" + JsonHelper.ToJson(payload) + ");");
+                            }
+                        });
+                    }, (title, m) =>
+                    {
+                        if (OnNotificationRequested != null) OnNotificationRequested(title, m);
+                    });
+                    return;
+                }
+
+                if (op.Equals("ocrClipboardImage", StringComparison.OrdinalIgnoreCase))
+                {
+                    var staThread = new Thread(() =>
+                    {
+                        try
+                        {
+                            string recognized = "";
+                            string imagePath = "";
+                            string source = "系统剪贴板";
+                            if (System.Windows.Forms.Clipboard.ContainsImage())
+                            {
+                                var img = System.Windows.Forms.Clipboard.GetImage();
+                                if (img != null)
+                                {
+                                    var bmp = new System.Drawing.Bitmap(img);
+                                    try
+                                    {
+                                        var tmpFile = Path.Combine(Path.GetTempPath(), "xiaolv_clipimg_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".png");
+                                        bmp.Save(tmpFile, System.Drawing.Imaging.ImageFormat.Png);
+                                        imagePath = tmpFile;
+                                    }
+                                    catch { }
+                                    recognized = LocalOcrEngine.RecognizeBitmap(bmp);
+                                    try { bmp.Dispose(); } catch { }
+                                    source = "剪贴板图片 OCR";
+                                }
+                            }
+                            else if (System.Windows.Forms.Clipboard.ContainsText())
+                            {
+                                recognized = System.Windows.Forms.Clipboard.GetText();
+                                source = "剪贴板已有文本";
+                            }
+
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    var payload = new Dictionary<string, object>();
+                                    payload["success"] = !string.IsNullOrEmpty(recognized) || !string.IsNullOrEmpty(imagePath);
+                                    payload["text"] = recognized ?? "";
+                                    payload["imagePath"] = imagePath ?? "";
+                                    payload["source"] = source;
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onWorkbenchOcrCaptured) window.onWorkbenchOcrCaptured(" + JsonHelper.ToJson(payload) + ");");
+                                }
+                            });
+                        }
+                        catch { }
+                    });
+                    staThread.IsBackground = true;
+                    staThread.SetApartmentState(ApartmentState.STA);
+                    staThread.Start();
                     return;
                 }
 

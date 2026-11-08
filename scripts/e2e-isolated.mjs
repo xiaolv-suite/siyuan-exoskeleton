@@ -2509,6 +2509,118 @@ async function main() {
   const isLoopOk = loopRes.includes("True");
   logStep("Step 7.112: Actionable PKM「任务-专注-结绳-完成」全生命周期闭环断言", isLoopOk, `全生命周期闭环断言: ${loopRes.trim()}`);
 
+  // Step 7.113: Test ExternalApiBridge Web Bookmark Webhook (GET /api/bookmark/web & POST /api/bookmark/web)
+  let webhookWebResp;
+  try {
+    const postResp = await fetch("http://127.0.0.1:43990/api/bookmark/web", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "Anthropic Claude 官网",
+        url: "https://www.anthropic.com/?utm_source=chat&spm=9988",
+        category: "开发",
+        tags: "AI,LLM"
+      })
+    });
+    const postJson = await postResp.json();
+    await sleep(300);
+    const getResp = await fetch("http://127.0.0.1:43990/api/bookmark/web?q=anthropic");
+    const getJson = await getResp.json();
+    webhookWebResp = { postCode: postJson.code, getCount: getJson.count, getCode: getJson.code };
+  } catch (err) {
+    webhookWebResp = { error: err.message };
+  }
+  const isWebhookWebOk = webhookWebResp && webhookWebResp.postCode === 0 && webhookWebResp.getCode === 0 && webhookWebResp.getCount >= 1;
+  logStep("Step 7.113: 网站收藏 Webhook (GET/POST /api/bookmark/web) 远程存取断言", isWebhookWebOk, `响应: ${JSON.stringify(webhookWebResp)}`);
+
+  // Step 7.114: Test ExternalApiBridge Folder Bookmark Webhook (GET /api/bookmark/folder & POST /api/bookmark/folder)
+  let webhookFoldResp;
+  try {
+    const postResp = await fetch("http://127.0.0.1:43990/api/bookmark/folder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        path: "D:\\思源插件\\小驴快门",
+        alias: "远程小驴插件工程",
+        shortcut: "xlv",
+        tags: "开发"
+      })
+    });
+    const postJson = await postResp.json();
+    await sleep(300);
+    const getResp = await fetch("http://127.0.0.1:43990/api/bookmark/folder?q=" + encodeURIComponent("小驴插件工程"));
+    const getJson = await getResp.json();
+    webhookFoldResp = { postCode: postJson.code, getCount: getJson.count, getCode: getJson.code };
+  } catch (err) {
+    webhookFoldResp = { error: err.message };
+  }
+  const isWebhookFoldOk = webhookFoldResp && webhookFoldResp.postCode === 0 && webhookFoldResp.getCode === 0 && webhookFoldResp.getCount >= 1;
+  logStep("Step 7.114: 文件夹收藏 Webhook (GET/POST /api/bookmark/folder) 远程存取断言", isWebhookFoldOk, `响应: ${JSON.stringify(webhookFoldResp)}`);
+
+  // Step 7.115: Test ExternalApiBridge Integrated Focus Status Webhook (GET /api/focus)
+  let webhookFocusGetResp;
+  try {
+    const resp = await fetch("http://127.0.0.1:43990/api/focus");
+    webhookFocusGetResp = await resp.json();
+  } catch (err) {
+    webhookFocusGetResp = { error: err.message };
+  }
+  const isWebhookFocusGetOk = webhookFocusGetResp && webhookFocusGetResp.code === 0 && (webhookFocusGetResp.data.Source === "exoskeleton" || webhookFocusGetResp.data.Source === "docktomato");
+  logStep("Step 7.115: 全景专注感知 Webhook (GET /api/focus) 状态探针断言", isWebhookFocusGetOk, `专注来源: ${webhookFocusGetResp?.data?.Source} · 状态: ${webhookFocusGetResp?.data?.Status}`);
+
+  // Step 7.116: Test ExternalApiBridge Focus Startup Webhook (POST /api/focus)
+  let webhookFocusStartResp;
+  try {
+    const resp = await fetch("http://127.0.0.1:43990/api/focus", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        minutes: 20,
+        task: "远程API专注测试",
+        task_block_id: createdCtxTask?.id || "",
+        doc_title: "技术专页",
+        auto_complete: true
+      })
+    });
+    webhookFocusStartResp = await resp.json();
+    // 立即通过 PowerShell 停止计时器避免后续干扰
+    runPs(`$bytes = [System.IO.File]::ReadAllBytes('${exePath}'); $asm = [System.Reflection.Assembly]::Load($bytes); $ftm = $asm.GetType('XiaoLv.Desktop.Core.FlowTimerManager'); $m = $ftm.GetMethod('StopTimer', [System.Reflection.BindingFlags]'Public,Static'); $m.Invoke($null, @($false));`);
+  } catch (err) {
+    webhookFocusStartResp = { error: err.message };
+  }
+  const isWebhookFocusStartOk = webhookFocusStartResp && webhookFocusStartResp.code === 0 && webhookFocusStartResp.minutes === 20;
+  logStep("Step 7.116: 专注启航 Webhook (POST /api/focus) 远程联动断言", isWebhookFocusStartOk, `响应: ${JSON.stringify(webhookFocusStartResp)}`);
+
+  // Step 7.117: Test ExternalApiBridge Task Auto-Completion Webhook (POST /api/task/complete)
+  let webhookTaskCompResp;
+  try {
+    const resp = await fetch("http://127.0.0.1:43990/api/task/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: createdCtxTask?.id || "" })
+    });
+    webhookTaskCompResp = await resp.json();
+  } catch (err) {
+    webhookTaskCompResp = { error: err.message };
+  }
+  const isWebhookTaskCompOk = webhookTaskCompResp && (webhookTaskCompResp.code === 0 || webhookTaskCompResp.code === 1);
+  logStep("Step 7.117: 任务勾销 Webhook (POST /api/task/complete) 远程完成断言", isWebhookTaskCompOk, `响应: ${JSON.stringify(webhookTaskCompResp)}`);
+
+  // Step 7.118: Test ExternalApiBridge Directory Navigation Webhook (POST /api/navigate)
+  let webhookNavResp;
+  try {
+    const resp = await fetch("http://127.0.0.1:43990/api/navigate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: "D:\\思源插件" })
+    });
+    webhookNavResp = await resp.json();
+  } catch (err) {
+    webhookNavResp = { error: err.message };
+  }
+  const isWebhookNavOk = webhookNavResp && (webhookNavResp.code === 0 || webhookNavResp.code === 1);
+  logStep("Step 7.118: 目录秒跳 Webhook (POST /api/navigate) 穿透调度断言", isWebhookNavOk, `响应: ${JSON.stringify(webhookNavResp)}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

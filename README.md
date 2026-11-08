@@ -283,13 +283,22 @@
 - **双向无感状态合流**：深度兼容思源内部王牌插件 `siyuan-plugin-docktomato`，毫秒级流式感知 `tomato-sync.json` 与 `tomato-settings.json` 专注状态；
 - **桌面工作台全局统一胶囊**：外骨骼顶栏与托盘统一汇聚本地心流与思源底栏计时状态，无需切入思源即可时刻掌握专注进度。
 
+### 46. ★ 现代化本地生态调用桥扩展 (`ExternalApiBridge.cs` · Webhook REST Suite)
+- **极速本地环回接口 (127.0.0.1:43989)**：响应延迟 < 1ms，0% 待机 CPU，为 Quicker、AutoHotkey、Raycast 及终端脚本提供工业级接口；
+- **全方位模块 REST 矩阵覆盖**：
+  - `GET/POST /api/bookmark/web` ➔ 网站书签远程存取与多维关键词检索；
+  - `GET/POST /api/bookmark/folder` ➔ 文件夹收藏远程存取与健康自愈查询；
+  - `POST /api/navigate` ➔ 远程触发 `#32770` 文件对话框原位穿透秒跳；
+  - `GET/POST /api/focus` ➔ 远程感知综合专注状态与启航番茄心流；
+  - `POST /api/task/complete` ➔ 远程精准翻转指定待办块状态 (`- [ ]` ➔ `- [x]`)。
+
 ---
 
 ## 三、 全局快捷键「六剑客」
 
 | 快捷键 | 视窗组件 | 核心定位与使用场景 |
 | :--- | :--- | :--- |
-| 🎯 **`Alt+Shift+Q`** | **Bento 穿透罗盘** | 1180×740 黄金画幅，25 款王牌卡片，`b:` 块秒搜、`d:` 文档、`att:` 附件、`tag:` 标签、`av:` 数据库、双栏反链抽屉、Office/PDF 透视。 |
+| 🎯 **`Alt+Shift+Q`** | **Bento 穿透罗盘** | 1180×740 黄金画幅，29 款王牌卡片，`b:` 块秒搜、`d:` 文档、`att:` 附件、`fav:` 网站、`fold:` 目录、`t:` 待办、`pom:` 番茄、双栏反链抽屉、Office/PDF 透视。 |
 | ✏️ **`Alt+Shift+W`** | **随身划笔微胶囊** | 410×188 跟随光标，数字键 1~6 盲打分发，双链认知雷达反查，边界自适应翻转，支持拖拽移动。 |
 | 📸 **`Alt+Shift+C`** | **截屏离线 OCR** | 自动调动本地已装 PixPin / Snipaste 或内置硬件加速引擎，原图与文字双通道入库。 |
 | ⚡ **`Alt+Shift+S`** | **极简速记 HUD** | 居中胶囊，30s 粘滞防碎块，前缀意图分流，`Ctrl+Enter` 扩展多行草稿微舱。 |
@@ -299,7 +308,7 @@
 
 ---
 
-## 四、 25 款王牌心流动作卡片全景 (高聚类·零冗余)
+## 四、 29 款王牌心流动作卡片全景 (高聚类·零冗余)
 
 ```
 【📝 极速捕获 (Capture · 6)】
@@ -310,13 +319,17 @@
   5. syoff    表格数据清洗       syoff          Excel/WPS 数据转标准 Markdown 表格
   6. syvoice  语音速记微舱       voice:         微信输入法/讯飞语音去噪自愈直化日记
 
-【🔍 检索双链 (Search · 6)】
+【🔍 搜索与资产 (Search · 10)】
   7. syf      全库快查与双链     Alt+Shift+F    b:块秒搜 / d:文档标题，双栏抽屉，Shift+Enter回贴双链
-  8. syatt    附件文献秒查       att:           全库 PDF/文献穿透，Everything / Listary 联动，支持 -page 页码直达
-  9. sytag    全库标签穿透坞     tag: / #标签   穿透检索全库匹配标签块，专属抽屉聚合流，1键导出 Markdown 大纲
- 10. syd      今日日记           Enter / syd    原生 SQL 直达当天日记，未建则自动创建
- 11. syo      全景大纲与导图     Alt+Shift+O    H1~H6 目录树拼音即搜即跳，抽屉原生贝塞尔曲线 SVG 导图
- 12. syws     工作现场快照       ws:            虚拟桌面与多任务窗口全景现场一键抓取与恢复
+  8. syfav    全景网站收藏       fav:           跨浏览器书签破岛，自动剥离追踪参数，终态沉淀《/网站导航》
+  9. syfold   文件夹导航与穿透   fold:          系统级目录管理，#32770 文件选择对话框原位秒跳，物理路径健康自愈
+ 10. sytask   全景待办视界       t:             穿透检索全库待办，支持 P1/今日/标签 过滤，一键生成交接 Checklist
+ 11. sypom    心流番茄行动闭环   pom:           桌面敏捷番茄钟，深度绑定待办任务，到期自动结绳完成 (- [x]) 归流日记
+ 12. syatt    附件文献秒查       att:           全库 PDF/文献穿透，Everything / Listary 联动，支持 -page 页码直达
+ 13. sytag    全库标签穿透坞     tag: / #标签   穿透检索全库匹配标签块，专属抽屉聚合流，1键导出 Markdown 大纲
+ 14. syd      今日日记           Enter / syd    原生 SQL 直达当天日记，未建则自动创建
+ 15. syo      全景大纲与导图     Alt+Shift+O    H1~H6 目录树拼音即搜即跳，抽屉原生贝塞尔曲线 SVG 导图
+ 16. syws     工作现场快照       ws:            虚拟桌面与多任务窗口全景现场一键抓取与恢复
 
 【🧩 垂直生态 (Learning · 8 · Alt+1~8 直达)】
  13. syda     习惯打卡           Alt+1          免切窗打卡记录 / 唤起打卡大窗

@@ -64,27 +64,39 @@ namespace XiaoLv.Desktop.Core
         public static async Task<List<WebBookmarkEntry>> LoadBookmarksAsync()
         {
             var list = new List<WebBookmarkEntry>();
+            var cached = LoadFromLocalCache();
 
             try
             {
                 // 1. 尝试从思源 SQLite 检索标准 web-bookmark 块
                 string sql = "SELECT b.id, b.content, b.markdown, b.ial, b.updated FROM blocks b " +
-                             "WHERE b.ial LIKE '%custom-type=\"web-bookmark\"%' OR b.content LIKE '%custom-type=\"web-bookmark\"%' " +
+                             "WHERE b.ial LIKE '%custom-type=\"web-bookmark\"%' OR b.content LIKE '%custom-type=\"web-bookmark\"%' OR b.markdown LIKE '%custom-type=\"web-bookmark\"%' " +
                              "ORDER BY b.updated DESC LIMIT 300";
 
                 var rows = await SiYuanClient.SqlAsync(sql);
                 if (rows != null && rows.Count > 0)
                 {
+                    var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                     foreach (var r in rows)
                     {
                         var entry = ParseBlockToEntry(r);
-                        if (entry != null && !string.IsNullOrEmpty(entry.Url))
+                        if (entry != null && !string.IsNullOrEmpty(entry.CleanUrl) && !seen.Contains(entry.CleanUrl))
                         {
+                            seen.Add(entry.CleanUrl);
                             list.Add(entry);
                         }
                     }
 
-                    // 成功获取思源数据，同步刷新本地脱机缓存
+                    // 深度对齐本地缓存，防止思源 SQLite 异步索引延迟产生脏缺漏
+                    foreach (var c in cached)
+                    {
+                        if (c != null && !string.IsNullOrEmpty(c.CleanUrl) && !seen.Contains(c.CleanUrl))
+                        {
+                            seen.Add(c.CleanUrl);
+                            list.Add(c);
+                        }
+                    }
+
                     SaveToLocalCache(list);
                     return list;
                 }
@@ -92,7 +104,7 @@ namespace XiaoLv.Desktop.Core
             catch { }
 
             // 2. 思源停机或暂无数据时，降级读取本地脱机缓存
-            return LoadFromLocalCache();
+            return cached;
         }
 
         /// <summary>
@@ -241,7 +253,22 @@ namespace XiaoLv.Desktop.Core
             }
             else
             {
-                return null;
+                var bareMatch = Regex.Match(text, @"(https?://[^\s{}""']+)");
+                if (bareMatch.Success)
+                {
+                    entry.Url = bareMatch.Groups[1].Value.Trim();
+                    entry.CleanUrl = TextCleaner.PurifyUrl(entry.Url);
+                    int uIdx = text.IndexOf(entry.Url);
+                    if (uIdx > 0)
+                    {
+                        entry.Title = text.Substring(0, uIdx).Replace("🌐", "").Trim().TrimStart('*', ' ', '[').TrimEnd(']', ' ');
+                    }
+                    if (string.IsNullOrEmpty(entry.Title)) entry.Title = entry.CleanUrl;
+                }
+                else
+                {
+                    return null;
+                }
             }
 
             // 提取 IAL 属性

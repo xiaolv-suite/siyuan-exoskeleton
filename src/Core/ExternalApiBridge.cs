@@ -203,15 +203,50 @@ namespace XiaoLv.Desktop.Core
                     return;
                 }
 
-                // G. 全库块检索: /search 或 /api/search
-                if (rawPath.Equals("/search", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/api/search", StringComparison.OrdinalIgnoreCase))
-                {
-                    HandleSearchRequest(req, resp);
-                    return;
-                }
+	                // G. 全库块检索: /search 或 /api/search
+	                if (rawPath.Equals("/search", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/api/search", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    HandleSearchRequest(req, resp);
+	                    return;
+	                }
 
-                // 未匹配到路由
-                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
+	                // H. 网站收藏中枢: /api/bookmark/web
+	                if (rawPath.Equals("/api/bookmark/web", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/bookmark/web", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    HandleWebBookmarkRequest(req, resp);
+	                    return;
+	                }
+
+	                // I. 文件夹导航中枢: /api/bookmark/folder
+	                if (rawPath.Equals("/api/bookmark/folder", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/bookmark/folder", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    HandleFolderBookmarkRequest(req, resp);
+	                    return;
+	                }
+
+	                // J. 本地目录秒跳穿透: /api/navigate
+	                if (rawPath.Equals("/api/navigate", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/navigate", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    HandleNavigateRequest(req, resp);
+	                    return;
+	                }
+
+	                // K. 全景心流专注: /api/focus
+	                if (rawPath.Equals("/api/focus", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/focus", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    HandleFocusRequest(req, resp);
+	                    return;
+	                }
+
+	                // L. 任务打勾完成: /api/task/complete
+	                if (rawPath.Equals("/api/task/complete", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/task/complete", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    HandleTaskCompleteRequest(req, resp);
+	                    return;
+	                }
+
+	                // 未匹配到路由
+	                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
             }
             catch (Exception ex)
             {
@@ -481,12 +516,152 @@ namespace XiaoLv.Desktop.Core
                 }
                 catch (Exception ex)
                 {
-                    WriteJsonResponse(resp, 500, new { code = 500, msg = ex.Message });
-                }
-            });
-        }
+	                    WriteJsonResponse(resp, 500, new { code = 500, msg = ex.Message });
+	                }
+	            });
+	        }
 
-        private static string ReadRequestBody(HttpListenerRequest req)
+		        private static void HandleWebBookmarkRequest(HttpListenerRequest req, HttpListenerResponse resp)
+		        {
+		            if (req.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+		            {
+		                string body = ReadRequestBody(req);
+		                var dict = JsonHelper.ParseDict(body);
+		                var entry = new WebBookmarkEntry
+		                {
+		                    Title = JsonHelper.GetString(dict, "title"),
+		                    Url = JsonHelper.GetString(dict, "url"),
+		                    Category = JsonHelper.GetString(dict, "category", "常用"),
+		                    Tags = JsonHelper.GetString(dict, "tags"),
+		                    Shortcut = JsonHelper.GetString(dict, "shortcut"),
+		                    Notes = JsonHelper.GetString(dict, "notes")
+		                };
+
+		                ThreadPool.QueueUserWorkItem(async s =>
+		                {
+		                    bool ok = await WebBookmarkHub.SaveBookmarkAsync(entry);
+		                    WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, msg = ok ? "网站收藏成功" : "收藏失败", entry = entry });
+		                });
+		                return;
+		            }
+
+		            // GET: 搜索网站收藏
+		            string q = GetQueryStringUtf8(req, "q");
+		            ThreadPool.QueueUserWorkItem(async s =>
+		            {
+		                var all = await WebBookmarkHub.LoadBookmarksAsync();
+		                var filtered = WebBookmarkHub.Search(all, q);
+		                WriteJsonResponse(resp, 200, new { code = 0, count = filtered.Count, data = filtered });
+		            });
+		        }
+
+		        private static void HandleFolderBookmarkRequest(HttpListenerRequest req, HttpListenerResponse resp)
+		        {
+		            if (req.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+		            {
+		                string body = ReadRequestBody(req);
+		                var dict = JsonHelper.ParseDict(body);
+		                var entry = new FolderBookmarkEntry
+		                {
+		                    Path = JsonHelper.GetString(dict, "path"),
+		                    Alias = JsonHelper.GetString(dict, "alias"),
+		                    Shortcut = JsonHelper.GetString(dict, "shortcut"),
+		                    Tags = JsonHelper.GetString(dict, "tags"),
+		                    SiyuanDocTitle = JsonHelper.GetString(dict, "doc_title")
+		                };
+
+		                ThreadPool.QueueUserWorkItem(async s =>
+		                {
+		                    bool ok = await FolderBookmarkHub.SaveFolderAsync(entry);
+		                    WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, msg = ok ? "文件夹收藏成功" : "收藏失败", entry = entry });
+		                });
+		                return;
+		            }
+
+		            // GET: 搜索文件夹收藏
+		            string q = GetQueryStringUtf8(req, "q");
+		            ThreadPool.QueueUserWorkItem(async s =>
+		            {
+		                var all = await FolderBookmarkHub.LoadFoldersAsync();
+		                var filtered = FolderBookmarkHub.Search(all, q);
+		                WriteJsonResponse(resp, 200, new { code = 0, count = filtered.Count, data = filtered });
+		            });
+		        }
+
+	        private static void HandleNavigateRequest(HttpListenerRequest req, HttpListenerResponse resp)
+	        {
+	            string path = "";
+	            if (req.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+	            {
+	                string body = ReadRequestBody(req);
+	                var dict = JsonHelper.ParseDict(body);
+	                path = JsonHelper.GetString(dict, "path");
+	            }
+	            else
+	            {
+	                path = req.QueryString["path"] ?? "";
+	            }
+
+	            if (string.IsNullOrEmpty(path))
+	            {
+	                WriteJsonResponse(resp, 400, new { code = 400, msg = "path 参数不能为空" });
+	                return;
+	            }
+
+	            bool ok = FolderBookmarkHub.NavigateToFolder(path);
+	            WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, msg = ok ? "导航成功" : "路径不存在或跳转失败", path = path });
+	        }
+
+	        private static void HandleFocusRequest(HttpListenerRequest req, HttpListenerResponse resp)
+	        {
+	            if (req.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+	            {
+	                string body = ReadRequestBody(req);
+	                var dict = JsonHelper.ParseDict(body);
+	                int mins = JsonHelper.GetInt(dict, "minutes", 25);
+	                string task = JsonHelper.GetString(dict, "task", "心流专注");
+	                string bId = JsonHelper.GetString(dict, "task_block_id", "");
+	                string doc = JsonHelper.GetString(dict, "doc_title", "");
+	                bool autoCheck = JsonHelper.GetBool(dict, "auto_complete", true);
+
+	                bool ok = FlowTimerManager.StartTimer(mins, task, bId, doc, autoCheck);
+	                WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, msg = ok ? "心流番茄钟已开启" : "启动失败", minutes = mins, task = task });
+	                return;
+	            }
+
+	            // GET: 获取全景专注状态
+	            var status = DockTomatoBridge.GetIntegratedFocusStatus();
+	            WriteJsonResponse(resp, 200, new { code = 0, msg = "获取成功", data = status });
+	        }
+
+	        private static void HandleTaskCompleteRequest(HttpListenerRequest req, HttpListenerResponse resp)
+	        {
+	            string id = "";
+	            if (req.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+	            {
+	                string body = ReadRequestBody(req);
+	                var dict = JsonHelper.ParseDict(body);
+	                id = JsonHelper.GetString(dict, "id");
+	            }
+	            else
+	            {
+	                id = req.QueryString["id"] ?? "";
+	            }
+
+	            if (string.IsNullOrEmpty(id))
+	            {
+	                WriteJsonResponse(resp, 400, new { code = 400, msg = "id 参数不能为空" });
+	                return;
+	            }
+
+	            ThreadPool.QueueUserWorkItem(async s =>
+	            {
+	                bool ok = await FlowTimerManager.CompleteAssociatedTaskAsync(id);
+	                WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, msg = ok ? "任务已打勾完成" : "任务完成失败或未找到待办块", id = id });
+	            });
+	        }
+
+	        private static string ReadRequestBody(HttpListenerRequest req)
         {
             try
             {
@@ -527,6 +702,29 @@ namespace XiaoLv.Desktop.Core
                 }
             }
             return dict;
+        }
+
+        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
+        {
+            try
+            {
+                if (req.Url == null || string.IsNullOrEmpty(req.Url.Query)) return "";
+                string query = req.Url.Query.TrimStart('?');
+                foreach (var pair in query.Split('&'))
+                {
+                    int eq = pair.IndexOf('=');
+                    if (eq > 0)
+                    {
+                        string k = Uri.UnescapeDataString(pair.Substring(0, eq));
+                        if (k.Equals(paramName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return Uri.UnescapeDataString(pair.Substring(eq + 1));
+                        }
+                    }
+                }
+            }
+            catch { }
+            return req.QueryString[paramName] ?? "";
         }
 
         private static void WriteJsonResponse(HttpListenerResponse resp, int statusCode, object data)

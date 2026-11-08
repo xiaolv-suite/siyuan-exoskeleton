@@ -66,6 +66,7 @@ namespace XiaoLv.Desktop.Core
         public static async Task<List<FolderBookmarkEntry>> LoadFoldersAsync()
         {
             var list = new List<FolderBookmarkEntry>();
+            var cached = LoadFromLocalCache();
 
             try
             {
@@ -76,13 +77,39 @@ namespace XiaoLv.Desktop.Core
                 var rows = await SiYuanClient.SqlAsync(sql);
                 if (rows != null && rows.Count > 0)
                 {
+                    var cacheMap = new Dictionary<string, FolderBookmarkEntry>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var c in cached)
+                    {
+                        if (c != null && !string.IsNullOrEmpty(c.Path)) cacheMap[c.Path] = c;
+                    }
+
+                    var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                     foreach (var r in rows)
                     {
                         var entry = ParseBlockToEntry(r);
-                        if (entry != null && !string.IsNullOrEmpty(entry.Path))
+                        if (entry != null && !string.IsNullOrEmpty(entry.Path) && !seen.Contains(entry.Path))
                         {
+                            seen.Add(entry.Path);
+                            if (cacheMap.ContainsKey(entry.Path))
+                            {
+                                var latest = cacheMap[entry.Path];
+                                if (!string.IsNullOrEmpty(latest.Alias)) entry.Alias = latest.Alias;
+                                if (!string.IsNullOrEmpty(latest.Shortcut)) entry.Shortcut = latest.Shortcut;
+                                if (!string.IsNullOrEmpty(latest.Tags)) entry.Tags = latest.Tags;
+                            }
                             entry.IsValid = Directory.Exists(entry.Path);
                             list.Add(entry);
+                        }
+                    }
+
+                    // 对齐本地缓存，防止思源 SQLite 异步索引延迟
+                    foreach (var c in cached)
+                    {
+                        if (c != null && !string.IsNullOrEmpty(c.Path) && !seen.Contains(c.Path))
+                        {
+                            seen.Add(c.Path);
+                            c.IsValid = Directory.Exists(c.Path);
+                            list.Add(c);
                         }
                     }
 
@@ -92,7 +119,6 @@ namespace XiaoLv.Desktop.Core
             }
             catch { }
 
-            var cached = LoadFromLocalCache();
             foreach (var it in cached)
             {
                 it.IsValid = Directory.Exists(it.Path);

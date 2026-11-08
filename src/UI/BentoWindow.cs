@@ -27,6 +27,17 @@ namespace XiaoLv.Desktop.UI
         private static extern bool SetForegroundWindow(IntPtr hWnd);
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool BringWindowToTop(IntPtr hWnd);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_SHOWWINDOW = 0x0040;
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
         private const byte VK_CONTROL = 0x11;
@@ -163,6 +174,25 @@ namespace XiaoLv.Desktop.UI
                 // 失去焦点时自动隐藏，保持轻量呼吸感 (若正在弹出原生目录选择框则暂缓隐藏)
                 if (_suppressAutoHide) return;
                 Hide();
+            };
+
+            CodeSnippetManager.OnExternalCodeBlockSynced += (bId, updatedCode, lang, docTitle) =>
+            {
+                try
+                {
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        if (_webView != null && _webView.CoreWebView2 != null)
+                        {
+                            _webView.CoreWebView2.ExecuteScriptAsync("if(window.onExternalCodeSynced) window.onExternalCodeSynced(" + JsonHelper.ToJson(new { code = 0, blockId = bId, content = updatedCode, language = lang, docTitle = docTitle }) + ");");
+                        }
+                    }));
+                    if (OnNotificationRequested != null)
+                    {
+                        OnNotificationRequested("代码工作台 · 热编辑回写", string.Format("✓ 外部 IDE 保存已自动同步回思源《{0}》代码块！", docTitle));
+                    }
+                }
+                catch { }
             };
 
             Loaded += BentoWindow_Loaded;
@@ -544,23 +574,53 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
-	                // 3.45 纯净代码片段本地临时导出秒开
-	                if (op.Equals("exportSourceFile", StringComparison.OrdinalIgnoreCase))
-	                {
-	                    string code = JsonHelper.GetString(msg, "code");
-	                    string lang = JsonHelper.GetString(msg, "lang");
-	                    string title = JsonHelper.GetString(msg, "docTitle");
+                // 3.45 纯净代码片段本地临时导出秒开 (支持外部 VS Code 热保存自动回写思源块)
+                if (op.Equals("exportSourceFile", StringComparison.OrdinalIgnoreCase) ||
+                    op.Equals("openCodeSnippetSourceFile", StringComparison.OrdinalIgnoreCase))
+                {
+                    string code = JsonHelper.GetString(msg, "code");
+                    string lang = JsonHelper.GetString(msg, "lang");
+                    if (string.IsNullOrEmpty(lang)) lang = JsonHelper.GetString(msg, "language", "text");
+                    string title = JsonHelper.GetString(msg, "docTitle");
+                    string blockId = JsonHelper.GetString(msg, "blockId");
 
-	                    ThreadPool.QueueUserWorkItem(s =>
-	                    {
-	                        string target = CodeSnippetManager.ExportAndOpenSourceFile(code, lang, title);
-	                        if (!string.IsNullOrEmpty(target) && OnNotificationRequested != null)
-	                        {
-	                            OnNotificationRequested("思源外骨骼 · 源码秒开", "✓ 已生成 " + Path.GetFileName(target) + " 并在本地开发工具中秒开！");
-	                        }
-	                    });
-	                    return;
-	                }
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        string target = CodeSnippetManager.ExportAndWatchSourceFile(code, lang, title, blockId, true);
+                        if (!string.IsNullOrEmpty(target) && OnNotificationRequested != null)
+                        {
+                            OnNotificationRequested("思源外骨骼 · 源码热联动", "✓ 已生成 " + Path.GetFileName(target) + " 并在外部 IDE 秒开 (Ctrl+S 保存将自动回写思源)！");
+                        }
+                    });
+                    return;
+                }
+
+                // 3.46 代码工作台原位编辑保存回思源代码块 (updateCodeBlock)
+                if (op.Equals("updateCodeBlock", StringComparison.OrdinalIgnoreCase))
+                {
+                    string blockId = JsonHelper.GetString(msg, "blockId");
+                    string code = JsonHelper.GetString(msg, "code");
+                    string lang = JsonHelper.GetString(msg, "language");
+                    if (string.IsNullOrEmpty(lang)) lang = JsonHelper.GetString(msg, "lang", "text");
+
+                    ThreadPool.QueueUserWorkItem(async s =>
+                    {
+                        bool ok = await CodeSnippetManager.UpdateCodeBlockInSiYuanAsync(blockId, code, lang);
+                        if (ok) SoundPlayerHelper.PlayFeedback();
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onCodeBlockUpdated) window.onCodeBlockUpdated(" + JsonHelper.ToJson(new { code = 0, success = ok, blockId = blockId }) + ");");
+                            }
+                        });
+                        if (ok && OnNotificationRequested != null)
+                        {
+                            OnNotificationRequested("代码工作台 · 原位写回", "✓ 纯净源码已成功原位保存回思源代码块！");
+                        }
+                    });
+                    return;
+                }
 
 	                // 3.48 全库表格与属性视图秒搜与解析 (tab: / table: 语法)
 	                if (op.Equals("searchTables", StringComparison.OrdinalIgnoreCase))
@@ -589,38 +649,78 @@ namespace XiaoLv.Desktop.UI
 	                    return;
 	                }
 
-		                // 3.49 表格数据结构解析与美化转换 (parseTableData)
-		                if (op.Equals("parseTableData", StringComparison.OrdinalIgnoreCase))
-		                {
-		                    string rawTableText = JsonHelper.GetString(msg, "rawText");
-		                    string title = JsonHelper.GetString(msg, "title", "数据表格");
-		                    ThreadPool.QueueUserWorkItem(s =>
-		                    {
-		                        try
-		                        {
-		                            var parsed = TableToAvConverter.ParseTable(rawTableText);
-		                            string beautifulMd = TableToAvConverter.FormatBeautifulMarkdownTable(parsed);
-		                            string foldable = TableToAvConverter.ConvertToFoldableList(parsed, title);
-		                            string csv = TableToAvConverter.ConvertToCsv(parsed);
+                // 3.49 表格数据结构解析与美化转换 (parseTableData)
+                if (op.Equals("parseTableData", StringComparison.OrdinalIgnoreCase))
+                {
+                    string rawTableText = JsonHelper.GetString(msg, "rawText");
+                    string blockId = JsonHelper.GetString(msg, "blockId");
+                    string title = JsonHelper.GetString(msg, "title", "数据表格");
+                    ThreadPool.QueueUserWorkItem(async s =>
+                    {
+                        try
+                        {
+                            if (string.IsNullOrWhiteSpace(rawTableText))
+                            {
+                                string sql = !string.IsNullOrWhiteSpace(blockId)
+                                    ? "SELECT id, content, markdown FROM blocks WHERE id='" + blockId.Replace("'", "''") + "' LIMIT 1"
+                                    : "SELECT id, content, markdown FROM blocks WHERE type='t' ORDER BY updated DESC LIMIT 1";
+                                var rows = await SiYuanClient.SqlAsync(sql);
+                                if (rows != null && rows.Count > 0)
+                                {
+                                    rawTableText = JsonHelper.GetString(rows[0], "markdown");
+                                    if (string.IsNullOrWhiteSpace(rawTableText)) rawTableText = JsonHelper.GetString(rows[0], "content");
+                                    if (string.IsNullOrWhiteSpace(blockId)) blockId = JsonHelper.GetString(rows[0], "id");
+                                }
+                            }
 
-		                            var payload = new Dictionary<string, object>();
-		                            payload["structure"] = parsed;
-		                            payload["beautifulMarkdown"] = beautifulMd;
-		                            payload["foldableList"] = foldable;
-		                            payload["csv"] = csv;
+                            var parsed = TableToAvConverter.ParseTable(rawTableText);
+                            string beautifulMd = TableToAvConverter.FormatBeautifulMarkdownTable(parsed);
+                            string foldable = TableToAvConverter.ConvertToFoldableList(parsed, title);
+                            string csv = TableToAvConverter.ConvertToCsv(parsed);
 
-		                            Dispatcher.Invoke(() =>
-		                            {
-		                                if (_webView != null && _webView.CoreWebView2 != null)
-		                                {
-		                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onTableDataParsed) window.onTableDataParsed(" + JsonHelper.ToJson(new { code = 0, data = payload }) + ");");
-		                                }
-		                            });
-		                        }
-		                        catch { }
-		                    });
-		                    return;
-		                }
+                            var payload = new Dictionary<string, object>();
+                            payload["blockId"] = blockId ?? "";
+                            payload["structure"] = parsed;
+                            payload["beautifulMarkdown"] = beautifulMd;
+                            payload["foldableList"] = foldable;
+                            payload["csv"] = csv;
+
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onTableDataParsed) window.onTableDataParsed(" + JsonHelper.ToJson(new { code = 0, data = payload }) + ");");
+                                }
+                            });
+                        }
+                        catch { }
+                    });
+                    return;
+                }
+
+                // 3.495 表格矩阵原位编辑保存回思源表格块 (updateTableBlock)
+                if (op.Equals("updateTableBlock", StringComparison.OrdinalIgnoreCase))
+                {
+                    string blockId = JsonHelper.GetString(msg, "blockId");
+                    string md = JsonHelper.GetString(msg, "markdown");
+                    ThreadPool.QueueUserWorkItem(async s =>
+                    {
+                        bool ok = await TableToAvConverter.UpdateTableBlockInSiYuanAsync(blockId, md);
+                        if (ok) SoundPlayerHelper.PlayFeedback();
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onTableBlockUpdated) window.onTableBlockUpdated(" + JsonHelper.ToJson(new { code = 0, success = ok, blockId = blockId }) + ");");
+                            }
+                        });
+                        if (ok && OnNotificationRequested != null)
+                        {
+                            OnNotificationRequested("表格矩阵 · 原位写回", "✓ 表格修改已成功原位保存回思源笔记表格块！");
+                        }
+                    });
+                    return;
+                }
 
 		                // 3.50 表格 1 键导出 Excel.xlsx 并本地秒开
 		                if (op.Equals("exportTableStructureXlsx", StringComparison.OrdinalIgnoreCase))
@@ -1618,27 +1718,53 @@ namespace XiaoLv.Desktop.UI
 										                    return;
 										                }
 
-										                if (op.Equals("captureCurrentProfile", StringComparison.OrdinalIgnoreCase))
-										                {
-										                    string cType = JsonHelper.GetString(msg, "type", "s3");
-										                    string cName = JsonHelper.GetString(msg, "name");
-										                    ThreadPool.QueueUserWorkItem(s =>
-										                    {
-										                        try
-										                        {
-										                            var captured = SiYuanProfileHub.CaptureCurrentLiveProfile(cType, cName);
-										                            Dispatcher.Invoke(() =>
-										                            {
-										                                if (_webView != null && _webView.CoreWebView2 != null)
-										                                {
-										                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onProfileCaptured) window.onProfileCaptured(" + JsonHelper.ToJson(new { code = 0, data = captured }) + ");");
-										                                }
-										                            });
-										                        }
-										                        catch { }
-										                    });
-										                    return;
-										                }
+                if (op.Equals("captureCurrentProfile", StringComparison.OrdinalIgnoreCase))
+                {
+                    string cType = JsonHelper.GetString(msg, "type", "s3");
+                    string cName = JsonHelper.GetString(msg, "name");
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        try
+                        {
+                            var captured = SiYuanProfileHub.CaptureCurrentLiveProfile(cType, cName);
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onProfileCaptured) window.onProfileCaptured(" + JsonHelper.ToJson(new { code = 0, data = captured }) + ");");
+                                }
+                            });
+                        }
+                        catch { }
+                    });
+                    return;
+                }
+
+                if (op.Equals("applyProfile", StringComparison.OrdinalIgnoreCase))
+                {
+                    string pid = JsonHelper.GetString(msg, "id");
+                    ThreadPool.QueueUserWorkItem(async s =>
+                    {
+                        try
+                        {
+                            var applyRes = await SiYuanProfileHub.ApplyProfileToLiveAsync(pid);
+                            if (applyRes.Success) SoundPlayerHelper.PlayFeedback();
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onProfileApplied) window.onProfileApplied(" + JsonHelper.ToJson(new { code = 0, data = applyRes }) + ");");
+                                }
+                            });
+                            if (applyRes.Success && OnNotificationRequested != null)
+                            {
+                                OnNotificationRequested("配置预设 · 热切换生效", "✓ " + applyRes.AppliedSummary);
+                            }
+                        }
+                        catch { }
+                    });
+                    return;
+                }
 
 										                // 3.72 全景系统与应用通知事件流中枢 (notice: / notif:)
 										                if (op.Equals("getNotificationHistory", StringComparison.OrdinalIgnoreCase))
@@ -3558,7 +3684,25 @@ namespace XiaoLv.Desktop.UI
             }
             catch { }
 
+            if (WindowState == WindowState.Minimized)
+            {
+                WindowState = WindowState.Normal;
+            }
+
             Show();
+            Topmost = false;
+            Topmost = true;
+            try
+            {
+                var hwnd = new WindowInteropHelper(this).Handle;
+                if (hwnd != IntPtr.Zero)
+                {
+                    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+                    BringWindowToTop(hwnd);
+                    SetForegroundWindow(hwnd);
+                }
+            }
+            catch { }
             Activate();
             Focus();
             if (_webView != null) _webView.Focus();

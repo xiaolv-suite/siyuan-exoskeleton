@@ -3642,6 +3642,155 @@ async function main() {
                            bridgeStatus.version === "3.0.0";
   logStep("Step 7.200: 全工程 v3.0.0 版本号一致性对齐 (C# 内核 / Webhook / 前端面板) 断言", isVersionAligned, `Webhook版本: ${bridgeStatus?.version}`);
 
+  // Step 7.201: Test Top-Layer Studio Switcher Anti-Occlusion & Win32 HWND_TOPMOST Enforcement
+  const headerIdx = panelContent.indexOf('</header>');
+  const popoverDomIdx = panelContent.indexOf('id="studio-switcher-popover"');
+  const isPopoverOutsideHeader = headerIdx > 0 && popoverDomIdx > headerIdx;
+  const hasTopZIndexHierarchy = panelContent.includes('z-index: 9200;') &&
+                                panelContent.includes('z-index: 9999;') &&
+                                panelContent.includes('function openStudioFromHub') &&
+                                bentoCsContent.includes('HWND_TOPMOST') &&
+                                bentoCsContent.includes('BringWindowToTop');
+  logStep("Step 7.201: 工作台九宫格浮层脱离顶栏层叠上下文 (z-index: 9200) 与 Win32 HWND_TOPMOST 防遮挡置顶断言", isPopoverOutsideHeader && hasTopZIndexHierarchy, `浮层根级挂载: ${isPopoverOutsideHeader} · 置顶层级: ${hasTopZIndexHierarchy}`);
+
+  // Step 7.202: Test Bi-Directional Code Block In-Place Write-Back (POST /api/code/update)
+  let codeWriteBackOk = false;
+  let testCodeBlockId = "";
+  try {
+    const appendCodeRes = await api("/api/block/appendBlock", {
+      parentID: row1.root_id,
+      dataType: "markdown",
+      data: "```python\ndef calc_score():\n    return 60\n```"
+    });
+    testCodeBlockId = appendCodeRes.data?.[0]?.doOperations?.[0]?.id || "";
+    if (testCodeBlockId) {
+      const updResp = await fetch("http://127.0.0.1:43990/api/code/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blockId: testCodeBlockId,
+          lang: "python",
+          code: "def calc_score():\n    return 100"
+        })
+      });
+      const updJson = await updResp.json();
+      await sleep(500);
+      const updatedCodeRow = await pollSql(`SELECT id, content, markdown FROM blocks WHERE id='${testCodeBlockId}' AND content LIKE '%return 100%' LIMIT 1`, 6);
+      codeWriteBackOk = updJson.code === 0 && !!updatedCodeRow;
+    }
+  } catch {}
+  logStep("Step 7.202: 代码工作台双向闭环 — 纯净源码原位写回思源代码块 (POST /api/code/update) 真机断言", codeWriteBackOk, `目标代码块: ${testCodeBlockId}`);
+
+  // Step 7.203: Test External IDE Hot-Edit Live Sync Watcher (ExportAndWatchSourceFile -> SyncModifiedFileToSiYuanAsync)
+  const hotCodeWatchScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $mgr = $asm.GetType('XiaoLv.Desktop.Core.CodeSnippetManager');
+    $mExportWatch = $mgr.GetMethod('ExportAndWatchSourceFile', [System.Reflection.BindingFlags]'Public,Static');
+    $mSync = $mgr.GetMethod('SyncModifiedFileToSiYuanAsync', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+
+    $srcPath = $mExportWatch.Invoke($null, @('def calc_score():\n    return 100', 'python', '架构测试', '${testCodeBlockId}', $false));
+    [System.IO.File]::WriteAllText($srcPath, "def calc_score():\`n    return 999 # hot-synced from external IDE", [System.Text.Encoding]::UTF8);
+
+    $task = $mSync.Invoke($null, @($srcPath));
+    $syncOk = $task.GetAwaiter().GetResult();
+    try { [System.IO.File]::Delete($srcPath); } catch {}
+    Write-Output ($syncOk.ToString());
+  `;
+  const hotCodeWatchRes = runPs(hotCodeWatchScript);
+  const kramRes = testCodeBlockId ? await api("/api/block/getBlockKramdown", { id: testCodeBlockId }) : null;
+  const hotSyncedKram = kramRes?.data?.kramdown || "";
+  const hotSyncedCodeRow = testCodeBlockId
+    ? await pollSql(`SELECT id, content FROM blocks WHERE id='${testCodeBlockId}' AND content LIKE '%999%' LIMIT 1`, 15)
+    : null;
+  const isHotCodeSyncOk = hotCodeWatchRes.includes("True") && (hotSyncedKram.includes("999") || !!hotSyncedCodeRow);
+  logStep("Step 7.203: 外部 VS Code / IDE 热保存自动监听回写思源代码块 (SyncModifiedFileToSiYuanAsync) 真机断言", isHotCodeSyncOk, `热同步状态: ${hotCodeWatchRes.trim()}`);
+
+  // Step 7.204: Test Code Studio Bi-Directional Frontend Controls & Ctrl+S Binding
+  const hasCodeStudioWriteBackUi = panelContent.includes('id="cs-save-siyuan-btn"') &&
+                                   panelContent.includes('function saveCurrentCodeSnippetToSiYuan') &&
+                                   panelContent.includes('window.onCodeBlockUpdated') &&
+                                   panelContent.includes('window.onExternalCodeSynced');
+  logStep("Step 7.204: 代码工作台前端原位保存按钮、Ctrl+S 快捷键与外部热同步实时刷新断言", hasCodeStudioWriteBackUi, `前端双向控件完整性: ${hasCodeStudioWriteBackUi}`);
+
+  // Step 7.205: Test Bi-Directional Table Matrix In-Place Write-Back (POST /api/table/update)
+  let tableWriteBackOk = false;
+  let testTableBlockId = "";
+  try {
+    const appendTblRes = await api("/api/block/appendBlock", {
+      parentID: row1.root_id,
+      dataType: "markdown",
+      data: "| 模块 | 状态 |\n| :--- | :--- |\n| 启动台 | 已完成 |"
+    });
+    testTableBlockId = appendTblRes.data?.[0]?.doOperations?.[0]?.id || "";
+    if (testTableBlockId) {
+      const updTblResp = await fetch("http://127.0.0.1:43990/api/table/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blockId: testTableBlockId,
+          markdown: "| 模块 | 状态 |\n| :--- | :--- |\n| 启动台 | 已完成 |\n| 表格双向写回 | 原位同步成功 |"
+        })
+      });
+      const updTblJson = await updTblResp.json();
+      const tblKramRes = await api("/api/block/getBlockKramdown", { id: testTableBlockId });
+      const tblKram = tblKramRes?.data?.kramdown || "";
+      const updatedTblRow = await pollSql(`SELECT id, markdown, content FROM blocks WHERE id='${testTableBlockId}' AND (markdown LIKE '%原位同步成功%' OR content LIKE '%原位同步成功%') LIMIT 1`, 15);
+      tableWriteBackOk = updTblJson.code === 0 && (tblKram.includes("原位同步成功") || !!updatedTblRow);
+    }
+  } catch {}
+  logStep("Step 7.205: 表格透视矩阵双向闭环 — 单元格修改与增行原位写回思源块 (POST /api/table/update) 真机断言", tableWriteBackOk, `目标表格块: ${testTableBlockId}`);
+
+  // Step 7.206: Test Table Grid Studio Bi-Directional Frontend Controls & Indexed Row Editing
+  const hasTableGridWriteBackUi = panelContent.includes('id="tg-save-siyuan-btn"') &&
+                                  panelContent.includes('function saveCurrentTableGridToSiYuan') &&
+                                  panelContent.includes('window.onTableBlockUpdated') &&
+                                  panelContent.includes('let indexedRows = rawRows.map');
+  logStep("Step 7.206: 表格矩阵原位保存按钮与排序态安全行索引 (indexedRows) 编辑映射断言", hasTableGridWriteBackUi, `表格写回控件完整性: ${hasTableGridWriteBackUi}`);
+
+  // Step 7.207: Test Windows Native DPAPI (Crypt32) Credential Vault Encryption & Decryption Roundtrip
+  const dpapiScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $hub = $asm.GetType('XiaoLv.Desktop.Core.SiYuanProfileHub');
+    $mProtect = $hub.GetMethod('ProtectSecretDpapi', [System.Reflection.BindingFlags]'Public,Static');
+    $mUnprotect = $hub.GetMethod('UnprotectSecretDpapi', [System.Reflection.BindingFlags]'Public,Static');
+
+    $rawSecret = 'sk-dpapi-vault-test-key-99887766';
+    $cipher = $mProtect.Invoke($null, @($rawSecret));
+    $plain = $mUnprotect.Invoke($null, @($cipher));
+
+    $okDpapi = $cipher.StartsWith('DPAPI:') -and ($cipher -ne $rawSecret) -and ($plain -eq $rawSecret);
+    Write-Output ($okDpapi.ToString() + '|' + $cipher.Substring(0, 14));
+  `;
+  const dpapiRes = runPs(dpapiScript);
+  const isDpapiOk = dpapiRes.includes("True|DPAPI:");
+  logStep("Step 7.207: 配置预设本机 Windows DPAPI (Crypt32) 硬件级凭据加解密保险箱往返断言", isDpapiOk, `DPAPI密文前缀: ${dpapiRes.trim()}`);
+
+  // Step 7.208: Test Live Profile 1-Click Hot-Switch with DPAPI Vault Restoration (POST /api/profile/apply)
+  let profileApplyOk = false;
+  let profileApplySummary = "";
+  try {
+    const applyResp = await fetch("http://127.0.0.1:43990/api/profile/apply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "阿里通义千问 Qwen-Max 旗舰模型" })
+    });
+    const applyJson = await applyResp.json();
+    profileApplyOk = applyJson.code === 0 && applyJson.data && applyJson.data.Success === true && applyJson.data.HasRestoredCredentials === true;
+    profileApplySummary = applyJson.data?.AppliedSummary || "";
+  } catch (err) {
+    profileApplySummary = err.message;
+  }
+  const hasProfileApplyUi = panelContent.includes('function applyProfileById') &&
+                            panelContent.includes('window.onProfileApplied') &&
+                            panelContent.includes('⚡ 激活生效') &&
+                            panelContent.includes('🔐 DPAPI锁密');
+  logStep("Step 7.208: 配置预设一键热切换生效 (POST /api/profile/apply) 与 DPAPI 密钥自动还原断言", profileApplyOk && hasProfileApplyUi, `切换结果: ${profileApplySummary}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

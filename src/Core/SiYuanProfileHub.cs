@@ -1,12 +1,35 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace XiaoLv.Desktop.Core
 {
+    public class ProfileApplyResult
+    {
+        public bool Success { get; set; }
+        public string ProfileId { get; set; }
+        public string ProfileName { get; set; }
+        public string ProfileType { get; set; }
+        public bool HasRestoredCredentials { get; set; }
+        public int RestoredCredentialCount { get; set; }
+        public string AppliedSummary { get; set; }
+
+        public ProfileApplyResult()
+        {
+            Success = false;
+            ProfileId = "";
+            ProfileName = "";
+            ProfileType = "";
+            HasRestoredCredentials = false;
+            RestoredCredentialCount = 0;
+            AppliedSummary = "";
+        }
+    }
+
     public class SiYuanProfileEntry
     {
         public string Id { get; set; }
@@ -16,6 +39,8 @@ namespace XiaoLv.Desktop.Core
         public Dictionary<string, object> ConfigData { get; set; }
         public string CreatedTime { get; set; }
         public string UpdatedTime { get; set; }
+        public bool HasVaultCredentials { get; set; }
+        public bool IsActive { get; set; }
 
         public SiYuanProfileEntry()
         {
@@ -26,6 +51,8 @@ namespace XiaoLv.Desktop.Core
             ConfigData = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
             CreatedTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
             UpdatedTime = CreatedTime;
+            HasVaultCredentials = false;
+            IsActive = false;
         }
     }
 
@@ -49,6 +76,120 @@ namespace XiaoLv.Desktop.Core
                 if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
                 return Path.Combine(dir, "siyuan_profiles.json");
             }
+        }
+
+        private static string DpapiVaultPath
+        {
+            get
+            {
+                string dir = EmbeddedResourceManager.AppDataDir;
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                return Path.Combine(dir, "local_vault_dpapi.json");
+            }
+        }
+
+        private static readonly Dictionary<string, string> _activeProfileByType = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private struct DATA_BLOB
+        {
+            public int cbData;
+            public IntPtr pbData;
+        }
+
+        [DllImport("crypt32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern bool CryptProtectData(
+            ref DATA_BLOB pDataIn,
+            string szDataDescr,
+            IntPtr pOptionalEntropy,
+            IntPtr pvReserved,
+            IntPtr pPromptStruct,
+            int dwFlags,
+            out DATA_BLOB pDataOut);
+
+        [DllImport("crypt32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern bool CryptUnprotectData(
+            ref DATA_BLOB pDataIn,
+            StringBuilder ppszDataDescr,
+            IntPtr pOptionalEntropy,
+            IntPtr pvReserved,
+            IntPtr pPromptStruct,
+            int dwFlags,
+            out DATA_BLOB pDataOut);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr LocalFree(IntPtr hMem);
+
+        private const int CRYPTPROTECT_UI_FORBIDDEN = 0x1;
+
+        /// <summary>
+        /// 使用 Windows 原生 DPAPI (CryptProtectData) 加密本机敏感凭据 (零外部 DLL 依赖)
+        /// </summary>
+        public static string ProtectSecretDpapi(string plainText)
+        {
+            if (string.IsNullOrEmpty(plainText)) return "";
+            if (plainText.StartsWith("DPAPI:", StringComparison.Ordinal)) return plainText;
+
+            byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
+            DATA_BLOB inBlob = new DATA_BLOB();
+            DATA_BLOB outBlob = new DATA_BLOB();
+            GCHandle handle = GCHandle.Alloc(plainBytes, GCHandleType.Pinned);
+            try
+            {
+                inBlob.cbData = plainBytes.Length;
+                inBlob.pbData = handle.AddrOfPinnedObject();
+
+                if (CryptProtectData(ref inBlob, "XiaoLvExoskeletonVault", IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, CRYPTPROTECT_UI_FORBIDDEN, out outBlob))
+                {
+                    byte[] cipherBytes = new byte[outBlob.cbData];
+                    Marshal.Copy(outBlob.pbData, cipherBytes, 0, outBlob.cbData);
+                    return "DPAPI:" + Convert.ToBase64String(cipherBytes);
+                }
+            }
+            catch { }
+            finally
+            {
+                if (handle.IsAllocated) handle.Free();
+                if (outBlob.pbData != IntPtr.Zero) LocalFree(outBlob.pbData);
+            }
+            return "";
+        }
+
+        /// <summary>
+        /// 使用 Windows 原生 DPAPI (CryptUnprotectData) 解密本机敏感凭据
+        /// </summary>
+        public static string UnprotectSecretDpapi(string cipherText)
+        {
+            if (string.IsNullOrEmpty(cipherText)) return "";
+            if (!cipherText.StartsWith("DPAPI:", StringComparison.Ordinal)) return cipherText;
+
+            string b64 = cipherText.Substring("DPAPI:".Length);
+            byte[] cipherBytes;
+            try { cipherBytes = Convert.FromBase64String(b64); }
+            catch { return ""; }
+
+            DATA_BLOB inBlob = new DATA_BLOB();
+            DATA_BLOB outBlob = new DATA_BLOB();
+            GCHandle handle = GCHandle.Alloc(cipherBytes, GCHandleType.Pinned);
+            try
+            {
+                inBlob.cbData = cipherBytes.Length;
+                inBlob.pbData = handle.AddrOfPinnedObject();
+
+                if (CryptUnprotectData(ref inBlob, null, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, CRYPTPROTECT_UI_FORBIDDEN, out outBlob))
+                {
+                    byte[] plainBytes = new byte[outBlob.cbData];
+                    Marshal.Copy(outBlob.pbData, plainBytes, 0, outBlob.cbData);
+                    return Encoding.UTF8.GetString(plainBytes);
+                }
+            }
+            catch { }
+            finally
+            {
+                if (handle.IsAllocated) handle.Free();
+                if (outBlob.pbData != IntPtr.Zero) LocalFree(outBlob.pbData);
+            }
+            return "";
         }
 
         /// <summary>
@@ -109,8 +250,12 @@ namespace XiaoLv.Desktop.Core
             entry.Type = (entry.Type ?? "s3").Trim().ToLowerInvariant();
             entry.UpdatedTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
 
-            // 严格执行安全凭据脱敏清洗
+            // 0. 脱敏前先将非空真实凭据通过本机 DPAPI 硬件级加密锁入本机保险箱
+            SaveCredentialsToDpapiVault(entry.Id, entry.Name, entry.ConfigData);
+
+            // 1. 严格执行安全凭据脱敏清洗 (保证思源笔记库与 JSON 蓝图 0 明文泄露)
             SanitizeProfileConfigData(entry.ConfigData);
+            entry.HasVaultCredentials = HasDpapiVaultCredentials(entry.Id, entry.Name);
 
             // 1. 本地缓存更新
             lock (_lock)
@@ -243,13 +388,219 @@ namespace XiaoLv.Desktop.Core
             }
             catch { }
 
+            SaveCredentialsToDpapiVault(entry.Id, entry.Name, entry.ConfigData);
             SanitizeProfileConfigData(entry.ConfigData);
+            entry.HasVaultCredentials = HasDpapiVaultCredentials(entry.Id, entry.Name);
             if (string.IsNullOrEmpty(entry.Name))
             {
                 entry.Name = (type.ToUpperInvariant() + " 预设快照 " + DateTime.Now.ToString("MM-dd HH:mm"));
             }
 
             return entry;
+        }
+
+        private static readonly string[] _sensitiveKeys = new string[]
+        {
+            "accessKey", "secretKey", "apiKey", "password", "token", "authCode", "access_key", "secret_key", "api_key"
+        };
+
+        private static Dictionary<string, object> LoadDpapiVaultDict()
+        {
+            try
+            {
+                string p = DpapiVaultPath;
+                if (File.Exists(p))
+                {
+                    string json = File.ReadAllText(p, Encoding.UTF8);
+                    var dict = JsonHelper.ParseDict(json);
+                    if (dict != null) return dict;
+                }
+            }
+            catch { }
+            return new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static void SaveDpapiVaultDict(Dictionary<string, object> dict)
+        {
+            try
+            {
+                string json = JsonHelper.ToJson(dict);
+                File.WriteAllText(DpapiVaultPath, json, new UTF8Encoding(false));
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// 将配置字典中的真实敏感凭据使用 Windows DPAPI 加密存入本机保险箱
+        /// </summary>
+        public static int SaveCredentialsToDpapiVault(string profileId, string profileName, Dictionary<string, object> data)
+        {
+            if (data == null) return 0;
+
+            int savedCount = 0;
+            lock (_lock)
+            {
+                var vault = LoadDpapiVaultDict();
+                string keyById = "id:" + (profileId ?? "");
+                string keyByName = "name:" + (profileName ?? "");
+
+                var secretMap = JsonHelper.GetDict(vault, keyById) ?? new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var k in _sensitiveKeys)
+                {
+                    if (data.ContainsKey(k) && data[k] != null)
+                    {
+                        string rawVal = data[k].ToString().Trim();
+                        if (!string.IsNullOrEmpty(rawVal) && rawVal != "[SECURED_CREDENTIAL]")
+                        {
+                            string encrypted = ProtectSecretDpapi(rawVal);
+                            if (!string.IsNullOrEmpty(encrypted))
+                            {
+                                secretMap[k] = encrypted;
+                                savedCount++;
+                            }
+                        }
+                    }
+                }
+
+                if (savedCount > 0)
+                {
+                    if (!string.IsNullOrEmpty(profileId)) vault[keyById] = secretMap;
+                    if (!string.IsNullOrEmpty(profileName)) vault[keyByName] = secretMap;
+                    SaveDpapiVaultDict(vault);
+                }
+            }
+            return savedCount;
+        }
+
+        /// <summary>
+        /// 从本机 DPAPI 保险箱解密还原敏感凭据至目标字典
+        /// </summary>
+        public static int RestoreCredentialsFromDpapiVault(string profileId, string profileName, Dictionary<string, object> targetData)
+        {
+            if (targetData == null) return 0;
+
+            int restored = 0;
+            lock (_lock)
+            {
+                var vault = LoadDpapiVaultDict();
+                Dictionary<string, object> secretMap = null;
+                if (!string.IsNullOrEmpty(profileId)) secretMap = JsonHelper.GetDict(vault, "id:" + profileId);
+                if (secretMap == null && !string.IsNullOrEmpty(profileName)) secretMap = JsonHelper.GetDict(vault, "name:" + profileName);
+                if (secretMap == null) return 0;
+
+                foreach (var kv in secretMap)
+                {
+                    string cipher = kv.Value != null ? kv.Value.ToString() : "";
+                    if (!string.IsNullOrEmpty(cipher))
+                    {
+                        string plain = UnprotectSecretDpapi(cipher);
+                        if (!string.IsNullOrEmpty(plain))
+                        {
+                            targetData[kv.Key] = plain;
+                            restored++;
+                        }
+                    }
+                }
+            }
+            return restored;
+        }
+
+        public static bool HasDpapiVaultCredentials(string profileId, string profileName)
+        {
+            lock (_lock)
+            {
+                var vault = LoadDpapiVaultDict();
+                if (!string.IsNullOrEmpty(profileId) && JsonHelper.GetDict(vault, "id:" + profileId) != null) return true;
+                if (!string.IsNullOrEmpty(profileName) && JsonHelper.GetDict(vault, "name:" + profileName) != null) return true;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 一键热切换激活指定配置预设：自动从本机 DPAPI 保险箱解密凭据并注入运行时生效
+        /// </summary>
+        public static async Task<ProfileApplyResult> ApplyProfileToLiveAsync(string profileId)
+        {
+            var res = new ProfileApplyResult { ProfileId = profileId ?? "" };
+            var all = await LoadProfilesAsync("all");
+            if (all == null || all.Count == 0) return res;
+
+            SiYuanProfileEntry target = all.Find(x => x != null && (x.Id.Equals(profileId, StringComparison.OrdinalIgnoreCase) || x.Name.Equals(profileId, StringComparison.OrdinalIgnoreCase)));
+            if (target == null && string.IsNullOrEmpty(profileId))
+            {
+                target = all[0];
+            }
+            if (target == null) return res;
+
+            res.ProfileId = target.Id;
+            res.ProfileName = target.Name;
+            res.ProfileType = target.Type;
+
+            var effectiveData = new Dictionary<string, object>(target.ConfigData ?? new Dictionary<string, object>(), StringComparer.OrdinalIgnoreCase);
+            int restoredCount = RestoreCredentialsFromDpapiVault(target.Id, target.Name, effectiveData);
+            res.RestoredCredentialCount = restoredCount;
+            res.HasRestoredCredentials = restoredCount > 0;
+
+            try
+            {
+                lock (_lock)
+                {
+                    _activeProfileByType[target.Type ?? "s3"] = target.Id;
+                    var vault = LoadDpapiVaultDict();
+                    vault["active:" + (target.Type ?? "s3").ToLowerInvariant()] = target.Id;
+                    SaveDpapiVaultDict(vault);
+                }
+
+                if (target.Type.Equals("ai", StringComparison.OrdinalIgnoreCase))
+                {
+                    string baseUrl = JsonHelper.GetString(effectiveData, "baseURL");
+                    if (string.IsNullOrEmpty(baseUrl)) baseUrl = JsonHelper.GetString(effectiveData, "baseUrl");
+                    if (string.IsNullOrEmpty(baseUrl)) baseUrl = JsonHelper.GetString(effectiveData, "endpoint");
+
+                    string model = JsonHelper.GetString(effectiveData, "modelName");
+                    if (string.IsNullOrEmpty(model)) model = JsonHelper.GetString(effectiveData, "model");
+
+                    string apiKey = JsonHelper.GetString(effectiveData, "apiKey");
+                    if (string.IsNullOrEmpty(apiKey)) apiKey = JsonHelper.GetString(effectiveData, "api_key");
+
+                    if (!string.IsNullOrEmpty(baseUrl)) AppSettings.Instance.AiBaseUrl = baseUrl;
+                    if (!string.IsNullOrEmpty(model)) AppSettings.Instance.AiModel = model;
+                    if (!string.IsNullOrEmpty(apiKey) && apiKey != "[SECURED_CREDENTIAL]")
+                    {
+                        AppSettings.Instance.AiApiKey = apiKey;
+                    }
+                    AppSettings.Instance.AiEnabled = true;
+                    AppSettings.Instance.Save();
+
+                    res.AppliedSummary = string.Format("AI 驱动源已热切换为【{0}】({1}){2}",
+                        target.Name,
+                        !string.IsNullOrEmpty(model) ? model : "默认模型",
+                        restoredCount > 0 ? " · 已从本机 DPAPI 保险箱自动注入加密密钥" : "");
+                }
+                else if (target.Type.Equals("s3", StringComparison.OrdinalIgnoreCase))
+                {
+                    string bucket = JsonHelper.GetString(effectiveData, "bucket", "默认桶");
+                    string endpoint = JsonHelper.GetString(effectiveData, "endpoint", "");
+                    res.AppliedSummary = string.Format("S3 存储桶预设已切换为【{0}】(Bucket: {1}){2}",
+                        target.Name,
+                        bucket,
+                        restoredCount > 0 ? string.Format(" · 已从 DPAPI 保险箱还原 {0} 项密钥", restoredCount) : "");
+                }
+                else
+                {
+                    res.AppliedSummary = string.Format("配置预设【{0}】({1}) 已激活生效", target.Name, target.Type.ToUpperInvariant());
+                }
+
+                res.Success = true;
+                OmniNotificationHub.Push("配置预设一键热切换", res.AppliedSummary, "success", "siyuan", target.Id);
+            }
+            catch (Exception ex)
+            {
+                res.AppliedSummary = "激活失败: " + ex.Message;
+            }
+
+            return res;
         }
 
         /// <summary>
@@ -310,6 +661,29 @@ namespace XiaoLv.Desktop.Core
 
         private static List<SiYuanProfileEntry> FilterByType(List<SiYuanProfileEntry> list, string typeFilter)
         {
+            if (list != null)
+            {
+                Dictionary<string, object> vault = null;
+                lock (_lock) { vault = LoadDpapiVaultDict(); }
+
+                foreach (var item in list)
+                {
+                    if (item == null) continue;
+                    string tKey = "active:" + (item.Type ?? "s3").ToLowerInvariant();
+                    string activeId = "";
+                    if (_activeProfileByType.ContainsKey(item.Type ?? "s3"))
+                    {
+                        activeId = _activeProfileByType[item.Type ?? "s3"];
+                    }
+                    else if (vault != null)
+                    {
+                        activeId = JsonHelper.GetString(vault, tKey);
+                    }
+                    item.IsActive = !string.IsNullOrEmpty(activeId) && activeId.Equals(item.Id, StringComparison.OrdinalIgnoreCase);
+                    item.HasVaultCredentials = vault != null &&
+                        (JsonHelper.GetDict(vault, "id:" + item.Id) != null || JsonHelper.GetDict(vault, "name:" + item.Name) != null);
+                }
+            }
             if (string.IsNullOrEmpty(typeFilter) || typeFilter == "all") return list;
             return list.FindAll(x => x != null && x.Type.Equals(typeFilter, StringComparison.OrdinalIgnoreCase));
         }

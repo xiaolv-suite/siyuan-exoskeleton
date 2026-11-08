@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace XiaoLv.Desktop.Core
 {
@@ -421,6 +422,42 @@ namespace XiaoLv.Desktop.Core
                 case "checkbox": return "checkbox";
                 case "url": return "url";
                 default: return "text";
+            }
+        }
+
+        /// <summary>
+        /// 将编辑后的表格结构原位格式化对齐并保存回思源指定表格块 (/api/block/updateBlock)
+        /// </summary>
+        public static async Task<bool> UpdateTableBlockInSiYuanAsync(string blockId, string rawTableText)
+        {
+            if (string.IsNullOrWhiteSpace(blockId) || string.IsNullOrWhiteSpace(rawTableText)) return false;
+
+            try
+            {
+                var parsed = ParseTable(rawTableText);
+                string finalMd = (parsed != null && parsed.Columns.Count > 0)
+                    ? FormatBeautifulMarkdownTable(parsed).Trim()
+                    : rawTableText.Trim();
+
+                var res = await SiYuanClient.PostAsync("/api/block/updateBlock", new
+                {
+                    id = blockId.Trim(),
+                    dataType = "markdown",
+                    data = finalMd
+                });
+
+                bool ok = res != null && res.Success;
+                if (ok)
+                {
+                    OmniNotificationHub.Push("表格矩阵原位写回",
+                        string.Format("表格块 ({0} 行 × {1} 列) 已成功原位保存回思源笔记！", parsed != null ? parsed.RowCount : 0, parsed != null ? parsed.ColCount : 0),
+                        "success", "siyuan", blockId.Trim());
+                }
+                return ok;
+            }
+            catch
+            {
+                return false;
             }
         }
     }

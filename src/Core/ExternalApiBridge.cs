@@ -350,12 +350,33 @@ namespace XiaoLv.Desktop.Core
 											                    return;
 											                }
 
-											                // AB. 纯净源码生成并在外部 IDE 秒开: /api/code/open
-											                if (rawPath.Equals("/api/code/open", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/code/open", StringComparison.OrdinalIgnoreCase))
-											                {
-											                    HandleCodeOpenRequest(req, resp);
-											                    return;
-											                }
+                                                // AB. 纯净源码生成并在外部 IDE 秒开: /api/code/open
+                                                if (rawPath.Equals("/api/code/open", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/code/open", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    HandleCodeOpenRequest(req, resp);
+                                                    return;
+                                                }
+
+                                                // AC. 代码块原位编辑回写思源: /api/code/update
+                                                if (rawPath.Equals("/api/code/update", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/code/update", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    HandleCodeUpdateRequest(req, resp);
+                                                    return;
+                                                }
+
+                                                // AD. 表格矩阵原位编辑回写思源: /api/table/update
+                                                if (rawPath.Equals("/api/table/update", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/table/update", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    HandleTableUpdateRequest(req, resp);
+                                                    return;
+                                                }
+
+                                                // AE. 配置预设一键热切换激活 (DPAPI 凭据注入): /api/profile/apply
+                                                if (rawPath.Equals("/api/profile/apply", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/profile/apply", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    HandleProfileApplyRequest(req, resp);
+                                                    return;
+                                                }
 
 			                // 未匹配到路由
 			                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
@@ -1381,31 +1402,122 @@ namespace XiaoLv.Desktop.Core
 							            });
 							        }
 
-							        private static void HandleCodeOpenRequest(HttpListenerRequest req, HttpListenerResponse resp)
-							        {
-							            string body = ReadRequestBody(req);
-							            var dict = JsonHelper.ParseDict(body);
-							            string code = JsonHelper.GetString(dict, "code");
-							            string lang = JsonHelper.GetString(dict, "lang", "text");
-							            string title = JsonHelper.GetString(dict, "title", "snippet");
+        private static void HandleCodeOpenRequest(HttpListenerRequest req, HttpListenerResponse resp)
+        {
+            string body = ReadRequestBody(req);
+            var dict = JsonHelper.ParseDict(body);
+            string code = JsonHelper.GetString(dict, "code");
+            string lang = JsonHelper.GetString(dict, "lang", "text");
+            if (string.IsNullOrEmpty(lang)) lang = JsonHelper.GetString(dict, "language", "text");
+            string title = JsonHelper.GetString(dict, "title", "snippet");
+            string blockId = JsonHelper.GetString(dict, "blockId", "");
 
-							            if (string.IsNullOrEmpty(code))
-							            {
-							                WriteJsonResponse(resp, 400, new { code = 400, msg = "code 参数不能为空" });
-							                return;
-							            }
+            if (string.IsNullOrEmpty(code))
+            {
+                WriteJsonResponse(resp, 400, new { code = 400, msg = "code 参数不能为空" });
+                return;
+            }
 
-							            try
-							            {
-							                string targetPath = CodeSnippetManager.ExportAndOpenSourceFile(code, lang, title);
-							                bool ok = !string.IsNullOrEmpty(targetPath);
-							                WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, msg = ok ? "已生成源文件并在外部编辑器秒开" : "打开失败", path = targetPath });
-							            }
-							            catch (Exception ex)
-							            {
-							                WriteJsonResponse(resp, 500, new { code = 500, msg = "生成代码文件异常: " + ex.Message });
-							            }
-							        }
+            try
+            {
+                string targetPath = CodeSnippetManager.ExportAndWatchSourceFile(code, lang, title, blockId, true);
+                bool ok = !string.IsNullOrEmpty(targetPath);
+                WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, msg = ok ? "已生成源文件并在外部编辑器秒开" : "打开失败", path = targetPath, watched = !string.IsNullOrEmpty(blockId) });
+            }
+            catch (Exception ex)
+            {
+                WriteJsonResponse(resp, 500, new { code = 500, msg = "生成代码文件异常: " + ex.Message });
+            }
+        }
+
+        private static void HandleCodeUpdateRequest(HttpListenerRequest req, HttpListenerResponse resp)
+        {
+            string body = ReadRequestBody(req);
+            var dict = JsonHelper.ParseDict(body);
+            string blockId = JsonHelper.GetString(dict, "blockId");
+            if (string.IsNullOrEmpty(blockId)) blockId = JsonHelper.GetString(dict, "id");
+            string code = JsonHelper.GetString(dict, "code");
+            string lang = JsonHelper.GetString(dict, "lang");
+            if (string.IsNullOrEmpty(lang)) lang = JsonHelper.GetString(dict, "language", "text");
+
+            if (string.IsNullOrEmpty(blockId))
+            {
+                WriteJsonResponse(resp, 400, new { code = 400, msg = "blockId 参数不能为空" });
+                return;
+            }
+
+            ThreadPool.QueueUserWorkItem(async s =>
+            {
+                try
+                {
+                    bool ok = await CodeSnippetManager.UpdateCodeBlockInSiYuanAsync(blockId, code ?? "", lang);
+                    WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, success = ok, blockId = blockId, msg = ok ? "代码块已原位更新回思源" : "原位更新失败" });
+                }
+                catch (Exception ex)
+                {
+                    WriteJsonResponse(resp, 500, new { code = 500, msg = "更新代码块异常: " + ex.Message });
+                }
+            });
+        }
+
+        private static void HandleTableUpdateRequest(HttpListenerRequest req, HttpListenerResponse resp)
+        {
+            string body = ReadRequestBody(req);
+            var dict = JsonHelper.ParseDict(body);
+            string blockId = JsonHelper.GetString(dict, "blockId");
+            if (string.IsNullOrEmpty(blockId)) blockId = JsonHelper.GetString(dict, "id");
+            string md = JsonHelper.GetString(dict, "markdown");
+            if (string.IsNullOrEmpty(md)) md = JsonHelper.GetString(dict, "rawText");
+
+            if (string.IsNullOrEmpty(blockId) || string.IsNullOrEmpty(md))
+            {
+                WriteJsonResponse(resp, 400, new { code = 400, msg = "blockId 与 markdown 参数不能为空" });
+                return;
+            }
+
+            ThreadPool.QueueUserWorkItem(async s =>
+            {
+                try
+                {
+                    bool ok = await TableToAvConverter.UpdateTableBlockInSiYuanAsync(blockId, md);
+                    WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, success = ok, blockId = blockId, msg = ok ? "表格已原位更新回思源" : "原位更新失败" });
+                }
+                catch (Exception ex)
+                {
+                    WriteJsonResponse(resp, 500, new { code = 500, msg = "更新表格块异常: " + ex.Message });
+                }
+            });
+        }
+
+        private static void HandleProfileApplyRequest(HttpListenerRequest req, HttpListenerResponse resp)
+        {
+            string id = GetQueryStringUtf8(req, "id");
+            if (req.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+            {
+                string body = ReadRequestBody(req);
+                var dict = JsonHelper.ParseDict(body);
+                if (string.IsNullOrEmpty(id)) id = JsonHelper.GetString(dict, "id");
+                if (string.IsNullOrEmpty(id)) id = JsonHelper.GetString(dict, "name");
+            }
+
+            ThreadPool.QueueUserWorkItem(async s =>
+            {
+                try
+                {
+                    var applyRes = await SiYuanProfileHub.ApplyProfileToLiveAsync(id);
+                    WriteJsonResponse(resp, 200, new
+                    {
+                        code = applyRes.Success ? 0 : 1,
+                        msg = applyRes.AppliedSummary,
+                        data = applyRes
+                    });
+                }
+                catch (Exception ex)
+                {
+                    WriteJsonResponse(resp, 500, new { code = 500, msg = "热切换预设异常: " + ex.Message });
+                }
+            });
+        }
 
 							        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
         {

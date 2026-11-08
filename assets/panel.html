@@ -181,7 +181,7 @@
     /* Top Telemetry Header */
     .telemetry-header {
       position: relative;
-      z-index: 10;
+      z-index: 500;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -329,7 +329,7 @@
     /* Command Search Bar */
     .search-section {
       position: relative;
-      z-index: 10;
+      z-index: 30;
       padding: 14px 24px 10px 24px;
       background: var(--bg-surface);
       border-bottom: 1px solid var(--border-hairline);
@@ -442,7 +442,7 @@
     /* Controls Bar: Categories & Layout Switcher */
     .controls-bar {
       position: relative;
-      z-index: 10;
+      z-index: 20;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -993,7 +993,7 @@
       opacity: 0;
       pointer-events: none;
       transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      z-index: 100;
+      z-index: 9999;
     }
     .toast-notify.show {
       opacity: 1;
@@ -1033,7 +1033,7 @@
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      z-index: 2000;
     }
     .help-modal-overlay.open { display: flex; }
     .help-modal-box {
@@ -1160,7 +1160,7 @@
     /* Floating Card Context Menu */
     .card-context-menu {
       position: fixed;
-      z-index: 2000;
+      z-index: 3000;
       background: var(--bg-surface-elevated, #FFFFFF);
       border: 1px solid var(--border-card, #CBD5E1);
       box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.25), 0 0 16px rgba(99, 102, 241, 0.15);
@@ -2336,7 +2336,7 @@
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 999;
+      z-index: 2000;
     }
     .timeline-modal-overlay.open { display: flex; }
     .timeline-modal-box {
@@ -2985,16 +2985,17 @@
     }
     .studio-switcher-popover {
       display: none;
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      width: 348px;
+      position: fixed;
+      top: 52px;
+      right: 168px;
+      width: 356px;
       background: var(--bg-surface);
-      border: 1px solid var(--border-glow);
+      border: 1.5px solid var(--border-glow);
       border-radius: 12px;
       padding: 12px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.78), 0 0 24px rgba(56, 189, 248, 0.2);
-      z-index: 2200;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.88), 0 0 28px rgba(56, 189, 248, 0.25);
+      z-index: 9200;
+      backdrop-filter: blur(18px);
       animation: modalEnter 0.16s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .studio-switcher-popover.open {
@@ -3067,7 +3068,7 @@
       inset: 0;
       background: rgba(3, 7, 18, 0.72);
       backdrop-filter: blur(6px);
-      z-index: 2600;
+      z-index: 9500;
       align-items: center;
       justify-content: center;
     }
@@ -3165,80 +3166,12 @@
         <span>🚀</span>
       </button>
 
-      <!-- 全景工作台九宫格矩阵切换器 (收纳 12 大独立工作台，告别顶栏拥挤) -->
+      <!-- 全景工作台九宫格矩阵切换器 (收纳 12 大独立工作台，告别顶栏拥挤，浮层挂载于 body 顶层彻底杜绝遮挡) -->
       <div class="studio-hub-wrap" id="studio-hub-wrap">
         <button class="theme-toggle-btn" id="studio-hub-btn" onclick="toggleStudioSwitcherPopover(event)" title="全景工作台九宫格矩阵 (🎛️ 一键切换 12 大独立视窗)" style="width: auto; padding: 0 9px; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.35);">
           <span>🎛️</span>
           <span>工作台</span>
         </button>
-        <div class="studio-switcher-popover" id="studio-switcher-popover" onclick="event.stopPropagation()">
-          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1px solid var(--border-hairline); font-size: 11.5px;">
-            <span style="font-weight: 700; color: var(--text-primary);">🎛️ 全景独立工作台矩阵 (12)</span>
-            <span style="font-size: 10px; color: var(--text-muted);">Esc 逐级返回</span>
-          </div>
-          <div class="studio-switcher-grid">
-            <button type="button" class="studio-grid-tile" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台 (pad:)">
-              <span class="tile-ico">🚀</span>
-              <span class="tile-lbl">大图标启动台</span>
-              <span class="tile-sub">pad:</span>
-            </button>
-            <button type="button" class="studio-grid-tile" onclick="toggleTasksKanbanModal()" title="全景待办四象限与看板工作台 (t:)">
-              <span class="tile-ico">🎴</span>
-              <span class="tile-lbl">四象限待办</span>
-              <span class="tile-sub">t:</span>
-            </button>
-            <button type="button" class="studio-grid-tile" id="clip-studio-btn" onclick="toggleClipStudioModal()" title="剪贴板多选碎片拼版工作台 (📋)">
-              <span class="tile-ico">📋</span>
-              <span class="tile-lbl">剪贴板拼版</span>
-              <span class="tile-sub">c:merge</span>
-            </button>
-            <button type="button" class="studio-grid-tile" id="graph-btn" onclick="toggleGraphModal()" title="双向知识网络星轨拓扑全景 (🌌)">
-              <span class="tile-ico">🌌</span>
-              <span class="tile-lbl">星轨图谱</span>
-              <span class="tile-sub">graph:</span>
-            </button>
-            <button type="button" class="studio-grid-tile" id="mindmap-btn" onclick="toggleOutlineMindmapModal()" title="全景大纲与交互思维导图大工作台 (🗺️)">
-              <span class="tile-ico">🗺️</span>
-              <span class="tile-lbl">大纲与导图</span>
-              <span class="tile-sub">syo</span>
-            </button>
-            <button type="button" class="studio-grid-tile" id="table-btn" onclick="toggleTableGridModal()" title="全库数据表格与属性视图透视矩阵 (📊)">
-              <span class="tile-ico">📊</span>
-              <span class="tile-lbl">表格矩阵</span>
-              <span class="tile-sub">tab:</span>
-            </button>
-            <button type="button" class="studio-grid-tile" id="code-btn" onclick="toggleCodeStudioModal()" title="全库代码片段与多语言纯净源码工作台 (⌨️)">
-              <span class="tile-ico">⌨️</span>
-              <span class="tile-lbl">代码工作台</span>
-              <span class="tile-sub">code:</span>
-            </button>
-            <button type="button" class="studio-grid-tile" id="vault-btn" onclick="toggleVaultMirrorModal()" title="外部知识库与 Markdown 目录镜像透视 (🗄️)">
-              <span class="tile-ico">🗄️</span>
-              <span class="tile-lbl">外部知识库</span>
-              <span class="tile-sub">vault:</span>
-            </button>
-            <button type="button" class="studio-grid-tile" id="profile-btn" onclick="toggleProfileHubModal()" title="思源配置预设与大模型驱动中枢 (🧩)">
-              <span class="tile-ico">🧩</span>
-              <span class="tile-lbl">配置与模型</span>
-              <span class="tile-sub">cfg:</span>
-            </button>
-            <button type="button" class="studio-grid-tile" id="doctor-btn" onclick="toggleSystemDoctorModal()" title="系统全库综合体检与死链清道夫 (🩺)">
-              <span class="tile-ico">🩺</span>
-              <span class="tile-lbl">系统体检</span>
-              <span class="tile-sub">syh</span>
-            </button>
-            <button type="button" class="studio-grid-tile" onclick="toggleHeatmapGalleryModal()" title="52周年度知识心流沉淀大画廊 (heat:)">
-              <span class="tile-ico">🔥</span>
-              <span class="tile-lbl">52周热力图</span>
-              <span class="tile-sub">heat:</span>
-            </button>
-            <button type="button" class="studio-grid-tile" onclick="toggleNotificationCenterModal()" title="全景通知与生命事件中心 (notice:)">
-              <span class="tile-ico">🔔</span>
-              <span class="tile-lbl">通知中心</span>
-              <span class="tile-sub">notice:</span>
-            </button>
-          </div>
-        </div>
       </div>
 
       <button class="theme-toggle-btn" id="notice-btn" onclick="toggleNotificationCenterModal()" title="全景通知与生命事件中心 (🔔)" style="position: relative;">
@@ -4352,6 +4285,7 @@
           <span class="brand-pill" id="tg-modal-count">0 行 · 0 列</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" id="tg-save-siyuan-btn" onclick="saveCurrentTableGridToSiYuan()" style="font-size: 11px; padding: 3px 10px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.45); font-weight: 700;" title="将当前编辑、排序或新增行后的表格原位保存回思源对应表格块 (Ctrl+S)">💾 原位写回思源</button>
           <button class="pref-btn" onclick="exportTableGridToXlsx()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="零依赖逆向生成标准 Excel .xlsx 文件并在外部秒开">📤 导出 Excel</button>
           <button class="pref-btn" onclick="copyTableGridMarkdown()" style="font-size: 11px; padding: 3px 10px;" title="复制标准美化对齐的 Markdown 表格源码">📋 复制表格</button>
           <button class="pref-btn" onclick="copyTableGridCsv()" style="font-size: 11px; padding: 3px 10px;" title="复制 CSV 纯文本数据">📑 复制 CSV</button>
@@ -4399,7 +4333,8 @@
           <span class="brand-pill" id="cs-modal-count">0 处代码块</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <button class="pref-btn" onclick="openCurrentCodeSnippetExternally()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="自动剥离反引号生成标准源文件并在本地 VS Code / IDE 中 0ms 秒开">⚡ 外部原位秒开</button>
+          <button class="pref-btn" id="cs-save-siyuan-btn" onclick="saveCurrentCodeSnippetToSiYuan()" style="font-size: 11px; padding: 3px 10px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.45); font-weight: 700;" title="将当前画布中编辑修改后的纯净源码原位写回思源代码块 (Ctrl+S)">💾 原位写回思源</button>
+          <button class="pref-btn" onclick="openCurrentCodeSnippetExternally()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="自动剥离反引号生成源文件并在本地 VS Code / IDE 秒开，外部 Ctrl+S 保存自动热回写思源">⚡ 外部原位秒开</button>
           <button class="pref-btn" onclick="pasteCleanCodeToCaret()" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.4);" title="将纯净代码内容直接注入外部活动光标处 (Shift+Enter)">⚡ 穿透直贴</button>
           <button class="pref-btn" onclick="copyCleanCodeSnippet()" style="font-size: 11px; padding: 3px 10px;" title="复制 100% 纯净代码 (无 Markdown 围栏)">📋 复制纯代码</button>
           <button class="pref-btn" onclick="copyCodeBlockMarkdown()" style="font-size: 11px; padding: 3px 10px;" title="复制带语言高亮围栏的 Markdown 代码块">📋 复制 MD 块</button>
@@ -4476,6 +4411,76 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- 顶层全局全景工作台九宫格矩阵浮层 (挂载于 body 根节点，z-index: 9200 彻底摆脱局部层叠上下文遮挡) -->
+  <div class="studio-switcher-popover" id="studio-switcher-popover" onclick="event.stopPropagation()">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1px solid var(--border-hairline); font-size: 11.5px;">
+      <span style="font-weight: 700; color: var(--text-primary);">🎛️ 全景独立工作台矩阵 (12)</span>
+      <span style="font-size: 10px; color: var(--text-muted);">Esc 逐级返回</span>
+    </div>
+    <div class="studio-switcher-grid">
+      <button type="button" class="studio-grid-tile" onclick="openStudioFromHub('launchpad-modal', toggleLaunchpadModal)" title="全景网站与工程文件夹大图标启动台 (pad:)">
+        <span class="tile-ico">🚀</span>
+        <span class="tile-lbl">大图标启动台</span>
+        <span class="tile-sub">pad:</span>
+      </button>
+      <button type="button" class="studio-grid-tile" onclick="openStudioFromHub('tasks-kanban-modal', toggleTasksKanbanModal)" title="全景待办四象限与看板工作台 (t:)">
+        <span class="tile-ico">🎴</span>
+        <span class="tile-lbl">四象限待办</span>
+        <span class="tile-sub">t:</span>
+      </button>
+      <button type="button" class="studio-grid-tile" id="clip-studio-btn" onclick="openStudioFromHub('clip-studio-modal', toggleClipStudioModal)" title="剪贴板多选碎片拼版工作台 (📋)">
+        <span class="tile-ico">📋</span>
+        <span class="tile-lbl">剪贴板拼版</span>
+        <span class="tile-sub">c:merge</span>
+      </button>
+      <button type="button" class="studio-grid-tile" id="graph-btn" onclick="openStudioFromHub('graph-modal', toggleGraphModal)" title="双向知识网络星轨拓扑全景 (🌌)">
+        <span class="tile-ico">🌌</span>
+        <span class="tile-lbl">星轨图谱</span>
+        <span class="tile-sub">graph:</span>
+      </button>
+      <button type="button" class="studio-grid-tile" id="mindmap-btn" onclick="openStudioFromHub('outline-mindmap-modal', toggleOutlineMindmapModal)" title="全景大纲与交互思维导图大工作台 (🗺️)">
+        <span class="tile-ico">🗺️</span>
+        <span class="tile-lbl">大纲与导图</span>
+        <span class="tile-sub">syo</span>
+      </button>
+      <button type="button" class="studio-grid-tile" id="table-btn" onclick="openStudioFromHub('table-grid-modal', toggleTableGridModal)" title="全库数据表格与属性视图透视矩阵 (📊)">
+        <span class="tile-ico">📊</span>
+        <span class="tile-lbl">表格矩阵</span>
+        <span class="tile-sub">tab:</span>
+      </button>
+      <button type="button" class="studio-grid-tile" id="code-btn" onclick="openStudioFromHub('code-studio-modal', toggleCodeStudioModal)" title="全库代码片段与多语言纯净源码工作台 (⌨️)">
+        <span class="tile-ico">⌨️</span>
+        <span class="tile-lbl">代码工作台</span>
+        <span class="tile-sub">code:</span>
+      </button>
+      <button type="button" class="studio-grid-tile" id="vault-btn" onclick="openStudioFromHub('vault-mirror-modal', toggleVaultMirrorModal)" title="外部知识库与 Markdown 目录镜像透视 (🗄️)">
+        <span class="tile-ico">🗄️</span>
+        <span class="tile-lbl">外部知识库</span>
+        <span class="tile-sub">vault:</span>
+      </button>
+      <button type="button" class="studio-grid-tile" id="profile-btn" onclick="openStudioFromHub('profile-hub-modal', toggleProfileHubModal)" title="思源配置预设与大模型驱动中枢 (🧩)">
+        <span class="tile-ico">🧩</span>
+        <span class="tile-lbl">配置与模型</span>
+        <span class="tile-sub">cfg:</span>
+      </button>
+      <button type="button" class="studio-grid-tile" id="doctor-btn" onclick="openStudioFromHub('system-doctor-modal', toggleSystemDoctorModal)" title="系统全库综合体检与死链清道夫 (🩺)">
+        <span class="tile-ico">🩺</span>
+        <span class="tile-lbl">系统体检</span>
+        <span class="tile-sub">syh</span>
+      </button>
+      <button type="button" class="studio-grid-tile" onclick="openStudioFromHub('heatmap-gallery-modal', toggleHeatmapGalleryModal)" title="52周年度知识心流沉淀大画廊 (heat:)">
+        <span class="tile-ico">🔥</span>
+        <span class="tile-lbl">52周热力图</span>
+        <span class="tile-sub">heat:</span>
+      </button>
+      <button type="button" class="studio-grid-tile" onclick="openStudioFromHub('notification-center-modal', toggleNotificationCenterModal)" title="全景通知与生命事件中心 (notice:)">
+        <span class="tile-ico">🔔</span>
+        <span class="tile-lbl">通知中心</span>
+        <span class="tile-sub">notice:</span>
+      </button>
     </div>
   </div>
 
@@ -13115,10 +13120,14 @@
         const paramsSummary = paramLines.slice(0, 4).join('<br/>');
 
         html += `
-          <div class="profile-card ${typeClass}-card">
+          <div class="profile-card ${typeClass}-card" style="${p.IsActive ? 'border-color: var(--emerald-mint); box-shadow: 0 0 18px rgba(16, 185, 129, 0.22);' : ''}">
             <div>
               <div class="profile-card-header">
-                <span style="font-size: 20px;">${icon}</span>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 20px;">${icon}</span>
+                  ${p.IsActive ? '<span class="profile-badge" style="background: rgba(16,185,129,0.2); color: var(--emerald-mint); border-color: rgba(16,185,129,0.45);">🟢 当前生效</span>' : ''}
+                  ${p.HasVaultCredentials ? '<span class="profile-badge" style="background: rgba(245,158,11,0.16); color: var(--tech-amber); border-color: rgba(245,158,11,0.4);" title="真实密钥已通过 Windows 原生 DPAPI 硬件加密锁入本机保险箱">🔐 DPAPI锁密</span>' : ''}
+                </div>
                 <span class="profile-badge ${typeClass}">${p.Type ? p.Type.toUpperCase() : "S3"}</span>
               </div>
               <div class="profile-card-title">${escapeHtml(p.Name)}</div>
@@ -13132,8 +13141,9 @@
             </div>
 
             <div class="profile-card-actions" onclick="event.stopPropagation()">
-              <button class="launchpad-mini-btn primary" onclick="copyToClipboard('${escapeQuote(jsonStr)}', '已复制标准脱敏配置 JSON！')" title="复制标准 JSON 配置到剪贴板">📋 复制蓝图</button>
-              <button class="launchpad-mini-btn" onclick="dumpProfileToDaily('${escapeQuote(p.Name)}', '${escapeQuote(jsonStr)}')" title="将此预设参数块沉淀至今日日记">📥 存入日记</button>
+              <button class="launchpad-mini-btn folder-primary" onclick="applyProfileById('${escapeQuote(p.Id)}')" title="一键热切换激活此配置预设 (自动从本机 DPAPI 保险箱还原密钥生效)" style="font-weight: 700;">⚡ 激活生效</button>
+              <button class="launchpad-mini-btn primary" onclick="copyToClipboard('${escapeQuote(jsonStr)}', '已复制标准脱敏配置 JSON！')" title="复制标准 JSON 配置到剪贴板">📋 蓝图</button>
+              <button class="launchpad-mini-btn" onclick="dumpProfileToDaily('${escapeQuote(p.Name)}', '${escapeQuote(jsonStr)}')" title="将此预设参数块沉淀至今日日记">📥 日记</button>
               <button class="launchpad-mini-btn danger" onclick="deleteProfileById('${escapeQuote(p.Id)}')" title="移除此预设">🗑️</button>
             </div>
           </div>
@@ -13165,26 +13175,61 @@
 
     function promptAddNewProfileModal() {
       showInlineFormModal({
-        title: "新建思源脱敏配置预设",
+        title: "新建思源配置预设 (本机 DPAPI 硬件锁密 + 笔记库自动脱敏)",
         icon: "🧩",
         fields: [
           { key: "type", label: "预设类型", type: "select", value: "s3", options: ["s3", "ai", "webdav"] },
           { key: "name", label: "预设名称 *", placeholder: "例如：Cloudflare R2 备份桶 / DeepSeek R1", value: "", required: true },
-          { key: "desc", label: "简要说明 (Endpoint 或 Model 名)", placeholder: "https://api.deepseek.com · deepseek-reasoner", value: "" }
+          { key: "endpoint", label: "服务地址 Endpoint / BaseURL", placeholder: "https://api.deepseek.com/v1 或 https://s3...", value: "" },
+          { key: "modelOrBucket", label: "模型名 Model 或 存储桶 Bucket", placeholder: "deepseek-chat / qwen-max / my-vault", value: "" },
+          { key: "secret", label: "本机私有密钥 ApiKey / SecretKey (可选 · 自动 DPAPI 加密)", placeholder: "sk-... (仅加密锁入本机 DPAPI 保险箱，笔记库显示 [SECURED_CREDENTIAL])", value: "" }
         ],
         onSubmit: (vals) => {
+          const pType = (vals.type || "s3").toLowerCase();
+          const cfg = { "name": vals.name, "type": pType, "created": new Date().toISOString() };
+          if (pType === "ai") {
+            if (vals.endpoint) cfg.baseURL = vals.endpoint;
+            if (vals.modelOrBucket) cfg.modelName = vals.modelOrBucket;
+            if (vals.secret) cfg.apiKey = vals.secret;
+          } else {
+            if (vals.endpoint) cfg.endpoint = vals.endpoint;
+            if (vals.modelOrBucket) cfg.bucket = vals.modelOrBucket;
+            if (vals.secret) cfg.secretKey = vals.secret;
+          }
           if (window.chrome && window.chrome.webview) {
             window.chrome.webview.postMessage(JSON.stringify({
               op: 'saveProfile',
               name: vals.name,
-              type: (vals.type || "s3").toLowerCase(),
-              description: vals.desc || "",
-              configData: { "name": vals.name, "type": vals.type || "s3", "created": new Date().toISOString() }
+              type: pType,
+              description: [vals.endpoint, vals.modelOrBucket].filter(Boolean).join(" · ") || "安全配置预设",
+              configData: cfg
             }));
           }
         }
       });
     }
+
+    function applyProfileById(profileId) {
+      if (!profileId) return;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'applyProfile',
+          id: profileId
+        }));
+        showToast("⚡ 正在从本机 DPAPI 保险箱解密凭据并热切换预设...");
+      }
+    }
+
+    window.onProfileApplied = function(res) {
+      if (res && res.data && res.data.Success) {
+        showToast("✓ " + (res.data.AppliedSummary || "配置预设已激活生效！"));
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'searchProfiles', keyword: '', type: 'all' }));
+        }
+      } else {
+        showToast("⚠️ 激活配置预设未生效");
+      }
+    };
 
     function dumpProfileToDaily(name, jsonStr) {
       const md = `### ⚙️ 《${name}》配置蓝图\n\n\`\`\`json\n${jsonStr}\n\`\`\`\n{: custom-type="profile-blueprint" }`;
@@ -14062,12 +14107,14 @@
     }
 
     function loadTableDataById(blockId) {
+      if (blockId) currentTableBlockId = blockId;
       const container = document.getElementById("tg-table-container");
       if (container) container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:12px;">正在穿透检索表格数据...</div>';
 
       if (window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({
           op: 'parseTableData',
+          blockId: blockId || "",
           rawText: "",
           title: "数据表格"
         }));
@@ -14076,11 +14123,15 @@
 
     function parseAndRenderTableGrid(markdownText, blockId) {
       if (blockId) currentTableBlockId = blockId;
-      if (!markdownText) return;
+      if (!markdownText) {
+        if (blockId) loadTableDataById(blockId);
+        return;
+      }
 
       if (window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({
           op: 'parseTableData',
+          blockId: currentTableBlockId || "",
           rawText: markdownText,
           title: currentTableTitle
         }));
@@ -14100,6 +14151,7 @@
       if (!res || !res.data) return;
 
       const d = res.data;
+      if (d.blockId && !currentTableBlockId) currentTableBlockId = d.blockId;
       const struct = d.structure || {};
       currentTableParsedData = struct;
       renderTableGridDom(struct);
@@ -14110,15 +14162,16 @@
       if (!container) return;
 
       const cols = struct.Columns || [];
-      let rows = (struct.Rows || []).slice();
+      const rawRows = struct.Rows || [];
+      let indexedRows = rawRows.map((cells, origIdx) => ({ cells, origIdx }));
 
       const countPill = document.getElementById("tg-modal-count");
-      if (countPill) countPill.innerText = `${rows.length} 行 · ${cols.length} 列`;
+      if (countPill) countPill.innerText = `${rawRows.length} 行 · ${cols.length} 列`;
 
       const statusSpan = document.getElementById("tg-modal-status");
-      if (statusSpan) statusSpan.innerText = `已就绪 · ${cols.length} 字段推导完成`;
+      if (statusSpan) statusSpan.innerText = `已就绪 · ${cols.length} 字段推导完成${currentTableBlockId ? ' · 支持 Ctrl+S 原位回写思源' : ''}`;
 
-      if (cols.length === 0 || rows.length === 0) {
+      if (cols.length === 0 || rawRows.length === 0) {
         container.innerHTML = '<div style="text-align:center;padding:36px;color:var(--text-muted);font-size:12px;">当前表格为空或暂无行数据</div>';
         return;
       }
@@ -14126,9 +14179,9 @@
       if (currentTableSortCol >= 0 && currentTableSortCol < cols.length) {
         const cIdx = currentTableSortCol;
         const colType = cols[cIdx].DetectedType || "text";
-        rows.sort((a, b) => {
-          let va = a[cIdx] || "";
-          let vb = b[cIdx] || "";
+        indexedRows.sort((a, b) => {
+          let va = a.cells[cIdx] || "";
+          let vb = b.cells[cIdx] || "";
           if (colType === "number") {
             let na = parseFloat(va) || 0;
             let nb = parseFloat(vb) || 0;
@@ -14139,7 +14192,7 @@
       }
 
       if (currentTableRowFilterKeyword) {
-        rows = rows.filter(r => r.some(cell => String(cell).toLowerCase().includes(currentTableRowFilterKeyword)));
+        indexedRows = indexedRows.filter(item => item.cells.some(cell => String(cell).toLowerCase().includes(currentTableRowFilterKeyword)));
       }
 
       let html = `<table class="tg-data-table"><thead><tr>`;
@@ -14157,10 +14210,10 @@
       });
       html += `</tr></thead><tbody>`;
 
-      rows.forEach((r, ri) => {
+      indexedRows.forEach(item => {
         html += `<tr>`;
         cols.forEach((c, ci) => {
-          html += `<td contenteditable="true" onblur="handleCellEdit(${ri}, ${ci}, this.innerText)">${escapeHtml(r[ci] || "")}</td>`;
+          html += `<td contenteditable="true" oninput="handleCellEdit(${item.origIdx}, ${ci}, this.innerText)" onblur="handleCellEdit(${item.origIdx}, ${ci}, this.innerText)">${escapeHtml(item.cells[ci] || "")}</td>`;
         });
         html += `</tr>`;
       });
@@ -14280,6 +14333,42 @@
       }
       openBlockById(currentTableBlockId);
     }
+
+    function saveCurrentTableGridToSiYuan() {
+      if (!currentTableBlockId || currentTableBlockId === "demo_table") {
+        showToast("⚠️ 当前表格为演示或剪贴板临时视图，无绑定思源块 ID，可点击【📥 存入日记】新建！");
+        return;
+      }
+      const md = buildMarkdownFromCurrentTable();
+      if (!md) {
+        showToast("⚠️ 表格数据为空，无法保存！");
+        return;
+      }
+      // 同步更新本地内存缓存
+      const cachedTbl = allLibraryTables.find(t => t.id === currentTableBlockId);
+      if (cachedTbl) cachedTbl.markdown = md;
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'updateTableBlock',
+          blockId: currentTableBlockId,
+          markdown: md
+        }));
+        showToast("💾 正在将表格矩阵原位写回思源表格块...");
+      }
+    }
+
+    window.onTableBlockUpdated = function(res) {
+      const statusSpan = document.getElementById("tg-modal-status");
+      if (res && res.success) {
+        const nowStr = new Date().toTimeString().split(' ')[0];
+        if (statusSpan) statusSpan.innerText = `✓ 已于 ${nowStr} 原位保存回思源块 (${res.blockId})`;
+        showToast("✓ 表格已成功原位保存回思源笔记！");
+      } else {
+        if (statusSpan) statusSpan.innerText = "⚠️ 原位写回思源失败，请检查思源内核连接";
+        showToast("⚠️ 表格原位写回失败！");
+      }
+    };
 
     // ==========================================================
     // 全库代码片段与多语言纯净源码工作台 (Code Studio Modal)
@@ -14472,13 +14561,66 @@
       if (window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({
           op: 'openCodeSnippetSourceFile',
+          blockId: currentSelectedCodeSnippet.BlockId || '',
           code: code,
+          lang: currentSelectedCodeSnippet.Language || 'text',
           language: currentSelectedCodeSnippet.Language || 'text',
           docTitle: currentSelectedCodeSnippet.DocTitle || 'snippet'
         }));
-        showToast(`⚡ 正在生成本地 ${currentSelectedCodeSnippet.FileExtension || '.txt'} 源码并在外部 IDE 秒开...`);
+        showToast(`⚡ 已生成 ${currentSelectedCodeSnippet.FileExtension || '.txt'} 并在 IDE 秒开 (外部 Ctrl+S 保存将自动回写思源)！`);
       }
     }
+
+    function saveCurrentCodeSnippetToSiYuan() {
+      if (!currentSelectedCodeSnippet || !currentSelectedCodeSnippet.BlockId || currentSelectedCodeSnippet.BlockId.startsWith("blk_cs_")) {
+        showToast("⚠️ 当前代码未关联真实思源块 ID，可点击【📥 存入日记】新建！");
+        return;
+      }
+      const code = getEditorCodeText();
+      currentSelectedCodeSnippet.Code = code;
+      currentSelectedCodeSnippet.LineCount = code.split('\n').length;
+      renderCodeStudioList();
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'updateCodeBlock',
+          blockId: currentSelectedCodeSnippet.BlockId,
+          code: code,
+          language: currentSelectedCodeSnippet.Language || 'text'
+        }));
+        showToast("💾 正在将纯净源码原位写回思源代码块...");
+      }
+    }
+
+    window.onCodeBlockUpdated = function(res) {
+      const statusSpan = document.getElementById("cs-modal-status");
+      if (res && res.success) {
+        const nowStr = new Date().toTimeString().split(' ')[0];
+        if (statusSpan) statusSpan.innerText = `✓ 已于 ${nowStr} 原位写回思源代码块 (${res.blockId})`;
+        showToast("✓ 代码已成功原位保存回思源笔记！");
+      } else {
+        showToast("⚠️ 代码块原位写回失败！");
+      }
+    };
+
+    window.onExternalCodeSynced = function(res) {
+      if (!res || !res.blockId) return;
+      const matched = allLoadedCodeSnippets.find(s => s.BlockId === res.blockId);
+      if (matched) {
+        matched.Code = res.content || "";
+        matched.LineCount = matched.Code.split('\n').length;
+      }
+      if (currentSelectedCodeSnippet && currentSelectedCodeSnippet.BlockId === res.blockId) {
+        currentSelectedCodeSnippet.Code = res.content || "";
+        const display = document.getElementById("cs-code-display");
+        if (display) display.innerText = currentSelectedCodeSnippet.Code;
+      }
+      renderCodeStudioList();
+      const nowStr = new Date().toTimeString().split(' ')[0];
+      const statusSpan = document.getElementById("cs-modal-status");
+      if (statusSpan) statusSpan.innerText = `⚡ 外部 IDE 热保存已于 ${nowStr} 自动同步回思源《${res.docTitle || ''}》`;
+      showToast(`⚡ 外部 IDE 保存已实时回写思源《${res.docTitle || '代码块'}》！`);
+    };
 
     function getEditorCodeText() {
       const display = document.getElementById("cs-code-display");
@@ -14589,8 +14731,26 @@
         document.addEventListener("click", (e) => {
           const pop = document.getElementById("studio-switcher-popover");
           const wrap = document.getElementById("studio-hub-wrap");
-          if (pop && pop.classList.contains("open") && wrap && !wrap.contains(e.target)) {
+          if (pop && pop.classList.contains("open") && !pop.contains(e.target) && (!wrap || !wrap.contains(e.target))) {
             pop.classList.remove("open");
+          }
+        });
+
+        // 全局工作台 Ctrl+S 双向原位保存快捷键总线 (支持表格矩阵与代码工作台即时写回思源)
+        document.addEventListener("keydown", (e) => {
+          if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
+            const tgModal = document.getElementById("table-grid-modal");
+            if (tgModal && tgModal.classList.contains("open")) {
+              e.preventDefault();
+              saveCurrentTableGridToSiYuan();
+              return;
+            }
+            const csModal = document.getElementById("code-studio-modal");
+            if (csModal && csModal.classList.contains("open")) {
+              e.preventDefault();
+              saveCurrentCodeSnippetToSiYuan();
+              return;
+            }
           }
         });
 
@@ -14604,13 +14764,17 @@
         this.isSyncing = true;
         try {
           closeStudioSwitcherPopover();
-          // 互斥关闭其余底层工作台模态框，彻底告别弹窗叠罗汉
+          // 互斥关闭其余底层工作台模态框，并强制提升当前活动工作台层级，彻底告别遮挡与叠罗汉
           MANAGED_STUDIO_MODALS.forEach(id => {
+            const m = document.getElementById(id);
+            if (!m) return;
             if (id !== openedId) {
-              const other = document.getElementById(id);
-              if (other && other.classList.contains("open")) {
-                other.classList.remove("open");
+              if (m.classList.contains("open")) {
+                m.classList.remove("open");
               }
+              m.style.zIndex = "";
+            } else {
+              m.style.zIndex = "2200";
             }
           });
           this.stack = this.stack.filter(x => x !== openedId);
@@ -14682,7 +14846,32 @@
       if (e) e.stopPropagation();
       const pop = document.getElementById("studio-switcher-popover");
       if (!pop) return;
-      pop.classList.toggle("open");
+      const willOpen = !pop.classList.contains("open");
+      if (willOpen) {
+        const btn = document.getElementById("studio-hub-btn");
+        if (btn) {
+          const rect = btn.getBoundingClientRect();
+          if (rect && rect.width > 0) {
+            pop.style.top = Math.round(rect.bottom + 8) + "px";
+            pop.style.right = Math.max(12, Math.round(window.innerWidth - rect.right)) + "px";
+          }
+        }
+        pop.classList.add("open");
+      } else {
+        pop.classList.remove("open");
+      }
+    }
+
+    function openStudioFromHub(modalId, toggleFn) {
+      closeStudioSwitcherPopover();
+      const target = document.getElementById(modalId);
+      if (target && target.classList.contains("open")) {
+        ModalStackManager.onModalOpened(modalId);
+        return;
+      }
+      if (typeof toggleFn === "function") {
+        toggleFn();
+      }
     }
 
     function closeStudioSwitcherPopover() {

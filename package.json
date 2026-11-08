@@ -1,6 +1,6 @@
 {
   "name": "siyuan-exoskeleton",
-  "version": "2.9.0",
+  "version": "3.0.0",
   "description": "SiYuan Exoskeleton (思源外骨骼 · 桌面穿透工作台)",
   "type": "module",
   "scripts": {

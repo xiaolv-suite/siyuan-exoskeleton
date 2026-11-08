@@ -1,7 +1,7 @@
 # 思源外骨骼 · 桌面穿透工作台 (SiYuan Exoskeleton) v3.0.0
 
 > 🚀 **专为思源笔记打造的 0ms 原生 Windows 桌面穿透工作台与本地生态连接中枢**  
-> 纯原生 Windows C# 5.0 / .NET Framework 4.8 (x64) + 嵌入式 WebView2 架构 · 零外部平台依赖 · **真正纯单文件绿色便携（3.14 MB 单 EXE 包含全部离线资产与运行时），后台常驻仅 ~11 MB，待机 CPU 0.0%**
+> 纯原生 Windows C# 5.0 / .NET Framework 4.8 (x64) + 嵌入式 WebView2 架构 · 零外部平台依赖 · **真正纯单文件绿色便携（3.64 MB 单 EXE 包含全部离线资产与运行时），后台冷压缩常驻 ~13-20 MB，待机 CPU 0.0%**
 
 ---
 
@@ -427,10 +427,20 @@
 - **极速调用桥 Webhook 接口**：`GET /api/code/snippets?lang=...&q=...` 与 `POST /api/code/open` 为外部自动化脚本提供全库代码检索与 IDE 秒开服务。
 
 ### 61. ★ P0 顶栏九宫格收纳、全局模态栈与暗夜内联表单体系 (`ModalStackManager` & `InlineFormModal`)
-- **顶栏清爽收敛减负**：将 12 大全景独立工作台统一收纳至顶栏 **🎛️ 工作台九宫格矩阵浮层**，搭配首屏高频意图胶囊 + `✨ 更多指令` 折叠抽屉，消除小屏幕顶栏挤压感；
+- **顶栏清爽收敛减负与根级防遮挡置顶**：将 12 大全景独立工作台统一收纳至顶栏 **🎛️ 工作台九宫格矩阵浮层**（根级 `<body>` 挂载 + `position: fixed; z-index: 9200` 动态跟随按钮坐标，彻底摆脱局部 `backdrop-filter` 层叠上下文遮挡），搭配 Win32 `HWND_TOPMOST` / `BringWindowToTop` 原生窗口置顶保障；
 - **全局统一模态栈与四级 `Esc` 丝滑回退**：`ModalStackManager` 统一托管全部 17 个模态视窗互斥切换，按 `Esc` 键按「关内联弹窗 ➔ 关九宫格菜单 ➔ 关顶层工作台 ➔ 清空搜索词 ➔ 隐退主窗口」四级递进回退；
 - **全面消灭阻塞式原生弹窗**：自研暗夜黑曜风通用内联表单 (`inline-form-modal`) 替代全量 `prompt()`/`confirm()`，彻底杜绝无边框窗体失焦隐退；
 - **原生系统目录选择桥接**：目录录入与外部知识库换库接入 C# 原生 `FolderBrowserDialog`（带防失焦隐退锁 `_suppressAutoHide`），点击 `📂 浏览...` 一键选取本地磁盘文件夹；全工程版本号统一对齐 `v3.0.0`。
+
+### 62. ★ P1 生产力「双向写回」深度闭环体系（代码热回写 / 表格原位保存 / 本机 DPAPI 凭据保险箱）
+- **代码块双向写回闭环 (`CodeSnippetManager` + `POST /api/code/update`)**：
+  - **面板内直改回写**：在 `code-studio-modal` 右侧纯净源码画布直接编辑代码，点击 `💾 原位写回思源`（或按 `Ctrl+S`）即可自动封装标准语言围栏并调用 `/api/block/updateBlock` 原位更新思源代码块；
+  - **外部 VS Code / IDE 热保存自动同步 (`ExportAndWatchSourceFile`)**：点击 `⚡ 外部原位秒开` 在本地 IDE 打开临时源文件后，外骨骼自动挂载 380ms 防抖 `FileSystemWatcher`；外部编辑器每次 `Ctrl+S` 保存即静默原位回写回思源对应代码块并实时刷新工作台画布；
+- **表格矩阵原位写回闭环 (`TableToAvConverter.UpdateTableBlockInSiYuanAsync` + `POST /api/table/update`)**：
+  - 在 `table-grid-modal` 中支持排序/过滤安全态原始行索引映射 (`indexedRows`)，双击任意单元格修改、新增行或规范对齐后，点击 `💾 原位写回思源`（或按 `Ctrl+S`）一键原位更新回思源对应表格块；
+- **配置预设本机 Windows DPAPI 凭据保险箱与一键热切换 (`SiYuanProfileHub` + `POST /api/profile/apply`)**：
+  - **零外部依赖硬件级加密**：基于 Windows 原生 `crypt32.dll` (`CryptProtectData` / `CryptUnprotectData`) 将敏感密钥（`apiKey` / `secretKey` / `accessKey` / `password`）加密锁入本机专属 `local_vault_dpapi.json`，同时思源笔记库《/配置预设》与导出蓝图依然 100% 保持 `[SECURED_CREDENTIAL]` 脱敏铁律；
+  - **一键热切换激活 (`⚡ 激活生效`)**：点击预设卡片即可从本机 DPAPI 保险箱自动解密还原凭据并注入运行时热切换生效（卡片实时点亮 `🟢 当前生效` 与 `🔐 DPAPI锁密` 徽章）。
 
 ---
 
@@ -503,11 +513,11 @@
 # 编译最新单文件独立可执行程序
 node build-desktop.mjs
 
-# 执行全量 72 项端到端隔离真机自动化验收
+# 执行全量 225 项端到端隔离真机自动化验收
 pnpm e2e:isolated
 ```
 
-### 自动化验收覆盖面（72 / 72 PASS · 100% 通过）：
+### 自动化验收覆盖面（225 / 225 PASS · 100% 通过）：
 1. 隔离思源 3.8.9 内核冷启动与笔记本绑定；
 2. 单条速记、30 秒防碎块粘滞合并、前台应用环境与 URL 溯源注水；
 3. Lifelog 账目 (`¥`)、专注区间 (`~45m`)、习惯打卡 (`+water`) 自动时序分流；

@@ -4036,6 +4036,26 @@ async function main() {
                             trayCs.includes('_menu.Items.Add(itemFlashback)');
   logStep("Step 7.229: 图钉便签失焦常驻与双行全宽编辑、高分屏 PointToScreen 截屏、FSRS 翻面提示与托盘菜单断言", hasNativeWinFixes, `原生窗体与DPI闭环: ${hasNativeWinFixes}`);
 
+  // Step 7.230: Test Unified SiYuan B3 Duotone-Stroke Icon Engine & Logo-Aligned Titanium Armor UI
+  const hasUnifiedIconsAndLogoUi = panelContent.includes('case "siyuan-pillars":') &&
+                                   panelContent.includes('case "microphone":') &&
+                                   panelContent.includes('case "window-restore":') &&
+                                   panelContent.includes('fill="currentColor" fill-opacity="0.16"') &&
+                                   panelContent.includes('.telemetry-header::after') &&
+                                   capsuleHtmlContent.includes('.capsule-header::after') &&
+                                   capsuleHtmlContent.includes('class="btn-svg"');
+  logStep("Step 7.230: 思源原生 B3 双色调矢量线性图标全覆盖与外骨骼 Logo 钛青机甲 UI 风格对齐断言", hasUnifiedIconsAndLogoUi, `统一B3矢量图标与Logo风格: ${hasUnifiedIconsAndLogoUi}`);
+
+  // Step 7.231: Test 4-Layer Interaction Clarity (Smart Prefix Switch/Toggle-Off, 4-Group Drawer, 3-Section Studio Hub & Card Mode Pills)
+  const hasInteractionClarity = panelContent.includes('function syncActiveIntentChipHighlight') &&
+                                panelContent.includes('function getCardModeMeta') &&
+                                panelContent.includes('class="card-mode-pill') &&
+                                panelContent.includes('class="drawer-chip-row"') &&
+                                panelContent.includes('class="studio-section-label"') &&
+                                panelContent.includes('id="workflow-guide-banner"') &&
+                                panelContent.includes('class="scope-switch-pill"');
+  logStep("Step 7.231: 四层交互清晰化 (检索域保留词切换与取消、4分类指令抽屉、3场景工作台矩阵、四步上手与卡片形态徽标) 断言", hasInteractionClarity, `四层交互清晰化闭环: ${hasInteractionClarity}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

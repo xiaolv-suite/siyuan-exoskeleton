@@ -213,6 +213,16 @@
       background: var(--bg-surface);
       backdrop-filter: blur(16px);
     }
+    .telemetry-header::after {
+      content: "";
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      bottom: -1px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(56, 189, 248, 0.52) 50%, transparent 100%);
+      pointer-events: none;
+    }
     .brand-wrap {
       display: flex;
       align-items: center;
@@ -692,6 +702,47 @@
       background: var(--key-badge-bg);
       border: 1px solid var(--key-badge-border);
       box-shadow: var(--key-badge-shadow);
+      position: relative;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .card-item:hover .card-icon,
+    .card-item.selected .card-icon {
+      border-color: var(--border-glow);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.22), var(--key-badge-shadow);
+      transform: scale(1.04);
+    }
+    .card-mode-pill {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1.5px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-inset);
+      color: var(--text-muted);
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .card-mode-pill.mode-studio {
+      color: var(--cyber-sky);
+      border-color: rgba(56, 189, 248, 0.32);
+      background: rgba(56, 189, 248, 0.1);
+    }
+    .card-mode-pill.mode-scope {
+      color: var(--emerald-mint);
+      border-color: rgba(16, 185, 129, 0.32);
+      background: rgba(16, 185, 129, 0.1);
+    }
+    .card-mode-pill.mode-plugin {
+      color: var(--cyber-purple);
+      border-color: rgba(129, 140, 248, 0.32);
+      background: rgba(129, 140, 248, 0.1);
+    }
+    .card-mode-pill.mode-exec {
+      color: var(--tech-amber);
+      border-color: rgba(245, 158, 11, 0.32);
+      background: rgba(245, 158, 11, 0.08);
     }
     .card-title {
       font-size: 14px;
@@ -3145,11 +3196,11 @@
       position: fixed;
       top: 52px;
       right: 168px;
-      width: 356px;
+      width: 430px;
       background: var(--bg-surface);
       border: 1.5px solid var(--border-glow);
       border-radius: 12px;
-      padding: 12px;
+      padding: 12px 14px;
       box-shadow: 0 24px 60px rgba(0, 0, 0, 0.88), 0 0 28px rgba(56, 189, 248, 0.25);
       z-index: 9200;
       backdrop-filter: blur(18px);
@@ -3160,9 +3211,26 @@
     }
     .studio-switcher-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-top: 8px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 7px;
+      margin-top: 6px;
+    }
+    .studio-section-label {
+      grid-column: 1 / -1;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--cyber-sky);
+      letter-spacing: 0.3px;
+      padding: 4px 2px 1px 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .studio-section-label::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border-hairline);
     }
     .studio-grid-tile {
       display: flex;
@@ -3170,7 +3238,7 @@
       align-items: center;
       justify-content: center;
       gap: 4px;
-      padding: 9px 6px;
+      padding: 8px 5px;
       border-radius: 8px;
       background: var(--bg-card);
       border: 1px solid var(--border-hairline);
@@ -3185,19 +3253,58 @@
       transform: translateY(-1px);
     }
     .studio-grid-tile .tile-ico {
-      font-size: 17px;
-      line-height: 1.1;
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: var(--key-badge-bg);
+      border: 1px solid var(--key-badge-border);
+      box-shadow: var(--key-badge-shadow);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cyber-sky);
+    }
+    .studio-grid-tile .tile-ico .icon-svg {
+      width: 15px;
+      height: 15px;
     }
     .studio-grid-tile .tile-lbl {
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 650;
       color: var(--text-primary);
       white-space: nowrap;
     }
     .studio-grid-tile .tile-sub {
       font-size: 9.5px;
       color: var(--text-muted);
-      font-family: var(--font-mono);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    .intent-chip.active-scope {
+      background: rgba(56, 189, 248, 0.22) !important;
+      border-color: var(--cyber-sky) !important;
+      color: var(--text-primary) !important;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.28);
+      font-weight: 700;
+    }
+    .scope-switch-pill {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: var(--key-badge-bg);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.14s ease;
+      white-space: nowrap;
+    }
+    .scope-switch-pill:hover {
+      border-color: var(--cyber-sky);
+      color: var(--cyber-sky);
+      background: rgba(56, 189, 248, 0.12);
     }
     .more-chips-toggle {
       border-color: rgba(56, 189, 248, 0.38) !important;
@@ -3208,14 +3315,71 @@
     .more-intent-chips-drawer {
       display: none;
       width: 100%;
-      flex-wrap: wrap;
+      flex-direction: column;
       gap: 6px;
-      padding-top: 6px;
-      margin-top: 4px;
-      border-top: 1px dashed var(--border-hairline);
+      padding: 8px 10px;
+      margin-top: 6px;
+      border-radius: 8px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-hairline);
     }
     .more-intent-chips-drawer.open {
       display: flex;
+    }
+    .drawer-chip-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .drawer-row-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--cyber-sky);
+      min-width: 96px;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .workflow-guide-banner {
+      display: none;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 10px 24px;
+      background: var(--bg-inset);
+      border-bottom: 1px solid var(--border-hairline);
+    }
+    .workflow-guide-banner.open {
+      display: grid;
+    }
+    .wf-step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .wf-step-card:hover {
+      border-color: var(--cyber-sky);
+      transform: translateY(-1px);
+    }
+    .wf-step-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .wf-step-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.4;
     }
 
     /* Dark-Obsidian Inline Form & Confirm Modal */
@@ -3319,27 +3483,33 @@
         </div>
       </div>
 
-      <button class="theme-toggle-btn" id="launchpad-btn" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台 (🚀)" style="position: relative;">
-        <span>🚀</span>
+      <button class="theme-toggle-btn" id="launchpad-btn" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台 (🚀)" style="position: relative; color: var(--cyber-sky);">
+        <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" fill="currentColor" fill-opacity="0.16"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>
       </button>
 
       <!-- 全景工作台九宫格矩阵切换器 (收纳 12 大独立工作台，告别顶栏拥挤，浮层挂载于 body 顶层彻底杜绝遮挡) -->
       <div class="studio-hub-wrap" id="studio-hub-wrap">
-        <button class="theme-toggle-btn" id="studio-hub-btn" onclick="toggleStudioSwitcherPopover(event)" title="全景工作台九宫格矩阵 (🎛️ 一键切换 12 大独立视窗)" style="width: auto; padding: 0 9px; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.35);">
-          <span>🎛️</span>
+        <button class="theme-toggle-btn" id="studio-hub-btn" onclick="toggleStudioSwitcherPopover(event)" title="全景工作台九宫格矩阵 (🎛️ 一键切换 12 大独立视窗)" style="width: auto; padding: 0 9px; gap: 5px; font-size: 11.5px; font-weight: 600; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.35);">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="currentColor" fill-opacity="0.2"></rect><rect x="14" y="3" width="7" height="7" rx="1.5" fill="currentColor" fill-opacity="0.12"></rect><rect x="14" y="14" width="7" height="7" rx="1.5" fill="currentColor" fill-opacity="0.2"></rect><rect x="3" y="14" width="7" height="7" rx="1.5" fill="currentColor" fill-opacity="0.12"></rect></svg>
           <span>工作台</span>
         </button>
       </div>
 
       <button class="theme-toggle-btn" id="notice-btn" onclick="toggleNotificationCenterModal()" title="全景通知与生命事件中心 (🔔)" style="position: relative;">
-        <span>🔔</span>
+        <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.15"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
         <span class="badge-dot" id="notice-badge-dot" style="display: none; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--rose-agent);"></span>
       </button>
-      <button class="theme-toggle-btn" id="help-btn" onclick="toggleCheatsheet()" title="快捷心流与语法罗盘 (?)">❓</button>
-      <button class="theme-toggle-btn" id="customize-btn" onclick="togglePreferencesModal()" title="设置中枢 (⚙)">⚙️</button>
+      <button class="theme-toggle-btn" id="help-btn" onclick="toggleCheatsheet()" title="快捷心流与语法罗盘 (?)">
+        <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      </button>
+      <button class="theme-toggle-btn" id="customize-btn" onclick="togglePreferencesModal()" title="设置中枢 (⚙)">
+        <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;"><circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.18"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
       <button class="theme-toggle-btn" id="theme-btn" onclick="toggleTheme()" title="切换浅色/深色主题">🌓</button>
       <button class="theme-toggle-btn" id="pin-window-btn" onclick="togglePinWindow()" title="窗口常驻置顶锁 (点击锁定后失焦不自动隐藏，方便双屏/分屏对照工作)">📌</button>
-      <button class="theme-toggle-btn" id="zen-btn" onclick="toggleMaximizeWindow()" title="沉浸式全屏 / 窗口化切换 (F11)">⛶</button>
+      <button class="theme-toggle-btn" id="zen-btn" onclick="toggleMaximizeWindow()" title="沉浸式全屏 / 窗口化切换 (F11)">
+        <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+      </button>
       <div class="top-nav-divider"></div>
       <button class="theme-toggle-btn window-close-btn" id="window-close-btn" onclick="closeWindow()" title="关闭退出面板 (Esc)">✕</button>
     </div>
@@ -3358,7 +3528,7 @@
         type="text"
         id="search-input"
         class="search-input"
-        placeholder="键入速记内容 (!待办, @人脉, ?闪卡, #项目) 或快速检索 (b:块, d:文档, p:插件)..."
+        placeholder="直接输入关键词搜全库，或点下方胶囊切换检索域 (再次点击已亮起胶囊即可退出该模式)..."
         autocomplete="off"
         spellcheck="false"
         autofocus
@@ -3374,63 +3544,72 @@
     <!-- Quick Intent Chips below the search box (首屏核心高频胶囊 + 可展开全量指令抽屉) -->
     <div class="quick-intent-chips" id="quick-intent-chips">
       <span class="intent-chip" onclick="stampCurrentTime()" title="在输入框前置盖上当前时间戳 (HH:mm)"><b>🕒</b> 时间</span>
-      <span class="intent-chip" onclick="insertPrefix('!')" title="输入 ! 快速将待办事项存入今日日记"><b>!</b> 待办</span>
-      <span class="intent-chip" onclick="insertPrefix('pom:25 ')" title="输入 pom:25 任务名 快速开启心流专注倒计时，到期自动记入今日日记"><b>🍅</b> 番茄钟</span>
+      <span class="intent-chip" data-prefix="!" onclick="insertPrefix('!')" title="点击切换【待办速记】模式 (再次点击可取消前缀)"><b>!</b> 待办</span>
+      <span class="intent-chip" data-prefix="pom:" onclick="insertPrefix('pom:25 ')" title="点击切换【番茄专注】模式 (再次点击可取消前缀)"><b>🍅</b> 番茄钟</span>
       <span class="chip-divider"></span>
-      <span class="intent-chip" onclick="insertPrefix('b:')" title="输入 b: 毫秒级检索思源正文块并直接复制/回贴双链"><b>b:</b> 块级秒搜</span>
-      <span class="intent-chip" onclick="insertPrefix('d:')" title="输入 d: 检索思源全库文档"><b>d:</b> 文档</span>
+      <span class="intent-chip" data-prefix="b:" onclick="insertPrefix('b:')" title="点击切换【搜正文块】模式，保留已输关键词 (再次点击退出模式)"><b>b:</b> 块级秒搜</span>
+      <span class="intent-chip" data-prefix="d:" onclick="insertPrefix('d:')" title="点击切换【搜文档标题】模式，保留已输关键词 (再次点击退出模式)"><b>d:</b> 文档</span>
       <span class="intent-chip" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台，大图标磁贴平铺与 1~9 盲打秒开"><b>🚀</b> 启动台</span>
       <span class="intent-chip" onclick="toggleClipStudioModal()" title="打开剪贴板多选碎片拼版工作台，自由选段、调序与实时模板化拼版"><b>📋</b> 拼版工作台</span>
       <span class="intent-chip" onclick="toggleCodeStudioModal()" title="全库代码片段与多语言纯净源码工作台，支持语言筛选、纯净直贴与VS Code秒开"><b>⌨️</b> 代码工作台</span>
       <span class="intent-chip" onclick="toggleGraphModal()" title="全景双向知识网络星轨拓扑视窗，辐射漫游与关系拓扑穿透"><b>🌌</b> 星轨图谱</span>
       <span class="intent-chip" onclick="toggleTodayTimeline()" title="无需切入思源，0ms 滑出今日日记记录的全部灵感、待办与笔记"><b>📅</b> 今日时间轴</span>
       <span class="intent-chip" onclick="toggleHeatmapGalleryModal()" title="查看全库 52 周知识心流沉淀大画廊与年轮徽章"><b>🔥</b> 沉淀热力图</span>
-      <span class="intent-chip more-chips-toggle" id="toggle-more-chips-btn" onclick="toggleMoreIntentChips()" title="展开/收起全部 36 项扩展语法与专业工作台胶囊"><b>✨</b> 更多指令 (36) ▾</span>
+      <span class="intent-chip more-chips-toggle" id="toggle-more-chips-btn" onclick="toggleMoreIntentChips()" title="展开/收起按 4 大分类整理的 36 项扩展语法与专业工作台"><b>✨</b> 更多指令 (36) ▾</span>
     </div>
 
-    <!-- 二级折叠指令抽屉 (作为独立兄弟块挂载在 quick-intent-chips 下方，保持全部 36 项专业胶囊横向平铺换行且不撑破首屏行容器) -->
+    <!-- 二级折叠指令抽屉 (按 4 大清晰场景分组呈现，告别无序平铺，点击已激活前缀胶囊可一键取消) -->
     <div class="more-intent-chips-drawer" id="more-intent-chips-drawer">
-        <span class="intent-chip" onclick="insertPrefix('¥')" title="输入 ¥ 快速记录一笔生活账目花销"><b>💰</b> 记账</span>
-        <span class="intent-chip" onclick="insertPrefix('~25m')" title="输入 ~ 快速记录一段专注时间流"><b>⏱️</b> 专注</span>
-        <span class="intent-chip" onclick="insertPrefix('+water 500ml')" title="快速记录一条习惯打卡"><b>🏃</b> 打卡</span>
-        <span class="intent-chip" onclick="insertPrefix('@')" title="输入 @ 记录人脉互动与双链时间线"><b>@</b> 人脉</span>
-        <span class="intent-chip" onclick="insertPrefix('?')" title="输入 ? 制作原生 FSRS 闪卡"><b>?</b> 闪卡</span>
-        <span class="intent-chip" onclick="insertPrefix('#')" title="输入 # 归入项目专页或今日日记"><b>#</b> 项目</span>
-        <span class="chip-divider"></span>
-        <span class="intent-chip" onclick="insertPrefix('tag:')" title="输入 tag: 聚合检索全库标签与聚合笔记流"><b>#</b> 标签</span>
-        <span class="intent-chip" onclick="insertPrefix('att:')" title="输入 att: 穿透检索全库 PDF 文献与附件资产秒查坞"><b>att:</b> 附件秒查</span>
-        <span class="intent-chip" onclick="insertPrefix('office:')" title="输入 office: 检索与透视本地 Word/Excel/PPT 大纲与批注"><b>🏢</b> Office</span>
-        <span class="intent-chip" onclick="insertPrefix('pdf:')" title="输入 pdf: 检索全库学术 PDF 并流式透视大纲书签与页码"><b>📑</b> PDF</span>
-        <span class="intent-chip" onclick="insertPrefix('epub:')" title="输入 epub: 检索本地 EPUB 电子书并流式透视章节目录"><b>📚</b> EPUB</span>
-        <span class="intent-chip" onclick="insertPrefix('xmind:')" title="输入 xmind: 检索本地思维导图并流式透视层级树生成思源大纲"><b>🧠</b> XMind</span>
-        <span class="intent-chip" onclick="insertPrefix('listary:')" title="直通本地 Listary 极速全盘文件检索"><b>🔍</b> Listary</span>
-        <span class="intent-chip" onclick="insertPrefix('zotero:')" title="唤起本地 Zotero 学术文献管理库"><b>📖</b> Zotero</span>
-        <span class="intent-chip" onclick="insertPrefix('bm:')" title="输入 bm: 穿透检索 Edge/Chrome 本地浏览器书签与收藏夹"><b>🔖</b> 浏览器书签</span>
-        <span class="intent-chip" onclick="insertPrefix('fav:')" title="输入 fav: 打开全景网站收藏中枢，跨浏览器统一秒搜、一键收录并沉淀至思源专属文档"><b>🌐</b> 网站收藏</span>
-        <span class="intent-chip" onclick="insertPrefix('fold:')" title="输入 fold: 打开本地文件夹导航中枢，支持 #32770 对话框原位穿透与思源工程锚定"><b>📂</b> 文件夹导航</span>
+      <section class="drawer-chip-row">
+        <span class="drawer-row-label">📝 速记与生活流</span>
+        <span class="intent-chip" data-prefix="¥" onclick="insertPrefix('¥')" title="记录一笔生活账目花销"><b>💰</b> 记账</span>
+        <span class="intent-chip" data-prefix="~" onclick="insertPrefix('~25m')" title="记录一段专注时间流"><b>⏱️</b> 专注</span>
+        <span class="intent-chip" data-prefix="+" onclick="insertPrefix('+water 500ml')" title="快速记录一条习惯打卡"><b>🏃</b> 打卡</span>
+        <span class="intent-chip" data-prefix="@" onclick="insertPrefix('@')" title="记录人脉互动与双链时间线"><b>@</b> 人脉</span>
+        <span class="intent-chip" data-prefix="?" onclick="insertPrefix('?')" title="制作原生 FSRS 问答闪卡"><b>?</b> 闪卡</span>
+        <span class="intent-chip" data-prefix="#" onclick="insertPrefix('#')" title="归入项目专页或今日日记"><b>#</b> 项目</span>
+        <span class="intent-chip" data-prefix="voice:" onclick="insertPrefix('voice:')" title="呼出语音速记微舱与口语去噪自愈"><b>🎙️</b> 语音速记</span>
+        <span class="intent-chip" onclick="executeItem({ id: 'syg', title: '极速网页剪藏卡' })" title="免扩展极速剪藏前台网页"><b>g:</b> 网页剪藏</span>
+        <span class="intent-chip" onclick="executeItem({ id: 'syfsrs', title: 'FSRS 闪卡微舱' })" title="0ms 居中弹出微卡片秒刷复习"><b>🧠</b> 刷闪卡</span>
+      </section>
+      <section class="drawer-chip-row">
+        <span class="drawer-row-label">📂 本地文件透视</span>
+        <span class="intent-chip" data-prefix="att:" onclick="insertPrefix('att:')" title="穿透检索全库 PDF 文献与附件资产秒查坞"><b>att:</b> 附件秒查</span>
+        <span class="intent-chip" data-prefix="office:" onclick="insertPrefix('office:')" title="检索与透视本地 Word/Excel/PPT 大纲与批注"><b>🏢</b> Office</span>
+        <span class="intent-chip" data-prefix="pdf:" onclick="insertPrefix('pdf:')" title="检索全库学术 PDF 并流式透视大纲书签与页码"><b>📑</b> PDF</span>
+        <span class="intent-chip" data-prefix="epub:" onclick="insertPrefix('epub:')" title="检索本地 EPUB 电子书并流式透视章节目录"><b>📚</b> EPUB</span>
+        <span class="intent-chip" data-prefix="xmind:" onclick="insertPrefix('xmind:')" title="检索本地思维导图并流式透视层级树生成思源大纲"><b>🧠</b> XMind</span>
+        <span class="intent-chip" data-prefix="listary:" onclick="insertPrefix('listary:')" title="直通本地 Listary / Everything 极速全盘文件检索"><b>🔍</b> Listary</span>
+        <span class="intent-chip" data-prefix="zotero:" onclick="insertPrefix('zotero:')" title="唤起本地 Zotero 学术文献管理库"><b>📖</b> Zotero</span>
+        <span class="intent-chip" data-prefix="fold:" onclick="insertPrefix('fold:')" title="本地文件夹导航中枢，支持文件对话框原位秒跳"><b>📂</b> 文件夹导航</span>
+      </section>
+      <section class="drawer-chip-row">
+        <span class="drawer-row-label">🗂️ 知识扩展检索</span>
+        <span class="intent-chip" data-prefix="tag:" onclick="insertPrefix('tag:')" title="聚合检索全库标签与聚合笔记流"><b>#</b> 标签</span>
+        <span class="intent-chip" data-prefix="t:" onclick="insertPrefix('t:')" title="秒查全库未完成的任务清单并支持直接勾选"><b>t:</b> 待办清单</span>
+        <span class="intent-chip" data-prefix="m:" onclick="insertPrefix('m:')" title="秒查全库已收藏或加书签的重点块与文档"><b>m:</b> 收藏</span>
+        <span class="intent-chip" data-prefix="c:" onclick="insertPrefix('c:')" title="查看并调用最近 30 条结构化清洗剪贴板"><b>c:</b> 剪贴板</span>
+        <span class="intent-chip" data-prefix="av:" onclick="insertPrefix('av:')" title="检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
+        <span class="intent-chip" data-prefix="v:" onclick="insertPrefix('v:')" title="快速调用每日复盘、文献卡片、会议纪要等结构化模板"><b>v:</b> 模板速贴</span>
+        <span class="intent-chip" data-prefix=":" onclick="insertPrefix(':')" title="快速调用简码扩词与动态模板变量"><b>:</b> 简码</span>
+        <span class="intent-chip" data-prefix="bm:" onclick="insertPrefix('bm:')" title="穿透检索 Edge/Chrome 本地浏览器书签与收藏夹"><b>🔖</b> 浏览器书签</span>
+        <span class="intent-chip" data-prefix="fav:" onclick="insertPrefix('fav:')" title="打开全景网站收藏中枢，跨浏览器统一秒搜"><b>🌐</b> 网站收藏</span>
+        <span class="intent-chip" data-prefix="p:" onclick="insertPrefix('p:')" title="穿透检索全部已装社区插件命令"><b>p:</b> 插件</span>
+        <span class="intent-chip" data-prefix="trash:" onclick="insertPrefix('trash:')" title="查看思源文档回收站、误删笔记与历史快照打捞"><b>🗑️</b> 回收站</span>
+        <span class="intent-chip" onclick="triggerFlashback()" title="随机漫游一条历史重点笔记或那年今日"><b>🎲</b> 漫游回顾</span>
+      </section>
+      <section class="drawer-chip-row">
+        <span class="drawer-row-label">🎛️ 专项工作台</span>
         <span class="intent-chip" onclick="toggleProfileHubModal()" title="查看与管理思源 S3 存储桶、AI 大模型与常用配置预设 (大看板)"><b>⚙️</b> 配置预设</span>
-        <span class="intent-chip" onclick="insertPrefix('notice:')" title="输入 notice: 查看全景系统与思源应用通知事件流，支持一键沉淀日记"><b>📢</b> 通知历史</span>
         <span class="intent-chip" onclick="toggleVaultMirrorModal()" title="外部知识库与 Markdown 目录镜像透视工作台 (大视窗)"><b>🗄️</b> 外部库</span>
         <span class="intent-chip" onclick="toggleTableGridModal()" title="全库数据表格与属性视图透视矩阵大工作台，支持排序、编辑与1键导出Excel"><b>📊</b> 表格透视</span>
-        <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
-        <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
-        <span class="intent-chip" onclick="insertPrefix('c:')" title="输入 c: 实时查看并调用最近 30 条清洗剪贴板；支持 c:url/c:code/c:table/c:cite/c:math/c:img 分类筛选"><b>c:</b> 剪贴板</span>
-        <span class="intent-chip" onclick="insertPrefix(':')" title="输入 : 快速调用简码扩词与动态模板变量"><b>:</b> 简码</span>
-        <span class="chip-divider"></span>
-        <span class="intent-chip" onclick="executeItem({ id: 'syg', title: '极速网页剪藏卡' })" title="输入 g: 或按 Alt+Shift+G 免扩展极速剪藏网页"><b>g:</b> 网页剪藏</span>
-        <span class="intent-chip" onclick="executeItem({ id: 'syfsrs', title: 'FSRS 闪卡微舱' })" title="无需切入思源，0ms 居中弹出微卡片，空格翻答案，1~4评级秒刷"><b>🧠</b> 刷闪卡</span>
-        <span class="intent-chip" onclick="insertPrefix('t:')" title="输入 t: 秒查全库未完成的任务清单并支持直接勾选"><b>t:</b> 待办清单</span>
-        <span class="intent-chip" onclick="insertPrefix('m:')" title="输入 m: 秒查全库已收藏或加书签的重点块与文档"><b>m:</b> 收藏</span>
-        <span class="intent-chip" onclick="insertPrefix('v:')" title="输入 v: 快速调用每日复盘、文献卡片、会议纪要等结构化模板"><b>v:</b> 模板速贴</span>
-        <span class="intent-chip" onclick="insertPrefix('ws:')" title="输入 ws: 管理工作现场快照与微软虚拟桌面全景联动"><b>🏢</b> 现场快照</span>
-        <span class="intent-chip" onclick="insertPrefix('voice:')" title="输入 voice: 呼出语音速记微舱与口语去噪自愈"><b>🎙️</b> 语音速记</span>
-        <span class="intent-chip" onclick="insertPrefix('trash:')" title="输入 trash: 查看思源文档回收站、误删笔记与历史快照打捞"><b>🗑️</b> 回收站</span>
-        <span class="intent-chip" onclick="triggerFlashback()" title="输入 rand: 随机漫游一条历史重点笔记或那年今日"><b>🎲</b> 漫游回顾</span>
-        <span class="intent-chip" onclick="toggleSystemDoctorModal()" title="全库死链体检、孤儿附件清道夫与系统健康诊断大视窗"><b>🩺</b> 系统体检</span>
         <span class="intent-chip" onclick="toggleOutlineMindmapModal()" title="全景大纲与交互思维导图大工作台 (H1~H6 树状联动)"><b>🗺️</b> 大纲导图</span>
-        <span class="chip-divider"></span>
-        <span class="intent-chip" style="opacity: 0.75; cursor: pointer;" onclick="toggleCheatsheet()" title="查看完整快捷键心流"><b>Alt+1~8</b> 官方直达</span>
-      </div>
+        <span class="intent-chip" onclick="toggleSystemDoctorModal()" title="全库死链体检、孤儿附件清道夫与系统健康诊断大视窗"><b>🩺</b> 系统体检</span>
+        <span class="intent-chip" data-prefix="ws:" onclick="insertPrefix('ws:')" title="管理工作现场快照与微软虚拟桌面全景联动"><b>🏢</b> 现场快照</span>
+        <span class="intent-chip" data-prefix="notice:" onclick="insertPrefix('notice:')" title="查看全景系统与思源应用通知事件流"><b>📢</b> 通知历史</span>
+        <span class="intent-chip" style="opacity: 0.85; cursor: pointer;" onclick="toggleCheatsheet()" title="查看完整快捷键心流"><b>Alt+1~8</b> 官方直达</span>
+      </section>
+    </div>
 
     <div id="intent-banner" class="intent-banner" style="display: none;"></div>
     <div id="pinned-dock" class="pinned-dock" style="display: none;"></div>
@@ -3446,12 +3625,33 @@
       <button class="cat-btn" id="cat-btn-commands" onclick="setCategoryFilter('commands')">🌐 格式心流 (4)</button>
       <button class="cat-btn" id="cat-btn-maintenance" onclick="setCategoryFilter('maintenance')">⚙️ 系统运维 (3)</button>
     </nav>
+    <button type="button" class="cat-btn" id="workflow-guide-btn" onclick="toggleWorkflowGuideBanner()" style="border-color: rgba(56, 189, 248, 0.35); color: var(--cyber-sky); font-weight: 600; flex-shrink: 0;" title="展开/收起 4 大高频场景一图速览">🧭 四步上手</button>
     <div class="layout-switcher" title="切换视图排版模式">
       <button type="button" class="layout-btn" id="layout-btn-grid" onclick="setLayoutMode('grid')" title="网格便当盒卡片视图">🎴 卡片</button>
       <button type="button" class="layout-btn" id="layout-btn-list" onclick="setLayoutMode('list')" title="高信息密度列表视图">☰ 列表</button>
       <button type="button" class="layout-btn" id="layout-btn-tiles" onclick="setLayoutMode('tiles')" title="微磁贴轻量视图">❖ 磁贴</button>
     </div>
   </div>
+
+  <!-- 四大高频使用场景可折叠速览条 (解决功能多不知从何下手的问题，点击卡片可直接体验) -->
+  <section class="workflow-guide-banner" id="workflow-guide-banner">
+    <article class="wf-step-card" onclick="executeItem(PANEL_ITEMS.find(x => x.id === 'sys'))" title="点击立即体验多态速记">
+      <span class="wf-step-title"><span>① ⚡ 随手记一笔</span><span class="card-hotkey" style="font-size: 9.5px;">Alt+Shift+S</span></span>
+      <span class="wf-step-desc">在任何软件呼出单行条，敲字回车秒入今日日记（前加 <b>!</b> 变待办、<b>?</b> 变闪卡、<b>¥</b> 记账，30秒内自动合并）。</span>
+    </article>
+    <article class="wf-step-card" onclick="executeItem(PANEL_ITEMS.find(x => x.id === 'sypen'))" title="点击立即体验随身划笔">
+      <span class="wf-step-title"><span>② ✏️ 选中文字盲打</span><span class="card-hotkey" style="font-size: 9.5px;">Alt+Shift+W</span></span>
+      <span class="wf-step-desc">鼠标划选文字呼出微胶囊，按数字 <b>1~8</b> 盲打入日记/制闪卡/派任务/净复制/钉桌面参考便签。</span>
+    </article>
+    <article class="wf-step-card" onclick="insertPrefix('b:')" title="点击切换至全库正文块秒搜">
+      <span class="wf-step-title"><span>③ 🔍 找笔记贴双链</span><span class="card-hotkey" style="font-size: 9.5px;">Alt+Shift+Q</span></span>
+      <span class="wf-step-desc">直接在上方搜索框打字搜全库；<b>Enter</b> 在思源打开，<b>Shift+Enter</b> 把双链直接贴回当前 Word/IDE 光标处。</span>
+    </article>
+    <article class="wf-step-card" onclick="toggleStudioSwitcherPopover(event)" title="点击展开右上角 12 大独立工作台矩阵">
+      <span class="wf-step-title"><span>④ 🎛️ 12大独立工作台</span><span class="card-hotkey" style="font-size: 9.5px;">右上角工作台</span></span>
+      <span class="wf-step-desc">集中处理多段复制拼版、代码块与IDE双向写回、表格原位修改导出 Excel、大纲重构与死链体检。</span>
+    </article>
+  </section>
 
   <!-- 卡片显隐自定义编辑模式工具栏 -->
   <div class="edit-toolbar" id="edit-toolbar">
@@ -4612,72 +4812,77 @@
     </div>
   </div>
 
-  <!-- 顶层全局全景工作台九宫格矩阵浮层 (挂载于 body 根节点，z-index: 9200 彻底摆脱局部层叠上下文遮挡) -->
+  <!-- 顶层全局全景工作台九宫格矩阵浮层 (挂载于 body 根节点，z-index: 9200 彻底摆脱局部层叠上下文遮挡，按 3 大清晰场景分区 + 思源原生 B3 双色调线性图标) -->
   <div class="studio-switcher-popover" id="studio-switcher-popover" onclick="event.stopPropagation()">
     <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1px solid var(--border-hairline); font-size: 11.5px;">
-      <span style="font-weight: 700; color: var(--text-primary);">🎛️ 全景独立工作台矩阵 (12)</span>
-      <span style="font-size: 10px; color: var(--text-muted);">Esc 逐级返回</span>
+      <span style="font-weight: 700; color: var(--text-primary); display: inline-flex; align-items: center; gap: 6px;">🎛️ 全景独立工作台矩阵 (12)</span>
+      <span style="font-size: 10px; color: var(--text-muted);">按 3 大场景分组 · Esc 逐级返回</span>
     </div>
     <div class="studio-switcher-grid">
+      <span class="studio-section-label">📝 一、采集、拼版与双向创作 (4)</span>
       <button type="button" class="studio-grid-tile" onclick="openStudioFromHub('launchpad-modal', toggleLaunchpadModal)" title="全景网站与工程文件夹大图标启动台 (pad:)">
-        <span class="tile-ico">🚀</span>
+        <span class="tile-ico" style="color: var(--cyber-sky);"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" fill="currentColor" fill-opacity="0.18"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg></span>
         <span class="tile-lbl">大图标启动台</span>
-        <span class="tile-sub">pad:</span>
-      </button>
-      <button type="button" class="studio-grid-tile" onclick="openStudioFromHub('tasks-kanban-modal', toggleTasksKanbanModal)" title="全景待办四象限与看板工作台 (t:)">
-        <span class="tile-ico">🎴</span>
-        <span class="tile-lbl">四象限待办</span>
-        <span class="tile-sub">t:</span>
+        <span class="tile-sub">网站与目录秒开</span>
       </button>
       <button type="button" class="studio-grid-tile" id="clip-studio-btn" onclick="openStudioFromHub('clip-studio-modal', toggleClipStudioModal)" title="剪贴板多选碎片拼版工作台 (📋)">
-        <span class="tile-ico">📋</span>
+        <span class="tile-ico" style="color: var(--emerald-mint);"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" fill="currentColor" fill-opacity="0.14"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1" fill="currentColor" fill-opacity="0.24"></rect><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="14" y2="15"></line></svg></span>
         <span class="tile-lbl">剪贴板拼版</span>
-        <span class="tile-sub">c:merge</span>
-      </button>
-      <button type="button" class="studio-grid-tile" id="graph-btn" onclick="openStudioFromHub('graph-modal', toggleGraphModal)" title="双向知识网络星轨拓扑全景 (🌌)">
-        <span class="tile-ico">🌌</span>
-        <span class="tile-lbl">星轨图谱</span>
-        <span class="tile-sub">graph:</span>
-      </button>
-      <button type="button" class="studio-grid-tile" id="mindmap-btn" onclick="openStudioFromHub('outline-mindmap-modal', toggleOutlineMindmapModal)" title="全景大纲与交互思维导图大工作台 (🗺️)">
-        <span class="tile-ico">🗺️</span>
-        <span class="tile-lbl">大纲与导图</span>
-        <span class="tile-sub">syo</span>
-      </button>
-      <button type="button" class="studio-grid-tile" id="table-btn" onclick="openStudioFromHub('table-grid-modal', toggleTableGridModal)" title="全库数据表格与属性视图透视矩阵 (📊)">
-        <span class="tile-ico">📊</span>
-        <span class="tile-lbl">表格矩阵</span>
-        <span class="tile-sub">tab:</span>
+        <span class="tile-sub">多段复制拼合</span>
       </button>
       <button type="button" class="studio-grid-tile" id="code-btn" onclick="openStudioFromHub('code-studio-modal', toggleCodeStudioModal)" title="全库代码片段与多语言纯净源码工作台 (⌨️)">
-        <span class="tile-ico">⌨️</span>
+        <span class="tile-ico" style="color: var(--cyber-purple);"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2.5" fill="currentColor" fill-opacity="0.14"></rect><polyline points="6 15 10 11 6 7"></polyline><line x1="12" y1="15" x2="18" y2="15"></line></svg></span>
         <span class="tile-lbl">代码工作台</span>
-        <span class="tile-sub">code:</span>
+        <span class="tile-sub">源码修改与回写</span>
+      </button>
+      <button type="button" class="studio-grid-tile" id="table-btn" onclick="openStudioFromHub('table-grid-modal', toggleTableGridModal)" title="全库数据表格与属性视图透视矩阵 (📊)">
+        <span class="tile-ico" style="color: var(--emerald-mint);"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="3" y="3" width="18" height="6" fill="currentColor" fill-opacity="0.22" stroke="none"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg></span>
+        <span class="tile-lbl">表格矩阵</span>
+        <span class="tile-sub">单元格编辑导表</span>
+      </button>
+
+      <span class="studio-section-label">🧭 二、知识结构透视与导航 (4)</span>
+      <button type="button" class="studio-grid-tile" onclick="openStudioFromHub('tasks-kanban-modal', toggleTasksKanbanModal)" title="全景待办四象限与看板工作台 (t:)">
+        <span class="tile-ico" style="color: var(--tech-amber);"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="currentColor" fill-opacity="0.2"></rect><rect x="14" y="3" width="7" height="7" rx="1.5" fill="currentColor" fill-opacity="0.12"></rect><rect x="14" y="14" width="7" height="7" rx="1.5" fill="currentColor" fill-opacity="0.2"></rect><rect x="3" y="14" width="7" height="7" rx="1.5" fill="currentColor" fill-opacity="0.12"></rect></svg></span>
+        <span class="tile-lbl">四象限待办</span>
+        <span class="tile-sub">待办看板与专注</span>
+      </button>
+      <button type="button" class="studio-grid-tile" id="mindmap-btn" onclick="openStudioFromHub('outline-mindmap-modal', toggleOutlineMindmapModal)" title="全景大纲与交互思维导图大工作台 (🗺️)">
+        <span class="tile-ico" style="color: var(--cyber-sky);"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="5" rx="1" fill="currentColor" fill-opacity="0.22"></rect><rect x="2" y="15" width="6" height="5" rx="1" fill="currentColor" fill-opacity="0.15"></rect><rect x="16" y="15" width="6" height="5" rx="1" fill="currentColor" fill-opacity="0.15"></rect><path d="M12 8v4m-7 3v-3h14v3"></path></svg></span>
+        <span class="tile-lbl">大纲与导图</span>
+        <span class="tile-sub">H1~H6改名脑图</span>
+      </button>
+      <button type="button" class="studio-grid-tile" id="graph-btn" onclick="openStudioFromHub('graph-modal', toggleGraphModal)" title="双向知识网络星轨拓扑全景 (🌌)">
+        <span class="tile-ico" style="color: var(--cyber-purple);"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.25"></circle><circle cx="5" cy="6" r="2"></circle><circle cx="19" cy="6" r="2"></circle><circle cx="5" cy="18" r="2"></circle><circle cx="19" cy="18" r="2"></circle><line x1="9.8" y1="10.2" x2="6.5" y2="7.5"></line><line x1="14.2" y1="10.2" x2="17.5" y2="7.5"></line><line x1="9.8" y1="13.8" x2="6.5" y2="16.5"></line><line x1="14.2" y1="13.8" x2="17.5" y2="16.5"></line></svg></span>
+        <span class="tile-lbl">星轨图谱</span>
+        <span class="tile-sub">双链拓扑漫游</span>
       </button>
       <button type="button" class="studio-grid-tile" id="vault-btn" onclick="openStudioFromHub('vault-mirror-modal', toggleVaultMirrorModal)" title="外部知识库与 Markdown 目录镜像透视 (🗄️)">
-        <span class="tile-ico">🗄️</span>
+        <span class="tile-ico" style="color: var(--cyber-sky);"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" fill="currentColor" fill-opacity="0.16"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></span>
         <span class="tile-lbl">外部知识库</span>
-        <span class="tile-sub">vault:</span>
+        <span class="tile-sub">外部.md读写</span>
+      </button>
+
+      <span class="studio-section-label">⚙️ 三、周期复盘与系统运维 (4)</span>
+      <button type="button" class="studio-grid-tile" onclick="openStudioFromHub('heatmap-gallery-modal', toggleHeatmapGalleryModal)" title="52周年度知识心流沉淀大画廊 (heat:)">
+        <span class="tile-ico" style="color: var(--emerald-mint);"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="currentColor" fill-opacity="0.2"></path></svg></span>
+        <span class="tile-lbl">52周热力图</span>
+        <span class="tile-sub">年度贡献画廊</span>
       </button>
       <button type="button" class="studio-grid-tile" id="profile-btn" onclick="openStudioFromHub('profile-hub-modal', toggleProfileHubModal)" title="思源配置预设与大模型驱动中枢 (🧩)">
-        <span class="tile-ico">🧩</span>
+        <span class="tile-ico" style="color: var(--indigo-light);"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.2"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span>
         <span class="tile-lbl">配置与模型</span>
-        <span class="tile-sub">cfg:</span>
+        <span class="tile-sub">AI与DPAPI保险箱</span>
       </button>
       <button type="button" class="studio-grid-tile" id="doctor-btn" onclick="openStudioFromHub('system-doctor-modal', toggleSystemDoctorModal)" title="系统全库综合体检与死链清道夫 (🩺)">
-        <span class="tile-ico">🩺</span>
+        <span class="tile-ico" style="color: var(--tech-amber);"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.16"></path><path d="M9 12l2 2 4-4"></path></svg></span>
         <span class="tile-lbl">系统体检</span>
-        <span class="tile-sub">syh</span>
-      </button>
-      <button type="button" class="studio-grid-tile" onclick="openStudioFromHub('heatmap-gallery-modal', toggleHeatmapGalleryModal)" title="52周年度知识心流沉淀大画廊 (heat:)">
-        <span class="tile-ico">🔥</span>
-        <span class="tile-lbl">52周热力图</span>
-        <span class="tile-sub">heat:</span>
+        <span class="tile-sub">断链与孤儿清理</span>
       </button>
       <button type="button" class="studio-grid-tile" onclick="openStudioFromHub('notification-center-modal', toggleNotificationCenterModal)" title="全景通知与生命事件中心 (notice:)">
-        <span class="tile-ico">🔔</span>
+        <span class="tile-ico" style="color: var(--rose-agent);"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.16"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></span>
         <span class="tile-lbl">通知中心</span>
-        <span class="tile-sub">notice:</span>
+        <span class="tile-sub">事件流汇总归档</span>
       </button>
     </div>
   </div>
@@ -5521,7 +5726,8 @@
       const q = raw.toLowerCase();
       const banner = document.getElementById("intent-banner");
       const chips = document.getElementById("quick-intent-chips");
-      if (chips) chips.style.display = raw.length > 0 ? "none" : "flex";
+      if (chips) chips.style.display = "flex";
+      syncActiveIntentChipHighlight(raw);
       activeIntentAction = null;
 
       if (raw.startsWith("@") || raw.startsWith("＠")) {
@@ -5632,6 +5838,20 @@
       } else if (q.startsWith("tab:") || q.startsWith("tab：") || q.startsWith("table:") || q.startsWith("table：") || q === "tab" || q === "table") {
         banner.style.display = "flex";
         banner.innerHTML = `<div><span class="intent-tag">📊 表格透视矩阵</span>全库数据表格透视，列排序、单行过滤与1键导出Excel</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开表格矩阵视窗</span>`;
+      } else if (raw.length > 0) {
+        banner.style.display = "flex";
+        banner.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span class="intent-tag">🔍 切换检索域</span>
+            <span class="scope-switch-pill" onclick="insertPrefix('b:')">🧱 搜正文块 (b:)</span>
+            <span class="scope-switch-pill" onclick="insertPrefix('d:')">📄 搜文档 (d:)</span>
+            <span class="scope-switch-pill" onclick="insertPrefix('att:')">📎 搜PDF/附件 (att:)</span>
+            <span class="scope-switch-pill" onclick="insertPrefix('c:')">📋 搜剪贴板 (c:)</span>
+            <span class="scope-switch-pill" onclick="insertPrefix('tag:')"># 搜标签 (tag:)</span>
+            <span class="scope-switch-pill" onclick="insertPrefix('!')">! 转为待办</span>
+          </div>
+          <span style="font-size: 10px; opacity: 0.85; white-space: nowrap;">↵ 执行当前项或记入今日日记</span>
+        `;
       } else {
         banner.style.display = "none";
       }
@@ -6319,7 +6539,17 @@
       if (filteredItems.length === 0 && raw.length > 0 && !activeIntentAction) {
         activeIntentAction = "sys";
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">📝 日记速记</span>按回车将当前键入内容直接追加到今日日记</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认记一笔</span>`;
+        banner.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span class="intent-tag">📝 回车记入日记 · 🔍 切换检索域</span>
+            <span class="scope-switch-pill" onclick="insertPrefix('b:')">🧱 搜正文块 (b:)</span>
+            <span class="scope-switch-pill" onclick="insertPrefix('d:')">📄 搜文档 (d:)</span>
+            <span class="scope-switch-pill" onclick="insertPrefix('att:')">📎 搜PDF/附件 (att:)</span>
+            <span class="scope-switch-pill" onclick="insertPrefix('c:')">📋 搜剪贴板 (c:)</span>
+            <span class="scope-switch-pill" onclick="insertPrefix('tag:')"># 搜标签 (tag:)</span>
+          </div>
+          <span style="font-size: 10px; opacity: 0.85; white-space: nowrap;">↵ 确认记一笔</span>
+        `;
       }
 
       selectedIndex = 0;
@@ -6411,6 +6641,7 @@
             actionButtons += `<button type="button" class="card-launch-btn" style="background: rgba(99,102,241,0.22); color: var(--indigo-light); border-color: rgba(99,102,241,0.4);" onclick="copyBlockRef('${item.blockId}', '${escapeQuote(item.blockContent || item.title)}', event)" title="复制思源块双链 ((id &quot;锚文本&quot;))">(( )) 双链</button>`;
           }
 
+          const modeMeta = getCardModeMeta(item);
           card.innerHTML = `
             <div class="card-header">
               <div class="card-title-wrap">
@@ -6427,6 +6658,7 @@
             <div class="card-footer">
               <div class="card-footer-left">
                 <span class="tag-badge ${item.badgeCls}">${item.badge}</span>
+                <span class="card-mode-pill ${modeMeta.cls}" title="${modeMeta.title}">${modeMeta.label}</span>
                 ${item.pluginHotkey && item.hotkey ? `<span class="card-hotkey" style="font-size: 10px; padding: 1px 5px;" title="全局热键">${item.hotkey}</span>` : ""}
               </div>
               <div class="card-footer-right">
@@ -6451,6 +6683,7 @@
             actionButtons += `<button type="button" class="card-launch-btn" style="background: rgba(99,102,241,0.22); color: var(--indigo-light); border-color: rgba(99,102,241,0.4);" onclick="copyBlockRef('${item.blockId}', '${escapeQuote(item.blockContent || item.title)}', event)" title="复制思源块双链 ((id &quot;锚文本&quot;))">(( )) 双链</button>`;
           }
 
+          const modeMeta = getCardModeMeta(item);
           row.innerHTML = `
             <div class="list-left">
               <div class="list-icon-wrap" style="color: ${item.iconColor};">
@@ -6460,6 +6693,7 @@
                 <div class="list-title">
                   <span>${highlightMatch(item.title, document.getElementById("search-input").value)}</span>
                   <span class="tag-badge ${item.badgeCls}">${item.badge}</span>
+                  <span class="card-mode-pill ${modeMeta.cls}" title="${modeMeta.title}">${modeMeta.label}</span>
                 </div>
                 <div class="list-desc">${item.desc}</div>
               </div>
@@ -8163,13 +8397,51 @@
       }
     }
 
+    function syncActiveIntentChipHighlight(rawVal) {
+      const val = (rawVal || "").trim().toLowerCase();
+      document.querySelectorAll(".intent-chip[data-prefix]").forEach(chip => {
+        const p = (chip.getAttribute("data-prefix") || "").toLowerCase();
+        if (!p) return;
+        const isActive = val.length > 0 && (val.startsWith(p) || (p.endsWith(":") && val.startsWith(p.replace(":", "："))));
+        chip.classList.toggle("active-scope", isActive);
+      });
+    }
+
+    function toggleWorkflowGuideBanner(forceState) {
+      const banner = document.getElementById("workflow-guide-banner");
+      const btn = document.getElementById("workflow-guide-btn");
+      if (!banner) return;
+      const shouldOpen = typeof forceState === "boolean" ? forceState : !banner.classList.contains("open");
+      banner.classList.toggle("open", shouldOpen);
+      if (btn) btn.classList.toggle("active", shouldOpen);
+    }
+
     function insertPrefix(p) {
       const si = document.getElementById("search-input");
       if (!si) return;
-      if (p.includes(":") && !p.endsWith(":")) {
-        si.value = p;
+      const cur = (si.value || "").trim();
+      const targetPrefix = p.trim();
+      const prefixCheck = targetPrefix.includes(":") ? (targetPrefix.split(":")[0] + ":") : targetPrefix.charAt(0);
+
+      // 若当前已处于该前缀模式，再次点击该胶囊则取消前缀（保留已输关键词）
+      if (cur.toLowerCase().startsWith(prefixCheck.toLowerCase())) {
+        let rest = "";
+        if (prefixCheck.endsWith(":")) {
+          rest = cur.substring(prefixCheck.length).trim();
+        } else {
+          rest = cur.substring(targetPrefix.length).trim();
+        }
+        si.value = rest;
       } else {
-        si.value = p + (p.endsWith(":") ? "" : " ");
+        // 若当前带有其他检索前缀，切换检索域时自动保留已输入的关键词
+        const existingPrefixMatch = cur.match(/^([a-zA-Z]+[:：]|[!！?？@#＃¥￥~～+＋])/);
+        const existingKeyword = existingPrefixMatch ? cur.substring(existingPrefixMatch[0].length).trim() : cur;
+        if (p.includes(":") && !p.endsWith(":")) {
+          si.value = p + (existingKeyword ? (" " + existingKeyword) : "");
+        } else {
+          const sep = p.endsWith(":") ? "" : " ";
+          si.value = p + sep + existingKeyword;
+        }
       }
       si.focus();
       si.setSelectionRange(si.value.length, si.value.length);
@@ -15577,82 +15849,128 @@
       }, 1600);
     }
 
-    function renderItemIcon(item) {
-      if (item.iconImg) {
-        return `<img src="${item.iconImg}" class="plugin-icon-img" alt="" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-flex';" /><span style="display:none; color: ${item.iconColor};">${getInlineSvg(item.iconType || 'bolt')}</span>`;
+    function getCardModeMeta(item) {
+      if (!item) return { label: "⚡ 直接执行", cls: "mode-exec", title: "点击或回车立即执行" };
+      const studioIds = ["sytask", "syo", "syprofile", "synotice", "syh"];
+      const scopeIds = ["syf", "syfav", "syfold", "sypom", "syatt", "sytag", "sycmd", "sytrash", "syws", "syvoice"];
+      if (studioIds.includes(item.id)) {
+        return { label: "🎛️ 独立视窗", cls: "mode-studio", title: "点击打开独立全景工作台大视窗" };
       }
-      return getInlineSvg(item.iconType || 'bolt');
+      if (scopeIds.includes(item.id)) {
+        return { label: "🔍 检索视图", cls: "mode-scope", title: "点击切换至该专属检索/交互视图" };
+      }
+      if (item.pluginLaunch) {
+        return { label: "🪟 思源联动", cls: "mode-plugin", title: "点击免切窗执行 · 点「面板」唤醒思源对应插件" };
+      }
+      return { label: "⚡ 直接执行", cls: "mode-exec", title: "点击或按回车立即执行动作" };
+    }
+
+    function renderItemIcon(item) {
+      return getInlineSvg((item && item.iconType) || 'bolt');
     }
 
     function getInlineSvg(type) {
-      const base = `<svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">`;
+      const base = `<svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">`;
       switch(type) {
+        case "siyuan-pillars":
+          return `<svg class="icon-svg" viewBox="0 0 24 24" fill="none"><polygon points="3.5,10 8.5,5 8.5,14.5 3.5,19.5" fill="currentColor" fill-opacity="0.92"/><polygon points="8.5,5 12,8.5 12,18 8.5,14.5" fill="currentColor" fill-opacity="0.55"/><polygon points="12,8.5 15.5,5 15.5,14.5 12,18" fill="currentColor" fill-opacity="0.92"/><polygon points="15.5,5 20.5,10 20.5,19.5 15.5,14.5" fill="currentColor" fill-opacity="0.55"/></svg>`;
         case "bolt":
-          return `${base}<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`;
+          return `${base}<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.16"></polygon></svg>`;
+        case "edit":
+          return `${base}<path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" fill="currentColor" fill-opacity="0.16"></path></svg>`;
         case "calendar":
-          return `${base}<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
+          return `${base}<rect x="3" y="4" width="18" height="18" rx="2.5" ry="2.5"></rect><rect x="3" y="4" width="18" height="6" rx="1" fill="currentColor" fill-opacity="0.18" stroke="none"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"></path></svg>`;
         case "tasks":
-          return `${base}<polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`;
+          return `${base}<rect x="3" y="3" width="18" height="18" rx="2.5" fill="currentColor" fill-opacity="0.12"></rect><polyline points="9 11 12 14 20 6"></polyline></svg>`;
         case "fingerprint":
           return `${base}<path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"></path><path d="M14 13.12c0 2.38 0 6.38-1 8.88"></path><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"></path><path d="M2 12a10 10 0 0 1 18-6"></path><path d="M2 16h.01"></path><path d="M21.8 16c.2-2 .131-5.354 0-6"></path><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"></path><path d="M8.65 22c.21-.66.45-1.32.57-2"></path><path d="M9 6.8a6 6 0 0 1 9 5.2v2"></path></svg>`;
         case "comment":
-          return `${base}<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`;
+          return `${base}<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="currentColor" fill-opacity="0.15"></path></svg>`;
         case "bullhorn":
-          return `${base}<path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
+          return `${base}<path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor" fill-opacity="0.16"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
         case "share":
-          return `${base}<circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>`;
+          return `${base}<circle cx="18" cy="5" r="3" fill="currentColor" fill-opacity="0.2"></circle><circle cx="6" cy="12" r="3" fill="currentColor" fill-opacity="0.2"></circle><circle cx="18" cy="19" r="3" fill="currentColor" fill-opacity="0.2"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>`;
         case "camera":
-          return `${base}<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`;
+          return `${base}<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" fill="currentColor" fill-opacity="0.12"></path><circle cx="12" cy="13" r="4" fill="currentColor" fill-opacity="0.2"></circle></svg>`;
+        case "microphone":
+          return `${base}<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" fill="currentColor" fill-opacity="0.18"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`;
         case "table":
-          return `${base}<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg>`;
+          return `${base}<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="3" y="3" width="18" height="6" fill="currentColor" fill-opacity="0.2" stroke="none"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg>`;
         case "database":
-          return `${base}<ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>`;
+          return `${base}<ellipse cx="12" cy="5" rx="9" ry="3" fill="currentColor" fill-opacity="0.2"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>`;
         case "search":
-          return `${base}<circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`;
+          return `${base}<circle cx="11" cy="11" r="8" fill="currentColor" fill-opacity="0.14"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`;
+        case "globe":
+          return `${base}<circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`;
+        case "folder":
+          return `${base}<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" fill="currentColor" fill-opacity="0.16"></path></svg>`;
         case "stream":
-          return `${base}<line x1="4" y1="6" x2="20" y2="6"></line><line x1="8" y1="12" x2="20" y2="12"></line><line x1="12" y1="18" x2="20" y2="18"></line></svg>`;
+          return `${base}<circle cx="5" cy="6" r="1.5" fill="currentColor"></circle><line x1="9" y1="6" x2="20" y2="6"></line><circle cx="8" cy="12" r="1.5" fill="currentColor"></circle><line x1="12" y1="12" x2="20" y2="12"></line><circle cx="11" cy="18" r="1.5" fill="currentColor"></circle><line x1="15" y1="18" x2="20" y2="18"></line></svg>`;
+        case "window-restore":
+          return `${base}<rect x="3" y="7" width="14" height="14" rx="2" fill="currentColor" fill-opacity="0.16"></rect><path d="M7 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2"></path></svg>`;
         case "book":
-          return `${base}<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`;
+          return `${base}<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" fill="currentColor" fill-opacity="0.15"></path></svg>`;
         case "inbox":
-          return `${base}<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>`;
+          return `${base}<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" fill="currentColor" fill-opacity="0.14"></path></svg>`;
         case "clock":
-          return `${base}<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
+          return `${base}<circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.14"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
         case "check":
-          return `${base}<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+          return `${base}<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" fill="currentColor" fill-opacity="0.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
         case "users":
-          return `${base}<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`;
+          return `${base}<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" fill="currentColor" fill-opacity="0.14"></path><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.18"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`;
         case "paper-plane":
-          return `${base}<line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`;
+          return `${base}<line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" fill-opacity="0.16"></polygon></svg>`;
         case "brain":
-          return `${base}<circle cx="12" cy="12" r="9"></circle><path d="M10 8a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2"></path></svg>`;
+          return `${base}<rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor" fill-opacity="0.14"></rect><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"></path><circle cx="12" cy="16.5" r="0.8" fill="currentColor"></circle></svg>`;
         case "spell-check":
-          return `${base}<path d="M6 16l6-12 6 12"></path><line x1="8" y1="12" x2="16" y2="12"></line><path d="M16 20l2 2 4-4"></path></svg>`;
+          return `${base}<path d="M12 3L2 8l10 5 10-5-10-5z" fill="currentColor" fill-opacity="0.18"></path><path d="M6 10.5v5.5c0 1.8 2.7 3.5 6 3.5s6-1.7 6-3.5v-5.5"></path><path d="M22 8v6"></path></svg>`;
         case "diagram":
-          return `${base}<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`;
+        case "kanban":
+          return `${base}<rect x="3" y="3" width="7" height="7" rx="1.5" fill="currentColor" fill-opacity="0.2"></rect><rect x="14" y="3" width="7" height="7" rx="1.5" fill="currentColor" fill-opacity="0.12"></rect><rect x="14" y="14" width="7" height="7" rx="1.5" fill="currentColor" fill-opacity="0.2"></rect><rect x="3" y="14" width="7" height="7" rx="1.5" fill="currentColor" fill-opacity="0.12"></rect></svg>`;
         case "sitemap":
-          return `${base}<rect x="9" y="3" width="6" height="6"></rect><rect x="2" y="15" width="6" height="6"></rect><rect x="16" y="15" width="6" height="6"></rect><path d="M12 9v3m-7 3v-3h14v3"></path></svg>`;
+          return `${base}<rect x="9" y="3" width="6" height="5" rx="1" fill="currentColor" fill-opacity="0.2"></rect><rect x="2" y="15" width="6" height="5" rx="1" fill="currentColor" fill-opacity="0.15"></rect><rect x="16" y="15" width="6" height="5" rx="1" fill="currentColor" fill-opacity="0.15"></rect><path d="M12 8v4m-7 3v-3h14v3"></path></svg>`;
         case "stopwatch":
-          return `${base}<circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2 2m-2-12v2m7 2l-1.5 1.5"></path></svg>`;
+          return `${base}<circle cx="12" cy="13" r="8" fill="currentColor" fill-opacity="0.14"></circle><path d="M12 9v4l2 2m-2-12v2m7 2l-1.5 1.5"></path></svg>`;
         case "brush":
-          return `${base}<path d="M9 19h6m-3-16v16m-6-6l6 6"></path><circle cx="12" cy="12" r="9"></circle></svg>`;
+          return `${base}<path d="M18.37 2.63L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3z" fill="currentColor" fill-opacity="0.16"></path><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"></path></svg>`;
         case "house":
-          return `${base}<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`;
+          return `${base}<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="currentColor" fill-opacity="0.14"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`;
         case "terminal":
-          return `${base}<polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>`;
+          return `${base}<rect x="2" y="4" width="20" height="16" rx="2.5" fill="currentColor" fill-opacity="0.13"></rect><polyline points="6 15 10 11 6 7"></polyline><line x1="12" y1="15" x2="18" y2="15"></line></svg>`;
         case "cubes":
-          return `${base}<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>`;
+        case "vault":
+          return `${base}<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" fill="currentColor" fill-opacity="0.14"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>`;
         case "shield":
-          return `${base}<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`;
+          return `${base}<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.15"></path><path d="M9 12l2 2 4-4"></path></svg>`;
+        case "trash":
+          return `${base}<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" fill="currentColor" fill-opacity="0.14"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+        case "bell":
+          return `${base}<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.16"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>`;
+        case "star":
+          return `${base}<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor" fill-opacity="0.18"></polygon></svg>`;
+        case "rotate-ccw":
+          return `${base}<polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path><polyline points="12 7 12 12 15 14"></polyline></svg>`;
+        case "cloud":
         case "sync":
-          return `${base}<polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>`;
+          return `${base}<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" fill="currentColor" fill-opacity="0.15"></path></svg>`;
         case "heart":
-          return `${base}<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
+          return `${base}<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="currentColor" fill-opacity="0.16"></path></svg>`;
         case "gear":
-          return `${base}<circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`;
+        case "sliders":
+          return `${base}<circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.2"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`;
         case "tag":
-          return `${base}<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>`;
+          return `${base}<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" fill="currentColor" fill-opacity="0.16"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>`;
+        case "rocket":
+          return `${base}<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" fill="currentColor" fill-opacity="0.16"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>`;
+        case "clipboard":
+          return `${base}<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" fill="currentColor" fill-opacity="0.12"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1" fill="currentColor" fill-opacity="0.22"></rect><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="14" y2="15"></line></svg>`;
+        case "network":
+          return `${base}<circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.25"></circle><circle cx="5" cy="6" r="2"></circle><circle cx="19" cy="6" r="2"></circle><circle cx="5" cy="18" r="2"></circle><circle cx="19" cy="18" r="2"></circle><line x1="9.8" y1="10.2" x2="6.5" y2="7.5"></line><line x1="14.2" y1="10.2" x2="17.5" y2="7.5"></line><line x1="9.8" y1="13.8" x2="6.5" y2="16.5"></line><line x1="14.2" y1="13.8" x2="17.5" y2="16.5"></line></svg>`;
+        case "flame":
+          return `${base}<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="currentColor" fill-opacity="0.18"></path></svg>`;
+        case "compass":
         default:
-          return `${base}<circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>`;
+          return `${base}<circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" fill-opacity="0.22"></polygon></svg>`;
       }
     }
   </script>

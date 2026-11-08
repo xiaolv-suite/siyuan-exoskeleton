@@ -280,12 +280,19 @@ namespace XiaoLv.Desktop.Core
 					                    return;
 					                }
 
-					                // R. 剪贴板批量拼版工作台: /api/clip/merge
-					                if (rawPath.Equals("/api/clip/merge", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/clip/merge", StringComparison.OrdinalIgnoreCase))
-					                {
-					                    HandleClipMergeRequest(req, resp);
-					                    return;
-					                }
+						                // R. 剪贴板批量拼版工作台: /api/clip/merge
+						                if (rawPath.Equals("/api/clip/merge", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/clip/merge", StringComparison.OrdinalIgnoreCase))
+						                {
+						                    HandleClipMergeRequest(req, resp);
+						                    return;
+						                }
+
+						                // S. 双向知识网络星轨拓扑全景: /api/graph/radial
+						                if (rawPath.Equals("/api/graph/radial", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/graph/radial", StringComparison.OrdinalIgnoreCase))
+						                {
+						                    HandleRadialGraphRequest(req, resp);
+						                    return;
+						                }
 
 			                // 未匹配到路由
 			                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
@@ -942,13 +949,83 @@ namespace XiaoLv.Desktop.Core
 		                    markdown = merged
 		                });
 		            }
-		            catch (Exception ex)
-		            {
-		                WriteJsonResponse(resp, 500, new { code = 500, msg = "拼版处理异常: " + ex.Message });
-		            }
-		        }
+			            catch (Exception ex)
+			            {
+			                WriteJsonResponse(resp, 500, new { code = 500, msg = "拼版处理异常: " + ex.Message });
+			            }
+			        }
 
-		        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
+			        private static void HandleRadialGraphRequest(HttpListenerRequest req, HttpListenerResponse resp)
+			        {
+			            string blockId = GetQueryStringUtf8(req, "id");
+			            string widthStr = req.QueryString["width"] ?? "900";
+			            string heightStr = req.QueryString["height"] ?? "500";
+			            int width = 900;
+			            int height = 500;
+			            int.TryParse(widthStr, out width);
+			            int.TryParse(heightStr, out height);
+
+			            ThreadPool.QueueUserWorkItem(async s =>
+			            {
+			                try
+			                {
+			                    string targetId = blockId;
+			                    string targetTitle = "";
+
+			                    if (string.IsNullOrEmpty(targetId))
+			                    {
+			                        string sql = "SELECT id, content FROM blocks WHERE type='d' ORDER BY updated DESC LIMIT 1";
+			                        var rows = await SiYuanClient.SqlAsync(sql);
+			                        if (rows != null && rows.Count > 0)
+			                        {
+			                            targetId = JsonHelper.GetString(rows[0], "id");
+			                            targetTitle = JsonHelper.GetString(rows[0], "content");
+			                        }
+			                    }
+			                    else
+			                    {
+			                        string sql = "SELECT id, content FROM blocks WHERE id='" + targetId.Replace("'", "''") + "' LIMIT 1";
+			                        var rows = await SiYuanClient.SqlAsync(sql);
+			                        if (rows != null && rows.Count > 0)
+			                        {
+			                            targetTitle = JsonHelper.GetString(rows[0], "content");
+			                        }
+			                    }
+
+			                    if (string.IsNullOrEmpty(targetId))
+			                    {
+			                        WriteJsonResponse(resp, 200, new { code = 1, msg = "库中暂无可用笔记块" });
+			                        return;
+			                    }
+
+				                    var links = await BiDirectionalGraphRadar.GetLinksForBlockAsync(targetId, targetTitle);
+				                    string svg = GraphVisualizer.RenderFullRadialGraphSvg(targetId, links.TargetTitle, links.InboundBacklinks, links.OutboundReferences, width, height, true);
+
+				                    WriteJsonResponse(resp, 200, new
+			                    {
+			                        code = 0,
+			                        msg = "ok",
+			                        data = new
+			                        {
+			                            centerId = targetId,
+			                            centerTitle = links.TargetTitle,
+			                            inCount = links.InboundBacklinks.Count,
+			                            outCount = links.OutboundReferences.Count,
+			                            total = links.TotalLinks,
+			                            svg = svg,
+			                            inbounds = links.InboundBacklinks,
+			                            outbounds = links.OutboundReferences
+			                        }
+			                    });
+			                }
+			                catch (Exception ex)
+			                {
+			                    WriteJsonResponse(resp, 500, new { code = 500, msg = "生成星轨图谱异常: " + ex.Message });
+			                }
+			            });
+			        }
+
+			        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
         {
             try
             {

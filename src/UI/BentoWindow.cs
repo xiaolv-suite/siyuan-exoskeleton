@@ -686,18 +686,56 @@ namespace XiaoLv.Desktop.UI
 				                        {
 				                            var links = await BiDirectionalGraphRadar.GetLinksForBlockAsync(bId, bTitle);
 				                            string graphSvg = GraphVisualizer.RenderRadialGraphSvg(bId, bTitle, links.InboundBacklinks, links.OutboundReferences);
-				                            Dispatcher.Invoke(() =>
+					                            Dispatcher.Invoke(() =>
+					                            {
+					                                if (_webView != null && _webView.CoreWebView2 != null)
+					                                {
+					                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onBlockLinksLoaded) window.onBlockLinksLoaded(" + JsonHelper.ToJson(new { code = 0, data = links, graphSvg = graphSvg }) + ");");
+					                                }
+					                            });
+					                        }
+				                        catch { }
+				                    });
+				                    return;
+				                }
+
+				                // 3.53B 全景星轨知识图谱大视窗 (Radial Star Graph Explorer)
+				                if (op.Equals("getRadialGraphModal", StringComparison.OrdinalIgnoreCase))
+				                {
+				                    string bId = JsonHelper.GetString(msg, "blockId");
+				                    string bTitle = JsonHelper.GetString(msg, "title");
+				                    ThreadPool.QueueUserWorkItem(async s =>
+				                    {
+				                        try
+				                        {
+				                            string targetId = bId;
+				                            string targetTitle = bTitle;
+
+				                            if (string.IsNullOrEmpty(targetId))
+				                            {
+				                                string sql = "SELECT id, content FROM blocks WHERE type='d' ORDER BY updated DESC LIMIT 1";
+				                                var rows = await SiYuanClient.SqlAsync(sql);
+				                                if (rows != null && rows.Count > 0)
+				                                {
+				                                    targetId = JsonHelper.GetString(rows[0], "id");
+				                                    targetTitle = JsonHelper.GetString(rows[0], "content");
+				                                }
+				                            }
+
+					                            var links = await BiDirectionalGraphRadar.GetLinksForBlockAsync(targetId, targetTitle);
+					                            string graphSvg = GraphVisualizer.RenderFullRadialGraphSvg(targetId, links.TargetTitle, links.InboundBacklinks, links.OutboundReferences, 920, 500, true);
+					                            Dispatcher.Invoke(() =>
 				                            {
 				                                if (_webView != null && _webView.CoreWebView2 != null)
 				                                {
-				                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onBlockLinksLoaded) window.onBlockLinksLoaded(" + JsonHelper.ToJson(new { code = 0, data = links, graphSvg = graphSvg }) + ");");
+				                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onRadialGraphLoaded) window.onRadialGraphLoaded(" + JsonHelper.ToJson(new { code = 0, centerId = targetId, centerTitle = links.TargetTitle, data = links, graphSvg = graphSvg }) + ");");
 				                                }
 				                            });
 				                        }
-			                        catch { }
-			                    });
-			                    return;
-			                }
+				                        catch { }
+				                    });
+				                    return;
+				                }
 
 			                // 3.54 全景待办视界 (Tasks Horizon: P1/P2/今日分流与Checklist导出)
 			                if (op.Equals("getTasksHorizon", StringComparison.OrdinalIgnoreCase))

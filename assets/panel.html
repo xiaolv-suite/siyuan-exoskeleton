@@ -2728,6 +2728,9 @@
         </div>
       </div>
 
+      <button class="theme-toggle-btn" id="graph-btn" onclick="toggleGraphModal()" title="双向知识网络星轨拓扑全景 (🌌)" style="position: relative;">
+        <span>🌌</span>
+      </button>
       <button class="theme-toggle-btn" id="clip-studio-btn" onclick="toggleClipStudioModal()" title="剪贴板多选碎片拼版工作台 (📋)" style="position: relative;">
         <span>📋</span>
       </button>
@@ -2819,8 +2822,9 @@
       <span class="intent-chip" onclick="insertPrefix('voice:')" title="输入 voice: 呼出语音速记微舱与口语去噪自愈"><b>🎙️</b> 语音速记</span>
       <span class="intent-chip" onclick="insertPrefix('trash:')" title="输入 trash: 查看思源文档回收站、误删笔记与历史快照打捞"><b>🗑️</b> 回收站</span>
 	      <span class="intent-chip" onclick="toggleTodayTimeline()" title="无需切入思源，0ms 滑出今日日记记录的全部灵感、待办与笔记"><b>📅</b> 今日时间轴</span>
-			      <span class="intent-chip" onclick="triggerFlashback()" title="输入 rand: 随机漫游一条历史重点笔记或那年今日"><b>🎲</b> 漫游回顾</span>
-			      <span class="intent-chip" onclick="toggleHeatmapGalleryModal()" title="查看全库 52 周知识心流沉淀大画廊与年轮徽章"><b>🔥</b> 沉淀热力图</span>
+				      <span class="intent-chip" onclick="triggerFlashback()" title="输入 rand: 随机漫游一条历史重点笔记或那年今日"><b>🎲</b> 漫游回顾</span>
+				      <span class="intent-chip" onclick="toggleHeatmapGalleryModal()" title="查看全库 52 周知识心流沉淀大画廊与年轮徽章"><b>🔥</b> 沉淀热力图</span>
+				      <span class="intent-chip" onclick="toggleGraphModal()" title="全景双向知识网络星轨拓扑视窗，辐射漫游与关系拓扑穿透"><b>🌌</b> 星轨图谱</span>
       <span class="chip-divider"></span>
       <span class="intent-chip" style="opacity: 0.75; cursor: pointer;" onclick="toggleCheatsheet()" title="查看完整快捷键心流"><b>Alt+1~8</b> 官方直达</span>
     </div>
@@ -3566,6 +3570,49 @@
       <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>操作指南</b>: 在左侧勾选多段碎片，点击 ⬆️/⬇️ 微调先后顺序，右侧自由切换 7 套模板实时拼版，支持原地修改润色</span>
         <span id="clip-studio-stat">已就绪</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 双向知识网络星轨拓扑全景视窗 (Radial Star Graph Explorer Modal) -->
+  <div class="timeline-modal-overlay" id="graph-modal" onclick="closeGraphModalOnBg(event)">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 95%; max-width: 980px; max-height: 88vh; background: #070d18;">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">🌌</span>
+          <span style="font-weight: 700; font-size: 14px;">双向知识网络星轨拓扑全景视窗</span>
+          <span class="brand-pill" id="graph-modal-center-pill">核心节点</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="randomExploreGraphNode()" style="font-size: 11px; padding: 3px 10px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.4);" title="随机漫游全库核心节点">🎲 随机漫游</button>
+          <button class="pref-btn" onclick="openCurrentGraphNode()" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.4);" title="在思源大窗中原位定位并打开当前节点">🔗 思源定位</button>
+          <button class="pref-btn" onclick="copyGraphSvgCode()" style="font-size: 11px; padding: 3px 10px;" title="复制星轨拓扑矢量的 SVG 源码">📋 复制 SVG</button>
+          <button class="pref-btn" onclick="exportGraphSvgCard()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="导出高保真知识拓扑卡片长图">📸 导出长图</button>
+          <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleGraphModal()">✕</button>
+        </div>
+      </div>
+
+      <!-- Graph Toolbar & Stats Strip -->
+      <div style="display: flex; gap: 12px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.25); align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: 11.5px;">
+        <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+          <div>⬅️ 反向反链: <b id="gm-in-count" style="color: var(--emerald-mint); font-size: 12.5px;">--</b> 篇</div>
+          <div>➡️ 正向出链: <b id="gm-out-count" style="color: var(--cyber-sky); font-size: 12.5px;">--</b> 篇</div>
+          <div>🌐 关系网络密度: <b id="gm-total-links" style="color: var(--tech-amber); font-size: 12.5px;">--</b> 连线</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <input type="text" id="gm-search-input" placeholder="输入关键词切换中心节点..." onkeydown="handleGraphSearchKey(event)" style="font-size: 11px; padding: 3px 10px; border-radius: 5px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-primary); width: 200px;" />
+        </div>
+      </div>
+
+      <!-- SVG Canvas Body Container -->
+      <div id="graph-modal-body" style="padding: 12px; overflow: hidden; display: flex; justify-content: center; align-items: center; min-height: 500px; background: radial-gradient(circle at center, #0f172a 0%, #030712 100%); position: relative;">
+        <div style="text-align: center; color: var(--text-muted); font-size: 12px;">正在生成双向知识网络星轨拓扑...</div>
+      </div>
+
+      <!-- Bottom Footer -->
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+        <span>💡 <b>交互指南</b>: 单击绿色/蓝色卫星节点可无缝重新聚类漫游 · 双击在思源大窗中原位打开 · 纯原生计算 0ms 渲染</span>
+        <span id="graph-modal-status">星轨拓扑就绪</span>
       </div>
     </div>
   </div>
@@ -4516,6 +4563,9 @@
       } else if (q.startsWith("c:merge") || q.startsWith("clip:") || q.startsWith("clip：") || q.startsWith("studio:") || q === "c:merge" || q === "merge") {
         banner.style.display = "flex";
         banner.innerHTML = `<div><span class="intent-tag">📋 剪贴板拼版台</span>自由多选最近剪贴板碎片，调序并以 7 套模板实时拼版与直贴</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开拼版工作台</span>`;
+      } else if (q.startsWith("graph:") || q.startsWith("graph：") || q.startsWith("star:") || q.startsWith("star：") || q.startsWith("net:") || q === "graph" || q === "star") {
+        banner.style.display = "flex";
+        banner.innerHTML = `<div><span class="intent-tag">🌌 星轨图谱</span>全屏双向知识网络拓扑，单击节点无缝漫游重构</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开星轨大视窗</span>`;
       } else {
         banner.style.display = "none";
       }
@@ -4729,6 +4779,13 @@
       // c:merge 或 clip: 模式：剪贴板多选碎片拼版工作台
       if (q.startsWith("c:merge") || q.startsWith("clip:") || q.startsWith("clip：") || q.startsWith("studio:") || q === "c:merge" || q === "merge") {
         toggleClipStudioModal();
+        return;
+      }
+
+      // graph: 或 star: 模式：双向知识网络星轨拓扑全景
+      if (q.startsWith("graph:") || q.startsWith("graph：") || q.startsWith("star:") || q.startsWith("star：") || q.startsWith("net:") || q === "graph" || q === "star") {
+        const subKw = q.replace(/^(graph:|graph：|star:|star：|net:|net：)/, "").trim();
+        toggleGraphModal("", subKw);
         return;
       }
 
@@ -8483,6 +8540,10 @@
       const outbounds = data.OutboundReferences || [];
 
       container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 11px; font-weight: 700; color: var(--indigo-light);">🌌 知识星轨拓扑</span>
+          <button class="pref-btn" onclick="toggleGraphModal('${data.TargetBlockId || ''}', '${escapeQuote(data.TargetTitle || '')}')" style="font-size: 10.5px; padding: 2px 8px; color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="展开 980px 全景双向知识网络星轨拓扑视窗">🌌 展开全景大图谱</button>
+        </div>
         ${res.graphSvg ? `<div style="margin-bottom: 12px; border: 1px solid var(--border-hairline); border-radius: 8px; overflow: hidden;">${res.graphSvg}</div>` : ''}
         <div style="font-size: 11px; padding: 6px 10px; background: rgba(56,189,248,0.08); border-radius: 6px; border: 1px dashed var(--border-hairline); margin-bottom: 12px; display: flex; justify-content: space-between;">
           <span>⬅️ <b>反向反链</b> (${inbounds.length})</span>
@@ -11779,6 +11840,141 @@
           text: txtArea.value
         }));
         showToast("🎉 拼版结果已成功沉淀至今日日记！");
+      }
+    }
+
+    // ==========================================================
+    // 双向知识网络星轨拓扑全景视窗 (Radial Star Graph Explorer)
+    // ==========================================================
+    let currentGraphCenterId = "";
+    let currentGraphCenterTitle = "";
+    let currentGraphSvg = "";
+
+    function toggleGraphModal(blockId, title) {
+      const modal = document.getElementById("graph-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) {
+        if (blockId) {
+          currentGraphCenterId = blockId;
+          currentGraphCenterTitle = title || "";
+        }
+        loadRadialGraphData(currentGraphCenterId, currentGraphCenterTitle);
+      }
+    }
+
+    function closeGraphModalOnBg(e) {
+      if (e.target && e.target.id === "graph-modal") {
+        toggleGraphModal();
+      }
+    }
+
+    function loadRadialGraphData(blockId, title) {
+      const body = document.getElementById("graph-modal-body");
+      if (body) {
+        body.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;">正在生成双向知识网络星轨拓扑...</div>';
+      }
+      const stat = document.getElementById("graph-modal-status");
+      if (stat) stat.innerText = "正在穿透检索底层双向引用关系...";
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'getRadialGraphModal',
+          blockId: blockId || '',
+          title: title || ''
+        }));
+      } else {
+        setTimeout(() => {
+          if (window.onRadialGraphLoaded) {
+            window.onRadialGraphLoaded({
+              code: 0,
+              centerId: blockId || "mock_center",
+              centerTitle: title || "知识节点核心",
+              data: { InboundBacklinks: [{ BlockId: "in_1", DocTitle: "反链文档A" }], OutboundReferences: [{ BlockId: "out_1", DocTitle: "出链文档B" }], TotalLinks: 2 },
+              graphSvg: `<svg width="100%" viewBox="0 0 900 500" style="background:#0b1120;"><text x="450" y="250" fill="#6366f1" text-anchor="middle">知识星轨拓扑网络</text></svg>`
+            });
+          }
+        }, 150);
+      }
+    }
+
+    window.onRadialGraphLoaded = function(res) {
+      if (!res || !res.graphSvg) return;
+      currentGraphCenterId = res.centerId || "";
+      currentGraphCenterTitle = res.centerTitle || "";
+      currentGraphSvg = res.graphSvg;
+
+      const body = document.getElementById("graph-modal-body");
+      if (body) body.innerHTML = res.graphSvg;
+
+      const pill = document.getElementById("graph-modal-center-pill");
+      if (pill) pill.innerText = currentGraphCenterTitle || "核心节点";
+
+      const inSpan = document.getElementById("gm-in-count");
+      if (inSpan) inSpan.innerText = res.data ? res.data.InboundBacklinks.length : 0;
+
+      const outSpan = document.getElementById("gm-out-count");
+      if (outSpan) outSpan.innerText = res.data ? res.data.OutboundReferences.length : 0;
+
+      const totalSpan = document.getElementById("gm-total-links");
+      if (totalSpan) totalSpan.innerText = res.data ? res.data.TotalLinks : 0;
+
+      const stat = document.getElementById("graph-modal-status");
+      if (stat) stat.innerText = `已就绪 · 中心节点: 《${currentGraphCenterTitle}》`;
+    };
+
+    window.exploreRadialGraphNode = function(nodeBlockId, nodeDocTitle) {
+      if (!nodeBlockId) return;
+      showToast(`🌌 正在重构星轨漫游至: ${nodeDocTitle || nodeBlockId}`);
+      currentGraphCenterId = nodeBlockId;
+      currentGraphCenterTitle = nodeDocTitle || "";
+      loadRadialGraphData(nodeBlockId, nodeDocTitle);
+    };
+
+    function randomExploreGraphNode() {
+      showToast("🎲 正在随机打捞核心笔记漫游星轨...");
+      currentGraphCenterId = "";
+      currentGraphCenterTitle = "";
+      loadRadialGraphData("", "");
+    }
+
+    function openCurrentGraphNode() {
+      if (!currentGraphCenterId) {
+        showToast("暂无可打开的节点！");
+        return;
+      }
+      openBlockById(currentGraphCenterId);
+    }
+
+    function copyGraphSvgCode() {
+      if (!currentGraphSvg) {
+        showToast("暂无可复制的星轨图谱！");
+        return;
+      }
+      copyToClipboard(currentGraphSvg, "✓ 星轨拓扑矢量 SVG 源码已复制！");
+    }
+
+    function exportGraphSvgCard() {
+      if (!currentGraphSvg) {
+        showToast("暂无可导出的星轨图谱！");
+        return;
+      }
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'exportCardSvg',
+          text: `双向知识星轨图谱网络 · 核心节点《${currentGraphCenterTitle}》· 纯原生矢量拓扑`,
+          title: `思源外骨骼 · 知识星轨网络`,
+          author: "SiYuan Radial Graph"
+        }));
+      }
+    }
+
+    function handleGraphSearchKey(e) {
+      if (e.key === "Enter") {
+        const val = (e.target.value || "").trim();
+        if (!val) return;
+        showToast(`🔍 正在定位匹配星轨节点: ${val}`);
+        loadRadialGraphData("", val);
       }
     }
 

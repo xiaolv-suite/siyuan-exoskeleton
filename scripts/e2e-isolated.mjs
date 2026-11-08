@@ -3142,6 +3142,88 @@ async function main() {
                           webhookClipResp.markdown.includes("碎片对比矩阵");
   logStep("Step 7.152: 极速调用桥批量拼版接口 (POST /api/clip/merge) 断言", isWebhookClipOk, `拼版响应: ${JSON.stringify(webhookClipResp)}`);
 
+  // Step 7.153: Test Radial Star Graph Modal UI Template Integrity in panel.html
+  const hasGraphModal = panelContent.includes('id="graph-modal"') &&
+                        panelContent.includes('id="graph-modal-center-pill"') &&
+                        panelContent.includes('id="gm-in-count"') &&
+                        panelContent.includes('id="gm-out-count"') &&
+                        panelContent.includes('id="graph-modal-body"');
+  logStep("Step 7.153: 双向知识网络星轨拓扑全景视窗 (graph-modal) 模版架构断言", hasGraphModal, `星轨图谱模版完整性: ${hasGraphModal}`);
+
+  // Step 7.154: Test Topbar Graph Button & Intent Chip Linkage
+  const hasGraphTopLink = panelContent.includes('id="graph-btn"') &&
+                          panelContent.includes('toggleGraphModal()') &&
+                          panelContent.includes('<b>🌌</b> 星轨图谱');
+  logStep("Step 7.154: 顶栏 🌌 星轨图谱按钮与横向流式意图胶囊直达断言", hasGraphTopLink, `顶栏星轨图谱入口联动: ${hasGraphTopLink}`);
+
+  // Step 7.155: Test GraphVisualizer Wide Viewport & Concentric Orbit Ring Rendering in C# Backend
+  const graphWideScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $gvType = $asm.GetType('XiaoLv.Desktop.Core.GraphVisualizer');
+    $linkItemType = $asm.GetType('XiaoLv.Desktop.Core.LinkItem');
+
+    $inList = [System.Collections.Generic.List[object]]::new();
+    $item1 = [Activator]::CreateInstance($linkItemType);
+    $item1.BlockId = 'blk_in_1';
+    $item1.DocTitle = '知识前置文档';
+    $inList.Add($item1);
+
+    $outList = [System.Collections.Generic.List[object]]::new();
+    $item2 = [Activator]::CreateInstance($linkItemType);
+    $item2.BlockId = 'blk_out_1';
+    $item2.DocTitle = '核心产出文献';
+    $outList.Add($item2);
+
+    $mSvg = $gvType.GetMethod('RenderFullRadialGraphSvg', [System.Reflection.BindingFlags]'Public,Static');
+    $resSvg = $mSvg.Invoke($null, @('center_1', 'Transformer架构精要', $inList, $outList, 920, 500, $true));
+
+    $okWide = $resSvg.Contains('viewBox=\"0 0 920 500\"') -and
+              $resSvg.Contains('stroke-dasharray=\"4 4\"') -and
+              $resSvg.Contains('exploreRadialGraphNode') -and
+              $resSvg.Contains('Transformer架构精要');
+
+    Write-Output ($okWide.ToString());
+  `;
+  const graphWideRes = runPs(graphWideScript);
+  const isGraphWideOk = graphWideRes.includes("True");
+  logStep("Step 7.155: 星轨拓扑 920x500 宽幅同心星轨画幅与交互漫游节点生成断言", isGraphWideOk, `宽幅星轨渲染断言: ${graphWideRes.trim()}`);
+
+  // Step 7.156: Test Radial Star Graph Frontend Functions & Roaming Engine in panel.html
+  const hasGraphJs = panelContent.includes('function toggleGraphModal') &&
+                     panelContent.includes('function loadRadialGraphData') &&
+                     panelContent.includes('exploreRadialGraphNode') &&
+                     panelContent.includes('randomExploreGraphNode') &&
+                     panelContent.includes('copyGraphSvgCode') &&
+                     panelContent.includes('exportGraphSvgCard');
+  logStep("Step 7.156: 知识星轨无缝重新聚类漫游与 SVG 导出前端驱动逻辑断言", hasGraphJs, `星轨图谱驱动函数完整性: ${hasGraphJs}`);
+
+  // Step 7.157: Test ExternalApiBridge Radial Graph Webhook (GET /api/graph/radial)
+  let webhookGraphResp;
+  try {
+    const getResp = await fetch("http://127.0.0.1:43990/api/graph/radial?width=900&height=500");
+    const getJson = await getResp.json();
+    webhookGraphResp = {
+      code: getJson.code,
+      hasData: !!getJson.data,
+      hasCenterId: !!getJson.data?.centerId,
+      hasSvg: !!getJson.data?.svg && getJson.data.svg.includes("<svg")
+    };
+  } catch (err) {
+    webhookGraphResp = { error: err.message };
+  }
+  const isWebhookGraphOk = webhookGraphResp &&
+                           webhookGraphResp.code === 0 &&
+                           webhookGraphResp.hasData &&
+                           webhookGraphResp.hasCenterId &&
+                           webhookGraphResp.hasSvg;
+  logStep("Step 7.157: 极速调用桥双向星轨拓扑接口 (GET /api/graph/radial) 断言", isWebhookGraphOk, `星轨拓扑响应: ${JSON.stringify(webhookGraphResp)}`);
+
+  // Step 7.158: Test Search Result Inspector Deep Linkage to Graph Modal in panel.html
+  const hasInspectorGraphLink = panelContent.includes("toggleGraphModal('${data.TargetBlockId") &&
+                                panelContent.includes("🌌 展开全景大图谱");
+  logStep("Step 7.158: 搜索结果抽屉双向反链与全景大图谱深度联动断言", hasInspectorGraphLink, `抽屉图谱展开按钮完整性: ${hasInspectorGraphLink}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

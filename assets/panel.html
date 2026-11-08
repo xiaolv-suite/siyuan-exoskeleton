@@ -2677,6 +2677,92 @@
       color: var(--text-primary);
     }
 
+    /* Profile Hub Modal Styles */
+    .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    .profile-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      border-radius: 9px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+    .profile-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(99, 102, 241, 0.45);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .profile-card.ai-card:hover {
+      border-color: rgba(168, 85, 247, 0.5);
+    }
+    .profile-card.s3-card:hover {
+      border-color: rgba(56, 189, 248, 0.5);
+    }
+    .profile-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .profile-badge {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid var(--border-hairline);
+    }
+    .profile-badge.s3 {
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--cyber-sky);
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+    .profile-badge.ai {
+      background: rgba(168, 85, 247, 0.12);
+      color: var(--cyber-purple);
+      border-color: rgba(168, 85, 247, 0.3);
+    }
+    .profile-badge.webdav {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--emerald-mint);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .profile-card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+    .profile-params-box {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-hairline);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      font-family: var(--font-mono);
+      max-height: 90px;
+      overflow-y: auto;
+      word-break: break-all;
+    }
+    .profile-card-actions {
+      display: flex;
+      gap: 6px;
+      border-top: 1px solid var(--border-hairline);
+      padding-top: 8px;
+      justify-content: flex-end;
+    }
+
   </style>
 </head>
 <body>
@@ -2736,6 +2822,9 @@
       </button>
       <button class="theme-toggle-btn" id="launchpad-btn" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台 (🚀)" style="position: relative;">
         <span>🚀</span>
+      </button>
+      <button class="theme-toggle-btn" id="profile-btn" onclick="toggleProfileHubModal()" title="思源配置预设与大模型驱动中枢 (🧩)" style="position: relative;">
+        <span>🧩</span>
       </button>
       <button class="theme-toggle-btn" id="notice-btn" onclick="toggleNotificationCenterModal()" title="全景通知与生命事件中心 (🔔)" style="position: relative;">
         <span>🔔</span>
@@ -2802,9 +2891,9 @@
 			      <span class="intent-chip" onclick="insertPrefix('bm:')" title="输入 bm: 穿透检索 Edge/Chrome 本地浏览器书签与收藏夹"><b>🔖</b> 浏览器书签</span>
 				      <span class="intent-chip" onclick="insertPrefix('fav:')" title="输入 fav: 打开全景网站收藏中枢，跨浏览器统一秒搜、一键收录并沉淀至思源专属文档"><b>🌐</b> 网站收藏</span>
 					      <span class="intent-chip" onclick="insertPrefix('fold:')" title="输入 fold: 打开本地文件夹导航中枢，支持 #32770 对话框原位穿透与思源工程锚定"><b>📂</b> 文件夹导航</span>
-					      <span class="intent-chip" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台，大图标磁贴平铺与 1~9 盲打秒开"><b>🚀</b> 启动台</span>
-					      <span class="intent-chip" onclick="insertPrefix('cfg:')" title="输入 cfg: 查看与管理思源 S3 存储桶、AI 大模型与常用配置预设"><b>⚙️</b> 配置预设</span>
-					      <span class="intent-chip" onclick="insertPrefix('notice:')" title="输入 notice: 查看全景系统与思源应用通知事件流，支持一键沉淀日记"><b>📢</b> 通知历史</span>
+						      <span class="intent-chip" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台，大图标磁贴平铺与 1~9 盲打秒开"><b>🚀</b> 启动台</span>
+						      <span class="intent-chip" onclick="toggleProfileHubModal()" title="查看与管理思源 S3 存储桶、AI 大模型与常用配置预设 (大看板)"><b>⚙️</b> 配置预设</span>
+						      <span class="intent-chip" onclick="insertPrefix('notice:')" title="输入 notice: 查看全景系统与思源应用通知事件流，支持一键沉淀日记"><b>📢</b> 通知历史</span>
 					      <span class="intent-chip" onclick="insertPrefix('vault:')" title="输入 vault: 穿透检索外部 Markdown 知识库与本地目录"><b>🗄️</b> 外部库</span>
 	      <span class="intent-chip" onclick="insertPrefix('tab:')" title="输入 tab: 检索全库数据表格，支持排版美化与1键导出Excel"><b>📊</b> 表格透视</span>
 	      <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
@@ -3613,6 +3702,49 @@
       <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>交互指南</b>: 单击绿色/蓝色卫星节点可无缝重新聚类漫游 · 双击在思源大窗中原位打开 · 纯原生计算 0ms 渲染</span>
         <span id="graph-modal-status">星轨拓扑就绪</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 思源常用配置预设与大模型驱动中枢 (Profile Hub Modal) -->
+  <div class="timeline-modal-overlay" id="profile-hub-modal" onclick="closeProfileHubOnBg(event)">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 95%; max-width: 920px; max-height: 88vh;">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">⚙️</span>
+          <span style="font-weight: 700; font-size: 14px;">思源配置预设与大模型驱动中枢</span>
+          <span class="brand-pill" id="profile-modal-count">0 项预设</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="triggerProfileCaptureModal('s3')" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.4);" title="萃取当前思源实时生效的 S3 存储桶配置为独立预设">☁️ 萃取当前S3</button>
+          <button class="pref-btn" onclick="triggerProfileCaptureModal('ai')" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-purple); border-color: rgba(168, 85, 247, 0.4);" title="萃取当前思源实时生效的 AI 大模型驱动源为独立预设">🤖 萃取当前AI</button>
+          <button class="pref-btn" onclick="promptAddNewProfileModal()" style="font-size: 11px; padding: 3px 10px;" title="手动登记一个配置预设">+ 新建预设</button>
+          <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleProfileHubModal()">✕</button>
+        </div>
+      </div>
+
+      <!-- Filters & Search Toolbar -->
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div class="timeline-filters" id="ph-type-filters" style="display: flex; gap: 6px; overflow-x: auto; padding: 0;">
+          <button class="cat-btn active" id="ph-tab-all" onclick="switchProfileHubTab('all')">🌟 全部预设</button>
+          <button class="cat-btn" id="ph-tab-s3" onclick="switchProfileHubTab('s3')">☁️ S3 存储桶</button>
+          <button class="cat-btn" id="ph-tab-ai" onclick="switchProfileHubTab('ai')">🤖 AI 大模型</button>
+          <button class="cat-btn" id="ph-tab-webdav" onclick="switchProfileHubTab('webdav')">💾 WebDAV 同步</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; flex: 1; max-width: 260px;">
+          <input type="text" id="profile-search-input" placeholder="实时过滤配置、厂商、模型名..." oninput="handleProfileLiveFilter(this.value)" style="width: 100%; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-primary);" />
+        </div>
+      </div>
+
+      <!-- Body Grid Container -->
+      <div id="profile-modal-body" style="padding: 16px 18px; overflow-y: auto; max-height: 64vh;">
+        <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在加载配置预设...</div>
+      </div>
+
+      <!-- Bottom Footer -->
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+        <span>💡 <b>隐私安全铁律</b>: 所有凭据（AccessKey / SecretKey / ApiKey / 密码）均已执行安全脱敏屏蔽，随时复制标准参数蓝图</span>
+        <span id="profile-modal-stat">已加载 0 个预设</span>
       </div>
     </div>
   </div>
@@ -5614,7 +5746,7 @@
 
       // 呼出思源常用配置与模型预设中枢
       if (item.id === "syprofile") {
-        insertPrefix("cfg:");
+        toggleProfileHubModal();
         return;
       }
 
@@ -9364,7 +9496,26 @@
     window.onProfilesLoaded = function(res) {
       if (!res || !Array.isArray(res.data)) return;
       const profiles = res.data;
+      window._rawProfileList = profiles;
+      if (typeof updateProfileHubGrid === 'function') {
+        updateProfileHubGrid();
+      }
       const items = [];
+
+      items.push({
+        id: "action_open_profile_hub",
+        group: "search",
+        title: "⚙️ [预设大看板] 打开配置预设与大模型驱动中枢大盘",
+        desc: "展开 920px 宽幅预设大看板，S3 存储桶与 AI 大模型脱敏参数矩阵一目了然",
+        hotkey: "cfg:",
+        iconType: "terminal",
+        iconColor: "var(--indigo-light)",
+        badge: "预设大盘",
+        badgeCls: "badge-native",
+        action: () => {
+          toggleProfileHubModal();
+        }
+      });
 
       items.push({
         id: "action_capture_current_profile",
@@ -9487,14 +9638,24 @@
     window.onProfileDeleted = function(res) {
       if (res && res.success) {
         showToast("✓ 配置预设已成功移除！");
-        insertPrefix('cfg:');
+        const modal = document.getElementById("profile-hub-modal");
+        if (modal && modal.classList.contains("open")) {
+          requestProfileHubData();
+        } else {
+          insertPrefix('cfg:');
+        }
       }
     };
 
     window.onProfileSaved = function(res) {
       if (res && res.success) {
         showToast("🎉 配置预设已安全脱敏沉淀至思源专属文档与本地缓存！");
-        insertPrefix('cfg:');
+        const modal = document.getElementById("profile-hub-modal");
+        if (modal && modal.classList.contains("open")) {
+          requestProfileHubData();
+        } else {
+          insertPrefix('cfg:');
+        }
       }
     };
 
@@ -11975,6 +12136,195 @@
         if (!val) return;
         showToast(`🔍 正在定位匹配星轨节点: ${val}`);
         loadRadialGraphData("", val);
+      }
+    }
+
+    // ==========================================================
+    // 思源常用配置预设与大模型驱动中枢 (Profile Hub Modal)
+    // ==========================================================
+    let currentProfileHubTab = "all";
+    let currentProfileHubKeyword = "";
+    window._rawProfileList = [];
+
+    function toggleProfileHubModal() {
+      const modal = document.getElementById("profile-hub-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) {
+        requestProfileHubData();
+      }
+    }
+
+    function closeProfileHubOnBg(e) {
+      if (e.target && e.target.id === "profile-hub-modal") {
+        toggleProfileHubModal();
+      }
+    }
+
+    function requestProfileHubData() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'searchProfiles', keyword: '', type: 'all' }));
+      }
+    }
+
+    function switchProfileHubTab(tab) {
+      currentProfileHubTab = tab;
+      const tabs = ["all", "s3", "ai", "webdav"];
+      tabs.forEach(t => {
+        const btn = document.getElementById("ph-tab-" + t);
+        if (btn) btn.classList.toggle("active", t === tab);
+      });
+      renderProfileHubGrid();
+    }
+
+    function handleProfileLiveFilter(kw) {
+      currentProfileHubKeyword = (kw || "").trim().toLowerCase();
+      renderProfileHubGrid();
+    }
+
+    function updateProfileHubGrid() {
+      const modal = document.getElementById("profile-hub-modal");
+      if (modal && modal.classList.contains("open")) {
+        renderProfileHubGrid();
+      }
+    }
+
+    function renderProfileHubGrid() {
+      const body = document.getElementById("profile-modal-body");
+      if (!body) return;
+      const all = window._rawProfileList || [];
+
+      // Filter by tab
+      let list = all;
+      if (currentProfileHubTab !== "all") {
+        list = list.filter(p => p.Type && p.Type.toLowerCase() === currentProfileHubTab.toLowerCase());
+      }
+
+      // Filter by keyword
+      if (currentProfileHubKeyword) {
+        list = list.filter(p => {
+          const name = (p.Name || "").toLowerCase();
+          const desc = (p.Description || "").toLowerCase();
+          const type = (p.Type || "").toLowerCase();
+          const cfgStr = JSON.stringify(p.ConfigData || {}).toLowerCase();
+          return name.includes(currentProfileHubKeyword) ||
+                 desc.includes(currentProfileHubKeyword) ||
+                 type.includes(currentProfileHubKeyword) ||
+                 cfgStr.includes(currentProfileHubKeyword);
+        });
+      }
+
+      // Update counters
+      const countPill = document.getElementById("profile-modal-count");
+      if (countPill) countPill.innerText = `${list.length} 项预设`;
+
+      const statSpan = document.getElementById("profile-modal-stat");
+      if (statSpan) {
+        const s3Count = all.filter(x => x.Type === "s3").length;
+        const aiCount = all.filter(x => x.Type === "ai").length;
+        statSpan.innerText = `当前呈现 ${list.length} 项 (全库已存 ${s3Count} 个 S3 桶 · ${aiCount} 个大模型驱动)`;
+      }
+
+      if (list.length === 0) {
+        body.innerHTML = `
+          <div style="text-align: center; padding: 48px 24px; color: var(--text-muted); font-size: 13px;">
+            <div style="font-size: 32px; margin-bottom: 12px;">⚙️</div>
+            <div>暂无匹配的配置预设</div>
+            <div style="font-size: 11px; margin-top: 6px; color: var(--cyber-sky);">
+              点击上方【☁️ 萃取当前S3】或【🤖 萃取当前AI】可一键捕获当前思源正在生效的设置并脱敏入库！
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      let html = `<div class="profile-grid">`;
+      list.forEach(p => {
+        const typeClass = p.Type ? p.Type.toLowerCase() : "s3";
+        const icon = p.Type === "ai" ? "🤖" : (p.Type === "webdav" ? "💾" : "☁️");
+        const jsonStr = JSON.stringify(p.ConfigData || {}, null, 2);
+
+        // Extract key summary lines from config data
+        const paramLines = [];
+        if (p.ConfigData) {
+          for (const k of Object.keys(p.ConfigData)) {
+            const v = p.ConfigData[k];
+            if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+              paramLines.push(`<b>${escapeHtml(k)}</b>: ${escapeHtml(String(v))}`);
+            }
+          }
+        }
+        const paramsSummary = paramLines.slice(0, 4).join('<br/>');
+
+        html += `
+          <div class="profile-card ${typeClass}-card">
+            <div>
+              <div class="profile-card-header">
+                <span style="font-size: 20px;">${icon}</span>
+                <span class="profile-badge ${typeClass}">${p.Type ? p.Type.toUpperCase() : "S3"}</span>
+              </div>
+              <div class="profile-card-title">${escapeHtml(p.Name)}</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${escapeHtml(p.Description || '脱敏安全配置')}
+              </div>
+            </div>
+
+            <div class="profile-params-box" title="脱敏参数预览">
+              ${paramsSummary || '<span style="color:var(--text-muted);">暂无可见参数</span>'}
+            </div>
+
+            <div class="profile-card-actions" onclick="event.stopPropagation()">
+              <button class="launchpad-mini-btn primary" onclick="copyToClipboard('${escapeQuote(jsonStr)}', '已复制标准脱敏配置 JSON！')" title="复制标准 JSON 配置到剪贴板">📋 复制蓝图</button>
+              <button class="launchpad-mini-btn" onclick="dumpProfileToDaily('${escapeQuote(p.Name)}', '${escapeQuote(jsonStr)}')" title="将此预设参数块沉淀至今日日记">📥 存入日记</button>
+              <button class="launchpad-mini-btn danger" onclick="deleteProfileById('${escapeQuote(p.Id)}')" title="移除此预设">🗑️</button>
+            </div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      body.innerHTML = html;
+    }
+
+    function triggerProfileCaptureModal(type) {
+      const defaultName = type === "s3" ? "思源实时 S3 存储桶" : "思源实时 AI 大模型";
+      const name = prompt(`请输入萃取后的预设别名:`, defaultName);
+      if (!name) return;
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'captureCurrentProfile',
+          type: type.toLowerCase(),
+          name: name
+        }));
+      }
+    }
+
+    function promptAddNewProfileModal() {
+      const type = prompt("请输入预设类型 (s3 / ai / webdav):", "s3");
+      if (!type) return;
+      const name = prompt("请输入预设名称:", "");
+      if (!name) return;
+      const desc = prompt("请输入简要说明 (如 endpoint 或 model 名称):", "") || "";
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'saveProfile',
+          name: name,
+          type: type.toLowerCase(),
+          description: desc,
+          configData: { "name": name, "type": type, "created": new Date().toISOString() }
+        }));
+      }
+    }
+
+    function dumpProfileToDaily(name, jsonStr) {
+      const md = `### ⚙️ 《${name}》配置蓝图\n\n\`\`\`json\n${jsonStr}\n\`\`\`\n{: custom-type="profile-blueprint" }`;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'recordMiniInput',
+          text: md
+        }));
+        showToast("🎉 配置蓝图已成功沉淀至今日日记！");
       }
     }
 

@@ -3224,6 +3224,60 @@ async function main() {
                                 panelContent.includes("🌌 展开全景大图谱");
   logStep("Step 7.158: 搜索结果抽屉双向反链与全景大图谱深度联动断言", hasInspectorGraphLink, `抽屉图谱展开按钮完整性: ${hasInspectorGraphLink}`);
 
+  // Step 7.159: Test Profile Hub Modal UI Template Integrity in panel.html
+  const hasProfileModal = panelContent.includes('id="profile-hub-modal"') &&
+                          panelContent.includes('id="profile-modal-count"') &&
+                          panelContent.includes('id="ph-type-filters"') &&
+                          panelContent.includes('id="profile-modal-body"') &&
+                          panelContent.includes('id="profile-search-input"');
+  logStep("Step 7.159: 思源常用配置预设与大模型驱动中枢 (profile-hub-modal) 模版架构断言", hasProfileModal, `配置预设大模版完整性: ${hasProfileModal}`);
+
+  // Step 7.160: Test Topbar Profile Button & Intent Chip Linkage
+  const hasProfileTopLink = panelContent.includes('id="profile-btn"') &&
+                            panelContent.includes('toggleProfileHubModal()') &&
+                            panelContent.includes('toggleProfileHubModal()');
+  logStep("Step 7.160: 顶栏 🧩 配置预设按钮与横向流式意图胶囊直达断言", hasProfileTopLink, `顶栏预设中枢入口联动: ${hasProfileTopLink}`);
+
+  // Step 7.161: Test Profile Hub CSS Grid & Card Styles in panel.html
+  const hasProfileCss = panelContent.includes('.profile-grid') &&
+                        panelContent.includes('.profile-card') &&
+                        panelContent.includes('.profile-badge') &&
+                        panelContent.includes('.profile-params-box');
+  logStep("Step 7.161: 配置预设卡片自适应网格与脱敏参数视窗样式规范断言", hasProfileCss, `CSS 预设网格样式规范: ${hasProfileCss}`);
+
+  // Step 7.162: Test Profile Hub Frontend Functions in panel.html
+  const hasProfileJs = panelContent.includes('function toggleProfileHubModal') &&
+                       panelContent.includes('function switchProfileHubTab') &&
+                       panelContent.includes('function renderProfileHubGrid') &&
+                       panelContent.includes('triggerProfileCaptureModal') &&
+                       panelContent.includes('promptAddNewProfileModal') &&
+                       panelContent.includes('dumpProfileToDaily');
+  logStep("Step 7.162: 配置预设与大模型多维分类、萃取与日记沉淀驱动逻辑断言", hasProfileJs, `预设中枢驱动函数完整性: ${hasProfileJs}`);
+
+  // Step 7.163: Test Bento Card syprofile Linkage to Profile Hub Modal in panel.html
+  const hasSyProfileCardLink = panelContent.includes('if (item.id === "syprofile")') &&
+                               panelContent.includes('toggleProfileHubModal();');
+  logStep("Step 7.163: Bento 卡片 syprofile 一键滑出配置预设大看板断言", hasSyProfileCardLink, `Bento主卡片大视窗联动: ${hasSyProfileCardLink}`);
+
+  // Step 7.164: Test ExternalApiBridge Profile Webhook Full Extraction
+  let webhookProfileHubResp;
+  try {
+    const getResp = await fetch("http://127.0.0.1:43990/api/profile");
+    const getJson = await getResp.json();
+    webhookProfileHubResp = {
+      code: getJson.code,
+      count: getJson.count,
+      hasData: Array.isArray(getJson.data) && getJson.data.length > 0
+    };
+  } catch (err) {
+    webhookProfileHubResp = { error: err.message };
+  }
+  const isWebhookProfileHubOk = webhookProfileHubResp &&
+                             webhookProfileHubResp.code === 0 &&
+                             webhookProfileHubResp.count >= 1 &&
+                             webhookProfileHubResp.hasData;
+  logStep("Step 7.164: 极速调用桥配置预设全量检索 (GET /api/profile) 断言", isWebhookProfileHubOk, `预设总数: ${webhookProfileHubResp?.count}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

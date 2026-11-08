@@ -354,6 +354,14 @@
 - **思源双击定位与高保真导出**：双击在思源大窗中原位定位该节点，支持 1 键复制矢量 SVG 源码与生成高保真知识卡片长图；
 - **极速调用桥 Webhook 接口**：`GET /api/graph/radial?id=...&width=900&height=500` 支持外部工具与脚本即时获取结构化拓扑网络与 SVG 渲染。
 
+### 55. ★ 思源配置预设与大模型驱动中枢独立大看板 (`profile-hub-modal` · `cfg:` / 顶栏 `🧩`)
+- **920px 宽幅自适应预设大看板**：将 S3 存储桶与 AI 大模型配置从窄抽屉外显升维至独立卡片网格视窗；
+- **全方位多维分类切换**：`🌟 全部预设`、`☁️ S3 存储桶`、`🤖 AI 大模型`、`💾 WebDAV 同步`；
+- **脱敏参数矩阵视窗**：每个预设卡片直观呈现 Endpoint、Bucket、Region、BaseURL、ModelName、Timeout 等核心参数；
+- **严格安全脱敏铁律**：所有敏感凭据（`accessKey`、`secretKey`、`apiKey`、`password`）自动屏蔽为 `[SECURED_CREDENTIAL]`，随时 1 键复制脱敏参数蓝图或沉淀日记；
+- **一键实时萃取思源配置**：点击「☁️ 萃取当前S3」或「🤖 萃取当前AI」自动嗅探思源运行态中生效的配置并脱敏入库；
+- **极速调用桥 Webhook 接口**：`GET/POST /api/profile` 与 `GET /api/profile/capture` 为外部脚本与自动化工具提供配置参数服务。
+
 ---
 
 ## 三、 全局快捷键「六剑客」
@@ -490,7 +498,7 @@ pnpm e2e:isolated
 | **`fav:关键词`** | 网站收藏中枢 | 跨浏览器统一秒搜、自动剥离跟踪参数，回车秒开，沉淀《/网站导航》 |
 | **`fold:关键词`** | 文件夹穿透 | 本地工程目录秒搜，前台若为文件对话框(#32770)原位秒跳，物理健康自愈 |
 | **`pad:` / `launch:`** | 全景启动台 | 唤起 980px 大图标自适应网格 Launchpad，支持 1~9 盲打秒开 |
-| **`cfg:关键词`** | 配置预设中枢 | 脱敏管理与一键切换 S3 存储桶、AI 大模型驱动与 WebDAV 同步配置 |
+| **`cfg:` / `profile:`** | 配置预设大看板 | 唤起 920px 宽幅配置预设大看板，S3 存储桶与 AI 大模型脱敏参数矩阵一目了然 |
 | **`notice:关键词`** | 通知与事件流 | 全景通知历史与四级过滤，汇总思源弹窗与系统事件，1键沉淀日记 |
 | **`bm:关键词`** | 浏览器书签 | 0 依赖穿透检索 Edge/Chrome 本地书签与收藏夹，支持直贴与剪藏 |
 | **`vault:关键词`** | 外部知识库 | 免导入物理拷贝，流式穿透检索外部 Obsidian 库或本地 Markdown 目录 |
@@ -515,7 +523,7 @@ pnpm e2e:isolated
 pnpm e2e:isolated
 ```
 
-- **175 项核心能力断言 100% PASS**：覆盖冷启动、30秒粘滞防碎块、上下文环境注水、意图分流（待办/闪卡）、FSRS 评级闭环、原生块检索、双链认知雷达、健康体检、全库附件检索、3D PDF 断行自愈、6大平台去噪、Office/EPUB/XMind流式透视、音视频时间戳笔记、纯净代码提取、Quicker Webhook 回路、数据表格类型推导与AV映射、本地PDF页码锚点感知、CLI 调度器、异构笔记语法对齐(Obsidian/Logseq)、智能超链嵌入(Smart Paste URL)、变量命名法转换、双向反链与图谱雷达、全景待办视界与Checklist导出、浮墨漫游回顾、离线队列管理、本地浏览器书签穿透检索、学术文献国标著录(GB/T 7714 & APA)与BibTeX生成、桌面心流计时器与自动时序沉淀、剪贴板历史批量合并排版、悬空死链深度诊断、外部Markdown与CSV直投、多语言源码结构化入库、双链自动重定向自愈、独立HTML网页导出、Word批注逆向注入与回写、PPT演讲备注晚绑定监听、桌面边缘托放中枢智能路由、活便签智能粘贴管道、外部富文本图文无损复制(CF_HTML与Base64图片内嵌)、双击Ctrl极速呼出微控激活器、长文认知阅读字数与耗时智能预估、知识卡片SVG长图生成、多屏幕多DPI自愈吸附、外部Markdown知识库镜像透视、知识库隐私敏感脱敏(PrivacySanitizer)、全库52周时序热力图(HabitHeatmapGenerator)、双向知识网络星轨拓扑图谱(GraphVisualizer)、全景网站收藏中枢(WebBookmarkHub)、本地文件夹收藏与#32770对话框秒跳穿透(FolderBookmarkHub)、底栏番茄钟生态感知(DockTomatoBridge)、Actionable PKM任务专注结绳闭环、思源脱敏配置预设管理(SiYuanProfileHub)、全景通知事件流与15s去重(OmniNotificationHub)、全景待办四象限大看板(tasks-kanban-modal)、52周年度热力大画廊(heatmap-gallery-modal)、通知中心独立视窗(notification-center-modal)、全景网站与工程文件夹大图标启动台(launchpad-modal)、剪贴板多选碎片拼版工作台(clip-studio-modal)、双向知识网络星轨拓扑全景大视窗(graph-modal)及断网离线队列回写；
+- **181 项核心能力断言 100% PASS**：覆盖冷启动、30秒粘滞防碎块、上下文环境注水、意图分流（待办/闪卡）、FSRS 评级闭环、原生块检索、双链认知雷达、健康体检、全库附件检索、3D PDF 断行自愈、6大平台去噪、Office/EPUB/XMind流式透视、音视频时间戳笔记、纯净代码提取、Quicker Webhook 回路、数据表格类型推导与AV映射、本地PDF页码锚点感知、CLI 调度器、异构笔记语法对齐(Obsidian/Logseq)、智能超链嵌入(Smart Paste URL)、变量命名法转换、双向反链与图谱雷达、全景待办视界与Checklist导出、浮墨漫游回顾、离线队列管理、本地浏览器书签穿透检索、学术文献国标著录(GB/T 7714 & APA)与BibTeX生成、桌面心流计时器与自动时序沉淀、剪贴板历史批量合并排版、悬空死链深度诊断、外部Markdown与CSV直投、多语言源码结构化入库、双链自动重定向自愈、独立HTML网页导出、Word批注逆向注入与回写、PPT演讲备注晚绑定监听、桌面边缘托放中枢智能路由、活便签智能粘贴管道、外部富文本图文无损复制(CF_HTML与Base64图片内嵌)、双击Ctrl极速呼出微控激活器、长文认知阅读字数与耗时智能预估、知识卡片SVG长图生成、多屏幕多DPI自愈吸附、外部Markdown知识库镜像透视、知识库隐私敏感脱敏(PrivacySanitizer)、全库52周时序热力图(HabitHeatmapGenerator)、双向知识网络星轨拓扑图谱(GraphVisualizer)、全景网站收藏中枢(WebBookmarkHub)、本地文件夹收藏与#32770对话框秒跳穿透(FolderBookmarkHub)、底栏番茄钟生态感知(DockTomatoBridge)、Actionable PKM任务专注结绳闭环、思源脱敏配置预设管理(SiYuanProfileHub)、全景通知事件流与15s去重(OmniNotificationHub)、全景待办四象限大看板(tasks-kanban-modal)、52周年度热力大画廊(heatmap-gallery-modal)、通知中心独立视窗(notification-center-modal)、全景网站与工程文件夹大图标启动台(launchpad-modal)、剪贴板多选碎片拼版工作台(clip-studio-modal)、双向知识网络星轨拓扑全景大视窗(graph-modal)、思源常用配置预设与大模型驱动中枢(profile-hub-modal)及断网离线队列回写；
 - **真实守护进程保护**：测试全程在独立沙箱与避让端口执行，自动化完成后即刻无感恢复生产版守护进程。
 
 ---

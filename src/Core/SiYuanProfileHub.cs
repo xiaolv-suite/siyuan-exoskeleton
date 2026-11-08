@@ -286,7 +286,7 @@ namespace XiaoLv.Desktop.Core
             foreach (var it in pool)
             {
                 if (it == null) continue;
-                if (!string.IsNullOrEmpty(typeFilter) && !it.Type.Equals(typeFilter, StringComparison.OrdinalIgnoreCase)) continue;
+                if (!string.IsNullOrEmpty(typeFilter) && !typeFilter.Equals("all", StringComparison.OrdinalIgnoreCase) && !it.Type.Equals(typeFilter, StringComparison.OrdinalIgnoreCase)) continue;
 
                 if (string.IsNullOrEmpty(cleanKw))
                 {

@@ -1429,6 +1429,68 @@ async function main() {
   const isCliOk = cliRes.includes("True|True|True|True");
   logStep("Step 7.60: 命令行 CLI 极速调度器 (-todo / -card / -panel / -status) 路由穿透断言", isCliOk, `CLI调度断言: ${cliRes.trim()}`);
 
+  // Step 7.61: Test HarmonizeMarkdownSyntax (Obsidian Callout/Frontmatter) & Academic Citation (DOI/arXiv)
+  const syntaxScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $tc = $asm.GetType('XiaoLv.Desktop.Core.TextCleaner');
+
+    $calloutText = '> [!TIP] 核心架构结论' + [Environment]::NewLine + '> 这是正文细节';
+    $mHarmonize = $tc.GetMethod('HarmonizeMarkdownSyntax', [System.Reflection.BindingFlags]'Public,Static');
+    $resCallout = $mHarmonize.Invoke($null, @($calloutText));
+    $okCallout = $resCallout.Contains('> 💡 **TIP**: 核心架构结论');
+
+    $fmText = '---' + [Environment]::NewLine + 'title: 架构复盘' + [Environment]::NewLine + 'tags: [ai, math]' + [Environment]::NewLine + '---' + [Environment]::NewLine + '正文结论';
+    $resFm = $mHarmonize.Invoke($null, @($fmText));
+    $okFm = $resFm.Contains('### 📑 《架构复盘》') -and $resFm.Contains('> 🏷️ #ai #math') -and $resFm.Contains('正文结论');
+
+    $mCite = $tc.GetMethod('TryExtractAcademicCitation', [System.Reflection.BindingFlags]'Public,Static');
+    $citeCard = '';
+    $citeArgs = @('arXiv:1706.03762', $citeCard);
+    $okArxiv = $mCite.Invoke($null, $citeArgs);
+
+    Write-Output ($okCallout.ToString() + '|' + $okFm.ToString() + '|' + $okArxiv.ToString());
+  `;
+  const syntaxRes = runPs(syntaxScript);
+  const isSyntaxOk = syntaxRes.includes("True|True|True");
+  logStep("Step 7.61: 异构笔记语法对齐(Obsidian Callout/Frontmatter)与学术DOI/arXiv嗅探断言", isSyntaxOk, `语法对齐断言: ${syntaxRes.trim()}`);
+
+  // Step 7.62: Test Smart Paste URL & Link Ingestion (TextCleaner.PurifyAndResolveUrlLink)
+  const urlLinkScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $tc = $asm.GetType('XiaoLv.Desktop.Core.TextCleaner');
+    $mLink = $tc.GetMethod('PurifyAndResolveUrlLink', [System.Reflection.BindingFlags]'Public,Static');
+
+    $rawUrl = 'https://arxiv.org/abs/1706.03762?utm_source=twitter&utm_medium=social';
+    $resLink = $mLink.Invoke($null, @($rawUrl, 'Transformer架构'));
+    $okLink = ($resLink -eq '[Transformer架构](https://arxiv.org/abs/1706.03762)');
+    Write-Output ($okLink.ToString());
+  `;
+  const urlLinkRes = runPs(urlLinkScript);
+  const isUrlLinkOk = urlLinkRes.includes("True");
+  logStep("Step 7.62: 智能超链与裸链标题自愈 (Smart Paste URL) 断言", isUrlLinkOk, `超链自愈断言: ${urlLinkRes.trim()}`);
+
+  // Step 7.63: Test NamingCaseConverter (camel ➔ snake ➔ kebab ➔ UPPER ➔ Pascal ➔ camel)
+  const namingScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $nc = $asm.GetType('XiaoLv.Desktop.Core.NamingCaseConverter');
+    $mCycle = $nc.GetMethod('CycleNext', [System.Reflection.BindingFlags]'Public,Static');
+
+    $s1 = $mCycle.Invoke($null, @('userAccountId'));
+    $s2 = $mCycle.Invoke($null, @($s1));
+    $s3 = $mCycle.Invoke($null, @($s2));
+    $s4 = $mCycle.Invoke($null, @($s3));
+    $s5 = $mCycle.Invoke($null, @($s4));
+
+    $okCycle = ($s1 -eq 'user_account_id') -and ($s2 -eq 'user-account-id') -and ($s3 -eq 'USER_ACCOUNT_ID') -and ($s4 -eq 'UserAccountId') -and ($s5 -eq 'userAccountId');
+    Write-Output ($okCycle.ToString() + '|' + $s1 + '|' + $s2 + '|' + $s3 + '|' + $s4 + '|' + $s5);
+  `;
+  const namingRes = runPs(namingScript);
+  const isNamingOk = namingRes.includes("True");
+  logStep("Step 7.63: 开发者变量命名法循环转换 (NamingCaseConverter) 断言", isNamingOk, `命名法轮转断言: ${namingRes.trim()}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

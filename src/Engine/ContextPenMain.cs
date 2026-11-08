@@ -400,6 +400,38 @@ public static class ContextPenMain
             SafeContext.Set(context, "通知反馈", "📌 已将划选内容钉在桌面！");
             return;
         }
+
+        // 分支 case: 变量命名法循环切换 (camelCase / snake_case / kebab-case / UPPER_CASE / PascalCase)
+        if (op == "case" || op == "naming")
+        {
+            string cycled = XiaoLv.Desktop.Core.NamingCaseConverter.CycleNext(text);
+            if (!string.IsNullOrEmpty(cycled))
+            {
+                IntPtr fg = IntPtr.Zero;
+                XiaoLv.Desktop.Core.NativeClipboard.PasteTextAtCaret(fg, cycled);
+                XiaoLv.Desktop.Core.SoundPlayerHelper.PlayFeedback();
+                SafeContext.Set(context, "是否成功", true);
+                SafeContext.Set(context, "需要通知", true);
+                SafeContext.Set(context, "通知反馈", "✓ 命名法已切换为: " + cycled);
+                return;
+            }
+        }
+
+        // 分支 pangu: 快速盘古中英空格排版
+        if (op == "pangu")
+        {
+            string panguText = XiaoLv.Desktop.Core.TextCleaner.FormatPanguSpacing(text);
+            if (!string.IsNullOrEmpty(panguText))
+            {
+                IntPtr fg = IntPtr.Zero;
+                XiaoLv.Desktop.Core.NativeClipboard.PasteTextAtCaret(fg, panguText);
+                XiaoLv.Desktop.Core.SoundPlayerHelper.PlayFeedback();
+                SafeContext.Set(context, "是否成功", true);
+                SafeContext.Set(context, "需要通知", true);
+                SafeContext.Set(context, "通知反馈", "✓ 已完成盘古中英排版自动补空！");
+                return;
+            }
+        }
     }
 
     private static string BuildCapsuleHtml(string preview)

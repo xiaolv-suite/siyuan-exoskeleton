@@ -2574,7 +2574,8 @@
       <span class="intent-chip" onclick="insertPrefix('ws:')" title="输入 ws: 管理工作现场快照与微软虚拟桌面全景联动"><b>🏢</b> 现场快照</span>
       <span class="intent-chip" onclick="insertPrefix('voice:')" title="输入 voice: 呼出语音速记微舱与口语去噪自愈"><b>🎙️</b> 语音速记</span>
       <span class="intent-chip" onclick="insertPrefix('trash:')" title="输入 trash: 查看思源文档回收站、误删笔记与历史快照打捞"><b>🗑️</b> 回收站</span>
-      <span class="intent-chip" onclick="toggleTodayTimeline()" title="无需切入思源，0ms 滑出今日日记记录的全部灵感、待办与笔记"><b>📅</b> 今日时间轴</span>
+	      <span class="intent-chip" onclick="toggleTodayTimeline()" title="无需切入思源，0ms 滑出今日日记记录的全部灵感、待办与笔记"><b>📅</b> 今日时间轴</span>
+	      <span class="intent-chip" onclick="triggerFlashback()" title="输入 rand: 随机漫游一条历史重点笔记或那年今日"><b>🎲</b> 漫游回顾</span>
       <span class="chip-divider"></span>
       <span class="intent-chip" style="opacity: 0.75; cursor: pointer;" onclick="toggleCheatsheet()" title="查看完整快捷键心流"><b>Alt+1~8</b> 官方直达</span>
     </div>
@@ -4144,6 +4145,12 @@
           filteredItems = [];
           renderItems();
         }
+        return;
+      }
+
+      // rand: 或 flash: 模式：浮墨漫游回顾与那年今日灵感唤醒
+      if (q.startsWith("rand:") || q.startsWith("rand：") || q.startsWith("flash:") || q.startsWith("flash：") || q === "rand" || q === "flash") {
+        triggerFlashback();
         return;
       }
 
@@ -7691,6 +7698,66 @@
       if (window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({ op: 'quickNote', text: markdown }));
         showToast("✓ 表格已追加至今日日记！");
+      }
+    }
+
+    function triggerFlashback() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'getFlashbackBlock' }));
+      }
+    }
+
+    window.onFlashbackLoaded = function(res) {
+      if (!res || !res.data) {
+        showToast("⚠️ 未能打捞到合适的历史回顾笔记");
+        return;
+      }
+      const item = res.data;
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">${item.IsAnniversary ? '🌟 那年今日回顾' : '🎲 浮墨漫游回顾'}</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${escapeHtml(item.TimeAgoDescription || '回顾')}</span>
+          </div>
+          <div class="inspector-doc-title">📑 来源文档: 《${escapeHtml(item.DocTitle)}》</div>
+        </div>
+        <div class="inspector-body" style="padding: 14px; max-height: 420px; overflow-y: auto;">
+          <div style="font-size: 11px; padding: 8px 12px; background: rgba(245,158,11,0.08); border-radius: 6px; border: 1px dashed rgba(245,158,11,0.3); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <span>⏱️ <b>记录时间</b>: <code>${escapeHtml(item.CreatedTime || '')}</code></span>
+            <span style="color: #fbbf24; font-weight: 700;">${escapeHtml(item.TimeAgoDescription || '')}</span>
+          </div>
+          <div style="padding: 14px; background: rgba(0,0,0,0.28); border-left: 3px solid #f59e0b; border-radius: 6px; font-size: 13px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap;">${escapeHtml(item.Content)}</div>
+          <div style="margin-top: 14px;">
+            <input type="text" id="flashback-thought-input" class="search-input" style="height: 32px; width: 100%; font-size: 12px; padding: 0 10px; border-radius: 6px;" placeholder="在此输入重温思考，按回车原位追加..." onkeydown="if(event.key==='Enter') submitFlashbackThought('${item.BlockId}')" />
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="submitFlashbackThought('${item.BlockId}')" title="将输入思考原位追加至该历史块下方">⚡ 续写补充</button>
+            <button class="inspector-dock-btn" onclick="triggerFlashback()" style="color: var(--amber-agent); border-color: rgba(245,158,11,0.4);" title="随机再换一条历史回顾">🎲 换一条</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(item.Content)}', '已复制回顾内容！')">📋 复制内容</button>
+            <button class="inspector-dock-btn" onclick="openBlockById('${item.BlockId}')" title="在思源大窗中原位定位跳转该块">🌐 思源中定位</button>
+          </div>
+        </div>
+      `;
+    };
+
+    function submitFlashbackThought(blockId) {
+      const el = document.getElementById("flashback-thought-input");
+      if (!el || !el.value.trim()) return;
+      const thought = el.value.trim();
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'appendFlashbackThought',
+          blockId: blockId,
+          thought: thought
+        }));
+        el.value = "";
+        showToast("✓ 重温思考已成功追加至该灵感块！");
       }
     }
 

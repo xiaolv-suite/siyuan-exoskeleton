@@ -802,9 +802,175 @@ namespace XiaoLv.Desktop.Core
             return fragment.Trim();
         }
 
-        private static bool IsCjkChar(char c)
-        {
-            return (c >= 0x4E00 && c <= 0x9FA5) || (c >= 0x3000 && c <= 0x303F) || (c >= 0xFF00 && c <= 0xFFEF);
-        }
-    }
-}
+	        /// <summary>
+	        /// 异构笔记语法智能对齐与转译引擎 (Obsidian Callout / Frontmatter / Logseq 语法对齐)
+	        /// 使得来自 Obsidian、Notion 或 Logseq 的 Markdown 文本无感融入思源原生块标准
+	        /// </summary>
+	        public static string HarmonizeMarkdownSyntax(string text)
+	        {
+	            if (string.IsNullOrEmpty(text)) return "";
+
+	            // 1. Obsidian Callout 语法转译为思源原生强调引用块
+	            // 例如 > [!NOTE] 提示内容 -> > 📌 **NOTE**: 提示内容
+	            text = Regex.Replace(text, @"^>\s*\[!([a-zA-Z]+)\](?:[ \t]+([^\r\n]*))?", new MatchEvaluator(m =>
+	            {
+	                string kind = m.Groups[1].Value.ToLowerInvariant();
+	                string customTitle = m.Groups[2].Success ? m.Groups[2].Value.Trim() : "";
+
+	                string icon = "📌";
+	                string label = kind.ToUpperInvariant();
+
+	                switch (kind)
+	                {
+	                    case "note": icon = "📌"; break;
+	                    case "tip":
+	                    case "hint": icon = "💡"; label = "TIP"; break;
+	                    case "warning":
+	                    case "caution":
+	                    case "attention": icon = "⚠️"; label = "WARNING"; break;
+	                    case "info": icon = "ℹ️"; label = "INFO"; break;
+	                    case "danger":
+	                    case "error": icon = "❌"; label = "ERROR"; break;
+	                    case "success":
+	                    case "check":
+	                    case "done": icon = "✅"; label = "SUCCESS"; break;
+	                    case "question":
+	                    case "help":
+	                    case "faq": icon = "❓"; label = "FAQ"; break;
+	                    case "quote":
+	                    case "cite": icon = "💬"; label = "QUOTE"; break;
+	                    case "bug": icon = "🐛"; label = "BUG"; break;
+	                    case "example": icon = "📋"; label = "EXAMPLE"; break;
+	                    default: icon = "📌"; break;
+	                }
+
+	                if (!string.IsNullOrEmpty(customTitle))
+	                {
+	                    return string.Format("> {0} **{1}**: {2}", icon, label, customTitle);
+	                }
+	                return string.Format("> {0} **{1}**", icon, label);
+	            }), RegexOptions.Multiline);
+
+	            // 2. Obsidian / Jekyll YAML Frontmatter 转译为思源标题与标签
+	            var fmMatch = Regex.Match(text, @"^---\r?\n([\s\S]*?)\r?\n---\r?\n");
+	            if (fmMatch.Success)
+	            {
+	                string fmContent = fmMatch.Groups[1].Value;
+	                string restText = text.Substring(fmMatch.Length);
+
+	                string docTitle = "";
+	                var tags = new List<string>();
+
+	                var titleM = Regex.Match(fmContent, @"^title:\s*(.+)$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+	                if (titleM.Success) docTitle = titleM.Groups[1].Value.Trim().Trim('"', '\'');
+
+	                // 提取 tags: [a, b] 或列表
+	                var tagArrM = Regex.Match(fmContent, @"^tags:\s*\[([^\]]*)\]", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+	                if (tagArrM.Success)
+	                {
+	                    foreach (var rawTag in tagArrM.Groups[1].Value.Split(','))
+	                    {
+	                        string cleanTag = rawTag.Trim().Trim('"', '\'');
+	                        if (!string.IsNullOrEmpty(cleanTag)) tags.Add("#" + cleanTag);
+	                    }
+	                }
+	                else
+	                {
+	                    var tagLinesM = Regex.Matches(fmContent, @"^tags:\s*\r?\n((?:\s*-\s*.+\r?\n)+)", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+	                    if (tagLinesM.Count > 0)
+	                    {
+	                        var lines = tagLinesM[0].Groups[1].Value.Split('\n');
+	                        foreach (var l in lines)
+	                        {
+	                            var item = Regex.Replace(l.Trim(), @"^-\s*", "").Trim().Trim('"', '\'');
+	                            if (!string.IsNullOrEmpty(item)) tags.Add("#" + item);
+	                        }
+	                    }
+	                }
+
+	                var sb = new StringBuilder();
+	                if (!string.IsNullOrEmpty(docTitle))
+	                {
+	                    sb.AppendFormat("### 📑 《{0}》\n", docTitle);
+	                }
+	                if (tags.Count > 0)
+	                {
+	                    sb.AppendFormat("> 🏷️ {0}\n\n", string.Join(" ", tags));
+	                }
+	                sb.Append(restText);
+	                text = sb.ToString();
+	            }
+
+	            // 3. Logseq 挖空 Cloze 转为高亮 ==text==
+	            text = Regex.Replace(text, @"\{\{cloze\s+([^\}]+)\}\}", "==$1==");
+
+	            return text.Trim();
+	        }
+
+	        /// <summary>
+	        /// 智能嗅探学术文献标识符 (DOI 与 arXiv) 并生成标准思源文献卡片
+	        /// </summary>
+	        public static bool TryExtractAcademicCitation(string text, out string formattedCard)
+	        {
+	            formattedCard = "";
+	            if (string.IsNullOrEmpty(text)) return false;
+
+	            // 1. 嗅探 arXiv: 1706.03762 或 arXiv:2304.12345
+	            var mArxiv = Regex.Match(text, @"(?:arxiv[:\s/]+)?(\d{4}\.\d{4,5}(?:v\d+)?)", RegexOptions.IgnoreCase);
+	            if (mArxiv.Success)
+	            {
+	                string id = mArxiv.Groups[1].Value;
+	                var sb = new StringBuilder();
+	                sb.AppendLine("> 📚 **学术论文预印本 (arXiv)**");
+	                sb.AppendFormat("> - 🔗 **arXiv 原文**: [arXiv:{0}](https://arxiv.org/abs/{0}) · [📥 PDF 直达](https://arxiv.org/pdf/{0}.pdf)\n", id);
+	                sb.AppendLine("> - ⏱️ **捕获时间**: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+	                sb.AppendLine("> - 🏷️ **标签**: #学术论文 #arXiv");
+	                sb.AppendFormat("{{: custom-type=\"literature-card\" custom-arxiv=\"{0}\" custom-clip-status=\"unread\" }}\n", id);
+	                formattedCard = sb.ToString();
+	                return true;
+	            }
+
+	            // 2. 嗅探标准 DOI: 10.1145/... 或 10.1038/...
+	            var mDoi = Regex.Match(text, @"\b(10\.\d{4,9}/[-._;()/:A-Za-z0-9]+)\b");
+	            if (mDoi.Success)
+	            {
+	                string doi = mDoi.Groups[1].Value.TrimEnd('.', ';', ')');
+	                var sb = new StringBuilder();
+	                sb.AppendLine("> 🎓 **学术文献引用 (DOI)**");
+	                sb.AppendFormat("> - 🔗 **DOI 解析出处**: [doi:{0}](https://doi.org/{0})\n", doi);
+	                sb.AppendLine("> - ⏱️ **捕获时间**: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+	                sb.AppendLine("> - 🏷️ **标签**: #学术文献 #DOI");
+	                sb.AppendFormat("{{: custom-type=\"literature-card\" custom-doi=\"{0}\" custom-clip-status=\"unread\" }}\n", doi.Replace("\"", "\\\""));
+	                formattedCard = sb.ToString();
+	                return true;
+	            }
+
+	            return false;
+	        }
+
+	        /// <summary>
+	        /// 智能超链与纯净网址自愈 (Smart Paste URL)
+	        /// 剥离营销参数并将裸 URL 转化为规范的 Markdown 超链接 [标题](纯净URL)
+	        /// </summary>
+	        public static string PurifyAndResolveUrlLink(string rawUrl, string fallbackTitle = "")
+	        {
+	            if (string.IsNullOrEmpty(rawUrl)) return "";
+	            string cleanUrl = PurifyUrl(rawUrl);
+
+	            string title = fallbackTitle;
+	            if (string.IsNullOrEmpty(title))
+	            {
+	                string site = DetectSiteName(cleanUrl);
+	                title = (site != "网页摘录") ? (site + "内容") : cleanUrl;
+	            }
+
+	            string safeTitle = title.Replace("[", "【").Replace("]", "】").Trim();
+	            return string.Format("[{0}]({1})", safeTitle, cleanUrl);
+	        }
+
+	        private static bool IsCjkChar(char c)
+	        {
+	            return (c >= 0x4E00 && c <= 0x9FA5) || (c >= 0x3000 && c <= 0x303F) || (c >= 0xFF00 && c <= 0xFFEF);
+	        }
+	    }
+	}

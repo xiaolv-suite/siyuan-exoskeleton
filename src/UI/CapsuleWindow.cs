@@ -281,6 +281,40 @@ namespace XiaoLv.Desktop.UI
                             }
                             catch { }
                         }
+
+                        // 智能超链嗅探 (Smart Paste URL): 嗅探剪贴板是否恰好存有有效网址
+                        try
+                        {
+                            string clipUrl = "";
+                            Dispatcher.Invoke(() =>
+                            {
+                                try
+                                {
+                                    if (System.Windows.Forms.Clipboard.ContainsText())
+                                    {
+                                        string clip = System.Windows.Forms.Clipboard.GetText().Trim();
+                                        if (clip.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || clip.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            clipUrl = clip;
+                                        }
+                                    }
+                                }
+                                catch { }
+                            });
+
+                            if (!string.IsNullOrEmpty(clipUrl))
+                            {
+                                string cleanUrl = TextCleaner.PurifyUrl(clipUrl);
+                                Dispatcher.Invoke(() =>
+                                {
+                                    if (_isPageLoaded && _webView != null && _webView.CoreWebView2 != null)
+                                    {
+                                        _webView.CoreWebView2.ExecuteScriptAsync(string.Format("if(window.onSmartUrlDetected) window.onSmartUrlDetected({{ url: '{0}', text: '{1}' }});", SafeContext.EscapeJson(cleanUrl), SafeContext.EscapeJson(term)));
+                                    }
+                                });
+                            }
+                        }
+                        catch { }
                     }
                     catch { }
                 });

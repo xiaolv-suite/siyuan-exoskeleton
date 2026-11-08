@@ -627,14 +627,55 @@ namespace XiaoLv.Desktop.UI
 	                            if (!string.IsNullOrEmpty(outPath) && OnNotificationRequested != null)
 	                            {
 	                                OnNotificationRequested("思源外骨骼 · 表格导出", "✓ 已成功将表格转为标准 Excel 工作簿并在外部秒开！");
-	                            }
-	                        }
-	                        catch { }
-	                    });
-	                    return;
-	                }
+		                            }
+		                        }
+		                        catch { }
+		                    });
+		                    return;
+		                }
 
-	                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
+		                // 3.51 浮墨漫游回顾与那年今日灵感唤醒 (rand: / flash: 语法)
+		                if (op.Equals("getFlashbackBlock", StringComparison.OrdinalIgnoreCase))
+		                {
+		                    ThreadPool.QueueUserWorkItem(async s =>
+		                    {
+		                        try
+		                        {
+		                            var item = await FlashbackManager.GetRandomFlashbackAsync();
+		                            Dispatcher.Invoke(() =>
+		                            {
+		                                if (_webView != null && _webView.CoreWebView2 != null)
+		                                {
+		                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onFlashbackLoaded) window.onFlashbackLoaded(" + JsonHelper.ToJson(new { code = 0, data = item }) + ");");
+		                                }
+		                            });
+		                        }
+		                        catch { }
+		                    });
+		                    return;
+		                }
+
+		                // 3.52 浮墨漫游追加续写思考
+		                if (op.Equals("appendFlashbackThought", StringComparison.OrdinalIgnoreCase))
+		                {
+		                    string targetBlockId = JsonHelper.GetString(msg, "blockId");
+		                    string thought = JsonHelper.GetString(msg, "thought");
+		                    ThreadPool.QueueUserWorkItem(async s =>
+		                    {
+		                        try
+		                        {
+		                            bool ok = await FlashbackManager.AppendThoughtAsync(targetBlockId, thought);
+		                            if (ok && OnNotificationRequested != null)
+		                            {
+		                                OnNotificationRequested("浮墨漫游回顾", "✓ 已成功将重温思考追加至该灵感块！");
+		                            }
+		                        }
+		                        catch { }
+		                    });
+		                    return;
+		                }
+
+		                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
                 if (op.Equals("searchDocs", StringComparison.OrdinalIgnoreCase))
                 {
                     string kw = JsonHelper.GetString(msg, "keyword");

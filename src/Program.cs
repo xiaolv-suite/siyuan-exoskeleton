@@ -313,7 +313,8 @@ namespace XiaoLv.Desktop
             _tray.OnSnippingOcrClicked += () => StartSnippingAndOcr();
             _tray.OnQuickCaptureClicked += () => PromptQuickCapture();
             _tray.OnFsrsReviewClicked += () => StartFsrsReview();
-            _tray.OnWebClipClicked += () => StartWebClip();
+	            _tray.OnWebClipClicked += () => StartWebClip();
+	            _tray.OnFlashbackClicked += () => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel("rand:"));
             _tray.OnManualSyncClicked += () =>
             {
                 ThreadPool.QueueUserWorkItem(async s =>

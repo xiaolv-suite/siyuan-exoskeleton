@@ -22,6 +22,7 @@ namespace XiaoLv.Desktop.Core
         public event Action OnWebClipClicked;
         public event Action OnManualSyncClicked;
         public event Action OnInteractiveToastClicked;
+        public event Action OnFlashbackClicked;
         public event Action OnCheckConnectionClicked;
         public event Action OnCheckUpdateClicked;
         public event Action OnExitClicked;
@@ -89,8 +90,11 @@ namespace XiaoLv.Desktop.Core
             var itemFsrs = new ToolStripMenuItem("🧠 FSRS 闪卡桌面微舱 (Alt+Shift+R)");
             itemFsrs.Click += (s, e) => { if (OnFsrsReviewClicked != null) OnFsrsReviewClicked(); };
 
-            var itemWebClip = new ToolStripMenuItem("🌐 网页免扩展极速剪藏卡 (Alt+Shift+G)");
-            itemWebClip.Click += (s, e) => { if (OnWebClipClicked != null) OnWebClipClicked(); };
+	            var itemWebClip = new ToolStripMenuItem("🌐 网页免扩展极速剪藏卡 (Alt+Shift+G)");
+	            itemWebClip.Click += (s, e) => { if (OnWebClipClicked != null) OnWebClipClicked(); };
+
+	            var itemFlashback = new ToolStripMenuItem("🎲 浮墨漫游回顾 (那年今日 / rand:)");
+	            itemFlashback.Click += (s, e) => { if (OnFlashbackClicked != null) OnFlashbackClicked(); };
 
             var itemSearchTool = new ToolStripMenuItem("🔍 唤起本地检索工具 (Listary / Everything)");
             itemSearchTool.Click += (s, e) =>

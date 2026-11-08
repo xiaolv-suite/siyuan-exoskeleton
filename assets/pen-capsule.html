@@ -392,6 +392,30 @@
       }
     }
 
+    let activeSmartUrl = null;
+    window.onSmartUrlDetected = function(info) {
+      if (!info || !info.url) return;
+      activeSmartUrl = info;
+      const tag = document.querySelector(".header-tag");
+      if (tag) {
+        tag.innerHTML = `🔗 嵌入超链: [${info.text || '链接'}] (Shift+↵)`;
+        tag.style.background = "rgba(14, 165, 233, 0.28)";
+        tag.style.borderColor = "#0ea5e9";
+        tag.style.color = "#38bdf8";
+        tag.style.cursor = "pointer";
+        tag.title = `点击或按 Shift+Enter 直接在光标处贴入超链: [${info.text}](${info.url})`;
+        tag.onclick = () => pasteSmartUrl();
+      }
+    };
+
+    function pasteSmartUrl() {
+      if (!activeSmartUrl) return;
+      const mdLink = `[${activeSmartUrl.text || '链接'}](${activeSmartUrl.url})`;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage({ op: 'pasteAtCaret', text: mdLink });
+      }
+    }
+
     function applyTheme(th) {
       let resolved = th;
       if (th === "auto") {
@@ -547,6 +571,15 @@
                 window.chrome.webview.postMessage(JSON.stringify({ op: 'openPanelWithQuery', query: 'xmind:' + p }));
               }
             };
+          } else if (/^[a-zA-Z0-9_\-\.]+$/.test(t) && t.length >= 3 && t.length <= 40 && (t.includes("_") || t.includes("-") || /[a-z][A-Z]/.test(t))) {
+            sBadge.innerText = "🔤 命名法 (点击切换)";
+            sBadge.className = "smart-badge badge-code";
+            sBadge.style.display = "inline-flex";
+            sBadge.title = "在 camelCase / snake_case / kebab-case 之间循环切换并在光标处回贴";
+            sBadge.onclick = (e) => {
+              e.stopPropagation();
+              choose("case");
+            };
           } else {
             sBadge.style.display = "none";
           }
@@ -609,9 +642,10 @@
 
     window.addEventListener("keydown", (e) => {
       const isInputFocused = (document.activeElement === document.getElementById("input-fallback"));
-      if ((e.shiftKey && e.key === "Enter") || (e.key === "Tab" && (activeRadarHit || activeContactHit))) {
+      if ((e.shiftKey && e.key === "Enter") || (e.key === "Tab" && (activeRadarHit || activeContactHit || activeSmartUrl))) {
         e.preventDefault();
-        if (activeContactHit) pasteContactRef();
+        if (activeSmartUrl) pasteSmartUrl();
+        else if (activeContactHit) pasteContactRef();
         else if (activeRadarHit) pasteRadarRef();
         return;
       }

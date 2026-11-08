@@ -399,6 +399,21 @@
   - `📋 复制大纲树` ➔ 导出标准缩进 Markdown 大纲文本（带 `((id))` 双链引用）；
 - **极速调用桥 Webhook 接口**：`GET /api/outline/tree?docId=...` 为外部自动化脚本与工具提供文档大纲小节树。
 
+### 59. ★ 全库数据表格与属性视图透视矩阵大工作台 (`table-grid-modal` · `tab:` / `table:` / 顶栏 `📊`)
+- **980px 宽幅多维表格透视矩阵**：将全库分散的对比表格、清单、统计数据与属性视图从单列抽屉升级为全景数据表格大盘；
+- **字段类型智能推导与状态徽章**：启发式自动识别各列数据类型并显示状态徽章（`🔢 数值`、`📅 日期`、`🔗 链接`、`📝 文本`、`☑️ 布尔`）；
+- **交互式数据治理与排序过滤**：
+  - 点击任一列头瞬时执行数值 / 文本排序（▲ 升序 / ▼ 降序）；
+  - 单行内容过滤搜索（在当前表格中毫秒级模糊筛选匹配行）；
+  - 双击单元格直接就地修改润色，支持一键在末尾追加新行；
+- **四重操作流水与零依赖 Excel 导出**：
+  - `📤 导出 Excel` ➔ 基于 `TableToAvConverter` 纯原生 OpenXML 逆向生成标准 Excel (.xlsx) 工作簿并在本地软件秒开；
+  - `📋 复制表格` ➔ 复制美化对齐的 GitHub 标准 Markdown 表格；
+  - `📑 复制 CSV` ➔ 复制规范纯文本 CSV 数据；
+  - `📥 存入日记` ➔ 一键追加至今日日记工作流水；
+  - `🔗 思源定位` ➔ 一键直达思源大窗中原位定位该表格块；
+- **极速调用桥 Webhook 接口**：`GET /api/table/list`、`GET /api/table/data` 与 `POST /api/table/export` 为外部自动化脚本提供全量数据表格服务。
+
 ---
 
 ## 三、 全局快捷键「六剑客」
@@ -531,7 +546,7 @@ pnpm e2e:isolated
 | **`c:关键词`** | 剪贴板历史 | 检索最近 30 条剪贴板条目，支持 `c:code`、`c:table` 等分类 |
 | **`c:merge`** / **`clip:`** | 剪贴板拼版台 | 唤起 980px 左右双栏拼版工作台大视窗，自由多选、调序与 7 套模板实时拼版直贴 |
 | **`pom:25 任务`** | 心流番茄钟 | 快速开启专注倒计时，到期自动生成时序记录写入今日日记 |
-| **`tab:关键词`** | 表格透视 | 检索全库表格与属性视图，支持字段类型推导、美化对齐与1键导出Excel |
+| **`tab:` / `table:`** | 表格矩阵透视大盘 | 唤起 980px 全库数据表格透视矩阵大工作台，列排序、类型推导、编辑与导出Excel |
 | **`fav:关键词`** | 网站收藏中枢 | 跨浏览器统一秒搜、自动剥离跟踪参数，回车秒开，沉淀《/网站导航》 |
 | **`fold:关键词`** | 文件夹穿透 | 本地工程目录秒搜，前台若为文件对话框(#32770)原位秒跳，物理健康自愈 |
 | **`pad:` / `launch:`** | 全景启动台 | 唤起 980px 大图标自适应网格 Launchpad，支持 1~9 盲打秒开 |
@@ -561,7 +576,7 @@ pnpm e2e:isolated
 pnpm e2e:isolated
 ```
 
-- **199 项核心能力断言 100% PASS**：覆盖冷启动、30秒粘滞防碎块、上下文环境注水、意图分流（待办/闪卡）、FSRS 评级闭环、原生块检索、双链认知雷达、健康体检、全库附件检索、3D PDF 断行自愈、6大平台去噪、Office/EPUB/XMind流式透视、音视频时间戳笔记、纯净代码提取、Quicker Webhook 回路、数据表格类型推导与AV映射、本地PDF页码锚点感知、CLI 调度器、异构笔记语法对齐(Obsidian/Logseq)、智能超链嵌入(Smart Paste URL)、变量命名法转换、双向反链与图谱雷达、全景待办视界与Checklist导出、浮墨漫游回顾、离线队列管理、本地浏览器书签穿透检索、学术文献国标著录(GB/T 7714 & APA)与BibTeX生成、桌面心流计时器与自动时序沉淀、剪贴板历史批量合并排版、悬空死链深度诊断、外部Markdown与CSV直投、多语言源码结构化入库、双链自动重定向自愈、独立HTML网页导出、Word批注逆向注入与回写、PPT演讲备注晚绑定监听、桌面边缘托放中枢智能路由、活便签智能粘贴管道、外部富文本图文无损复制(CF_HTML与Base64图片内嵌)、双击Ctrl极速呼出微控激活器、长文认知阅读字数与耗时智能预估、知识卡片SVG长图生成、多屏幕多DPI自愈吸附、外部Markdown知识库镜像透视、知识库隐私敏感脱敏(PrivacySanitizer)、全库52周时序热力图(HabitHeatmapGenerator)、双向知识网络星轨拓扑图谱(GraphVisualizer)、全景网站收藏中枢(WebBookmarkHub)、本地文件夹收藏与#32770对话框秒跳穿透(FolderBookmarkHub)、底栏番茄钟生态感知(DockTomatoBridge)、Actionable PKM任务专注结绳闭环、思源脱敏配置预设管理(SiYuanProfileHub)、全景通知事件流与15s去重(OmniNotificationHub)、全景待办四象限大看板(tasks-kanban-modal)、52周年度热力大画廊(heatmap-gallery-modal)、通知中心独立视窗(notification-center-modal)、全景网站与工程文件夹大图标启动台(launchpad-modal)、剪贴板多选碎片拼版工作台(clip-studio-modal)、双向知识网络星轨拓扑全景大视窗(graph-modal)、思源常用配置预设与大模型驱动中枢(profile-hub-modal)、系统全库综合体检与死链清道夫(system-doctor-modal)、外部知识库与Markdown目录镜像透视工作台(vault-mirror-modal)、全景大纲与交互思维导图独立大工作台(outline-mindmap-modal)及断网离线队列回写；
+- **205 项核心能力断言 100% PASS**：覆盖冷启动、30秒粘滞防碎块、上下文环境注水、意图分流（待办/闪卡）、FSRS 评级闭环、原生块检索、双链认知雷达、健康体检、全库附件检索、3D PDF 断行自愈、6大平台去噪、Office/EPUB/XMind流式透视、音视频时间戳笔记、纯净代码提取、Quicker Webhook 回路、数据表格类型推导与AV映射、本地PDF页码锚点感知、CLI 调度器、异构笔记语法对齐(Obsidian/Logseq)、智能超链嵌入(Smart Paste URL)、变量命名法转换、双向反链与图谱雷达、全景待办视界与Checklist导出、浮墨漫游回顾、离线队列管理、本地浏览器书签穿透检索、学术文献国标著录(GB/T 7714 & APA)与BibTeX生成、桌面心流计时器与自动时序沉淀、剪贴板历史批量合并排版、悬空死链深度诊断、外部Markdown与CSV直投、多语言源码结构化入库、双链自动重定向自愈、独立HTML网页导出、Word批注逆向注入与回写、PPT演讲备注晚绑定监听、桌面边缘托放中枢智能路由、活便签智能粘贴管道、外部富文本图文无损复制(CF_HTML与Base64图片内嵌)、双击Ctrl极速呼出微控激活器、长文认知阅读字数与耗时智能预估、知识卡片SVG长图生成、多屏幕多DPI自愈吸附、外部Markdown知识库镜像透视、知识库隐私敏感脱敏(PrivacySanitizer)、全库52周时序热力图(HabitHeatmapGenerator)、双向知识网络星轨拓扑图谱(GraphVisualizer)、全景网站收藏中枢(WebBookmarkHub)、本地文件夹收藏与#32770对话框秒跳穿透(FolderBookmarkHub)、底栏番茄钟生态感知(DockTomatoBridge)、Actionable PKM任务专注结绳闭环、思源脱敏配置预设管理(SiYuanProfileHub)、全景通知事件流与15s去重(OmniNotificationHub)、全景待办四象限大看板(tasks-kanban-modal)、52周年度热力大画廊(heatmap-gallery-modal)、通知中心独立视窗(notification-center-modal)、全景网站与工程文件夹大图标启动台(launchpad-modal)、剪贴板多选碎片拼版工作台(clip-studio-modal)、双向知识网络星轨拓扑全景大视窗(graph-modal)、思源常用配置预设与大模型驱动中枢(profile-hub-modal)、系统全库综合体检与死链清道夫(system-doctor-modal)、外部知识库与Markdown目录镜像透视工作台(vault-mirror-modal)、全景大纲与交互思维导图独立大工作台(outline-mindmap-modal)、全库数据表格与属性视图透视矩阵大工作台(table-grid-modal)及断网离线队列回写；
 - **真实守护进程保护**：测试全程在独立沙箱与避让端口执行，自动化完成后即刻无感恢复生产版守护进程。
 
 ---

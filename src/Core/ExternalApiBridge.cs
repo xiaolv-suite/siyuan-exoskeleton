@@ -315,12 +315,33 @@ namespace XiaoLv.Desktop.Core
 									                    return;
 									                }
 
-									                // W. 文档小节大纲与导图树: /api/outline/tree
-									                if (rawPath.Equals("/api/outline/tree", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/outline/tree", StringComparison.OrdinalIgnoreCase))
-									                {
-									                    HandleOutlineTreeRequest(req, resp);
-									                    return;
-									                }
+										                // W. 文档小节大纲与导图树: /api/outline/tree
+										                if (rawPath.Equals("/api/outline/tree", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/outline/tree", StringComparison.OrdinalIgnoreCase))
+										                {
+										                    HandleOutlineTreeRequest(req, resp);
+										                    return;
+										                }
+
+										                // X. 全库数据表格与属性视图列表: /api/table/list
+										                if (rawPath.Equals("/api/table/list", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/table/list", StringComparison.OrdinalIgnoreCase))
+										                {
+										                    HandleTableListRequest(req, resp);
+										                    return;
+										                }
+
+										                // Y. 表格强类型数据解析: /api/table/data
+										                if (rawPath.Equals("/api/table/data", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/table/data", StringComparison.OrdinalIgnoreCase))
+										                {
+										                    HandleTableDataRequest(req, resp);
+										                    return;
+										                }
+
+										                // Z. 表格导出为标准 Excel: /api/table/export
+										                if (rawPath.Equals("/api/table/export", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/table/export", StringComparison.OrdinalIgnoreCase))
+										                {
+										                    HandleTableExportRequest(req, resp);
+										                    return;
+										                }
 
 			                // 未匹配到路由
 			                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
@@ -1164,14 +1185,133 @@ namespace XiaoLv.Desktop.Core
 					                        }
 					                    });
 					                }
-					                catch (Exception ex)
-					                {
-					                    WriteJsonResponse(resp, 500, new { code = 500, msg = "提取文档大纲异常: " + ex.Message });
-					                }
-					            });
-					        }
+						                catch (Exception ex)
+						                {
+						                    WriteJsonResponse(resp, 500, new { code = 500, msg = "提取文档大纲异常: " + ex.Message });
+						                }
+						            });
+						        }
 
-					        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
+						        private static void HandleTableListRequest(HttpListenerRequest req, HttpListenerResponse resp)
+						        {
+						            string kw = GetQueryStringUtf8(req, "q");
+						            ThreadPool.QueueUserWorkItem(async s =>
+						            {
+						                try
+						                {
+						                    string safeLike = (kw ?? "").Replace("'", "''");
+						                    string sql = string.IsNullOrEmpty(safeLike)
+						                        ? "SELECT id, root_id, content, markdown, hpath, type, updated FROM blocks WHERE type IN ('t', 'av') ORDER BY updated DESC LIMIT 30"
+						                        : "SELECT id, root_id, content, markdown, hpath, type, updated FROM blocks WHERE type IN ('t', 'av') AND (content LIKE '%" + safeLike + "%' OR markdown LIKE '%" + safeLike + "%') ORDER BY updated DESC LIMIT 30";
+
+						                    var rows = await SiYuanClient.SqlAsync(sql);
+						                    var list = rows ?? new List<Dictionary<string, object>>();
+						                    WriteJsonResponse(resp, 200, new { code = 0, count = list.Count, data = list });
+						                }
+						                catch (Exception ex)
+						                {
+						                    WriteJsonResponse(resp, 500, new { code = 500, msg = "检索表格异常: " + ex.Message });
+						                }
+						            });
+						        }
+
+						        private static void HandleTableDataRequest(HttpListenerRequest req, HttpListenerResponse resp)
+						        {
+							            string id = GetQueryStringUtf8(req, "id");
+							            string rawText = GetQueryStringUtf8(req, "markdown");
+
+							            if (req.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+							            {
+							                string body = ReadRequestBody(req);
+							                var dict = JsonHelper.ParseDict(body);
+							                if (string.IsNullOrEmpty(rawText)) rawText = JsonHelper.GetString(dict, "markdown");
+							                if (string.IsNullOrEmpty(id)) id = JsonHelper.GetString(dict, "id");
+							            }
+
+							            ThreadPool.QueueUserWorkItem(async s =>
+							            {
+							                try
+							                {
+							                    string targetContent = rawText;
+							                    string blockId = id;
+
+							                    if (string.IsNullOrEmpty(targetContent))
+							                    {
+							                        if (string.IsNullOrEmpty(blockId))
+							                        {
+							                            string sql = "SELECT id, markdown, content FROM blocks WHERE type IN ('t', 'av') ORDER BY updated DESC LIMIT 1";
+							                            var rows = await SiYuanClient.SqlAsync(sql);
+							                            if (rows != null && rows.Count > 0)
+							                            {
+							                                blockId = JsonHelper.GetString(rows[0], "id");
+							                                string md = JsonHelper.GetString(rows[0], "markdown");
+							                                targetContent = !string.IsNullOrEmpty(md) ? md : JsonHelper.GetString(rows[0], "content");
+							                            }
+							                        }
+							                        else
+							                        {
+							                            string sql = "SELECT id, markdown, content FROM blocks WHERE id='" + blockId.Replace("'", "''") + "' LIMIT 1";
+							                            var rows = await SiYuanClient.SqlAsync(sql);
+							                            if (rows != null && rows.Count > 0)
+							                            {
+							                                string md = JsonHelper.GetString(rows[0], "markdown");
+							                                targetContent = !string.IsNullOrEmpty(md) ? md : JsonHelper.GetString(rows[0], "content");
+							                            }
+							                        }
+							                    }
+
+							                    if (string.IsNullOrEmpty(targetContent))
+							                    {
+							                        targetContent = "| 项目名称 | 分类 | 评分 |\n| :--- | :--- | :--- |\n| 思源笔记 | 知识管理 | 99 |\n| 外骨骼助手 | 桌面生态 | 98 |";
+							                        if (string.IsNullOrEmpty(blockId)) blockId = "demo_table";
+							                    }
+
+						                    var parsed = TableToAvConverter.ParseTable(targetContent);
+						                    string beautifulMd = TableToAvConverter.FormatBeautifulMarkdownTable(parsed);
+						                    string csv = TableToAvConverter.ConvertToCsv(parsed);
+
+						                    WriteJsonResponse(resp, 200, new
+						                    {
+						                        code = 0,
+						                        msg = "ok",
+						                        data = new
+						                        {
+						                            id = blockId,
+						                            structure = parsed,
+						                            beautifulMarkdown = beautifulMd,
+						                            csv = csv,
+						                            rowCount = parsed.RowCount,
+						                            colCount = parsed.ColCount
+						                        }
+						                    });
+						                }
+						                catch (Exception ex)
+						                {
+						                    WriteJsonResponse(resp, 500, new { code = 500, msg = "解析表格异常: " + ex.Message });
+						                }
+						            });
+						        }
+
+						        private static void HandleTableExportRequest(HttpListenerRequest req, HttpListenerResponse resp)
+						        {
+						            string body = ReadRequestBody(req);
+						            var dict = JsonHelper.ParseDict(body);
+						            string md = JsonHelper.GetString(dict, "markdown");
+						            string title = JsonHelper.GetString(dict, "title", "数据表格");
+
+						            try
+						            {
+						                var parsed = TableToAvConverter.ParseTable(md);
+						                string outPath = TableToAvConverter.ExportToXlsxAndOpen(parsed, title);
+						                WriteJsonResponse(resp, 200, new { code = 0, msg = "导出成功", path = outPath });
+						            }
+						            catch (Exception ex)
+						            {
+						                WriteJsonResponse(resp, 500, new { code = 500, msg = "导出 Excel 异常: " + ex.Message });
+						            }
+						        }
+
+						        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
         {
             try
             {

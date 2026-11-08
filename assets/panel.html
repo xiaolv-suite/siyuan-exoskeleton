@@ -2874,6 +2874,57 @@
     .omm-lvl-h4 { background: rgba(245, 158, 11, 0.18); color: var(--tech-amber); border: 1px solid rgba(245, 158, 11, 0.35); }
     .omm-lvl-h5, .omm-lvl-h6 { background: rgba(148, 163, 184, 0.12); color: var(--text-muted); border: 1px solid var(--border-hairline); }
 
+    /* Table Grid Modal Styles */
+    .tg-table-wrapper {
+      padding: 14px 18px;
+      overflow: auto;
+      max-height: 60vh;
+      background: var(--bg-surface);
+    }
+    .tg-data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      text-align: left;
+    }
+    .tg-data-table th {
+      position: sticky;
+      top: 0;
+      background: var(--key-badge-bg);
+      border-bottom: 2px solid var(--border-hairline);
+      padding: 8px 10px;
+      font-weight: 700;
+      color: var(--text-primary);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .tg-data-table th:hover {
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--cyber-sky);
+    }
+    .tg-data-table td {
+      border-bottom: 1px solid var(--border-hairline);
+      padding: 7px 10px;
+      color: var(--text-secondary);
+      outline: none;
+      word-break: break-all;
+    }
+    .tg-data-table tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+    .tg-col-type-tag {
+      font-size: 9.5px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      margin-left: 4px;
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+
   </style>
 </head>
 <body>
@@ -2946,6 +2997,9 @@
       <button class="theme-toggle-btn" id="mindmap-btn" onclick="toggleOutlineMindmapModal()" title="全景大纲与交互思维导图大工作台 (🗺️)" style="position: relative;">
         <span>🗺️</span>
       </button>
+      <button class="theme-toggle-btn" id="table-btn" onclick="toggleTableGridModal()" title="全库数据表格与属性视图透视矩阵 (📊)" style="position: relative;">
+        <span>📊</span>
+      </button>
       <button class="theme-toggle-btn" id="notice-btn" onclick="toggleNotificationCenterModal()" title="全景通知与生命事件中心 (🔔)" style="position: relative;">
         <span>🔔</span>
         <span class="badge-dot" id="notice-badge-dot" style="display: none; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--rose-agent);"></span>
@@ -3014,9 +3068,9 @@
 						      <span class="intent-chip" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台，大图标磁贴平铺与 1~9 盲打秒开"><b>🚀</b> 启动台</span>
 						      <span class="intent-chip" onclick="toggleProfileHubModal()" title="查看与管理思源 S3 存储桶、AI 大模型与常用配置预设 (大看板)"><b>⚙️</b> 配置预设</span>
 							      <span class="intent-chip" onclick="insertPrefix('notice:')" title="输入 notice: 查看全景系统与思源应用通知事件流，支持一键沉淀日记"><b>📢</b> 通知历史</span>
-						      <span class="intent-chip" onclick="toggleVaultMirrorModal()" title="外部知识库与 Markdown 目录镜像透视工作台 (大视窗)"><b>🗄️</b> 外部库</span>
-		      <span class="intent-chip" onclick="insertPrefix('tab:')" title="输入 tab: 检索全库数据表格，支持排版美化与1键导出Excel"><b>📊</b> 表格透视</span>
-	      <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
+							      <span class="intent-chip" onclick="toggleVaultMirrorModal()" title="外部知识库与 Markdown 目录镜像透视工作台 (大视窗)"><b>🗄️</b> 外部库</span>
+			      <span class="intent-chip" onclick="toggleTableGridModal()" title="全库数据表格与属性视图透视矩阵大工作台，支持排序、编辑与1键导出Excel"><b>📊</b> 表格透视</span>
+		      <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
       <span class="intent-chip" onclick="insertPrefix('c:')" title="输入 c: 实时查看并调用最近 30 条清洗剪贴板；支持 c:url/c:code/c:table/c:cite/c:math/c:img 分类筛选"><b>c:</b> 剪贴板</span>
       <span class="intent-chip" onclick="toggleClipStudioModal()" title="打开剪贴板多选碎片拼版工作台，自由选段、调序与实时模板化拼版"><b>📋</b> 拼版工作台</span>
@@ -4041,6 +4095,53 @@
     </div>
   </div>
 
+  <!-- 全库数据表格与属性视图透视矩阵大工作台 (Table & AV Studio Modal) -->
+  <div class="timeline-modal-overlay" id="table-grid-modal" onclick="closeTableGridOnBg(event)">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 95%; max-width: 980px; max-height: 88vh;">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">📊</span>
+          <span style="font-weight: 700; font-size: 14px;">全库数据表格与属性视图透视矩阵</span>
+          <span class="brand-pill" id="tg-modal-count">0 行 · 0 列</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="exportTableGridToXlsx()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="零依赖逆向生成标准 Excel .xlsx 文件并在外部秒开">📤 导出 Excel</button>
+          <button class="pref-btn" onclick="copyTableGridMarkdown()" style="font-size: 11px; padding: 3px 10px;" title="复制标准美化对齐的 Markdown 表格源码">📋 复制表格</button>
+          <button class="pref-btn" onclick="copyTableGridCsv()" style="font-size: 11px; padding: 3px 10px;" title="复制 CSV 纯文本数据">📑 复制 CSV</button>
+          <button class="pref-btn" onclick="dumpTableGridToDaily()" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.4);" title="将当前表格追加沉淀至今日日记">📥 存入日记</button>
+          <button class="pref-btn" onclick="openCurrentTableBlockInSiYuan()" style="font-size: 11px; padding: 3px 10px;" title="在思源大窗中原位定位打开此表格块">🔗 思源定位</button>
+          <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleTableGridModal()">✕</button>
+        </div>
+      </div>
+
+      <!-- Controls & Row Filter Toolbar -->
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 11px; color: var(--text-muted);">📑 切换表格:</span>
+          <select id="tg-table-picker" onchange="switchTableGridFromSelect(this.value)" style="max-width: 260px; font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-primary); outline: none;">
+            <option value="">加载全库表格中...</option>
+          </select>
+          <input type="text" id="tg-row-filter" placeholder="在当前表格中实时过滤行..." oninput="handleTableGridRowFilter(this.value)" style="width: 170px; font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-primary);" />
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button class="launchpad-mini-btn" onclick="addNewRowToTableGrid()" title="在表格末尾新增一条空白数据行">+ 新增行</button>
+          <button class="launchpad-mini-btn primary" onclick="formatTableGridAligned()" title="居中美化列宽对齐">* 规范排版</button>
+        </div>
+      </div>
+
+      <!-- Interactive Table Body Container -->
+      <div class="tg-table-wrapper" id="tg-table-container">
+        <div style="text-align: center; padding: 36px; color: var(--text-muted); font-size: 12px;">正在加载并解析全库数据表格...</div>
+      </div>
+
+      <!-- Bottom Footer -->
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+        <span>💡 <b>交互操作</b>: 点击表头可升降序排序 · 双击单元格直接就地修改 · 支持 1 键零依赖导出标准 Excel (.xlsx)</span>
+        <span id="tg-modal-status">表格矩阵已就绪</span>
+      </div>
+    </div>
+  </div>
+
   <!-- 离岸应急缓冲队列详情弹窗 -->
   <div class="help-modal-overlay" id="offline-queue-modal" onclick="closeOfflineQueueModal(event)">
     <div class="help-modal-box" onclick="event.stopPropagation()" style="max-width: 580px;">
@@ -4996,6 +5097,9 @@
       } else if (q.startsWith("syo") || q.startsWith("outline:") || q.startsWith("mindmap:") || q === "syo" || q === "outline") {
         banner.style.display = "flex";
         banner.innerHTML = `<div><span class="intent-tag">🗺️ 大纲与导图</span>文档 H1~H6 层级树与轻量交互思维导图大工作台</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开大纲导图视窗</span>`;
+      } else if (q.startsWith("tab:") || q.startsWith("tab：") || q.startsWith("table:") || q.startsWith("table：") || q === "tab" || q === "table") {
+        banner.style.display = "flex";
+        banner.innerHTML = `<div><span class="intent-tag">📊 表格透视矩阵</span>全库数据表格透视，列排序、单行过滤与1键导出Excel</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开表格矩阵视窗</span>`;
       } else {
         banner.style.display = "none";
       }
@@ -5240,6 +5344,12 @@
       // syo 或 outline: 或 mindmap: 模式：全景大纲与交互思维导图大工作台
       if (q.startsWith("outline:") || q.startsWith("mindmap:") || q === "syo" || q === "outline") {
         toggleOutlineMindmapModal();
+        return;
+      }
+
+      // tab: 或 table: 模式：全库数据表格透视矩阵大工作台
+      if (q.startsWith("table:") || q.startsWith("table：") || q === "tab" || q === "table") {
+        toggleTableGridModal();
         return;
       }
 
@@ -8901,7 +9011,8 @@
         </div>
         <div class="inspector-dock">
           <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="inspector-dock-btn primary" onclick="pasteAtCursor('${escapeQuote(d.beautifulMarkdown)}')" title="在外部活动光标处原位粘贴美化对齐的标准 Markdown 表格 (Shift+Enter)">⚡ Shift+↵ 贴美化表格</button>
+            <button class="inspector-dock-btn primary" onclick="toggleTableGridModal('${d.id || ''}', '${escapeQuote(d.beautifulMarkdown || '')}')" title="展开 980px 全景数据表格与属性视图透视矩阵大工作台">📊 展开表格大矩阵</button>
+            <button class="inspector-dock-btn" onclick="pasteAtCursor('${escapeQuote(d.beautifulMarkdown)}')" title="在外部活动光标处原位粘贴美化对齐的标准 Markdown 表格 (Shift+Enter)">⚡ Shift+↵ 贴美化表格</button>
             <button class="inspector-dock-btn" onclick="exportTableToXlsx('${escapeQuote(d.beautifulMarkdown)}')" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="1 键逆向生成标准 Excel .xlsx 文件并在外部秒开">📊 导出Excel秒开</button>
             <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(d.beautifulMarkdown)}', '已复制标准 Markdown 表格！')">📋 复制表格</button>
             <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(d.csv)}', '已复制 CSV 数据！')">📑 复制CSV</button>
@@ -13412,6 +13523,305 @@
         currentOutlineDocTitle = val;
         refreshOutlineMindmapData();
       }
+    }
+
+    // ==========================================================
+    // 全库数据表格与属性视图透视矩阵大工作台 (Table & AV Studio)
+    // ==========================================================
+    let currentTableBlockId = "";
+    let currentTableTitle = "数据表格";
+    let currentTableParsedData = null;
+    let currentTableSortCol = -1;
+    let currentTableSortAsc = true;
+    let currentTableRowFilterKeyword = "";
+    let allLibraryTables = [];
+
+    function toggleTableGridModal(blockId, markdown) {
+      const modal = document.getElementById("table-grid-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) {
+        if (blockId) currentTableBlockId = blockId;
+        loadAllLibraryTables(blockId, markdown);
+      }
+    }
+
+    function closeTableGridOnBg(e) {
+      if (e.target && e.target.id === "table-grid-modal") {
+        toggleTableGridModal();
+      }
+    }
+
+    function loadAllLibraryTables(initialBlockId, initialMarkdown) {
+      const picker = document.getElementById("tg-table-picker");
+      if (picker) picker.innerHTML = '<option value="">正在检索全库表格清单...</option>';
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'searchTables', keyword: '' }));
+      }
+
+      if (initialMarkdown) {
+        parseAndRenderTableGrid(initialMarkdown, initialBlockId);
+      } else if (initialBlockId) {
+        loadTableDataById(initialBlockId);
+      }
+    }
+
+    window.onTablesLoaded = function(res) {
+      if (!res || !Array.isArray(res.data)) return;
+      allLibraryTables = res.data;
+      const picker = document.getElementById("tg-table-picker");
+      if (!picker) return;
+
+      if (allLibraryTables.length === 0) {
+        picker.innerHTML = '<option value="">全库未检索到表格块</option>';
+        return;
+      }
+
+      let html = "";
+      allLibraryTables.forEach((t, idx) => {
+        const isSelected = currentTableBlockId === t.id || (!currentTableBlockId && idx === 0);
+        const title = (t.hpath ? t.hpath.split('/').pop() : '') || (t.content ? t.content.substring(0, 20) : `表格 #${idx + 1}`);
+        html += `<option value="${t.id}" ${isSelected ? 'selected' : ''}>[${t.type.toUpperCase()}] ${escapeHtml(title)}</option>`;
+      });
+      picker.innerHTML = html;
+
+      if (!currentTableBlockId && allLibraryTables.length > 0) {
+        currentTableBlockId = allLibraryTables[0].id;
+        const md = allLibraryTables[0].markdown || allLibraryTables[0].content || "";
+        parseAndRenderTableGrid(md, currentTableBlockId);
+      }
+    };
+
+    function switchTableGridFromSelect(val) {
+      if (!val) return;
+      currentTableBlockId = val;
+      const found = allLibraryTables.find(t => t.id === val);
+      if (found) {
+        parseAndRenderTableGrid(found.markdown || found.content || "", found.id);
+      } else {
+        loadTableDataById(val);
+      }
+    }
+
+    function loadTableDataById(blockId) {
+      const container = document.getElementById("tg-table-container");
+      if (container) container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:12px;">正在穿透检索表格数据...</div>';
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'parseTableData',
+          rawText: "",
+          title: "数据表格"
+        }));
+      }
+    }
+
+    function parseAndRenderTableGrid(markdownText, blockId) {
+      if (blockId) currentTableBlockId = blockId;
+      if (!markdownText) return;
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'parseTableData',
+          rawText: markdownText,
+          title: currentTableTitle
+        }));
+      } else {
+        setTimeout(() => {
+          renderTableGridDom({
+            Columns: [{ Header: "名称", DetectedType: "text" }, { Header: "类别", DetectedType: "text" }, { Header: "评分", DetectedType: "number" }],
+            Rows: [["思源笔记", "知识库", "98"], ["外骨骼桌面助手", "效率工具", "99"]]
+          });
+        }, 100);
+      }
+    }
+
+    const _origOnTableDataParsed = window.onTableDataParsed;
+    window.onTableDataParsed = function(res) {
+      if (_origOnTableDataParsed) _origOnTableDataParsed(res);
+      if (!res || !res.data) return;
+
+      const d = res.data;
+      const struct = d.structure || {};
+      currentTableParsedData = struct;
+      renderTableGridDom(struct);
+    };
+
+    function renderTableGridDom(struct) {
+      const container = document.getElementById("tg-table-container");
+      if (!container) return;
+
+      const cols = struct.Columns || [];
+      let rows = (struct.Rows || []).slice();
+
+      const countPill = document.getElementById("tg-modal-count");
+      if (countPill) countPill.innerText = `${rows.length} 行 · ${cols.length} 列`;
+
+      const statusSpan = document.getElementById("tg-modal-status");
+      if (statusSpan) statusSpan.innerText = `已就绪 · ${cols.length} 字段推导完成`;
+
+      if (cols.length === 0 || rows.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:36px;color:var(--text-muted);font-size:12px;">当前表格为空或暂无行数据</div>';
+        return;
+      }
+
+      if (currentTableSortCol >= 0 && currentTableSortCol < cols.length) {
+        const cIdx = currentTableSortCol;
+        const colType = cols[cIdx].DetectedType || "text";
+        rows.sort((a, b) => {
+          let va = a[cIdx] || "";
+          let vb = b[cIdx] || "";
+          if (colType === "number") {
+            let na = parseFloat(va) || 0;
+            let nb = parseFloat(vb) || 0;
+            return currentTableSortAsc ? (na - nb) : (nb - na);
+          }
+          return currentTableSortAsc ? va.localeCompare(vb, 'zh') : vb.localeCompare(va, 'zh');
+        });
+      }
+
+      if (currentTableRowFilterKeyword) {
+        rows = rows.filter(r => r.some(cell => String(cell).toLowerCase().includes(currentTableRowFilterKeyword)));
+      }
+
+      let html = `<table class="tg-data-table"><thead><tr>`;
+      cols.forEach((c, idx) => {
+        const sortIcon = (currentTableSortCol === idx) ? (currentTableSortAsc ? " ▲" : " ▼") : "";
+        const typeIcon = c.DetectedType === "number" ? "🔢" :
+                         (c.DetectedType === "date" ? "📅" :
+                         (c.DetectedType === "url" ? "🔗" :
+                         (c.DetectedType === "checkbox" ? "☑️" : "📝")));
+        html += `
+          <th onclick="sortTableGridByCol(${idx})">
+            ${escapeHtml(c.Header)}<span class="tg-col-type-tag">${typeIcon} ${c.DetectedType}</span><span style="color:var(--cyber-sky);">${sortIcon}</span>
+          </th>
+        `;
+      });
+      html += `</tr></thead><tbody>`;
+
+      rows.forEach((r, ri) => {
+        html += `<tr>`;
+        cols.forEach((c, ci) => {
+          html += `<td contenteditable="true" onblur="handleCellEdit(${ri}, ${ci}, this.innerText)">${escapeHtml(r[ci] || "")}</td>`;
+        });
+        html += `</tr>`;
+      });
+
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    }
+
+    function sortTableGridByCol(colIdx) {
+      if (currentTableSortCol === colIdx) {
+        currentTableSortAsc = !currentTableSortAsc;
+      } else {
+        currentTableSortCol = colIdx;
+        currentTableSortAsc = true;
+      }
+      if (currentTableParsedData) {
+        renderTableGridDom(currentTableParsedData);
+      }
+    }
+
+    function handleTableGridRowFilter(val) {
+      currentTableRowFilterKeyword = (val || "").trim().toLowerCase();
+      if (currentTableParsedData) {
+        renderTableGridDom(currentTableParsedData);
+      }
+    }
+
+    function handleCellEdit(ri, ci, newVal) {
+      if (!currentTableParsedData || !currentTableParsedData.Rows) return;
+      if (ri < currentTableParsedData.Rows.length) {
+        currentTableParsedData.Rows[ri][ci] = newVal;
+      }
+    }
+
+    function addNewRowToTableGrid() {
+      if (!currentTableParsedData || !currentTableParsedData.Columns) return;
+      const newRow = new Array(currentTableParsedData.Columns.length).fill("");
+      if (!currentTableParsedData.Rows) currentTableParsedData.Rows = [];
+      currentTableParsedData.Rows.push(newRow);
+      renderTableGridDom(currentTableParsedData);
+      showToast("✓ 已在末尾添加空白新行！");
+    }
+
+    function formatTableGridAligned() {
+      if (!currentTableParsedData) return;
+      const md = buildMarkdownFromCurrentTable();
+      parseAndRenderTableGrid(md, currentTableBlockId);
+      showToast("✓ 表格列宽已居中美化对齐！");
+    }
+
+    function buildMarkdownFromCurrentTable() {
+      if (!currentTableParsedData) return "";
+      const cols = currentTableParsedData.Columns || [];
+      const rows = currentTableParsedData.Rows || [];
+      if (cols.length === 0) return "";
+
+      let md = "| " + cols.map(c => c.Header).join(" | ") + " |\n";
+      md += "| " + cols.map(() => ":---").join(" | ") + " |\n";
+      rows.forEach(r => {
+        md += "| " + cols.map((c, i) => (r[i] || "").replace(/\|/g, "\\|")).join(" | ") + " |\n";
+      });
+      return md.trim();
+    }
+
+    function buildCsvFromCurrentTable() {
+      if (!currentTableParsedData) return "";
+      const cols = currentTableParsedData.Columns || [];
+      const rows = currentTableParsedData.Rows || [];
+      let csv = cols.map(c => `"${c.Header.replace(/"/g, '""')}"`).join(",") + "\n";
+      rows.forEach(r => {
+        csv += cols.map((c, i) => `"${(r[i] || "").replace(/"/g, '""')}"`).join(",") + "\n";
+      });
+      return csv;
+    }
+
+    function exportTableGridToXlsx() {
+      const md = buildMarkdownFromCurrentTable();
+      if (!md) {
+        showToast("暂无可导出的表格内容！");
+        return;
+      }
+      exportTableToXlsx(md);
+      showToast("📊 正在零依赖生成 Excel (.xlsx) 工作簿并在本地秒开...");
+    }
+
+    function copyTableGridMarkdown() {
+      const md = buildMarkdownFromCurrentTable();
+      if (!md) {
+        showToast("暂无可复制的表格！");
+        return;
+      }
+      copyToClipboard(md, "✓ 标准 Markdown 表格已复制！");
+    }
+
+    function copyTableGridCsv() {
+      const csv = buildCsvFromCurrentTable();
+      if (!csv) {
+        showToast("暂无可复制的 CSV！");
+        return;
+      }
+      copyToClipboard(csv, "✓ CSV 纯文本数据已复制！");
+    }
+
+    function dumpTableGridToDaily() {
+      const md = buildMarkdownFromCurrentTable();
+      if (!md) {
+        showToast("暂无可沉淀的表格！");
+        return;
+      }
+      appendTableToDailyNote(md);
+    }
+
+    function openCurrentTableBlockInSiYuan() {
+      if (!currentTableBlockId) {
+        showToast("暂无可定位的表格目标块！");
+        return;
+      }
+      openBlockById(currentTableBlockId);
     }
 
     function closeWindow() {

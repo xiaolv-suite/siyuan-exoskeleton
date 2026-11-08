@@ -3471,6 +3471,63 @@ async function main() {
                          panelContent.includes('🗺️ 展开全景大导图');
   logStep("Step 7.182: Bento 主卡片 syo 与抽屉导图展开大视窗深度联动断言", hasOmmCardLink, `大纲导图主卡片联动: ${hasOmmCardLink}`);
 
+  // Step 7.183: Test Table Grid Studio Modal UI Template Integrity in panel.html
+  const hasTgModal = panelContent.includes('id="table-grid-modal"') &&
+                     panelContent.includes('id="tg-modal-count"') &&
+                     panelContent.includes('id="tg-table-picker"') &&
+                     panelContent.includes('id="tg-table-container"') &&
+                     panelContent.includes('id="tg-row-filter"');
+  logStep("Step 7.183: 全库数据表格透视矩阵大工作台 (table-grid-modal) 模版架构断言", hasTgModal, `表格透视模版完整性: ${hasTgModal}`);
+
+  // Step 7.184: Test Topbar Table Button & Intent Chip Linkage in panel.html
+  const hasTgTopLink = panelContent.includes('id="table-btn"') &&
+                       panelContent.includes('toggleTableGridModal()') &&
+                       panelContent.includes('<b>📊</b> 表格透视');
+  logStep("Step 7.184: 顶栏 📊 表格按钮与横向流式意图胶囊直达断言", hasTgTopLink, `顶栏表格入口联动: ${hasTgTopLink}`);
+
+  // Step 7.185: Test Table Grid CSS Styles & Type Tags in panel.html
+  const hasTgCss = panelContent.includes('.tg-table-wrapper') &&
+                   panelContent.includes('.tg-data-table') &&
+                   panelContent.includes('.tg-col-type-tag');
+  logStep("Step 7.185: 表格矩阵自适应网格与字段类型标签样式规范断言", hasTgCss, `表格矩阵样式规范: ${hasTgCss}`);
+
+  // Step 7.186: Test Table Grid Frontend Functions in panel.html
+  const hasTgJs = panelContent.includes('function toggleTableGridModal') &&
+                  panelContent.includes('function sortTableGridByCol') &&
+                  panelContent.includes('function handleTableGridRowFilter') &&
+                  panelContent.includes('exportTableGridToXlsx') &&
+                  panelContent.includes('copyTableGridMarkdown') &&
+                  panelContent.includes('copyTableGridCsv');
+  logStep("Step 7.186: 表格矩阵列排序、单行过滤、Excel导出与复制驱动逻辑断言", hasTgJs, `前端驱动函数完整性: ${hasTgJs}`);
+
+  // Step 7.187: Test ExternalApiBridge Table Webhook Suite (GET /api/table/list & GET /api/table/data)
+  let webhookTableResp;
+  try {
+    const listResp = await fetch("http://127.0.0.1:43990/api/table/list");
+    const listJson = await listResp.json();
+    const dataResp = await fetch("http://127.0.0.1:43990/api/table/data");
+    const dataJson = await dataResp.json();
+    webhookTableResp = {
+      listCode: listJson.code,
+      listCount: listJson.count,
+      dataCode: dataJson.code,
+      hasStructure: !!dataJson.data?.structure,
+      hasCols: Array.isArray(dataJson.data?.structure?.Columns)
+    };
+  } catch (err) {
+    webhookTableResp = { error: err.message };
+  }
+  const isWebhookTableOk = webhookTableResp &&
+                           webhookTableResp.listCode === 0 &&
+                           webhookTableResp.dataCode === 0 &&
+                           webhookTableResp.hasStructure;
+  logStep("Step 7.187: 极速调用桥全库表格清单与强类型数据解析接口断言", isWebhookTableOk, `表格解析响应: ${JSON.stringify(webhookTableResp)}`);
+
+  // Step 7.188: Test Inspector Table Dock Linkage to Table Grid Modal in panel.html
+  const hasInspectorTableLink = panelContent.includes("toggleTableGridModal('${d.id") &&
+                                panelContent.includes("📊 展开表格大矩阵");
+  logStep("Step 7.188: 搜索结果抽屉表格卡片与透视矩阵大工作台深度联动断言", hasInspectorTableLink, `抽屉表格展开大矩阵联动: ${hasInspectorTableLink}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

@@ -4154,6 +4154,14 @@
         return;
       }
 
+      // queue: 或 offline: 模式：离岸脱机缓冲队列透视与管理
+      if (q.startsWith("queue:") || q.startsWith("queue：") || q.startsWith("offline:") || q.startsWith("offline：") || q === "queue" || q === "offline") {
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'getOfflineQueue' }));
+        }
+        return;
+      }
+
       // office: / word: / excel: / ppt: / pdf: / epub: / xmind: 模式：全库本地文档极速检索与穿透
       if (q.startsWith("office:") || q.startsWith("office：") || q.startsWith("word:") || q.startsWith("word：") || q.startsWith("excel:") || q.startsWith("excel：") || q.startsWith("ppt:") || q.startsWith("ppt：") || q.startsWith("pdf:") || q.startsWith("pdf：") || q.startsWith("epub:") || q.startsWith("epub：") || q.startsWith("xmind:") || q.startsWith("xmind：")) {
         let subKw = q.replace(/^(office:|office：|word:|word：|excel:|excel：|ppt:|ppt：|pdf:|pdf：|epub:|epub：|xmind:|xmind：)/, "").trim();
@@ -5488,13 +5496,28 @@
       currentInspectorTab = tab;
       const detailView = document.getElementById("inspector-detail-view");
       const mindmapView = document.getElementById("inspector-mindmap-view");
+      const linksView = document.getElementById("inspector-links-view");
       const btnDetail = document.getElementById("tab-btn-detail");
       const btnMindmap = document.getElementById("tab-btn-mindmap");
+      const btnLinks = document.getElementById("tab-btn-links");
 
       if (detailView) detailView.style.display = (tab === "detail") ? "block" : "none";
       if (mindmapView) mindmapView.style.display = (tab === "mindmap") ? "block" : "none";
+      if (linksView) linksView.style.display = (tab === "links") ? "block" : "none";
       if (btnDetail) btnDetail.classList.toggle("active", tab === "detail");
       if (btnMindmap) btnMindmap.classList.toggle("active", tab === "mindmap");
+      if (btnLinks) btnLinks.classList.toggle("active", tab === "links");
+
+      if (tab === "links" && currentInspectedItem) {
+        const targetId = currentInspectedItem.blockId || currentInspectedItem.docId;
+        if (targetId && window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({
+            op: 'getBlockLinks',
+            blockId: targetId,
+            title: currentInspectedItem.title || ''
+          }));
+        }
+      }
     }
 
     function buildMindmapTree(docTitle, headings) {
@@ -5782,12 +5805,13 @@
             <div class="inspector-doc-title">📄 ${escapeHtml(docTitle)}</div>
             <div class="inspector-tab-bar">
               <button class="inspector-tab-btn ${currentInspectorTab === 'detail' ? 'active' : ''}" id="tab-btn-detail" onclick="switchInspectorTab('detail')" title="查看小节大纲、正文与上下文">📋 大纲与正文</button>
-              <button class="inspector-tab-btn ${currentInspectorTab === 'mindmap' ? 'active' : ''}" id="tab-btn-mindmap" onclick="switchInspectorTab('mindmap')" title="查看文档树状结构思维导图">🗺️ 视觉导图</button>
-            </div>
-          </div>
-        </div>
-        <div class="inspector-body" style="overflow: auto;">
-          <div id="inspector-detail-view" style="display: ${currentInspectorTab === 'detail' ? 'block' : 'none'};">
+	              <button class="inspector-tab-btn ${currentInspectorTab === 'mindmap' ? 'active' : ''}" id="tab-btn-mindmap" onclick="switchInspectorTab('mindmap')" title="查看文档树状结构思维导图">🗺️ 视觉导图</button>
+	              <button class="inspector-tab-btn ${currentInspectorTab === 'links' ? 'active' : ''}" id="tab-btn-links" onclick="switchInspectorTab('links')" title="穿透查看双向反向链接与知识图谱">🔗 双链雷达</button>
+	            </div>
+	          </div>
+	        </div>
+	        <div class="inspector-body" style="overflow: auto;">
+	          <div id="inspector-detail-view" style="display: ${currentInspectorTab === 'detail' ? 'block' : 'none'};">
             ${ialTags ? `<div class="inspector-ial-tags">${ialTags}</div>` : ""}
             <div style="position: relative; margin-bottom: 8px;">
               <div id="inspector-preview-box" class="inspector-preview-card" style="display: block;">
@@ -5818,10 +5842,13 @@
             ${backlinkHtml}
             ${assetsHtml}
           </div>
-          <div id="inspector-mindmap-view" style="display: ${currentInspectorTab === 'mindmap' ? 'block' : 'none'}; overflow: auto; height: 100%;">
-            ${generateMindmapSvg(docTitle, payload.headings)}
-          </div>
-        </div>
+	          <div id="inspector-mindmap-view" style="display: ${currentInspectorTab === 'mindmap' ? 'block' : 'none'}; overflow: auto; height: 100%;">
+	            ${generateMindmapSvg(docTitle, payload.headings)}
+	          </div>
+	          <div id="inspector-links-view" style="display: ${currentInspectorTab === 'links' ? 'block' : 'none'}; overflow: auto; padding: 10px 0;">
+	            <div style="font-size: 11.5px; color: var(--text-muted); text-align: center; padding: 30px;">正在穿透思源知识网络扫描双向反链...</div>
+	          </div>
+	        </div>
         <div class="inspector-dock">
           <div class="inspector-dock-actions">
             ${taskActionBtn}
@@ -6560,15 +6587,19 @@
           badgeCls: "badge-native",
           actionType: "block-jump",
           blockId: b.id,
-          blockContent: raw,
-          isTaskItem: true
-        });
-      }
+	          blockContent: raw,
+	          isTaskItem: true
+	        });
+	      }
 
-      filteredItems = dynamicList;
-      selectedIndex = 0;
-      renderItems();
-    };
+	      filteredItems = dynamicList;
+	      selectedIndex = 0;
+	      renderItems();
+
+	      if (window.chrome && window.chrome.webview) {
+	        window.chrome.webview.postMessage(JSON.stringify({ op: 'getTasksHorizon', keyword: (lastQuery || '').replace(/^(t:|todo:)/, '').trim() }));
+	      }
+	    };
 
     function markTaskDone(taskId, rawContent) {
       if (window.chrome && window.chrome.webview) {
@@ -7758,6 +7789,104 @@
         }));
         el.value = "";
         showToast("✓ 重温思考已成功追加至该灵感块！");
+      }
+    }
+
+    window.onBlockLinksLoaded = function(res) {
+      const container = document.getElementById("inspector-links-view");
+      if (!container || !res || !res.data) return;
+      const data = res.data;
+      const inbounds = data.InboundBacklinks || [];
+      const outbounds = data.OutboundReferences || [];
+
+      container.innerHTML = `
+        <div style="font-size: 11px; padding: 6px 10px; background: rgba(56,189,248,0.08); border-radius: 6px; border: 1px dashed var(--border-hairline); margin-bottom: 12px; display: flex; justify-content: space-between;">
+          <span>⬅️ <b>反向反链</b> (${inbounds.length})</span>
+          <span>➡️ <b>正向出链</b> (${outbounds.length})</span>
+          <span>⚡ <b>全网链接</b>: ${data.TotalLinks || (inbounds.length + outbounds.length)} 处</span>
+        </div>
+        <div style="margin-bottom: 14px;">
+          <div style="font-size: 12px; font-weight: 700; color: var(--emerald-mint); margin-bottom: 6px;">⬅️ 引用此内容的笔记 (反向反链 · ${inbounds.length})</div>
+          ${inbounds.length === 0 ? '<div style="font-size: 11px; color: var(--text-muted); padding: 6px;">暂无外部反向引用</div>' :
+            inbounds.map(it => `
+              <div class="search-item" style="padding: 6px 8px; margin-bottom: 4px; border-radius: 6px; background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center;" onclick="openBlockById('${it.BlockId}')">
+                <div style="flex: 1; overflow: hidden;">
+                  <div style="font-size: 11.5px; font-weight: 600; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">《${escapeHtml(it.DocTitle)}》</div>
+                  <div style="font-size: 11px; color: var(--text-muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${escapeHtml(it.Content || '引用块')}</div>
+                </div>
+                <button class="card-launch-btn" style="padding: 2px 6px; font-size: 10px;" onclick="event.stopPropagation(); pasteAtCursor('((${it.BlockId} \\&quot;${escapeQuote(it.DocTitle)}\\&quot;))')">📋 贴双链</button>
+              </div>
+            `).join('')}
+        </div>
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: var(--cyber-sky); margin-bottom: 6px;">➡️ 此处引用的外部笔记 (正向出链 · ${outbounds.length})</div>
+          ${outbounds.length === 0 ? '<div style="font-size: 11px; color: var(--text-muted); padding: 6px;">暂无出链引用</div>' :
+            outbounds.map(it => `
+              <div class="search-item" style="padding: 6px 8px; margin-bottom: 4px; border-radius: 6px; background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center;" onclick="openBlockById('${it.BlockId}')">
+                <div style="flex: 1; overflow: hidden;">
+                  <div style="font-size: 11.5px; font-weight: 600; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">《${escapeHtml(it.DocTitle)}》</div>
+                  <div style="font-size: 11px; color: var(--text-muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${escapeHtml(it.Content || '出链块')}</div>
+                </div>
+                <button class="card-launch-btn" style="padding: 2px 6px; font-size: 10px;" onclick="event.stopPropagation(); pasteAtCursor('((${it.BlockId} \\&quot;${escapeQuote(it.DocTitle)}\\&quot;))')">📋 贴双链</button>
+              </div>
+            `).join('')}
+        </div>
+      `;
+    };
+
+    window.onTasksHorizonLoaded = function(res) {
+      if (!res || !res.data) return;
+      const rep = res.data;
+      const banner = document.getElementById("intent-banner");
+      if (banner) {
+        banner.style.display = "flex";
+        banner.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <span>🔥 今日必办: <b>${rep.TodayTasks ? rep.TodayTasks.length : 0}</b> · ⚡ 重点: <b>${rep.PriorityTasks ? rep.PriorityTasks.length : 0}</b> · 📋 全库待办: <b>${rep.TotalTasks || 0}</b> 项</span>
+            <button class="card-launch-btn" style="padding: 2px 8px; font-size: 11px;" onclick="copyToClipboard('${escapeQuote(rep.FormattedChecklist)}', '今日Checklist已复制！')">📋 复制Checklist</button>
+          </div>
+        `;
+      }
+    };
+
+    window.onOfflineQueueLoaded = function(res) {
+      if (!res || !Array.isArray(res.data)) return;
+      const items = res.data;
+      filteredItems = items.map((it, idx) => ({
+        id: `queue_${it.Id || idx}`,
+        group: "offline",
+        title: `⏳ [离岸脱机缓冲] ${escapeHtml(it.Content || '速记')}`,
+        desc: `录入时间: ${it.CreatedAt ? new Date(it.CreatedAt).toLocaleString() : '离线'} · 来源: ${it.SourceWindow || '桌面'} (等待内核上线自动合流)`,
+        hotkey: "Enter",
+        iconType: "cloud",
+        iconColor: "var(--tech-amber)",
+        badge: "离线",
+        badgeCls: "badge-native",
+        action: () => {
+          showToast("此笔记暂存在本地离线加密队列，待思源上线后将自动合流补录！");
+        }
+      }));
+      selectedIndex = 0;
+      renderItems();
+
+      const banner = document.getElementById("intent-banner");
+      if (banner) {
+        banner.style.display = "flex";
+        banner.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <span>🛡️ 本地离岸缓冲队列: <b>${items.length}</b> 笔速记待同步</span>
+            <div style="display: flex; gap: 6px;">
+              <button class="card-launch-btn" style="padding: 2px 8px; font-size: 11px;" onclick="flushOfflineQueueNow()">⚡ 立即强制合流</button>
+            </div>
+          </div>
+        `;
+      }
+    };
+
+    function flushOfflineQueueNow() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'flushOfflineQueue' }));
+        showToast("✓ 正在尝试合流写入思源笔记...");
       }
     }
 

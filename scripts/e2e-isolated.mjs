@@ -1491,6 +1491,87 @@ async function main() {
   const isNamingOk = namingRes.includes("True");
   logStep("Step 7.63: 开发者变量命名法循环转换 (NamingCaseConverter) 断言", isNamingOk, `命名法轮转断言: ${namingRes.trim()}`);
 
+  // Step 7.64: Test BiDirectionalGraphRadar (Inbound Backlinks & Outbound References)
+  const radarScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $radar = $asm.GetType('XiaoLv.Desktop.Core.BiDirectionalGraphRadar');
+    $mLinks = $radar.GetMethod('GetLinksForBlockAsync', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+    $task = $mLinks.Invoke($null, @('${cardRow?.id || row1?.id}', '测试块双链'));
+    $res = $task.GetAwaiter().GetResult();
+
+    $okRadar = ($null -ne $res) -and ($res.TargetBlockId -eq '${cardRow?.id || row1?.id}') -and ($res.InboundBacklinks.Count -ge 0);
+    Write-Output ($okRadar.ToString());
+  `;
+  const radarRes = runPs(radarScript);
+  const isRadarOk = radarRes.includes("True");
+  logStep("Step 7.64: 双向反链与图谱雷达 (BiDirectionalGraphRadar) 穿透断言", isRadarOk, `双链网络断言: ${radarRes.trim()}`);
+
+  // Step 7.65: Test TasksHorizonManager (Priority P1/P2/Today & Checklist Export)
+  const horizonScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $thm = $asm.GetType('XiaoLv.Desktop.Core.TasksHorizonManager');
+    $mRep = $thm.GetMethod('GetTasksHorizonAsync', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+    $task = $mRep.Invoke($null, @(''));
+    $rep = $task.GetAwaiter().GetResult();
+
+    $okRep = ($rep -ne $null) -and ($rep.TotalTasks -ge 1) -and ($rep.FormattedChecklist.Contains('全景待办清单视界'));
+    Write-Output ($okRep.ToString() + '|' + $rep.TotalTasks);
+  `;
+  const horizonRes = runPs(horizonScript);
+  const isHorizonOk = horizonRes.includes("True");
+  logStep("Step 7.65: 全景待办视界与优先级分流 (TasksHorizonManager) 断言", isHorizonOk, `任务视界断言: ${horizonRes.trim()}`);
+
+  // Step 7.66: Test FlashbackManager (Random Inspiration & Anniversary Retrieval)
+  const flashbackScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $fbm = $asm.GetType('XiaoLv.Desktop.Core.FlashbackManager');
+    $mFlash = $fbm.GetMethod('GetRandomFlashbackAsync', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+    $task = $mFlash.Invoke($null, $null);
+    $item = $task.GetAwaiter().GetResult();
+
+    $okFlash = ($item -ne $null) -and ($item.BlockId.Length -ge 10) -and (![string]::IsNullOrEmpty($item.Content));
+    Write-Output ($okFlash.ToString() + '|' + $item.BlockId + '|' + $item.TimeAgoDescription);
+  `;
+  const flashbackRes = runPs(flashbackScript);
+  const isFlashbackOk = flashbackRes.includes("True");
+  logStep("Step 7.66: 浮墨漫游回顾引擎 (FlashbackManager) 随机灵感打捞断言", isFlashbackOk, `漫游回顾断言: ${flashbackRes.trim()}`);
+
+  // Step 7.67: Test Offline Queue Items Inspection & Clearing (OfflineQueueManager)
+  const queueScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $oqm = $asm.GetType('XiaoLv.Desktop.Core.OfflineQueueManager');
+
+    $mEnqueue = $oqm.GetMethod('EnqueueNote', [System.Reflection.BindingFlags]'Public,Static');
+    $mEnqueue.Invoke($null, @('离线测试笔记条目', 'VS Code'));
+
+    $mCount = $oqm.GetMethod('GetQueueCount', [System.Reflection.BindingFlags]'Public,Static');
+    $countBefore = $mCount.Invoke($null, $null);
+
+    $mClear = $oqm.GetMethod('ClearQueue', [System.Reflection.BindingFlags]'Public,Static');
+    $mClear.Invoke($null, $null);
+
+    $countAfter = $mCount.Invoke($null, $null);
+
+    $okQueue = ($countBefore -ge 1) -and ($countAfter -eq 0);
+    Write-Output ($okQueue.ToString() + '|' + $countBefore + '->' + $countAfter);
+  `;
+  const queueRes = runPs(queueScript);
+  const isQueueOk = queueRes.includes("True");
+  logStep("Step 7.67: 离岸脱机缓冲队列透视与队列重置管道 (OfflineQueueManager) 断言", isQueueOk, `离线队列管道断言: ${queueRes.trim()}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

@@ -662,20 +662,107 @@ namespace XiaoLv.Desktop.UI
 		                    string thought = JsonHelper.GetString(msg, "thought");
 		                    ThreadPool.QueueUserWorkItem(async s =>
 		                    {
-		                        try
-		                        {
-		                            bool ok = await FlashbackManager.AppendThoughtAsync(targetBlockId, thought);
-		                            if (ok && OnNotificationRequested != null)
-		                            {
-		                                OnNotificationRequested("浮墨漫游回顾", "✓ 已成功将重温思考追加至该灵感块！");
-		                            }
-		                        }
-		                        catch { }
-		                    });
-		                    return;
-		                }
+			                        try
+			                        {
+			                            bool ok = await FlashbackManager.AppendThoughtAsync(targetBlockId, thought);
+			                            if (ok && OnNotificationRequested != null)
+			                            {
+			                                OnNotificationRequested("浮墨漫游回顾", "✓ 已成功将重温思考追加至该灵感块！");
+			                            }
+			                        }
+			                        catch { }
+			                    });
+			                    return;
+			                }
 
-		                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
+			                // 3.53 双向双链雷达 (Inbound Backlinks & Outbound References)
+			                if (op.Equals("getBlockLinks", StringComparison.OrdinalIgnoreCase))
+			                {
+			                    string bId = JsonHelper.GetString(msg, "blockId");
+			                    string bTitle = JsonHelper.GetString(msg, "title");
+			                    ThreadPool.QueueUserWorkItem(async s =>
+			                    {
+			                        try
+			                        {
+			                            var links = await BiDirectionalGraphRadar.GetLinksForBlockAsync(bId, bTitle);
+			                            Dispatcher.Invoke(() =>
+			                            {
+			                                if (_webView != null && _webView.CoreWebView2 != null)
+			                                {
+			                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onBlockLinksLoaded) window.onBlockLinksLoaded(" + JsonHelper.ToJson(new { code = 0, data = links }) + ");");
+			                                }
+			                            });
+			                        }
+			                        catch { }
+			                    });
+			                    return;
+			                }
+
+			                // 3.54 全景待办视界 (Tasks Horizon: P1/P2/今日分流与Checklist导出)
+			                if (op.Equals("getTasksHorizon", StringComparison.OrdinalIgnoreCase))
+			                {
+			                    string kw = JsonHelper.GetString(msg, "keyword");
+			                    ThreadPool.QueueUserWorkItem(async s =>
+			                    {
+			                        try
+			                        {
+			                            var rep = await TasksHorizonManager.GetTasksHorizonAsync(kw);
+			                            Dispatcher.Invoke(() =>
+			                            {
+			                                if (_webView != null && _webView.CoreWebView2 != null)
+			                                {
+			                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onTasksHorizonLoaded) window.onTasksHorizonLoaded(" + JsonHelper.ToJson(new { code = 0, data = rep }) + ");");
+			                                }
+			                            });
+			                        }
+			                        catch { }
+			                    });
+			                    return;
+			                }
+
+			                // 3.55 离岸脱机缓冲队列透视与管理 (queue: / offline:)
+			                if (op.Equals("getOfflineQueue", StringComparison.OrdinalIgnoreCase))
+			                {
+			                    ThreadPool.QueueUserWorkItem(s =>
+			                    {
+			                        try
+			                        {
+			                            var items = OfflineQueueManager.GetQueueItems();
+			                            Dispatcher.Invoke(() =>
+			                            {
+			                                if (_webView != null && _webView.CoreWebView2 != null)
+			                                {
+			                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOfflineQueueLoaded) window.onOfflineQueueLoaded(" + JsonHelper.ToJson(new { code = 0, count = items.Count, data = items }) + ");");
+			                                }
+			                            });
+			                        }
+			                        catch { }
+			                    });
+			                    return;
+			                }
+
+			                if (op.Equals("flushOfflineQueue", StringComparison.OrdinalIgnoreCase))
+			                {
+			                    ThreadPool.QueueUserWorkItem(s =>
+			                    {
+			                        try
+			                        {
+			                            var conn = SiYuanClient.GetConnectionInfo(false);
+			                            bool ok = OfflineQueueManager.FlushQueue(conn.Url, conn.Token, (t, m) =>
+			                            {
+			                                if (OnNotificationRequested != null) OnNotificationRequested(t, m);
+			                            });
+			                            if (ok && OnNotificationRequested != null)
+			                            {
+			                                OnNotificationRequested("离线缓冲队列", "✓ 离线速记已全部合流补录至今日日记！");
+			                            }
+			                        }
+			                        catch { }
+			                    });
+			                    return;
+			                }
+
+			                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
                 if (op.Equals("searchDocs", StringComparison.OrdinalIgnoreCase))
                 {
                     string kw = JsonHelper.GetString(msg, "keyword");
@@ -1438,20 +1525,20 @@ namespace XiaoLv.Desktop.UI
                         {
                             string safeLike = (kw ?? "").Replace("'", "''");
                             string sql;
-                            if (!string.IsNullOrEmpty(safeLike))
-                            {
-                                sql = "SELECT b.id, b.root_id, b.content, b.hpath, b.updated, doc.content AS doc_title FROM blocks b " +
-                                      "LEFT JOIN blocks doc ON doc.id = b.root_id " +
-                                      "WHERE b.subtype = 't' AND b.content LIKE '%[ ]%' AND b.content LIKE '%" + safeLike + "%' " +
-                                      "ORDER BY b.updated DESC LIMIT 35";
-                            }
-                            else
-                            {
-                                sql = "SELECT b.id, b.root_id, b.content, b.hpath, b.updated, doc.content AS doc_title FROM blocks b " +
-                                      "LEFT JOIN blocks doc ON doc.id = b.root_id " +
-                                      "WHERE b.subtype = 't' AND b.content LIKE '%[ ]%' " +
-                                      "ORDER BY b.updated DESC LIMIT 35";
-                            }
+	                            if (!string.IsNullOrEmpty(safeLike))
+	                            {
+	                                sql = "SELECT b.id, b.root_id, b.content, b.hpath, b.updated, doc.content AS doc_title FROM blocks b " +
+	                                      "LEFT JOIN blocks doc ON doc.id = b.root_id " +
+	                                      "WHERE b.subtype = 't' AND (b.markdown NOT LIKE '%[x]%' AND b.markdown NOT LIKE '%[X]%') AND (b.content LIKE '%" + safeLike + "%' OR b.markdown LIKE '%" + safeLike + "%') " +
+	                                      "ORDER BY b.updated DESC LIMIT 35";
+	                            }
+	                            else
+	                            {
+	                                sql = "SELECT b.id, b.root_id, b.content, b.hpath, b.updated, doc.content AS doc_title FROM blocks b " +
+	                                      "LEFT JOIN blocks doc ON doc.id = b.root_id " +
+	                                      "WHERE b.subtype = 't' AND (b.markdown NOT LIKE '%[x]%' AND b.markdown NOT LIKE '%[X]%') " +
+	                                      "ORDER BY b.updated DESC LIMIT 35";
+	                            }
                             var rows = await SiYuanClient.SqlAsync(sql);
                             Dispatcher.Invoke(() =>
                             {

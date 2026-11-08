@@ -23,6 +23,15 @@ namespace XiaoLv.Desktop.UI
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
 
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool ReleaseCapture();
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
+
+        private const int WM_NCLBUTTONDOWN = 0x00A1;
+        private const int HTCAPTION = 0x0002;
+
         public event Action<string, string> OnCapsuleCommand;
         public event Action<string, string, string> OnCapsuleCommandWithImage;
         public event Action<string> OnOpenMasterRequested;
@@ -154,7 +163,20 @@ namespace XiaoLv.Desktop.UI
 
                 if (op.Equals("dragWindow", StringComparison.OrdinalIgnoreCase))
                 {
-                    try { DragMove(); } catch { }
+                    try
+                    {
+                        ReleaseCapture();
+                        var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+                        if (hwnd != IntPtr.Zero)
+                        {
+                            SendMessage(hwnd, WM_NCLBUTTONDOWN, (IntPtr)HTCAPTION, IntPtr.Zero);
+                        }
+                        else
+                        {
+                            DragMove();
+                        }
+                    }
+                    catch { }
                     return;
                 }
 
@@ -345,6 +367,8 @@ namespace XiaoLv.Desktop.UI
             }
 
             Show();
+            Topmost = false;
+            Topmost = true;
             Activate();
             Focus();
             _webView.Focus();

@@ -32,10 +32,18 @@ namespace XiaoLv.Desktop.UI
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool ReleaseCapture();
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
+
         private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
         private const uint SWP_NOSIZE = 0x0001;
         private const uint SWP_NOMOVE = 0x0002;
         private const uint SWP_SHOWWINDOW = 0x0040;
+        private const int WM_NCLBUTTONDOWN = 0x00A1;
+        private const int HTCAPTION = 0x0002;
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
@@ -51,6 +59,7 @@ namespace XiaoLv.Desktop.UI
         private string _currentInspectedDocId = "";
         private string _currentInspectedDocTitle = "";
         private bool _suppressAutoHide = false;
+        private bool _isWindowPinned = false;
 
         public event Action<string, string> OnSubActionRequested;
         public event Action<string> OnSaveSettingsRequested;
@@ -171,8 +180,8 @@ namespace XiaoLv.Desktop.UI
 
             Deactivated += (s_ev, e) =>
             {
-                // 失去焦点时自动隐藏，保持轻量呼吸感 (若正在弹出原生目录选择框则暂缓隐藏)
-                if (_suppressAutoHide) return;
+                // 失去焦点时自动隐藏，保持轻量呼吸感 (若正在弹出原生目录选择框或已点击📌锁定窗口常驻则不自动隐藏)
+                if (_suppressAutoHide || _isWindowPinned) return;
                 Hide();
             };
 
@@ -394,10 +403,30 @@ namespace XiaoLv.Desktop.UI
                 string op = JsonHelper.GetString(msg, "op");
                 if (string.IsNullOrEmpty(op)) op = JsonHelper.GetString(msg, "action");
 
-                // 0. 窗口拖拽直通
+                // 0. 窗口拖拽直通 (先释放 WebView2 内部鼠标捕获再触发 Win32 HTCAPTION 原生丝滑拖拽)
                 if (op.Equals("dragMove", StringComparison.OrdinalIgnoreCase))
                 {
-                    try { DragMove(); } catch { }
+                    try
+                    {
+                        ReleaseCapture();
+                        var hwnd = new WindowInteropHelper(this).Handle;
+                        if (hwnd != IntPtr.Zero)
+                        {
+                            SendMessage(hwnd, WM_NCLBUTTONDOWN, (IntPtr)HTCAPTION, IntPtr.Zero);
+                        }
+                        else
+                        {
+                            DragMove();
+                        }
+                    }
+                    catch { }
+                    return;
+                }
+
+                // 0.5 窗口常驻置顶图钉锁 (togglePinWindow)
+                if (op.Equals("togglePinWindow", StringComparison.OrdinalIgnoreCase))
+                {
+                    _isWindowPinned = JsonHelper.GetBool(msg, "pinned", !_isWindowPinned);
                     return;
                 }
 
@@ -868,26 +897,26 @@ namespace XiaoLv.Desktop.UI
 			                    return;
 			                }
 
-			                // 3.55 离岸脱机缓冲队列透视与管理 (queue: / offline:)
-			                if (op.Equals("getOfflineQueue", StringComparison.OrdinalIgnoreCase))
-			                {
-			                    ThreadPool.QueueUserWorkItem(s =>
-			                    {
-			                        try
-			                        {
-			                            var items = OfflineQueueManager.GetQueueItems();
-			                            Dispatcher.Invoke(() =>
-			                            {
-			                                if (_webView != null && _webView.CoreWebView2 != null)
-			                                {
-			                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOfflineQueueLoaded) window.onOfflineQueueLoaded(" + JsonHelper.ToJson(new { code = 0, count = items.Count, data = items }) + ");");
-			                                }
-			                            });
-			                        }
-			                        catch { }
-			                    });
-			                    return;
-			                }
+                // 3.55 离岸脱机缓冲队列透视与管理 (queue: / offline:)
+                if (op.Equals("getOfflineQueue", StringComparison.OrdinalIgnoreCase))
+                {
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        try
+                        {
+                            var items = OfflineQueueManager.GetQueueItems();
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOfflineQueueLoaded) window.onOfflineQueueLoaded(" + JsonHelper.ToJson(new { code = 0, count = items.Count, data = items, items = items }) + ");");
+                                }
+                            });
+                        }
+                        catch { }
+                    });
+                    return;
+                }
 
 				                if (op.Equals("flushOfflineQueue", StringComparison.OrdinalIgnoreCase))
 				                {

@@ -337,7 +337,7 @@
     let activeRadarHit = null;
 
     function startDrag(e) {
-      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+      if (e.target.tagName === 'BUTTON' || e.target.closest('button, .header-tag, .smart-badge, input')) return;
       if (e.button === 0 && window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({ op: 'dragWindow' }));
       }

@@ -3899,6 +3899,58 @@ async function main() {
                            panelContent.includes("op: 'renameOutlineHeading'");
   logStep("Step 7.215: 大纲目录树内联重命名按钮与思维导图实时重绘驱动断言", hasOutlineEditUi, `大纲编辑控件完整性: ${hasOutlineEditUi}`);
 
+  // Step 7.216: Test Zero Undefined CSS Variables & Complete Badge Classes in panel.html
+  const definedCssVars = new Set();
+  for (const m of panelContent.matchAll(/(--[a-zA-Z0-9\-]+)\s*:/g)) definedCssVars.add(m[1]);
+  const missingCssVars = [];
+  for (const m of panelContent.matchAll(/var\(\s*(--[a-zA-Z0-9\-]+)/g)) {
+    if (!definedCssVars.has(m[1])) missingCssVars.push(m[1]);
+  }
+  const hasBadgeClasses = panelContent.includes('.badge-stale') &&
+                          panelContent.includes('.badge-primary') &&
+                          panelContent.includes('.tag-badge') &&
+                          missingCssVars.length === 0;
+  logStep("Step 7.216: 全局 CSS 变量 100% 闭环定义 (--font-mono/--titanium-cyan 等零缺失) 与徽章类完整性断言", hasBadgeClasses, `未定义CSS变量数: ${missingCssVars.length}`);
+
+  // Step 7.217: Test Zero Duplicate DOM IDs & 100% Balanced Div Hierarchy in panel.html
+  const staticHtmlPart = panelContent.substring(0, panelContent.indexOf("<script>", panelContent.indexOf("</style>")));
+  const domIdMap = new Map();
+  for (const m of staticHtmlPart.matchAll(/\bid="([^"]+)"/g)) {
+    domIdMap.set(m[1], (domIdMap.get(m[1]) || 0) + 1);
+  }
+  const duplicateDomIds = [...domIdMap.entries()].filter(([k, v]) => v > 1);
+  const staticBodyPart = staticHtmlPart.substring(staticHtmlPart.indexOf("<body"));
+  const openDivCount = (staticBodyPart.match(/<div\b/g) || []).length;
+  const closeDivCount = (staticBodyPart.match(/<\/div>/g) || []).length;
+  const isDomClean = duplicateDomIds.length === 0 && openDivCount === closeDivCount && panelContent.includes('id="code-studio-preview-meta"');
+  logStep("Step 7.217: 静态 DOM 树零重复 ID 冲突与 <div> 标签严格对称平衡断言", isDomClean, `重复ID: ${duplicateDomIds.length} · div平衡: ${openDivCount}/${closeDivCount}`);
+
+  // Step 7.218: Test Background Bento Grid Anti-Pollution Guard (hasActiveSearchPrefix) & Chained Studio Callbacks
+  const hasAntiPollutionGuard = panelContent.includes('function hasActiveSearchPrefix') &&
+                                panelContent.includes('const _origOnOfflineQueueLoaded = window.onOfflineQueueLoaded') &&
+                                panelContent.includes('const _origOnRecentClipsLoaded = window.onRecentClipsLoaded') &&
+                                panelContent.includes('const _origOnClipboardMerged = window.onClipboardMerged') &&
+                                panelContent.includes('const _origOnTablesLoaded = window.onTablesLoaded');
+  logStep("Step 7.218: 独立工作台弹窗与底层 Bento 主界面状态隔离门禁 (hasActiveSearchPrefix) 及双轨回调串联断言", hasAntiPollutionGuard, `背景防污染门禁完整性: ${hasAntiPollutionGuard}`);
+
+  // Step 7.219: Test Mist Light ([data-theme='light']) Studio Modal High-Contrast Adaptation
+  const hasLightThemeAdaptation = panelContent.includes('[data-theme="light"] .timeline-modal-box') &&
+                                  panelContent.includes('[data-theme="light"] .studio-switcher-popover') &&
+                                  panelContent.includes('[data-theme="light"] .launchpad-card') &&
+                                  !panelContent.includes('max-height: 88vh; background: #070d18;');
+  logStep("Step 7.219: 通透冷白 ([data-theme='light']) 12 大工作台高对比度视觉适配与星轨顶栏消黑底断言", hasLightThemeAdaptation, `浅色主题大工作台适配: ${hasLightThemeAdaptation}`);
+
+  // Step 7.220: Test Win32 ReleaseCapture Smooth Window Drag & Topbar Pin Window Lock (togglePinWindow)
+  const capsuleHtmlContent = fs.readFileSync(path.join(ROOT, 'assets', 'pen-capsule.html'), 'utf8');
+  const hasSmoothDragAndPin = bentoCsContent.includes('ReleaseCapture()') &&
+                              bentoCsContent.includes('WM_NCLBUTTONDOWN') &&
+                              bentoCsContent.includes('_isWindowPinned') &&
+                              bentoCsContent.includes('op.Equals("togglePinWindow"') &&
+                              panelContent.includes('id="pin-window-btn"') &&
+                              panelContent.includes('function togglePinWindow') &&
+                              capsuleHtmlContent.includes('.header-tag, .smart-badge');
+  logStep("Step 7.220: Win32 ReleaseCapture 丝滑拖拽、顶栏 📌 常驻图钉锁与随身划笔徽章防吞点击断言", hasSmoothDragAndPin, `原生丝滑拖拽与常驻锁: ${hasSmoothDragAndPin}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

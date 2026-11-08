@@ -74,6 +74,15 @@
       --input-border: #CBD5E1;
       --input-shadow: inset 0 1.5px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
 
+      --font-mono: ui-monospace, SFMono-Regular, "Cascadia Code", Consolas, "Liberation Mono", monospace;
+      --titanium-cyan: #0284c7;
+      --sky-glow: #0284c7;
+      --amber-agent: #d97706;
+      --amber-glow: #d97706;
+      --border-card-bottom: #94A3B8;
+      --b3-font-color: #0F172A;
+      --bg-editor-well: #F8FAFC;
+
       --radius-sm: 6px;
       --radius-md: 10px;
       --radius-lg: 14px;
@@ -135,6 +144,15 @@
       --input-bg: rgba(15, 23, 42, 0.72);
       --input-border: rgba(255, 255, 255, 0.14);
       --input-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+
+      --font-mono: ui-monospace, SFMono-Regular, "Cascadia Code", Consolas, "Liberation Mono", monospace;
+      --titanium-cyan: #38bdf8;
+      --sky-glow: #38bdf8;
+      --amber-agent: #f59e0b;
+      --amber-glow: #fbbf24;
+      --border-card-bottom: #0284C7;
+      --b3-font-color: #FFFFFF;
+      --bg-editor-well: rgba(0, 0, 0, 0.3);
 
       --radius-sm: 6px;
       --radius-md: 10px;
@@ -943,6 +961,48 @@
       color: var(--cyber-sky);
       border-color: rgba(56, 189, 248, 0.35);
     }
+    .badge-stale {
+      background: rgba(244, 63, 94, 0.16);
+      color: var(--rose-agent);
+      border: 1px solid rgba(244, 63, 94, 0.38);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .badge-primary {
+      background: rgba(99, 102, 241, 0.2);
+      color: var(--indigo-light);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .tag-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 4px;
+      border: 1px solid var(--border-hairline);
+      padding: 1px 6px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .inspector-action-btn {
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid var(--border-hairline);
+      background: var(--key-badge-bg);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .inspector-action-btn:hover {
+      border-color: var(--indigo-primary);
+      color: var(--indigo-light);
+    }
 
     /* Footer Status Bar */
     .panel-footer {
@@ -1362,6 +1422,55 @@
       border: 1px solid #CBD5E1;
       color: #0F172A;
       box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    }
+    [data-theme="light"] .timeline-modal-box,
+    [data-theme="light"] .inline-form-box,
+    [data-theme="light"] .studio-switcher-popover {
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      box-shadow: 0 25px 55px -12px rgba(15, 23, 42, 0.24), 0 0 20px rgba(99, 102, 241, 0.1);
+    }
+    [data-theme="light"] .launchpad-card,
+    [data-theme="light"] .clip-snippet-item,
+    [data-theme="light"] .profile-card,
+    [data-theme="light"] .vault-note-card,
+    [data-theme="light"] .omm-tree-item,
+    [data-theme="light"] .code-snippet-card,
+    [data-theme="light"] .studio-grid-tile {
+      background: #FFFFFF;
+      border-color: #CBD5E1;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+    [data-theme="light"] .launchpad-card:hover,
+    [data-theme="light"] .clip-snippet-item:hover,
+    [data-theme="light"] .profile-card:hover,
+    [data-theme="light"] .vault-note-card:hover,
+    [data-theme="light"] .omm-tree-item:hover,
+    [data-theme="light"] .code-snippet-card:hover,
+    [data-theme="light"] .studio-grid-tile:hover {
+      background: #F8FAFC;
+      border-color: #6366F1;
+      box-shadow: 0 8px 20px -4px rgba(99, 102, 241, 0.14);
+    }
+    [data-theme="light"] .profile-params-box,
+    [data-theme="light"] #cs-preview-textarea,
+    [data-theme="light"] #vm-markdown-preview {
+      background: #F8FAFC !important;
+      border-color: #CBD5E1 !important;
+      color: #0F172A !important;
+    }
+    [data-theme="light"] .launchpad-card-icon-wrap,
+    [data-theme="light"] .launchpad-card-pill,
+    [data-theme="light"] .launchpad-mini-btn,
+    [data-theme="light"] .launchpad-card-num-badge {
+      background: #F1F5F9;
+      border-color: #CBD5E1;
+      color: #334155;
+    }
+    [data-theme="light"] .badge-stale {
+      background: #FFF1F2;
+      color: #BE123C;
+      border-color: #FECDD3;
     }
 
     .icon-svg {
@@ -3116,7 +3225,7 @@
 <body>
 
   <!-- Top Telemetry Header -->
-  <header class="telemetry-header" onmousedown="handleHeaderMouseDown(event)">
+  <header class="telemetry-header" onmousedown="handleHeaderMouseDown(event)" ondblclick="handleHeaderDoubleClick(event)">
     <div class="brand-wrap">
       <div class="brand-logo" title="思源外骨骼 · 桌面穿透工作台">
         <img src="icons/xiaolv-master-logo.svg" alt="思源外骨骼" class="brand-logo-img" onerror="this.outerHTML='⚡';" />
@@ -3181,6 +3290,7 @@
       <button class="theme-toggle-btn" id="help-btn" onclick="toggleCheatsheet()" title="快捷心流与语法罗盘 (?)">❓</button>
       <button class="theme-toggle-btn" id="customize-btn" onclick="togglePreferencesModal()" title="设置中枢 (⚙)">⚙️</button>
       <button class="theme-toggle-btn" id="theme-btn" onclick="toggleTheme()" title="切换浅色/深色主题">🌓</button>
+      <button class="theme-toggle-btn" id="pin-window-btn" onclick="togglePinWindow()" title="窗口常驻置顶锁 (点击锁定后失焦不自动隐藏，方便双屏/分屏对照工作)">📌</button>
       <button class="theme-toggle-btn" id="zen-btn" onclick="toggleMaximizeWindow()" title="沉浸式全屏 / 窗口化切换 (F11)">⛶</button>
       <div class="top-nav-divider"></div>
       <button class="theme-toggle-btn window-close-btn" id="window-close-btn" onclick="closeWindow()" title="关闭退出面板 (Esc)">✕</button>
@@ -3310,7 +3420,7 @@
       <div class="hint-item"><span class="hint-kbd">Shift+Enter</span> 穿透回贴双链</div>
       <div class="hint-item"><span class="hint-kbd">Esc</span> 退出</div>
     </div>
-    <div id="footer-count" style="font-family: monospace; font-weight: 600;">共 25 项王牌能力 · 就绪</div>
+    <div id="footer-count" style="font-family: monospace; font-weight: 600;">共 31 项王牌能力 · 就绪</div>
   </footer>
 
   <div class="toast-notify" id="toast-notify">✓ 指令已执行</div>
@@ -3657,7 +3767,6 @@
         </div>
       </div>
     </div>
-  </div>
   </div>
 
   <!-- AI 前置提炼结果模态弹窗 -->
@@ -4025,7 +4134,7 @@
 
   <!-- 双向知识网络星轨拓扑全景视窗 (Radial Star Graph Explorer Modal) -->
   <div class="timeline-modal-overlay" id="graph-modal" onclick="closeGraphModalOnBg(event)">
-    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 95%; max-width: 980px; max-height: 88vh; background: #070d18;">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 95%; max-width: 980px; max-height: 88vh;">
       <div class="timeline-header">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 16px;">🌌</span>
@@ -4375,7 +4484,7 @@
         <!-- Right: Code Editor & Canvas -->
         <div class="code-studio-right">
           <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
-            <div id="cs-preview-meta" style="font-family: var(--font-mono); font-size: 11px; color: var(--cyber-sky); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 440px;">未选择代码块</div>
+            <div id="code-studio-preview-meta" style="font-family: var(--font-mono); font-size: 11px; color: var(--cyber-sky); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 440px;">未选择代码块</div>
             <div style="display: flex; gap: 8px;">
               <button class="launchpad-mini-btn" onclick="openCurrentCodeBlockInSiYuan()" title="在思源大窗中原位定位此块">🔗 思源定位</button>
               <button class="launchpad-mini-btn primary" onclick="copyCleanCodeSnippet()" title="复制纯净代码">📋 复制代码</button>
@@ -7902,17 +8011,23 @@
       if (modal) modal.classList.remove("open");
     }
 
+    function hasActiveSearchPrefix(prefixes) {
+      const si = document.getElementById("search-input");
+      const q = si ? (si.value || "").trim().toLowerCase() : "";
+      if (!q) return false;
+      return prefixes.some(p => q === p || q.startsWith(p + ":") || q.startsWith(p + "："));
+    }
+
     window.onOfflineQueueLoaded = function(payload) {
       const badge = document.getElementById("offline-queue-modal-badge");
       const body = document.getElementById("offline-queue-modal-body");
-      if (!body) return;
-
-      const items = (payload && Array.isArray(payload.items)) ? payload.items : [];
+      const items = (payload && Array.isArray(payload.items)) ? payload.items : ((payload && Array.isArray(payload.data)) ? payload.data : []);
       if (badge) badge.textContent = `${items.length} 条待回写`;
+      updateOfflineQueueBadge({ count: items.length });
+      if (!body) return;
 
       if (items.length === 0) {
         body.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 24px;">队列为空，所有速记已成功落盘至思源。</div>`;
-        updateOfflineQueueBadge({ count: 0 });
         return;
       }
 
@@ -7925,8 +8040,6 @@
           <div style="font-size: 12px; color: var(--text-primary); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(it.Content || it.FilePath || '')}</div>
         </div>
       `).join("");
-
-      updateOfflineQueueBadge({ count: items.length });
     };
 
     function flushOfflineQueue() {
@@ -8715,22 +8828,6 @@
       }
     }
 
-    function triggerAiRefine(mode, text) {
-      if (!text) {
-        showToast("⚠️ 内容为空，无法提炼");
-        return;
-      }
-      showToast("🤖 正在调用大模型进行智能提炼，请稍候...");
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({
-          op: 'refineWithAi',
-          mode: mode || 'takeaways',
-          text: text,
-          target: 'daily'
-        }));
-      }
-    }
-
     let currentPdfSummary = null;
 
     function inspectPdfDeep(filePath) {
@@ -9249,6 +9346,7 @@
 
     window.onCodeSnippetsLoaded = function(resp) {
       if (!resp || !Array.isArray(resp.data)) return;
+      if (!hasActiveSearchPrefix(["code", "snip"])) return;
       const items = resp.data;
       filteredItems = items.map(s => {
         const firstLine = (s.Code || "").split('\n')[0].trim();
@@ -9316,6 +9414,7 @@
 
     window.onTablesLoaded = function(resp) {
       if (!resp || !Array.isArray(resp.data)) return;
+      if (!hasActiveSearchPrefix(["tab", "table"])) return;
       const items = resp.data;
       filteredItems = items.map(tbl => {
         const isAv = tbl.type === 'av';
@@ -9548,6 +9647,8 @@
 
       // 同步刷新四象限与看板独立视窗
       renderKanbanBoard();
+
+      if (!hasActiveSearchPrefix(["t", "todo"])) return;
 
       const banner = document.getElementById("intent-banner");
       if (banner) {
@@ -9863,9 +9964,13 @@
       }
     }
 
+    const _origOnOfflineQueueLoaded = window.onOfflineQueueLoaded;
     window.onOfflineQueueLoaded = function(res) {
-      if (!res || !Array.isArray(res.data)) return;
-      const items = res.data;
+      if (_origOnOfflineQueueLoaded) _origOnOfflineQueueLoaded(res);
+      const list = (res && Array.isArray(res.data)) ? res.data : ((res && Array.isArray(res.items)) ? res.items : null);
+      if (!list) return;
+      if (!hasActiveSearchPrefix(["queue", "offline"])) return;
+      const items = list;
       filteredItems = items.map((it, idx) => ({
         id: `queue_${it.Id || idx}`,
         group: "offline",
@@ -10039,6 +10144,7 @@
         });
       }
 
+      if (!hasActiveSearchPrefix(["fav", "url"])) return;
       filteredItems = items;
       selectedIndex = 0;
       renderItems();
@@ -10225,6 +10331,7 @@
         });
       }
 
+      if (!hasActiveSearchPrefix(["fold", "folder", "dir", "f"])) return;
       filteredItems = items;
       selectedIndex = 0;
       renderItems();
@@ -10399,6 +10506,7 @@
         });
       }
 
+      if (!hasActiveSearchPrefix(["cfg", "s3", "ai", "profile"])) return;
       filteredItems = items;
       selectedIndex = 0;
       renderItems();
@@ -10587,6 +10695,7 @@
         });
       }
 
+      if (!hasActiveSearchPrefix(["notice", "notif"])) return;
       filteredItems = items;
       selectedIndex = 0;
       renderItems();
@@ -11017,6 +11126,7 @@
 
     window.onVaultNotesLoaded = function(res) {
       if (!res || !Array.isArray(res.data)) return;
+      if (!hasActiveSearchPrefix(["vault", "dir"])) return;
       const notes = res.data;
       filteredItems = notes.map(n => ({
         id: `vault_${Math.random().toString(36).slice(2)}`,
@@ -11468,6 +11578,7 @@
 
     window.onRecentClipsLoaded = function(resp) {
       if (!resp || !Array.isArray(resp.data)) return;
+      if (!hasActiveSearchPrefix(["c", "clip"])) return;
       const clips = resp.data;
       const dynamicList = [];
 
@@ -12230,11 +12341,33 @@
     };
 
     function handleHeaderMouseDown(e) {
-      if (e.button === 0 && !e.target.closest("button, .t-pill, input, a, .top-nav-divider")) {
+      if (e.button === 0 && !e.target.closest("button, .t-pill, input, a, .top-nav-divider, .studio-hub-wrap, .studio-switcher-popover")) {
         if (window.chrome && window.chrome.webview) {
           window.chrome.webview.postMessage(JSON.stringify({ op: 'dragMove' }));
         }
       }
+    }
+
+    function handleHeaderDoubleClick(e) {
+      if (!e.target.closest("button, .t-pill, input, a, .top-nav-divider, .studio-hub-wrap, .studio-switcher-popover")) {
+        toggleMaximizeWindow();
+      }
+    }
+
+    let isWindowPinnedState = false;
+    function togglePinWindow() {
+      isWindowPinnedState = !isWindowPinnedState;
+      const btn = document.getElementById("pin-window-btn");
+      if (btn) {
+        btn.style.borderColor = isWindowPinnedState ? "var(--emerald-mint)" : "";
+        btn.style.background = isWindowPinnedState ? "rgba(16, 185, 129, 0.2)" : "";
+        btn.style.color = isWindowPinnedState ? "var(--emerald-mint)" : "";
+        btn.title = isWindowPinnedState ? "📌 窗口已锁定常驻 (失焦不隐藏，点击解除锁定)" : "窗口常驻置顶锁 (点击锁定后失焦不自动隐藏，方便双屏/分屏对照工作)";
+      }
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'togglePinWindow', pinned: isWindowPinnedState }));
+      }
+      showToast(isWindowPinnedState ? "📌 窗口已锁定常驻：点击外部软件时工作台将保持置顶不隐藏！" : "✓ 已解除常驻锁定：恢复失焦自动隐退呼吸感");
     }
 
     // ==========================================================
@@ -12661,7 +12794,9 @@
     }
 
     // Called when backend returns recent clips
+    const _origOnRecentClipsLoaded = window.onRecentClipsLoaded;
     window.onRecentClipsLoaded = function(res) {
+      if (_origOnRecentClipsLoaded) _origOnRecentClipsLoaded(res);
       if (!res || !Array.isArray(res.data)) return;
       window._rawRecentClips = res.data;
       clipStudioOrder = [];
@@ -12842,7 +12977,9 @@
     }
 
     // Called when backend returns merged markdown
+    const _origOnClipboardMerged = window.onClipboardMerged;
     window.onClipboardMerged = function(res) {
+      if (_origOnClipboardMerged) _origOnClipboardMerged(res);
       if (!res || !res.markdown) return;
       const txtArea = document.getElementById("cs-preview-textarea");
       if (txtArea) {
@@ -14189,7 +14326,9 @@
       }
     }
 
+    const _origOnTablesLoaded = window.onTablesLoaded;
     window.onTablesLoaded = function(res) {
+      if (_origOnTablesLoaded) _origOnTablesLoaded(res);
       if (!res || !Array.isArray(res.data)) return;
       allLibraryTables = res.data;
       const picker = document.getElementById("tg-table-picker");
@@ -14661,7 +14800,7 @@
       currentSelectedCodeSnippet = snippet;
       renderCodeStudioList();
 
-      const metaLabel = document.getElementById("cs-preview-meta");
+      const metaLabel = document.getElementById("code-studio-preview-meta");
       if (metaLabel) {
         metaLabel.innerText = `《${snippet.DocTitle}》 · ${(snippet.Language || 'TEXT').toUpperCase()} · ${snippet.LineCount} 行`;
       }

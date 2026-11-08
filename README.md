@@ -426,6 +426,12 @@
   - `🔗 思源定位` ➔ 一键激活思源大窗并定位该代码块；
 - **极速调用桥 Webhook 接口**：`GET /api/code/snippets?lang=...&q=...` 与 `POST /api/code/open` 为外部自动化脚本提供全库代码检索与 IDE 秒开服务。
 
+### 61. ★ P0 顶栏九宫格收纳、全局模态栈与暗夜内联表单体系 (`ModalStackManager` & `InlineFormModal`)
+- **顶栏清爽收敛减负**：将 12 大全景独立工作台统一收纳至顶栏 **🎛️ 工作台九宫格矩阵浮层**，搭配首屏高频意图胶囊 + `✨ 更多指令` 折叠抽屉，消除小屏幕顶栏挤压感；
+- **全局统一模态栈与四级 `Esc` 丝滑回退**：`ModalStackManager` 统一托管全部 17 个模态视窗互斥切换，按 `Esc` 键按「关内联弹窗 ➔ 关九宫格菜单 ➔ 关顶层工作台 ➔ 清空搜索词 ➔ 隐退主窗口」四级递进回退；
+- **全面消灭阻塞式原生弹窗**：自研暗夜黑曜风通用内联表单 (`inline-form-modal`) 替代全量 `prompt()`/`confirm()`，彻底杜绝无边框窗体失焦隐退；
+- **原生系统目录选择桥接**：目录录入与外部知识库换库接入 C# 原生 `FolderBrowserDialog`（带防失焦隐退锁 `_suppressAutoHide`），点击 `📂 浏览...` 一键选取本地磁盘文件夹；全工程版本号统一对齐 `v3.0.0`。
+
 ---
 
 ## 三、 全局快捷键「六剑客」
@@ -588,7 +594,7 @@ pnpm e2e:isolated
 pnpm e2e:isolated
 ```
 
-- **211 项核心能力断言 100% PASS**：覆盖冷启动、30秒粘滞防碎块、上下文环境注水、意图分流（待办/闪卡）、FSRS 评级闭环、原生块检索、双链认知雷达、健康体检、全库附件检索、3D PDF 断行自愈、6大平台去噪、Office/EPUB/XMind流式透视、音视频时间戳笔记、纯净代码提取、Quicker Webhook 回路、数据表格类型推导与AV映射、本地PDF页码锚点感知、CLI 调度器、异构笔记语法对齐(Obsidian/Logseq)、智能超链嵌入(Smart Paste URL)、变量命名法转换、双向反链与图谱雷达、全景待办视界与Checklist导出、浮墨漫游回顾、离线队列管理、本地浏览器书签穿透检索、学术文献国标著录(GB/T 7714 & APA)与BibTeX生成、桌面心流计时器与自动时序沉淀、剪贴板历史批量合并排版、悬空死链深度诊断、外部Markdown与CSV直投、多语言源码结构化入库、双链自动重定向自愈、独立HTML网页导出、Word批注逆向注入与回写、PPT演讲备注晚绑定监听、桌面边缘托放中枢智能路由、活便签智能粘贴管道、外部富文本图文无损复制(CF_HTML与Base64图片内嵌)、双击Ctrl极速呼出微控激活器、长文认知阅读字数与耗时智能预估、知识卡片SVG长图生成、多屏幕多DPI自愈吸附、外部Markdown知识库镜像透视、知识库隐私敏感脱敏(PrivacySanitizer)、全库52周时序热力图(HabitHeatmapGenerator)、双向知识网络星轨拓扑图谱(GraphVisualizer)、全景网站收藏中枢(WebBookmarkHub)、本地文件夹收藏与#32770对话框秒跳穿透(FolderBookmarkHub)、底栏番茄钟生态感知(DockTomatoBridge)、Actionable PKM任务专注结绳闭环、思源脱敏配置预设管理(SiYuanProfileHub)、全景通知事件流与15s去重(OmniNotificationHub)、全景待办四象限大看板(tasks-kanban-modal)、52周年度热力大画廊(heatmap-gallery-modal)、通知中心独立视窗(notification-center-modal)、全景网站与工程文件夹大图标启动台(launchpad-modal)、剪贴板多选碎片拼版工作台(clip-studio-modal)、双向知识网络星轨拓扑全景大视窗(graph-modal)、思源常用配置预设与大模型驱动中枢(profile-hub-modal)、系统全库综合体检与死链清道夫(system-doctor-modal)、外部知识库与Markdown目录镜像透视工作台(vault-mirror-modal)、全景大纲与交互思维导图独立大工作台(outline-mindmap-modal)、全库数据表格与属性视图透视矩阵大工作台(table-grid-modal)、全库代码片段与多语言纯净源码工作台(code-studio-modal)及断网离线队列回写；
+- **217 项核心能力断言 100% PASS**：覆盖冷启动、30秒粘滞防碎块、上下文环境注水、意图分流（待办/闪卡）、FSRS 评级闭环、原生块检索、双链认知雷达、健康体检、全库附件检索、3D PDF 断行自愈、6大平台去噪、Office/EPUB/XMind流式透视、音视频时间戳笔记、纯净代码提取、Quicker Webhook 回路、数据表格类型推导与AV映射、本地PDF页码锚点感知、CLI 调度器、异构笔记语法对齐(Obsidian/Logseq)、智能超链嵌入(Smart Paste URL)、变量命名法转换、双向反链与图谱雷达、全景待办视界与Checklist导出、浮墨漫游回顾、离线队列管理、本地浏览器书签穿透检索、学术文献国标著录(GB/T 7714 & APA)与BibTeX生成、桌面心流计时器与自动时序沉淀、剪贴板历史批量合并排版、悬空死链深度诊断、外部Markdown与CSV直投、多语言源码结构化入库、双链自动重定向自愈、独立HTML网页导出、Word批注逆向注入与回写、PPT演讲备注晚绑定监听、桌面边缘托放中枢智能路由、活便签智能粘贴管道、外部富文本图文无损复制(CF_HTML与Base64图片内嵌)、双击Ctrl极速呼出微控激活器、长文认知阅读字数与耗时智能预估、知识卡片SVG长图生成、多屏幕多DPI自愈吸附、外部Markdown知识库镜像透视、知识库隐私敏感脱敏(PrivacySanitizer)、全库52周时序热力图(HabitHeatmapGenerator)、双向知识网络星轨拓扑图谱(GraphVisualizer)、全景网站收藏中枢(WebBookmarkHub)、本地文件夹收藏与#32770对话框秒跳穿透(FolderBookmarkHub)、底栏番茄钟生态感知(DockTomatoBridge)、Actionable PKM任务专注结绳闭环、思源脱敏配置预设管理(SiYuanProfileHub)、全景通知事件流与15s去重(OmniNotificationHub)、全景待办四象限大看板(tasks-kanban-modal)、52周年度热力大画廊(heatmap-gallery-modal)、通知中心独立视窗(notification-center-modal)、全景网站与工程文件夹大图标启动台(launchpad-modal)、剪贴板多选碎片拼版工作台(clip-studio-modal)、双向知识网络星轨拓扑全景大视窗(graph-modal)、思源常用配置预设与大模型驱动中枢(profile-hub-modal)、系统全库综合体检与死链清道夫(system-doctor-modal)、外部知识库与Markdown目录镜像透视工作台(vault-mirror-modal)、全景大纲与交互思维导图独立大工作台(outline-mindmap-modal)、全库数据表格与属性视图透视矩阵大工作台(table-grid-modal)、全库代码片段与多语言纯净源码工作台(code-studio-modal)、顶栏九宫格工作台矩阵(studio-switcher-popover)、全局统一模态栈四级Esc回退(ModalStackManager)、暗夜黑曜内联表单与原生目录浏览(InlineFormModal + FolderBrowserDialog)及断网离线队列回写；
 - **真实守护进程保护**：测试全程在独立沙箱与避让端口执行，自动化完成后即刻无感恢复生产版守护进程。
 
 ---

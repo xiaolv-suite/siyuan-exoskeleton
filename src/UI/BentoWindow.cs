@@ -39,6 +39,7 @@ namespace XiaoLv.Desktop.UI
         private static Timer _saveSizeTimer = null;
         private string _currentInspectedDocId = "";
         private string _currentInspectedDocTitle = "";
+        private bool _suppressAutoHide = false;
 
         public event Action<string, string> OnSubActionRequested;
         public event Action<string> OnSaveSettingsRequested;
@@ -140,7 +141,14 @@ namespace XiaoLv.Desktop.UI
             {
                 if (e.Key == Key.Escape)
                 {
-                    Hide();
+                    if (_webView != null && _webView.CoreWebView2 != null)
+                    {
+                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.handleGlobalEscapeKey){window.handleGlobalEscapeKey();}else{if(window.closeWindow)window.closeWindow();}");
+                    }
+                    else
+                    {
+                        Hide();
+                    }
                     e.Handled = true;
                 }
                 else if (e.Key == Key.F11)
@@ -152,7 +160,8 @@ namespace XiaoLv.Desktop.UI
 
             Deactivated += (s_ev, e) =>
             {
-                // 失去焦点时自动隐藏，保持轻量呼吸感
+                // 失去焦点时自动隐藏，保持轻量呼吸感 (若正在弹出原生目录选择框则暂缓隐藏)
+                if (_suppressAutoHide) return;
                 Hide();
             };
 
@@ -1479,16 +1488,57 @@ namespace XiaoLv.Desktop.UI
 									                    return;
 									                }
 
-										                if (op.Equals("navigateFolderBookmark", StringComparison.OrdinalIgnoreCase))
-										                {
-										                    string targetPath = JsonHelper.GetString(msg, "path");
-										                    if (!string.IsNullOrEmpty(targetPath))
-										                    {
-										                        Hide();
-										                        FolderBookmarkHub.NavigateToFolder(targetPath, LastExternalForegroundHwnd);
-										                    }
-										                    return;
-										                }
+											                if (op.Equals("navigateFolderBookmark", StringComparison.OrdinalIgnoreCase))
+											                {
+											                    string targetPath = JsonHelper.GetString(msg, "path");
+											                    if (!string.IsNullOrEmpty(targetPath))
+											                    {
+											                        Hide();
+											                        FolderBookmarkHub.NavigateToFolder(targetPath, LastExternalForegroundHwnd);
+											                    }
+											                    return;
+											                }
+
+											                if (op.Equals("pickLocalFolder", StringComparison.OrdinalIgnoreCase))
+											                {
+											                    string initialDir = JsonHelper.GetString(msg, "initialDir", @"D:\");
+											                    string targetInputId = JsonHelper.GetString(msg, "targetInputId", "");
+											                    string desc = JsonHelper.GetString(msg, "description", "请选择本地文件夹目录");
+											                    Dispatcher.BeginInvoke(new Action(() =>
+											                    {
+											                        _suppressAutoHide = true;
+											                        try
+											                        {
+											                            using (var fbd = new System.Windows.Forms.FolderBrowserDialog())
+											                            {
+											                                fbd.Description = desc;
+											                                fbd.ShowNewFolderButton = true;
+											                                if (!string.IsNullOrEmpty(initialDir) && Directory.Exists(initialDir))
+											                                {
+											                                    fbd.SelectedPath = initialDir;
+											                                }
+											                                var dlgRes = fbd.ShowDialog();
+											                                if (dlgRes == System.Windows.Forms.DialogResult.OK && !string.IsNullOrEmpty(fbd.SelectedPath))
+											                                {
+											                                    string picked = fbd.SelectedPath;
+											                                    string alias = Path.GetFileName(picked.TrimEnd('\\', '/'));
+											                                    if (string.IsNullOrEmpty(alias)) alias = picked;
+											                                    if (_webView != null && _webView.CoreWebView2 != null)
+											                                    {
+											                                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onLocalFolderPicked) window.onLocalFolderPicked(" + JsonHelper.ToJson(new { code = 0, path = picked, alias = alias, targetInputId = targetInputId }) + ");");
+											                                    }
+											                                }
+											                            }
+											                        }
+											                        catch { }
+											                        finally
+											                        {
+											                            _suppressAutoHide = false;
+											                            try { Activate(); } catch { }
+											                        }
+											                    }));
+											                    return;
+											                }
 
 										                // 3.71 思源常用配置预设与大模型切换中枢 (cfg: / s3: / ai:)
 										                if (op.Equals("searchProfiles", StringComparison.OrdinalIgnoreCase))

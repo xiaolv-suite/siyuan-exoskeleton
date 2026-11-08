@@ -181,7 +181,7 @@ namespace XiaoLv.Desktop.Core
     /// </summary>
     public static class AutoUpdater
     {
-        public const string CURRENT_VERSION = "2.9.0";
+        public const string CURRENT_VERSION = "3.0.0";
         private const string GITEE_VERSION_URL = "https://gitee.com/xiaolv-desktop/releases/raw/master/version.json";
         private const string GITHUB_PROXY_URL = "https://ghproxy.net/https://raw.githubusercontent.com/xiaolv-desktop/releases/master/version.json";
 

@@ -2977,6 +2977,139 @@
       border: 1px solid rgba(56, 189, 248, 0.3);
     }
 
+    /* Studio Hub 9-Grid Switcher Popover & Tiered Intent Chips */
+    .studio-hub-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .studio-switcher-popover {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 348px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-glow);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.78), 0 0 24px rgba(56, 189, 248, 0.2);
+      z-index: 2200;
+      animation: modalEnter 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .studio-switcher-popover.open {
+      display: block;
+    }
+    .studio-switcher-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .studio-grid-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 9px 6px;
+      border-radius: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .studio-grid-tile:hover {
+      border-color: var(--cyber-sky);
+      background: rgba(56, 189, 248, 0.1);
+      transform: translateY(-1px);
+    }
+    .studio-grid-tile .tile-ico {
+      font-size: 17px;
+      line-height: 1.1;
+    }
+    .studio-grid-tile .tile-lbl {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+    .studio-grid-tile .tile-sub {
+      font-size: 9.5px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .more-chips-toggle {
+      border-color: rgba(56, 189, 248, 0.38) !important;
+      background: rgba(56, 189, 248, 0.1) !important;
+      color: var(--cyber-sky) !important;
+      font-weight: 600;
+    }
+    .more-intent-chips-drawer {
+      display: none;
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding-top: 6px;
+      margin-top: 4px;
+      border-top: 1px dashed var(--border-hairline);
+    }
+    .more-intent-chips-drawer.open {
+      display: flex;
+    }
+
+    /* Dark-Obsidian Inline Form & Confirm Modal */
+    .inline-form-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.72);
+      backdrop-filter: blur(6px);
+      z-index: 2600;
+      align-items: center;
+      justify-content: center;
+    }
+    .inline-form-overlay.open {
+      display: flex;
+    }
+    .inline-form-box {
+      width: 92%;
+      max-width: 460px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-glow);
+      border-radius: 12px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 28px rgba(99, 102, 241, 0.25);
+      overflow: hidden;
+      animation: modalEnter 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .inline-form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .inline-form-field label {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .inline-form-input {
+      width: 100%;
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      outline: none;
+      font-family: inherit;
+    }
+    .inline-form-input:focus {
+      border-color: var(--cyber-sky);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+    }
+
   </style>
 </head>
 <body>
@@ -2989,7 +3122,7 @@
       </div>
       <div class="brand-title">
         <span>思源外骨骼 · 桌面穿透工作台</span>
-        <span class="brand-pill">v2.9.0</span>
+        <span class="brand-pill">v3.0.0</span>
       </div>
     </div>
     <div class="telemetry-right">
@@ -3028,33 +3161,86 @@
         </div>
       </div>
 
-      <button class="theme-toggle-btn" id="graph-btn" onclick="toggleGraphModal()" title="双向知识网络星轨拓扑全景 (🌌)" style="position: relative;">
-        <span>🌌</span>
-      </button>
-      <button class="theme-toggle-btn" id="clip-studio-btn" onclick="toggleClipStudioModal()" title="剪贴板多选碎片拼版工作台 (📋)" style="position: relative;">
-        <span>📋</span>
-      </button>
       <button class="theme-toggle-btn" id="launchpad-btn" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台 (🚀)" style="position: relative;">
         <span>🚀</span>
       </button>
-      <button class="theme-toggle-btn" id="profile-btn" onclick="toggleProfileHubModal()" title="思源配置预设与大模型驱动中枢 (🧩)" style="position: relative;">
-        <span>🧩</span>
-      </button>
-      <button class="theme-toggle-btn" id="doctor-btn" onclick="toggleSystemDoctorModal()" title="系统全库综合体检与死链清道夫 (🩺)" style="position: relative;">
-        <span>🩺</span>
-      </button>
-      <button class="theme-toggle-btn" id="vault-btn" onclick="toggleVaultMirrorModal()" title="外部知识库与 Markdown 目录镜像透视 (🗄️)" style="position: relative;">
-        <span>🗄️</span>
-      </button>
-      <button class="theme-toggle-btn" id="mindmap-btn" onclick="toggleOutlineMindmapModal()" title="全景大纲与交互思维导图大工作台 (🗺️)" style="position: relative;">
-        <span>🗺️</span>
-      </button>
-      <button class="theme-toggle-btn" id="table-btn" onclick="toggleTableGridModal()" title="全库数据表格与属性视图透视矩阵 (📊)" style="position: relative;">
-        <span>📊</span>
-      </button>
-      <button class="theme-toggle-btn" id="code-btn" onclick="toggleCodeStudioModal()" title="全库代码片段与多语言纯净源码工作台 (⌨️)" style="position: relative;">
-        <span>⌨️</span>
-      </button>
+
+      <!-- 全景工作台九宫格矩阵切换器 (收纳 12 大独立工作台，告别顶栏拥挤) -->
+      <div class="studio-hub-wrap" id="studio-hub-wrap">
+        <button class="theme-toggle-btn" id="studio-hub-btn" onclick="toggleStudioSwitcherPopover(event)" title="全景工作台九宫格矩阵 (🎛️ 一键切换 12 大独立视窗)" style="width: auto; padding: 0 9px; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.35);">
+          <span>🎛️</span>
+          <span>工作台</span>
+        </button>
+        <div class="studio-switcher-popover" id="studio-switcher-popover" onclick="event.stopPropagation()">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1px solid var(--border-hairline); font-size: 11.5px;">
+            <span style="font-weight: 700; color: var(--text-primary);">🎛️ 全景独立工作台矩阵 (12)</span>
+            <span style="font-size: 10px; color: var(--text-muted);">Esc 逐级返回</span>
+          </div>
+          <div class="studio-switcher-grid">
+            <button type="button" class="studio-grid-tile" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台 (pad:)">
+              <span class="tile-ico">🚀</span>
+              <span class="tile-lbl">大图标启动台</span>
+              <span class="tile-sub">pad:</span>
+            </button>
+            <button type="button" class="studio-grid-tile" onclick="toggleTasksKanbanModal()" title="全景待办四象限与看板工作台 (t:)">
+              <span class="tile-ico">🎴</span>
+              <span class="tile-lbl">四象限待办</span>
+              <span class="tile-sub">t:</span>
+            </button>
+            <button type="button" class="studio-grid-tile" id="clip-studio-btn" onclick="toggleClipStudioModal()" title="剪贴板多选碎片拼版工作台 (📋)">
+              <span class="tile-ico">📋</span>
+              <span class="tile-lbl">剪贴板拼版</span>
+              <span class="tile-sub">c:merge</span>
+            </button>
+            <button type="button" class="studio-grid-tile" id="graph-btn" onclick="toggleGraphModal()" title="双向知识网络星轨拓扑全景 (🌌)">
+              <span class="tile-ico">🌌</span>
+              <span class="tile-lbl">星轨图谱</span>
+              <span class="tile-sub">graph:</span>
+            </button>
+            <button type="button" class="studio-grid-tile" id="mindmap-btn" onclick="toggleOutlineMindmapModal()" title="全景大纲与交互思维导图大工作台 (🗺️)">
+              <span class="tile-ico">🗺️</span>
+              <span class="tile-lbl">大纲与导图</span>
+              <span class="tile-sub">syo</span>
+            </button>
+            <button type="button" class="studio-grid-tile" id="table-btn" onclick="toggleTableGridModal()" title="全库数据表格与属性视图透视矩阵 (📊)">
+              <span class="tile-ico">📊</span>
+              <span class="tile-lbl">表格矩阵</span>
+              <span class="tile-sub">tab:</span>
+            </button>
+            <button type="button" class="studio-grid-tile" id="code-btn" onclick="toggleCodeStudioModal()" title="全库代码片段与多语言纯净源码工作台 (⌨️)">
+              <span class="tile-ico">⌨️</span>
+              <span class="tile-lbl">代码工作台</span>
+              <span class="tile-sub">code:</span>
+            </button>
+            <button type="button" class="studio-grid-tile" id="vault-btn" onclick="toggleVaultMirrorModal()" title="外部知识库与 Markdown 目录镜像透视 (🗄️)">
+              <span class="tile-ico">🗄️</span>
+              <span class="tile-lbl">外部知识库</span>
+              <span class="tile-sub">vault:</span>
+            </button>
+            <button type="button" class="studio-grid-tile" id="profile-btn" onclick="toggleProfileHubModal()" title="思源配置预设与大模型驱动中枢 (🧩)">
+              <span class="tile-ico">🧩</span>
+              <span class="tile-lbl">配置与模型</span>
+              <span class="tile-sub">cfg:</span>
+            </button>
+            <button type="button" class="studio-grid-tile" id="doctor-btn" onclick="toggleSystemDoctorModal()" title="系统全库综合体检与死链清道夫 (🩺)">
+              <span class="tile-ico">🩺</span>
+              <span class="tile-lbl">系统体检</span>
+              <span class="tile-sub">syh</span>
+            </button>
+            <button type="button" class="studio-grid-tile" onclick="toggleHeatmapGalleryModal()" title="52周年度知识心流沉淀大画廊 (heat:)">
+              <span class="tile-ico">🔥</span>
+              <span class="tile-lbl">52周热力图</span>
+              <span class="tile-sub">heat:</span>
+            </button>
+            <button type="button" class="studio-grid-tile" onclick="toggleNotificationCenterModal()" title="全景通知与生命事件中心 (notice:)">
+              <span class="tile-ico">🔔</span>
+              <span class="tile-lbl">通知中心</span>
+              <span class="tile-sub">notice:</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <button class="theme-toggle-btn" id="notice-btn" onclick="toggleNotificationCenterModal()" title="全景通知与生命事件中心 (🔔)" style="position: relative;">
         <span>🔔</span>
         <span class="badge-dot" id="notice-badge-dot" style="display: none; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--rose-agent);"></span>
@@ -3094,59 +3280,65 @@
       </div>
     </div>
 
-    <!-- Quick Intent Chips below the search box (横向流式光轨) -->
+    <!-- Quick Intent Chips below the search box (首屏核心高频胶囊 + 可展开全量指令抽屉) -->
     <div class="quick-intent-chips" id="quick-intent-chips">
       <span class="intent-chip" onclick="stampCurrentTime()" title="在输入框前置盖上当前时间戳 (HH:mm)"><b>🕒</b> 时间</span>
       <span class="intent-chip" onclick="insertPrefix('!')" title="输入 ! 快速将待办事项存入今日日记"><b>!</b> 待办</span>
-      <span class="intent-chip" onclick="insertPrefix('¥')" title="输入 ¥ 快速记录一笔生活账目花销"><b>💰</b> 记账</span>
-      <span class="intent-chip" onclick="insertPrefix('~25m')" title="输入 ~ 快速记录一段专注时间流"><b>⏱️</b> 专注</span>
       <span class="intent-chip" onclick="insertPrefix('pom:25 ')" title="输入 pom:25 任务名 快速开启心流专注倒计时，到期自动记入今日日记"><b>🍅</b> 番茄钟</span>
-      <span class="intent-chip" onclick="insertPrefix('+water 500ml')" title="快速记录一条习惯打卡"><b>🏃</b> 打卡</span>
-      <span class="intent-chip" onclick="insertPrefix('@')" title="输入 @ 记录人脉互动与双链时间线"><b>@</b> 人脉</span>
-      <span class="intent-chip" onclick="insertPrefix('?')" title="输入 ? 制作原生 FSRS 闪卡"><b>?</b> 闪卡</span>
-      <span class="intent-chip" onclick="insertPrefix('#')" title="输入 # 归入项目专页或今日日记"><b>#</b> 项目</span>
       <span class="chip-divider"></span>
       <span class="intent-chip" onclick="insertPrefix('b:')" title="输入 b: 毫秒级检索思源正文块并直接复制/回贴双链"><b>b:</b> 块级秒搜</span>
       <span class="intent-chip" onclick="insertPrefix('d:')" title="输入 d: 检索思源全库文档"><b>d:</b> 文档</span>
-      <span class="intent-chip" onclick="toggleCodeStudioModal()" title="全库代码片段与多语言纯净源码工作台，支持语言筛选、纯净直贴与VS Code秒开"><b>⌨️</b> 代码工作台</span>
-      <span class="intent-chip" onclick="insertPrefix('tag:')" title="输入 tag: 聚合检索全库标签与聚合笔记流"><b>#</b> 标签</span>
-      <span class="intent-chip" onclick="insertPrefix('att:')" title="输入 att: 穿透检索全库 PDF 文献与附件资产秒查坞"><b>att:</b> 附件秒查</span>
-      <span class="intent-chip" onclick="insertPrefix('office:')" title="输入 office: 检索与透视本地 Word/Excel/PPT 大纲与批注"><b>🏢</b> Office</span>
-      <span class="intent-chip" onclick="insertPrefix('pdf:')" title="输入 pdf: 检索全库学术 PDF 并流式透视大纲书签与页码"><b>📑</b> PDF</span>
-      <span class="intent-chip" onclick="insertPrefix('epub:')" title="输入 epub: 检索本地 EPUB 电子书并流式透视章节目录"><b>📚</b> EPUB</span>
-      <span class="intent-chip" onclick="insertPrefix('xmind:')" title="输入 xmind: 检索本地思维导图并流式透视层级树生成思源大纲"><b>🧠</b> XMind</span>
-      <span class="intent-chip" onclick="insertPrefix('listary:')" title="直通本地 Listary 极速全盘文件检索"><b>🔍</b> Listary</span>
-	      <span class="intent-chip" onclick="insertPrefix('zotero:')" title="唤起本地 Zotero 学术文献管理库"><b>📖</b> Zotero</span>
-			      <span class="intent-chip" onclick="insertPrefix('bm:')" title="输入 bm: 穿透检索 Edge/Chrome 本地浏览器书签与收藏夹"><b>🔖</b> 浏览器书签</span>
-				      <span class="intent-chip" onclick="insertPrefix('fav:')" title="输入 fav: 打开全景网站收藏中枢，跨浏览器统一秒搜、一键收录并沉淀至思源专属文档"><b>🌐</b> 网站收藏</span>
-					      <span class="intent-chip" onclick="insertPrefix('fold:')" title="输入 fold: 打开本地文件夹导航中枢，支持 #32770 对话框原位穿透与思源工程锚定"><b>📂</b> 文件夹导航</span>
-						      <span class="intent-chip" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台，大图标磁贴平铺与 1~9 盲打秒开"><b>🚀</b> 启动台</span>
-						      <span class="intent-chip" onclick="toggleProfileHubModal()" title="查看与管理思源 S3 存储桶、AI 大模型与常用配置预设 (大看板)"><b>⚙️</b> 配置预设</span>
-							      <span class="intent-chip" onclick="insertPrefix('notice:')" title="输入 notice: 查看全景系统与思源应用通知事件流，支持一键沉淀日记"><b>📢</b> 通知历史</span>
-							      <span class="intent-chip" onclick="toggleVaultMirrorModal()" title="外部知识库与 Markdown 目录镜像透视工作台 (大视窗)"><b>🗄️</b> 外部库</span>
-			      <span class="intent-chip" onclick="toggleTableGridModal()" title="全库数据表格与属性视图透视矩阵大工作台，支持排序、编辑与1键导出Excel"><b>📊</b> 表格透视</span>
-		      <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
-      <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
-      <span class="intent-chip" onclick="insertPrefix('c:')" title="输入 c: 实时查看并调用最近 30 条清洗剪贴板；支持 c:url/c:code/c:table/c:cite/c:math/c:img 分类筛选"><b>c:</b> 剪贴板</span>
+      <span class="intent-chip" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台，大图标磁贴平铺与 1~9 盲打秒开"><b>🚀</b> 启动台</span>
       <span class="intent-chip" onclick="toggleClipStudioModal()" title="打开剪贴板多选碎片拼版工作台，自由选段、调序与实时模板化拼版"><b>📋</b> 拼版工作台</span>
-      <span class="intent-chip" onclick="insertPrefix(':')" title="输入 : 快速调用简码扩词与动态模板变量"><b>:</b> 简码</span>
-      <span class="chip-divider"></span>
-      <span class="intent-chip" onclick="executeItem({ id: 'syg', title: '极速网页剪藏卡' })" title="输入 g: 或按 Alt+Shift+G 免扩展极速剪藏网页"><b>g:</b> 网页剪藏</span>
-      <span class="intent-chip" onclick="executeItem({ id: 'syfsrs', title: 'FSRS 闪卡微舱' })" title="无需切入思源，0ms 居中弹出微卡片，空格翻答案，1~4评级秒刷"><b>🧠</b> 刷闪卡</span>
-      <span class="intent-chip" onclick="insertPrefix('t:')" title="输入 t: 秒查全库未完成的任务清单并支持直接勾选"><b>t:</b> 待办清单</span>
-      <span class="intent-chip" onclick="insertPrefix('m:')" title="输入 m: 秒查全库已收藏或加书签的重点块与文档"><b>m:</b> 收藏</span>
-      <span class="intent-chip" onclick="insertPrefix('v:')" title="输入 v: 快速调用每日复盘、文献卡片、会议纪要等结构化模板"><b>v:</b> 模板速贴</span>
-      <span class="intent-chip" onclick="insertPrefix('ws:')" title="输入 ws: 管理工作现场快照与微软虚拟桌面全景联动"><b>🏢</b> 现场快照</span>
-      <span class="intent-chip" onclick="insertPrefix('voice:')" title="输入 voice: 呼出语音速记微舱与口语去噪自愈"><b>🎙️</b> 语音速记</span>
-      <span class="intent-chip" onclick="insertPrefix('trash:')" title="输入 trash: 查看思源文档回收站、误删笔记与历史快照打捞"><b>🗑️</b> 回收站</span>
-	      <span class="intent-chip" onclick="toggleTodayTimeline()" title="无需切入思源，0ms 滑出今日日记记录的全部灵感、待办与笔记"><b>📅</b> 今日时间轴</span>
-				      <span class="intent-chip" onclick="triggerFlashback()" title="输入 rand: 随机漫游一条历史重点笔记或那年今日"><b>🎲</b> 漫游回顾</span>
-					      <span class="intent-chip" onclick="toggleHeatmapGalleryModal()" title="查看全库 52 周知识心流沉淀大画廊与年轮徽章"><b>🔥</b> 沉淀热力图</span>
-					      <span class="intent-chip" onclick="toggleGraphModal()" title="全景双向知识网络星轨拓扑视窗，辐射漫游与关系拓扑穿透"><b>🌌</b> 星轨图谱</span>
-						      <span class="intent-chip" onclick="toggleSystemDoctorModal()" title="全库死链体检、孤儿附件清道夫与系统健康诊断大视窗"><b>🩺</b> 系统体检</span>
-						      <span class="intent-chip" onclick="toggleOutlineMindmapModal()" title="全景大纲与交互思维导图大工作台 (H1~H6 树状联动)"><b>🗺️</b> 大纲导图</span>
-      <span class="chip-divider"></span>
-      <span class="intent-chip" style="opacity: 0.75; cursor: pointer;" onclick="toggleCheatsheet()" title="查看完整快捷键心流"><b>Alt+1~8</b> 官方直达</span>
+      <span class="intent-chip" onclick="toggleCodeStudioModal()" title="全库代码片段与多语言纯净源码工作台，支持语言筛选、纯净直贴与VS Code秒开"><b>⌨️</b> 代码工作台</span>
+      <span class="intent-chip" onclick="toggleGraphModal()" title="全景双向知识网络星轨拓扑视窗，辐射漫游与关系拓扑穿透"><b>🌌</b> 星轨图谱</span>
+      <span class="intent-chip" onclick="toggleTodayTimeline()" title="无需切入思源，0ms 滑出今日日记记录的全部灵感、待办与笔记"><b>📅</b> 今日时间轴</span>
+      <span class="intent-chip" onclick="toggleHeatmapGalleryModal()" title="查看全库 52 周知识心流沉淀大画廊与年轮徽章"><b>🔥</b> 沉淀热力图</span>
+      <span class="intent-chip more-chips-toggle" id="toggle-more-chips-btn" onclick="toggleMoreIntentChips()" title="展开/收起全部 36 项扩展语法与专业工作台胶囊"><b>✨</b> 更多指令 (36) ▾</span>
+
+      <!-- 二级折叠指令抽屉 (保持全部 36 项专业胶囊可点击且首屏不拥挤) -->
+      <div class="more-intent-chips-drawer" id="more-intent-chips-drawer">
+        <span class="intent-chip" onclick="insertPrefix('¥')" title="输入 ¥ 快速记录一笔生活账目花销"><b>💰</b> 记账</span>
+        <span class="intent-chip" onclick="insertPrefix('~25m')" title="输入 ~ 快速记录一段专注时间流"><b>⏱️</b> 专注</span>
+        <span class="intent-chip" onclick="insertPrefix('+water 500ml')" title="快速记录一条习惯打卡"><b>🏃</b> 打卡</span>
+        <span class="intent-chip" onclick="insertPrefix('@')" title="输入 @ 记录人脉互动与双链时间线"><b>@</b> 人脉</span>
+        <span class="intent-chip" onclick="insertPrefix('?')" title="输入 ? 制作原生 FSRS 闪卡"><b>?</b> 闪卡</span>
+        <span class="intent-chip" onclick="insertPrefix('#')" title="输入 # 归入项目专页或今日日记"><b>#</b> 项目</span>
+        <span class="chip-divider"></span>
+        <span class="intent-chip" onclick="insertPrefix('tag:')" title="输入 tag: 聚合检索全库标签与聚合笔记流"><b>#</b> 标签</span>
+        <span class="intent-chip" onclick="insertPrefix('att:')" title="输入 att: 穿透检索全库 PDF 文献与附件资产秒查坞"><b>att:</b> 附件秒查</span>
+        <span class="intent-chip" onclick="insertPrefix('office:')" title="输入 office: 检索与透视本地 Word/Excel/PPT 大纲与批注"><b>🏢</b> Office</span>
+        <span class="intent-chip" onclick="insertPrefix('pdf:')" title="输入 pdf: 检索全库学术 PDF 并流式透视大纲书签与页码"><b>📑</b> PDF</span>
+        <span class="intent-chip" onclick="insertPrefix('epub:')" title="输入 epub: 检索本地 EPUB 电子书并流式透视章节目录"><b>📚</b> EPUB</span>
+        <span class="intent-chip" onclick="insertPrefix('xmind:')" title="输入 xmind: 检索本地思维导图并流式透视层级树生成思源大纲"><b>🧠</b> XMind</span>
+        <span class="intent-chip" onclick="insertPrefix('listary:')" title="直通本地 Listary 极速全盘文件检索"><b>🔍</b> Listary</span>
+        <span class="intent-chip" onclick="insertPrefix('zotero:')" title="唤起本地 Zotero 学术文献管理库"><b>📖</b> Zotero</span>
+        <span class="intent-chip" onclick="insertPrefix('bm:')" title="输入 bm: 穿透检索 Edge/Chrome 本地浏览器书签与收藏夹"><b>🔖</b> 浏览器书签</span>
+        <span class="intent-chip" onclick="insertPrefix('fav:')" title="输入 fav: 打开全景网站收藏中枢，跨浏览器统一秒搜、一键收录并沉淀至思源专属文档"><b>🌐</b> 网站收藏</span>
+        <span class="intent-chip" onclick="insertPrefix('fold:')" title="输入 fold: 打开本地文件夹导航中枢，支持 #32770 对话框原位穿透与思源工程锚定"><b>📂</b> 文件夹导航</span>
+        <span class="intent-chip" onclick="toggleProfileHubModal()" title="查看与管理思源 S3 存储桶、AI 大模型与常用配置预设 (大看板)"><b>⚙️</b> 配置预设</span>
+        <span class="intent-chip" onclick="insertPrefix('notice:')" title="输入 notice: 查看全景系统与思源应用通知事件流，支持一键沉淀日记"><b>📢</b> 通知历史</span>
+        <span class="intent-chip" onclick="toggleVaultMirrorModal()" title="外部知识库与 Markdown 目录镜像透视工作台 (大视窗)"><b>🗄️</b> 外部库</span>
+        <span class="intent-chip" onclick="toggleTableGridModal()" title="全库数据表格与属性视图透视矩阵大工作台，支持排序、编辑与1键导出Excel"><b>📊</b> 表格透视</span>
+        <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
+        <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
+        <span class="intent-chip" onclick="insertPrefix('c:')" title="输入 c: 实时查看并调用最近 30 条清洗剪贴板；支持 c:url/c:code/c:table/c:cite/c:math/c:img 分类筛选"><b>c:</b> 剪贴板</span>
+        <span class="intent-chip" onclick="insertPrefix(':')" title="输入 : 快速调用简码扩词与动态模板变量"><b>:</b> 简码</span>
+        <span class="chip-divider"></span>
+        <span class="intent-chip" onclick="executeItem({ id: 'syg', title: '极速网页剪藏卡' })" title="输入 g: 或按 Alt+Shift+G 免扩展极速剪藏网页"><b>g:</b> 网页剪藏</span>
+        <span class="intent-chip" onclick="executeItem({ id: 'syfsrs', title: 'FSRS 闪卡微舱' })" title="无需切入思源，0ms 居中弹出微卡片，空格翻答案，1~4评级秒刷"><b>🧠</b> 刷闪卡</span>
+        <span class="intent-chip" onclick="insertPrefix('t:')" title="输入 t: 秒查全库未完成的任务清单并支持直接勾选"><b>t:</b> 待办清单</span>
+        <span class="intent-chip" onclick="insertPrefix('m:')" title="输入 m: 秒查全库已收藏或加书签的重点块与文档"><b>m:</b> 收藏</span>
+        <span class="intent-chip" onclick="insertPrefix('v:')" title="输入 v: 快速调用每日复盘、文献卡片、会议纪要等结构化模板"><b>v:</b> 模板速贴</span>
+        <span class="intent-chip" onclick="insertPrefix('ws:')" title="输入 ws: 管理工作现场快照与微软虚拟桌面全景联动"><b>🏢</b> 现场快照</span>
+        <span class="intent-chip" onclick="insertPrefix('voice:')" title="输入 voice: 呼出语音速记微舱与口语去噪自愈"><b>🎙️</b> 语音速记</span>
+        <span class="intent-chip" onclick="insertPrefix('trash:')" title="输入 trash: 查看思源文档回收站、误删笔记与历史快照打捞"><b>🗑️</b> 回收站</span>
+        <span class="intent-chip" onclick="triggerFlashback()" title="输入 rand: 随机漫游一条历史重点笔记或那年今日"><b>🎲</b> 漫游回顾</span>
+        <span class="intent-chip" onclick="toggleSystemDoctorModal()" title="全库死链体检、孤儿附件清道夫与系统健康诊断大视窗"><b>🩺</b> 系统体检</span>
+        <span class="intent-chip" onclick="toggleOutlineMindmapModal()" title="全景大纲与交互思维导图大工作台 (H1~H6 树状联动)"><b>🗺️</b> 大纲导图</span>
+        <span class="chip-divider"></span>
+        <span class="intent-chip" style="opacity: 0.75; cursor: pointer;" onclick="toggleCheatsheet()" title="查看完整快捷键心流"><b>Alt+1~8</b> 官方直达</span>
+      </div>
     </div>
 
     <div id="intent-banner" class="intent-banner" style="display: none;"></div>
@@ -4287,6 +4479,24 @@
     </div>
   </div>
 
+  <!-- 暗夜黑曜通用内联表单与确认弹窗 (Inline Form & Confirm Modal · 全面替代原生 prompt/confirm) -->
+  <div class="inline-form-overlay" id="inline-form-modal" onclick="closeInlineFormOnBg(event)">
+    <div class="inline-form-box" onclick="event.stopPropagation()">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;" id="ifm-icon">✨</span>
+          <span style="font-weight: 700; font-size: 13.5px;" id="ifm-title">录入信息</span>
+        </div>
+        <button class="theme-toggle-btn" style="width: 24px; height: 24px; font-size: 11px;" onclick="closeInlineFormModal()">✕</button>
+      </div>
+      <div id="ifm-body" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; max-height: 62vh; overflow-y: auto;"></div>
+      <div style="padding: 10px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.22); display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="pref-btn" onclick="closeInlineFormModal()" style="font-size: 11.5px; padding: 5px 14px;">取消 (Esc)</button>
+        <button type="button" class="pref-btn" id="ifm-submit-btn" onclick="submitInlineFormModal()" style="font-size: 11.5px; padding: 5px 16px; background: var(--indigo-primary); color: #fff; border-color: var(--indigo-primary); font-weight: 600;">确认提交 (Enter)</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Floating Card Context Menu -->
   <div id="card-context-menu" class="card-context-menu" style="display: none;">
     <div class="context-menu-item" onclick="contextActionExecute()">▶️ 执行此动作 (Enter)</div>
@@ -4634,6 +4844,23 @@
           return;
         }
 
+        // 若当前有顶层内联表单、九宫格菜单或任意全景工作台弹窗处于打开态，交由模态栈统一接管
+        if (typeof ModalStackManager !== "undefined" && ModalStackManager.hasAnyModalOpen()) {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            window.handleGlobalEscapeKey();
+            return;
+          }
+          const ifm = document.getElementById("inline-form-modal");
+          if (ifm && ifm.classList.contains("open") && e.key === "Enter" && (!document.activeElement || document.activeElement.tagName !== "TEXTAREA")) {
+            e.preventDefault();
+            submitInlineFormModal();
+            return;
+          }
+          // 其余按键交由弹窗自身输入框/编辑器处理，不触发底层卡片网格导航
+          return;
+        }
+
         if (e.key === "ArrowDown") {
           e.preventDefault();
           moveSelection(isSplitSearchModeActive() ? 1 : getColCount());
@@ -4667,27 +4894,7 @@
           }
         } else if (e.key === "Escape") {
           e.preventDefault();
-          const timeModal = document.getElementById("timeline-modal");
-          if (timeModal && timeModal.classList.contains("open")) {
-            timeModal.classList.remove("open");
-            return;
-          }
-          const prefModal = document.getElementById("preferences-modal");
-          if (prefModal && prefModal.classList.contains("open")) {
-            prefModal.classList.remove("open");
-            return;
-          }
-          const modal = document.getElementById("cheatsheet-modal");
-          if (modal && modal.classList.contains("open")) {
-            modal.classList.remove("open");
-            return;
-          }
-          // 二段式退出：若搜索框有内容，优先清空搜索并还原卡片视图；若搜索框已空，退出面板
-          if (searchInput && searchInput.value.trim().length > 0) {
-            clearSearchInput();
-            return;
-          }
-          closeWindow();
+          window.handleGlobalEscapeKey();
         } else if (e.key === "Tab") {
           e.preventDefault();
           cycleCategory();
@@ -7295,17 +7502,24 @@
 	    };
 
     function promptAppendToDoc(docId, docTitle) {
-      const note = prompt(`向文档《${docTitle}》快速追加一条笔记：`, "");
-      if (note && note.trim()) {
-        if (window.chrome && window.chrome.webview) {
-          window.chrome.webview.postMessage(JSON.stringify({
-            op: 'executeCommand',
-            cmd: 'SYS',
-            text: `>@${docTitle} ${note.trim()}`
-          }));
-          showToast(`✓ 已向《${docTitle}》追加笔记！`);
+      showInlineFormModal({
+        title: `向《${docTitle}》快速追加笔记`,
+        icon: "📥",
+        fields: [
+          { key: "note", label: "追加内容 *", placeholder: "输入要免切窗追加到该文档的内容...", value: "", required: true }
+        ],
+        onSubmit: (vals) => {
+          const note = (vals.note || "").trim();
+          if (note && window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({
+              op: 'executeCommand',
+              cmd: 'SYS',
+              text: `>@${docTitle} ${note}`
+            }));
+            showToast(`✓ 已向《${docTitle}》追加笔记！`);
+          }
         }
-      }
+      });
     }
 
     let currentEditingBlockId = "";
@@ -7681,12 +7895,18 @@
     }
 
     function clearOfflineQueue() {
-      if (!confirm("确定要清空全部离线缓冲记录吗？")) return;
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'clearOfflineQueue' }));
-      }
-      closeOfflineQueueModal();
-      showToast("✓ 离线缓冲队列已清空");
+      showInlineConfirmModal({
+        title: "清空离线缓冲队列",
+        message: "确定要清空全部离线缓冲记录吗？",
+        danger: true,
+        onConfirm: () => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({ op: 'clearOfflineQueue' }));
+          }
+          closeOfflineQueueModal();
+          showToast("✓ 离线缓冲队列已清空");
+        }
+      });
     }
 
     function openTodayDailyDoc() {
@@ -9493,21 +9713,27 @@
     }
 
     function promptCreateNewTaskModal() {
-      const title = prompt("请输入新待办任务内容:", "");
-      if (!title) return;
-      const prio = prompt("优先级 (P1/P2/P3):", "P2") || "P2";
-      const due = prompt("截止日期 (yyyy-MM-dd，可选):", "") || "";
-
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({
-          op: 'createTaskFromContext',
-          title: title,
-          priority: prio,
-          dueDate: due
-        }));
-        showToast("✓ 待办任务已成功创建！");
-        setTimeout(loadKanbanData, 600);
-      }
+      showInlineFormModal({
+        title: "快速创建待办任务",
+        icon: "📋",
+        fields: [
+          { key: "title", label: "待办任务内容 *", placeholder: "例如：完成架构评审与单元测试", value: "", required: true },
+          { key: "priority", label: "优先级", type: "select", value: "P2", options: ["P1", "P2", "P3"] },
+          { key: "dueDate", label: "截止日期 (可选)", placeholder: "yyyy-MM-dd", value: "" }
+        ],
+        onSubmit: (vals) => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({
+              op: 'createTaskFromContext',
+              title: vals.title,
+              priority: vals.priority || "P2",
+              dueDate: vals.dueDate || ""
+            }));
+            showToast("✓ 待办任务已成功创建！");
+            setTimeout(loadKanbanData, 600);
+          }
+        }
+      });
     }
 
     function copyChecklistFromKanban() {
@@ -9827,10 +10053,16 @@
     }
 
     function deleteWebBookmarkById(id) {
-      if (!confirm("确定从思源网站收藏中移除此项吗？")) return;
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'deleteWebBookmark', id: id }));
-      }
+      showInlineConfirmModal({
+        title: "移除网站收藏",
+        message: "确定从思源网站收藏中移除此项吗？",
+        danger: true,
+        onConfirm: () => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({ op: 'deleteWebBookmark', id: id }));
+          }
+        }
+      });
     }
 
     window.onWebBookmarkDeleted = function(res) {
@@ -9850,21 +10082,28 @@
         showToast("⚠️ 未能探测到前台浏览器的有效网址，请确保浏览器处于活动状态。");
         return;
       }
-      const title = prompt("请输入收藏标题:", res.title || res.url);
-      if (!title) return;
-      const cat = prompt("请输入分类 (常用/开发/学术/设计/工具/生活):", "常用") || "常用";
-      const tags = prompt("请输入标签 (逗号分隔，可选):", "") || "";
-
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({
-          op: 'saveWebBookmark',
-          title: title,
-          url: res.url,
-          category: cat,
-          tags: tags,
-          notes: `由 ${res.app || '浏览器'} 一键收录`
-        }));
-      }
+      showInlineFormModal({
+        title: "一键收录前台浏览器网址",
+        icon: "🌐",
+        fields: [
+          { key: "title", label: "收藏标题 *", value: res.title || res.url, required: true },
+          { key: "url", label: "网址链接 *", value: res.url, required: true },
+          { key: "category", label: "所属分类", type: "select", value: "常用", options: ["常用", "开发", "学术", "设计", "工具", "生活"] },
+          { key: "tags", label: "标签 (逗号分隔，可选)", placeholder: "AI, 开源, 工具", value: "" }
+        ],
+        onSubmit: (vals) => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({
+              op: 'saveWebBookmark',
+              title: vals.title,
+              url: vals.url || res.url,
+              category: vals.category || "常用",
+              tags: vals.tags || "",
+              notes: `由 ${res.app || '浏览器'} 一键收录`
+            }));
+          }
+        }
+      });
     };
 
     window.onWebBookmarkSaved = function(res) {
@@ -9993,10 +10232,16 @@
     }
 
     function deleteFolderBookmarkById(id) {
-      if (!confirm("确定移除此文件夹收藏吗？")) return;
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'deleteFolderBookmark', id: id }));
-      }
+      showInlineConfirmModal({
+        title: "移除文件夹导航",
+        message: "确定移除此文件夹收藏吗？",
+        danger: true,
+        onConfirm: () => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({ op: 'deleteFolderBookmark', id: id }));
+          }
+        }
+      });
     }
 
     window.onFolderBookmarkDeleted = function(res) {
@@ -10012,25 +10257,29 @@
     };
 
     window.onActiveExplorerFolderCaptured = function(res) {
-      if (!res || !res.path) {
-        const manualPath = prompt("未检测到前台打开的资源管理器窗口，请输入物理文件夹路径:", "D:\\");
-        if (!manualPath) return;
-        res = { path: manualPath, alias: manualPath.split(/[\\\\/]/).pop() || manualPath };
-      }
-      const alias = prompt("请输入文件夹别名/工程名:", res.alias || res.path);
-      if (!alias) return;
-      const shortcut = prompt("请输入快捷简码 (可选，例如 prj/work):", "") || "";
-      const docTitle = prompt("关联思源工程文档名称 (可选):", "") || "";
-
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({
-          op: 'saveFolderBookmark',
-          path: res.path,
-          alias: alias,
-          shortcut: shortcut,
-          siyuanDocTitle: docTitle
-        }));
-      }
+      const detectedPath = (res && res.path) ? res.path : "D:\\";
+      const detectedAlias = (res && res.alias) ? res.alias : (detectedPath.split(/[\\\\/]/).pop() || detectedPath);
+      showInlineFormModal({
+        title: "登记本地工程文件夹导航",
+        icon: "📂",
+        fields: [
+          { key: "path", label: "物理文件夹绝对路径 *", type: "folder", value: detectedPath, required: true },
+          { key: "alias", label: "文件夹别名 / 工程名 *", value: detectedAlias, required: true },
+          { key: "shortcut", label: "快捷简码 (可选，如 prj/work)", value: "" },
+          { key: "docTitle", label: "关联思源工程文档名称 (可选)", value: "" }
+        ],
+        onSubmit: (vals) => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({
+              op: 'saveFolderBookmark',
+              path: vals.path,
+              alias: vals.alias || vals.path,
+              shortcut: vals.shortcut || "",
+              siyuanDocTitle: vals.docTitle || ""
+            }));
+          }
+        }
+      });
     };
 
     window.onFolderBookmarkSaved = function(res) {
@@ -10152,18 +10401,23 @@
     }
 
     function promptCaptureCurrentProfile() {
-      const type = prompt("请输入要萃取的思源配置类型 (s3 / ai / webdav):", "s3");
-      if (!type) return;
-      const name = prompt("请输入预设别名 (例如 '腾讯云 COS 南京桶' 或 'DeepSeek V3 官方'):", "");
-      if (!name) return;
-
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({
-          op: 'captureCurrentProfile',
-          type: type.toLowerCase(),
-          name: name
-        }));
-      }
+      showInlineFormModal({
+        title: "萃取思源实时配置为脱敏预设",
+        icon: "⚙️",
+        fields: [
+          { key: "type", label: "配置类型", type: "select", value: "s3", options: ["s3", "ai", "webdav"] },
+          { key: "name", label: "预设别名 *", placeholder: "例如：腾讯云 COS 南京桶 / DeepSeek V3 官方", value: "思源实时配置预设", required: true }
+        ],
+        onSubmit: (vals) => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({
+              op: 'captureCurrentProfile',
+              type: (vals.type || "s3").toLowerCase(),
+              name: vals.name
+            }));
+          }
+        }
+      });
     }
 
     window.onProfileCaptured = function(res) {
@@ -10184,10 +10438,16 @@
     };
 
     function deleteProfileById(id) {
-      if (!confirm("确定移除此配置预设吗？")) return;
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'deleteProfile', id: id }));
-      }
+      showInlineConfirmModal({
+        title: "移除配置预设",
+        message: "确定移除此配置预设吗？",
+        danger: true,
+        onConfirm: () => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({ op: 'deleteProfile', id: id }));
+          }
+        }
+      });
     }
 
     window.onProfileDeleted = function(res) {
@@ -10464,12 +10724,23 @@
     }
 
     function clearAllNotifications() {
-      if (!confirm("确定清空全部通知历史记录吗？")) return;
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'clearNotificationHistory' }));
-        showToast("✓ 通知历史已全部清空！");
-        insertPrefix('notice:');
-      }
+      showInlineConfirmModal({
+        title: "清空全部通知历史",
+        message: "确定清空全部通知历史记录吗？",
+        danger: true,
+        onConfirm: () => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({ op: 'clearNotificationHistory' }));
+            showToast("✓ 通知历史已全部清空！");
+            const ncModal = document.getElementById("notification-center-modal");
+            if (ncModal && ncModal.classList.contains("open")) {
+              window.chrome.webview.postMessage(JSON.stringify({ op: 'getNotificationHistory', keyword: '', level: 'all', source: 'all' }));
+            } else {
+              insertPrefix('notice:');
+            }
+          }
+        }
+      });
     }
 
     window.onNotificationsCleared = function() {
@@ -10862,19 +11133,29 @@
     }
 
     function quarantineAllOrphans() {
-      if (confirm("确定将当前未被任何笔记引用的孤儿附件移入安全隔离区 (.quarantine) 吗？\n（文件仅被移动暂存，未物理删除，随时可恢复）")) {
-        if (window.chrome && window.chrome.webview) {
-          window.chrome.webview.postMessage(JSON.stringify({ op: 'quarantineAssets', fileNames: [] }));
+      showInlineConfirmModal({
+        title: "移入安全隔离区 (.quarantine)",
+        message: "确定将当前未被任何笔记引用的孤儿附件移入安全隔离区 (.quarantine) 吗？（文件仅被移动暂存，未物理删除，随时可恢复）",
+        danger: false,
+        onConfirm: () => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({ op: 'quarantineAssets', fileNames: [] }));
+          }
         }
-      }
+      });
     }
 
     function purgeQuarantineFiles() {
-      if (confirm("⚠️ 警告：确定彻底清空并永久释放安全隔离区文件吗？\n（此操作将物理删除 .quarantine 目录下的文件以释放磁盘空间）")) {
-        if (window.chrome && window.chrome.webview) {
-          window.chrome.webview.postMessage(JSON.stringify({ op: 'purgeQuarantine' }));
+      showInlineConfirmModal({
+        title: "⚠️ 彻底释放安全隔离区",
+        message: "警告：确定彻底清空并永久释放安全隔离区文件吗？（此操作将物理删除 .quarantine 目录下的文件以释放磁盘空间）",
+        danger: true,
+        onConfirm: () => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({ op: 'purgeQuarantine' }));
+          }
         }
-      }
+      });
     }
 
     // ==========================================================
@@ -11013,14 +11294,19 @@
     }
 
     function triggerDeleteWorkspace(id) {
-      if (confirm("确定要删除这个工作现场快照吗？")) {
-        if (window.chrome && window.chrome.webview) {
-          window.chrome.webview.postMessage(JSON.stringify({ op: 'deleteWorkspace', id: id }));
-          setTimeout(() => {
-            window.chrome.webview.postMessage(JSON.stringify({ op: 'listWorkspaces' }));
-          }, 300);
+      showInlineConfirmModal({
+        title: "删除工作现场快照",
+        message: "确定要删除这个工作现场快照吗？",
+        danger: true,
+        onConfirm: () => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({ op: 'deleteWorkspace', id: id }));
+            setTimeout(() => {
+              window.chrome.webview.postMessage(JSON.stringify({ op: 'listWorkspaces' }));
+            }, 300);
+          }
         }
-      }
+      });
     }
 
     function submitSaveWorkspace() {
@@ -11617,15 +11903,22 @@
     function selectRecentTargetDoc() {
       if (window.__OMNI_RUNTIME__ && Array.isArray(window.__OMNI_RUNTIME__.recentDocs) && window.__OMNI_RUNTIME__.recentDocs.length > 0) {
         const docs = window.__OMNI_RUNTIME__.recentDocs;
-        const options = docs.map((d, i) => `${i + 1}. 《${d.title || d.content}》`).join("\n");
-        const chosen = prompt(`请选择目标收集箱文档 (输入序号 1~${docs.length})：\n\n${options}`, "1");
-        if (chosen) {
-          const idx = parseInt(chosen, 10) - 1;
-          if (idx >= 0 && idx < docs.length) {
-            const targetEl = document.getElementById("pref-desktop-targetdoc");
-            if (targetEl) targetEl.value = docs[idx].title || docs[idx].content || docs[idx].id;
+        const optLabels = docs.map((d, i) => `${i + 1}. ${d.title || d.content || d.id}`);
+        showInlineFormModal({
+          title: "选择默认速记目标收集箱文档",
+          icon: "📑",
+          fields: [
+            { key: "chosen", label: "选择最近活跃文档", type: "select", value: optLabels[0], options: optLabels }
+          ],
+          onSubmit: (vals) => {
+            const idx = optLabels.indexOf(vals.chosen);
+            const picked = docs[idx >= 0 ? idx : 0];
+            if (picked) {
+              const targetEl = document.getElementById("pref-desktop-targetdoc");
+              if (targetEl) targetEl.value = picked.title || picked.content || picked.id;
+            }
           }
-        }
+        });
       } else {
         insertPrefix("d:");
         closePreferencesOnBg();
@@ -12189,11 +12482,14 @@
 
     // Keyboard Blind Opening for Launchpad
     document.addEventListener("keydown", function(e) {
+      if (e.defaultPrevented) return;
+      const ifm = document.getElementById("inline-form-modal");
+      if (ifm && ifm.classList.contains("open")) return;
       const modal = document.getElementById("launchpad-modal");
       if (!modal || !modal.classList.contains("open")) return;
 
       if (e.key === "Escape") {
-        toggleLaunchpadModal();
+        window.handleGlobalEscapeKey();
         e.preventDefault();
         return;
       }
@@ -12246,41 +12542,46 @@
     }
 
     function promptAddLaunchpadItem() {
-      const choice = prompt("请选择添加类型 (输入 1: 网站书签, 输入 2: 本地文件夹):", "1");
-      if (choice === "1") {
-        const url = prompt("请输入完整网址 (例如 https://github.com):", "");
-        if (!url) return;
-        const title = prompt("请输入书签标题:", url);
-        if (!title) return;
-        const cat = prompt("请输入分类 (常用/开发/工具/设计/学术/生活):", "常用") || "常用";
-        const tags = prompt("请输入标签 (逗号分隔，可选):", "") || "";
-        if (window.chrome && window.chrome.webview) {
-          window.chrome.webview.postMessage(JSON.stringify({
-            op: 'saveWebBookmark',
-            title: title,
-            url: url,
-            category: cat,
-            tags: tags,
-            notes: "由全景启动台手动登记"
-          }));
+      showInlineFormModal({
+        title: "手动登记启动台项目 (网址或本地文件夹)",
+        icon: "🚀",
+        fields: [
+          { key: "itemType", label: "项目类型", type: "select", value: "web", options: ["web (网站书签)", "folder (本地工程文件夹)"] },
+          { key: "target", label: "完整网址 或 文件夹物理路径 *", type: "folder", placeholder: "https://github.com 或 D:\\Projects (可点击右侧浏览文件夹)", value: "", required: true },
+          { key: "title", label: "显示标题 / 文件夹别名 *", placeholder: "留空则自动根据网址或目录名提取", value: "" },
+          { key: "category", label: "分类 (常用/开发/工具/设计/学术/生活)", value: "常用" },
+          { key: "extra", label: "标签 或 关联思源文档名 (可选)", value: "" }
+        ],
+        onSubmit: (vals) => {
+          const isFolder = (vals.itemType || "").startsWith("folder") || /^[a-zA-Z]:[\\/]/.test(vals.target || "");
+          const cleanTarget = (vals.target || "").trim();
+          if (!cleanTarget) return;
+          if (!isFolder) {
+            const bmTitle = (vals.title || "").trim() || cleanTarget;
+            if (window.chrome && window.chrome.webview) {
+              window.chrome.webview.postMessage(JSON.stringify({
+                op: 'saveWebBookmark',
+                title: bmTitle,
+                url: cleanTarget,
+                category: vals.category || "常用",
+                tags: vals.extra || "",
+                notes: "由全景启动台内联表单登记"
+              }));
+            }
+          } else {
+            const fAlias = (vals.title || "").trim() || cleanTarget.split(/[\\\\/]/).pop() || cleanTarget;
+            if (window.chrome && window.chrome.webview) {
+              window.chrome.webview.postMessage(JSON.stringify({
+                op: 'saveFolderBookmark',
+                path: cleanTarget,
+                alias: fAlias,
+                shortcut: vals.category || "",
+                siyuanDocTitle: vals.extra || ""
+              }));
+            }
+          }
         }
-      } else if (choice === "2") {
-        const path = prompt("请输入物理文件夹绝对路径 (例如 D:\\Projects):", "");
-        if (!path) return;
-        const alias = prompt("请输入文件夹别名/工程名:", path.split(/[\\\\/]/).pop() || path);
-        if (!alias) return;
-        const shortcut = prompt("请输入快捷简码 (可选，例如 prj):", "") || "";
-        const docTitle = prompt("关联思源工程文档名称 (可选):", "") || "";
-        if (window.chrome && window.chrome.webview) {
-          window.chrome.webview.postMessage(JSON.stringify({
-            op: 'saveFolderBookmark',
-            path: path,
-            alias: alias,
-            shortcut: shortcut,
-            siyuanDocTitle: docTitle
-          }));
-        }
-      }
+      });
     }
 
     // ==========================================================
@@ -12844,34 +13145,45 @@
 
     function triggerProfileCaptureModal(type) {
       const defaultName = type === "s3" ? "思源实时 S3 存储桶" : "思源实时 AI 大模型";
-      const name = prompt(`请输入萃取后的预设别名:`, defaultName);
-      if (!name) return;
-
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({
-          op: 'captureCurrentProfile',
-          type: type.toLowerCase(),
-          name: name
-        }));
-      }
+      showInlineFormModal({
+        title: `萃取思源实时 ${type.toUpperCase()} 配置`,
+        icon: type === "s3" ? "☁️" : "🤖",
+        fields: [
+          { key: "name", label: "预设别名 *", value: defaultName, required: true }
+        ],
+        onSubmit: (vals) => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({
+              op: 'captureCurrentProfile',
+              type: type.toLowerCase(),
+              name: vals.name || defaultName
+            }));
+          }
+        }
+      });
     }
 
     function promptAddNewProfileModal() {
-      const type = prompt("请输入预设类型 (s3 / ai / webdav):", "s3");
-      if (!type) return;
-      const name = prompt("请输入预设名称:", "");
-      if (!name) return;
-      const desc = prompt("请输入简要说明 (如 endpoint 或 model 名称):", "") || "";
-
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({
-          op: 'saveProfile',
-          name: name,
-          type: type.toLowerCase(),
-          description: desc,
-          configData: { "name": name, "type": type, "created": new Date().toISOString() }
-        }));
-      }
+      showInlineFormModal({
+        title: "新建思源脱敏配置预设",
+        icon: "🧩",
+        fields: [
+          { key: "type", label: "预设类型", type: "select", value: "s3", options: ["s3", "ai", "webdav"] },
+          { key: "name", label: "预设名称 *", placeholder: "例如：Cloudflare R2 备份桶 / DeepSeek R1", value: "", required: true },
+          { key: "desc", label: "简要说明 (Endpoint 或 Model 名)", placeholder: "https://api.deepseek.com · deepseek-reasoner", value: "" }
+        ],
+        onSubmit: (vals) => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({
+              op: 'saveProfile',
+              name: vals.name,
+              type: (vals.type || "s3").toLowerCase(),
+              description: vals.desc || "",
+              configData: { "name": vals.name, "type": vals.type || "s3", "created": new Date().toISOString() }
+            }));
+          }
+        }
+      });
     }
 
     function dumpProfileToDaily(name, jsonStr) {
@@ -13133,12 +13445,18 @@
     }
 
     function quarantineDoctorOrphansAction() {
-      if (!confirm("确定将当前未被任何笔记引用的孤儿附件移入安全隔离区 (.quarantine) 吗？\n（文件仅软转移暂存，未物理删除，随时可恢复）")) return;
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'quarantineDoctorOrphans' }));
-        showToast("📦 已触发孤儿附件安全隔离！");
-        setTimeout(() => triggerSystemDoctorAudit(), 1000);
-      }
+      showInlineConfirmModal({
+        title: "移入安全隔离区 (.quarantine)",
+        message: "确定将当前未被任何笔记引用的孤儿附件移入安全隔离区 (.quarantine) 吗？（文件仅软转移暂存，未物理删除，随时可原位打捞恢复）",
+        danger: false,
+        onConfirm: () => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({ op: 'quarantineDoctorOrphans' }));
+            showToast("📦 已触发孤儿附件安全隔离！");
+            setTimeout(() => triggerSystemDoctorAudit(), 1000);
+          }
+        }
+      });
     }
 
     function restoreDoctorOrphansAction() {
@@ -13150,12 +13468,18 @@
     }
 
     function cleanDoctorEmptyBlocksAction() {
-      if (!confirm("确定安全清理全库无意义空白幽灵块吗？")) return;
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'cleanDoctorEmptyBlocks' }));
-        showToast("🧹 正在物理释放空白幽灵块...");
-        setTimeout(() => triggerSystemDoctorAudit(), 1200);
-      }
+      showInlineConfirmModal({
+        title: "清理无意义空白幽灵块",
+        message: "确定安全清理全库无意义空白幽灵块吗？",
+        danger: true,
+        onConfirm: () => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({ op: 'cleanDoctorEmptyBlocks' }));
+            showToast("🧹 正在物理释放空白幽灵块...");
+            setTimeout(() => triggerSystemDoctorAudit(), 1200);
+          }
+        }
+      });
     }
 
     function dumpDoctorReportToDaily() {
@@ -13237,12 +13561,21 @@
     }
 
     function promptChangeVaultDirectory() {
-      const newDir = prompt("请输入外部知识库或本地 Markdown 扫描物理目录绝对路径:", currentVaultDir);
-      if (!newDir || newDir.trim() === "") return;
-      currentVaultDir = newDir.trim();
-      currentSelectedVaultNote = null;
-      currentVaultNoteContent = "";
-      refreshVaultMirrorData();
+      showInlineFormModal({
+        title: "切换外部知识库 / Markdown 镜像目录",
+        icon: "🗄️",
+        fields: [
+          { key: "dir", label: "外部知识库物理目录绝对路径 *", type: "folder", value: currentVaultDir, required: true }
+        ],
+        onSubmit: (vals) => {
+          const newDir = (vals.dir || "").trim();
+          if (!newDir) return;
+          currentVaultDir = newDir;
+          currentSelectedVaultNote = null;
+          currentVaultNoteContent = "";
+          refreshVaultMirrorData();
+        }
+      });
     }
 
     function handleVaultLiveFilter(val) {
@@ -14209,6 +14542,317 @@
       }
       openBlockById(currentSelectedCodeSnippet.BlockId);
     }
+
+    // ==========================================================
+    // P0 体验精修中枢：统一模态栈管理器 (ModalStackManager)、九宫格工作台浮层与内联表单引擎
+    // ==========================================================
+    const MANAGED_STUDIO_MODALS = [
+      "tasks-kanban-modal",
+      "heatmap-gallery-modal",
+      "notification-center-modal",
+      "launchpad-modal",
+      "clip-studio-modal",
+      "graph-modal",
+      "profile-hub-modal",
+      "system-doctor-modal",
+      "vault-mirror-modal",
+      "outline-mindmap-modal",
+      "table-grid-modal",
+      "code-studio-modal",
+      "timeline-modal",
+      "preferences-modal",
+      "cheatsheet-modal",
+      "ai-result-modal",
+      "offline-queue-modal"
+    ];
+
+    const ModalStackManager = {
+      stack: [],
+      isSyncing: false,
+
+      init() {
+        MANAGED_STUDIO_MODALS.forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          const obs = new MutationObserver(() => {
+            if (this.isSyncing) return;
+            if (el.classList.contains("open")) {
+              this.onModalOpened(id);
+            } else {
+              this.stack = this.stack.filter(x => x !== id);
+            }
+          });
+          obs.observe(el, { attributes: true, attributeFilter: ["class"] });
+        });
+
+        // 点击空白处自动收起顶栏工作台九宫格浮层
+        document.addEventListener("click", (e) => {
+          const pop = document.getElementById("studio-switcher-popover");
+          const wrap = document.getElementById("studio-hub-wrap");
+          if (pop && pop.classList.contains("open") && wrap && !wrap.contains(e.target)) {
+            pop.classList.remove("open");
+          }
+        });
+
+        // 恢复用户意图光轨展开偏好
+        if (localStorage.getItem("xiaolv_more_chips_open") === "1") {
+          toggleMoreIntentChips(true);
+        }
+      },
+
+      onModalOpened(openedId) {
+        this.isSyncing = true;
+        try {
+          closeStudioSwitcherPopover();
+          // 互斥关闭其余底层工作台模态框，彻底告别弹窗叠罗汉
+          MANAGED_STUDIO_MODALS.forEach(id => {
+            if (id !== openedId) {
+              const other = document.getElementById(id);
+              if (other && other.classList.contains("open")) {
+                other.classList.remove("open");
+              }
+            }
+          });
+          this.stack = this.stack.filter(x => x !== openedId);
+          this.stack.push(openedId);
+        } finally {
+          this.isSyncing = false;
+        }
+      },
+
+      hasAnyModalOpen() {
+        const ifm = document.getElementById("inline-form-modal");
+        if (ifm && ifm.classList.contains("open")) return true;
+        const pop = document.getElementById("studio-switcher-popover");
+        if (pop && pop.classList.contains("open")) return true;
+        return MANAGED_STUDIO_MODALS.some(id => {
+          const el = document.getElementById(id);
+          return el && el.classList.contains("open");
+        });
+      },
+
+      closeTopmostModal() {
+        // 第 1 优先级：关闭顶层内联表单 / 确认框
+        const ifm = document.getElementById("inline-form-modal");
+        if (ifm && ifm.classList.contains("open")) {
+          closeInlineFormModal();
+          return true;
+        }
+        // 第 2 优先级：关闭顶栏九宫格切换浮层
+        const pop = document.getElementById("studio-switcher-popover");
+        if (pop && pop.classList.contains("open")) {
+          closeStudioSwitcherPopover();
+          return true;
+        }
+        // 第 3 优先级：按栈顶逆序关闭当前打开的工作台大视窗
+        while (this.stack.length > 0) {
+          const topId = this.stack.pop();
+          const el = document.getElementById(topId);
+          if (el && el.classList.contains("open")) {
+            el.classList.remove("open");
+            return true;
+          }
+        }
+        for (const id of MANAGED_STUDIO_MODALS) {
+          const el = document.getElementById(id);
+          if (el && el.classList.contains("open")) {
+            el.classList.remove("open");
+            return true;
+          }
+        }
+        return false;
+      }
+    };
+
+    // 全局四级丝滑 Esc 回退总线 (供前端与 C# PreviewKeyDown 统一调用)
+    window.handleGlobalEscapeKey = function() {
+      if (ModalStackManager.closeTopmostModal()) {
+        return true;
+      }
+      const si = document.getElementById("search-input");
+      if (si && si.value.trim().length > 0) {
+        clearSearchInput();
+        return true;
+      }
+      closeWindow();
+      return true;
+    };
+
+    function toggleStudioSwitcherPopover(e) {
+      if (e) e.stopPropagation();
+      const pop = document.getElementById("studio-switcher-popover");
+      if (!pop) return;
+      pop.classList.toggle("open");
+    }
+
+    function closeStudioSwitcherPopover() {
+      const pop = document.getElementById("studio-switcher-popover");
+      if (pop) pop.classList.remove("open");
+    }
+
+    function toggleMoreIntentChips(forceState) {
+      const drawer = document.getElementById("more-intent-chips-drawer");
+      const btn = document.getElementById("toggle-more-chips-btn");
+      if (!drawer || !btn) return;
+      const shouldOpen = typeof forceState === "boolean" ? forceState : !drawer.classList.contains("open");
+      drawer.classList.toggle("open", shouldOpen);
+      btn.innerHTML = shouldOpen ? "<b>✨</b> 收起扩展 ▴" : "<b>✨</b> 更多指令 (36) ▾";
+      try { localStorage.setItem("xiaolv_more_chips_open", shouldOpen ? "1" : "0"); } catch(e) {}
+    }
+
+    // 通用暗夜黑曜内联表单与确认框引擎
+    let _currentInlineFormConfig = null;
+
+    function showInlineFormModal(config) {
+      _currentInlineFormConfig = config || {};
+      const modal = document.getElementById("inline-form-modal");
+      const iconEl = document.getElementById("ifm-icon");
+      const titleEl = document.getElementById("ifm-title");
+      const bodyEl = document.getElementById("ifm-body");
+      const submitBtn = document.getElementById("ifm-submit-btn");
+      if (!modal || !bodyEl) return;
+
+      if (iconEl) iconEl.innerText = config.icon || "✨";
+      if (titleEl) titleEl.innerText = config.title || "录入信息";
+      if (submitBtn) {
+        submitBtn.innerText = config.submitText || "确认提交 (Enter)";
+        submitBtn.style.background = config.danger ? "var(--rose-agent)" : "var(--indigo-primary)";
+        submitBtn.style.borderColor = config.danger ? "var(--rose-agent)" : "var(--indigo-primary)";
+      }
+
+      const fields = Array.isArray(config.fields) ? config.fields : [];
+      let html = "";
+      if (config.message) {
+        html += `<div style="font-size: 12.5px; color: var(--text-primary); line-height: 1.65;">${escapeHtml(config.message)}</div>`;
+      }
+      fields.forEach(f => {
+        const inputId = `ifm-field-${f.key}`;
+        if (f.type === "select" && Array.isArray(f.options)) {
+          html += `
+            <div class="inline-form-field">
+              <label for="${inputId}">${escapeHtml(f.label || f.key)}</label>
+              <select id="${inputId}" class="inline-form-input">
+                ${f.options.map(opt => `<option value="${escapeQuote(opt)}" ${opt === f.value ? 'selected' : ''}>${escapeHtml(opt)}</option>`).join("")}
+              </select>
+            </div>
+          `;
+        } else if (f.type === "folder") {
+          html += `
+            <div class="inline-form-field">
+              <label for="${inputId}">${escapeHtml(f.label || f.key)}</label>
+              <div style="display: flex; gap: 6px;">
+                <input type="text" id="${inputId}" class="inline-form-input" value="${escapeQuote(f.value || '')}" placeholder="${escapeQuote(f.placeholder || '')}" style="flex: 1;" />
+                <button type="button" class="pref-btn" onclick="triggerNativeFolderPicker('${inputId}')" style="font-size: 11px; padding: 0 10px; white-space: nowrap; color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);" title="调用系统原生目录选择框浏览本地文件夹">📂 浏览...</button>
+              </div>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="inline-form-field">
+              <label for="${inputId}">${escapeHtml(f.label || f.key)}</label>
+              <input type="text" id="${inputId}" class="inline-form-input" value="${escapeQuote(f.value || '')}" placeholder="${escapeQuote(f.placeholder || '')}" />
+            </div>
+          `;
+        }
+      });
+
+      bodyEl.innerHTML = html;
+      modal.classList.add("open");
+
+      setTimeout(() => {
+        const firstInput = bodyEl.querySelector("input, select");
+        if (firstInput) {
+          firstInput.focus();
+          if (firstInput.select) firstInput.select();
+        } else if (submitBtn) {
+          submitBtn.focus();
+        }
+      }, 50);
+    }
+
+    function showInlineConfirmModal(opts) {
+      showInlineFormModal({
+        title: opts.title || "确认操作",
+        icon: opts.danger ? "⚠️" : "💡",
+        message: opts.message || "确定继续执行此操作吗？",
+        danger: !!opts.danger,
+        submitText: opts.confirmText || (opts.danger ? "确认执行" : "确定"),
+        fields: [],
+        onSubmit: () => {
+          if (typeof opts.onConfirm === "function") opts.onConfirm();
+        }
+      });
+    }
+
+    function submitInlineFormModal() {
+      if (!_currentInlineFormConfig) {
+        closeInlineFormModal();
+        return;
+      }
+      const cfg = _currentInlineFormConfig;
+      const fields = Array.isArray(cfg.fields) ? cfg.fields : [];
+      const values = {};
+
+      for (const f of fields) {
+        const el = document.getElementById(`ifm-field-${f.key}`);
+        const val = el ? (el.value || "").trim() : "";
+        if (f.required && !val) {
+          showToast(`⚠️ 请填写必填项：${f.label || f.key}`);
+          if (el) el.focus();
+          return;
+        }
+        values[f.key] = val;
+      }
+
+      closeInlineFormModal();
+      if (typeof cfg.onSubmit === "function") {
+        cfg.onSubmit(values);
+      }
+    }
+
+    function closeInlineFormModal() {
+      const modal = document.getElementById("inline-form-modal");
+      if (modal) modal.classList.remove("open");
+      _currentInlineFormConfig = null;
+    }
+
+    function closeInlineFormOnBg(e) {
+      if (e && e.target && e.target.id === "inline-form-modal") {
+        closeInlineFormModal();
+      }
+    }
+
+    function triggerNativeFolderPicker(targetInputId) {
+      const inputEl = document.getElementById(targetInputId);
+      const currentVal = inputEl ? (inputEl.value || "").trim() : "";
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: "pickLocalFolder",
+          initialDir: currentVal || "D:\\",
+          targetInputId: targetInputId || "",
+          description: "请选择本地工程目录或外部知识库文件夹"
+        }));
+      } else {
+        showToast("当前环境暂不支持原生目录浏览，请直接输入路径");
+      }
+    }
+
+    window.onLocalFolderPicked = function(res) {
+      if (!res || !res.path) return;
+      if (res.targetInputId) {
+        const el = document.getElementById(res.targetInputId);
+        if (el) el.value = res.path;
+      }
+      // 若表单同时存在空的别名/标题框，自动智能填充文件夹名
+      const aliasEl = document.getElementById("ifm-field-alias") || document.getElementById("ifm-field-title");
+      if (aliasEl && !aliasEl.value.trim() && res.alias) {
+        aliasEl.value = res.alias;
+      }
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      ModalStackManager.init();
+    });
 
     function closeWindow() {
       if (window.chrome && window.chrome.webview) {

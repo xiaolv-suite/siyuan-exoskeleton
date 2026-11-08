@@ -234,7 +234,7 @@ namespace XiaoLv.Desktop.Core
             _menu.Items.Add(itemExit);
 
             _notifyIcon = new NotifyIcon();
-            _notifyIcon.Text = "思源外骨骼 · 桌面穿透工作台 v2.9.0";
+            _notifyIcon.Text = "思源外骨骼 · 桌面穿透工作台 v3.0.0";
             _notifyIcon.ContextMenuStrip = _menu;
             _notifyIcon.Visible = true;
 

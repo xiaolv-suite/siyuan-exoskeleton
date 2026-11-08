@@ -3594,6 +3594,54 @@ async function main() {
                             panelContent.includes('toggleCodeStudioModal();');
   logStep("Step 7.194: 检索前缀 code/snip 与代码工作台呼出深度联动断言", hasCodeSearchLink, `代码工作台呼出联动: ${hasCodeSearchLink}`);
 
+  // Step 7.195: Test Topbar Studio Hub 9-Grid Switcher Popover (P0 Topbar De-cluttering)
+  const hasStudioSwitcher = panelContent.includes('id="studio-hub-btn"') &&
+                            panelContent.includes('id="studio-switcher-popover"') &&
+                            panelContent.includes('class="studio-switcher-grid"') &&
+                            panelContent.includes('function toggleStudioSwitcherPopover');
+  logStep("Step 7.195: 顶栏全景工作台九宫格矩阵切换器 (studio-switcher-popover) 收纳减负断言", hasStudioSwitcher, `九宫格工作台浮层架构: ${hasStudioSwitcher}`);
+
+  // Step 7.196: Test Tiered Quick Intent Chips & Expandable Drawer (P0 First-Screen De-cluttering)
+  const hasTieredChips = panelContent.includes('id="toggle-more-chips-btn"') &&
+                         panelContent.includes('id="more-intent-chips-drawer"') &&
+                         panelContent.includes('function toggleMoreIntentChips');
+  logStep("Step 7.196: 搜索框意图光轨首屏高频与折叠扩展抽屉 (more-intent-chips-drawer) 分层断言", hasTieredChips, `意图光轨二级分层架构: ${hasTieredChips}`);
+
+  // Step 7.197: Test Global ModalStackManager & 4-Tier Escape Key Bus
+  const hasModalStack = panelContent.includes('const MANAGED_STUDIO_MODALS =') &&
+                        panelContent.includes('const ModalStackManager =') &&
+                        panelContent.includes('onModalOpened(openedId)') &&
+                        panelContent.includes('closeTopmostModal()') &&
+                        panelContent.includes('window.handleGlobalEscapeKey = function()');
+  logStep("Step 7.197: 全局统一模态栈互斥管理 (ModalStackManager) 与四级 Esc 丝滑回退总线断言", hasModalStack, `模态栈与Esc回退总线: ${hasModalStack}`);
+
+  // Step 7.198: Test Dark-Obsidian InlineFormModal & Zero Blocking prompt()/confirm()
+  const nonCommentLines = panelContent.split(/\r?\n/).filter(l => {
+    const t = l.trim();
+    return !t.startsWith('//') && !t.startsWith('<!--');
+  });
+  const blockingCalls = nonCommentLines.filter(l => /\b(prompt|confirm)\s*\(/.test(l));
+  const hasInlineFormEngine = panelContent.includes('id="inline-form-modal"') &&
+                              panelContent.includes('function showInlineFormModal') &&
+                              panelContent.includes('function showInlineConfirmModal') &&
+                              blockingCalls.length === 0;
+  logStep("Step 7.198: 暗夜黑曜内联表单引擎 (inline-form-modal) 与阻塞式 prompt/confirm 清零断言", hasInlineFormEngine, `残留原生弹窗数: ${blockingCalls.length}`);
+
+  // Step 7.199: Test Native Folder Browser Bridge & Focus-Loss Auto-Hide Guard in BentoWindow.cs
+  const bentoCsContent = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'BentoWindow.cs'), 'utf8');
+  const hasNativeFolderPicker = bentoCsContent.includes('op.Equals("pickLocalFolder"') &&
+                                bentoCsContent.includes('FolderBrowserDialog') &&
+                                bentoCsContent.includes('_suppressAutoHide') &&
+                                panelContent.includes('function triggerNativeFolderPicker') &&
+                                panelContent.includes('window.onLocalFolderPicked');
+  logStep("Step 7.199: C# 原生系统目录浏览桥接 (pickLocalFolder) 与防失焦隐退锁断言", hasNativeFolderPicker, `原生目录选择与防隐退锁: ${hasNativeFolderPicker}`);
+
+  // Step 7.200: Test Unified v3.0.0 Version Alignment Across Backend, Webhook & UI
+  const isVersionAligned = panelContent.includes('<span class="brand-pill">v3.0.0</span>') &&
+                           bridgeStatus &&
+                           bridgeStatus.version === "3.0.0";
+  logStep("Step 7.200: 全工程 v3.0.0 版本号一致性对齐 (C# 内核 / Webhook / 前端面板) 断言", isVersionAligned, `Webhook版本: ${bridgeStatus?.version}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

@@ -2621,6 +2621,163 @@ async function main() {
   const isWebhookNavOk = webhookNavResp && (webhookNavResp.code === 0 || webhookNavResp.code === 1);
   logStep("Step 7.118: 目录秒跳 Webhook (POST /api/navigate) 穿透调度断言", isWebhookNavOk, `响应: ${JSON.stringify(webhookNavResp)}`);
 
+  // Step 7.119: Test SiYuanProfileHub Credential Sanitization
+  const sanitizeScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $hub = $asm.GetType('XiaoLv.Desktop.Core.SiYuanProfileHub');
+    $entryType = $asm.GetType('XiaoLv.Desktop.Core.SiYuanProfileEntry');
+    $mSanitize = $hub.GetMethod('SanitizeProfileConfigData', [System.Reflection.BindingFlags]'Public,Static');
+
+    $entry = [Activator]::CreateInstance($entryType);
+    $entry.ConfigData['endpoint'] = 'https://s3.ap-east-1.amazonaws.com';
+    $entry.ConfigData['bucket'] = 'my-vault';
+    $entry.ConfigData['accessKey'] = 'AKIA1234567890SECRET';
+    $entry.ConfigData['secretKey'] = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY';
+    $entry.ConfigData['apiKey'] = 'sk-proj1234567890abcdef';
+
+    $mSanitize.Invoke($null, @($entry.ConfigData));
+
+    $okSanitize = ($entry.ConfigData['endpoint'] -eq 'https://s3.ap-east-1.amazonaws.com') -and ($entry.ConfigData['bucket'] -eq 'my-vault') -and ($entry.ConfigData['accessKey'] -eq '[SECURED_CREDENTIAL]') -and ($entry.ConfigData['secretKey'] -eq '[SECURED_CREDENTIAL]') -and ($entry.ConfigData['apiKey'] -eq '[SECURED_CREDENTIAL]');
+    Write-Output ($okSanitize.ToString());
+  `;
+  const sanitizeRes = runPs(sanitizeScript);
+  const isSanitizeOk = sanitizeRes.includes("True");
+  logStep("Step 7.119: 配置预设凭据安全脱敏清道夫 (SanitizeProfileConfigData) 断言", isSanitizeOk, `脱敏断言: ${sanitizeRes.trim()}`);
+
+  // Step 7.120: Test SiYuanProfileHub S3 Profile Save & SQLite/Cache Persistence
+  const s3ProfileScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $hub = $asm.GetType('XiaoLv.Desktop.Core.SiYuanProfileHub');
+    $entryType = $asm.GetType('XiaoLv.Desktop.Core.SiYuanProfileEntry');
+
+    $entry = [Activator]::CreateInstance($entryType);
+    $entry.Name = '腾讯云 COS 华东存储桶';
+    $entry.Type = 's3';
+    $entry.Description = '南京生产主力备份桶';
+    $entry.ConfigData['endpoint'] = 'https://cos.ap-nanjing.myqcloud.com';
+    $entry.ConfigData['bucket'] = 'jymw-production-vault';
+    $entry.ConfigData['region'] = 'ap-nanjing';
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+
+    $mSave = $hub.GetMethod('SaveProfileAsync', [System.Reflection.BindingFlags]'Public,Static');
+    $task = $mSave.Invoke($null, @($entry));
+    $saveOk = $task.GetAwaiter().GetResult();
+
+    Write-Output ($saveOk.ToString());
+  `;
+  const s3ProfileRes = runPs(s3ProfileScript);
+  const isS3ProfileOk = s3ProfileRes.includes("True");
+  logStep("Step 7.120: S3 对象存储配置预设保存与脱敏落盘断言", isS3ProfileOk, `S3预设保存断言: ${s3ProfileRes.trim()}`);
+
+  // Step 7.121: Test SiYuanProfileHub AI Profile Save & Desensitization
+  const aiProfileScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $hub = $asm.GetType('XiaoLv.Desktop.Core.SiYuanProfileHub');
+    $entryType = $asm.GetType('XiaoLv.Desktop.Core.SiYuanProfileEntry');
+
+    $entry = [Activator]::CreateInstance($entryType);
+    $entry.Name = '阿里通义千问 Qwen-Max 旗舰模型';
+    $entry.Type = 'ai';
+    $entry.Description = '大文本推理与复杂代码分析';
+    $entry.ConfigData['baseURL'] = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+    $entry.ConfigData['modelName'] = 'qwen-max-latest';
+    $entry.ConfigData['apiKey'] = 'sk-aliyun1234567890';
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+
+    $mSave = $hub.GetMethod('SaveProfileAsync', [System.Reflection.BindingFlags]'Public,Static');
+    $task = $mSave.Invoke($null, @($entry));
+    $saveOk = $task.GetAwaiter().GetResult();
+
+    $keyMasked = ($entry.ConfigData['apiKey'] -eq '[SECURED_CREDENTIAL]');
+    Write-Output ($saveOk.ToString() + '|' + $keyMasked.ToString());
+  `;
+  const aiProfileRes = runPs(aiProfileScript);
+  const isAiProfileOk = aiProfileRes.includes("True|True");
+  logStep("Step 7.121: AI 大模型配置预设保存与 API-Key 强屏蔽断言", isAiProfileOk, `AI预设保存断言: ${aiProfileRes.trim()}`);
+
+  // Step 7.122: Test SiYuanProfileHub Search & Type Filtering
+  const searchProfileScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $hub = $asm.GetType('XiaoLv.Desktop.Core.SiYuanProfileHub');
+    $mLoad = $hub.GetMethod('LoadProfilesAsync', [System.Reflection.BindingFlags]'Public,Static');
+    $mSearch = $hub.GetMethod('Search', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+    $task = $mLoad.Invoke($null, @('all'));
+    $all = $task.GetAwaiter().GetResult();
+
+    $s3Hits = $mSearch.Invoke($null, @($all, '腾讯云', 's3'));
+    $aiHits = $mSearch.Invoke($null, @($all, '通义千问', 'ai'));
+
+    $okSearch = ($s3Hits.Count -ge 1) -and ($aiHits.Count -ge 1) -and ($s3Hits[0].Type -eq 's3') -and ($aiHits[0].Type -eq 'ai');
+    Write-Output ($okSearch.ToString() + '|' + $s3Hits.Count + '|' + $aiHits.Count);
+  `;
+  const searchProfileRes = runPs(searchProfileScript);
+  const isSearchProfileOk = searchProfileRes.includes("True");
+  logStep("Step 7.122: 配置预设关键词与类型双维过滤 (Search) 断言", isSearchProfileOk, `预设过滤断言: ${searchProfileRes.trim()}`);
+
+  // Step 7.123: Test SiYuanProfileHub.CaptureCurrentLiveProfile
+  const captureLiveScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $hub = $asm.GetType('XiaoLv.Desktop.Core.SiYuanProfileHub');
+    $mCapture = $hub.GetMethod('CaptureCurrentLiveProfile', [System.Reflection.BindingFlags]'Public,Static');
+
+    $capS3 = $mCapture.Invoke($null, @('s3', '当前实时S3'));
+    $okCapture = ($null -ne $capS3) -and ($capS3.Type -eq 's3') -and ($capS3.Name -eq '当前实时S3');
+    Write-Output ($okCapture.ToString());
+  `;
+  const captureLiveRes = runPs(captureLiveScript);
+  const isCaptureLiveOk = captureLiveRes.includes("True");
+  logStep("Step 7.123: 思源实时配置一键萃取探针 (CaptureCurrentLiveProfile) 断言", isCaptureLiveOk, `配置萃取断言: ${captureLiveRes.trim()}`);
+
+  // Step 7.124: Test ExternalApiBridge Profile Webhook (GET /api/profile & POST /api/profile)
+  let webhookProfileResp;
+  try {
+    const postResp = await fetch("http://127.0.0.1:43990/api/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "智谱 GLM-4 开放平台",
+        type: "ai",
+        description: "GLM-4 旗舰预设",
+        configData: {
+          baseURL: "https://open.bigmodel.cn/api/paas/v4",
+          modelName: "glm-4-plus"
+        }
+      })
+    });
+    const postJson = await postResp.json();
+    await sleep(300);
+    const getResp = await fetch("http://127.0.0.1:43990/api/profile?type=ai&q=" + encodeURIComponent("智谱"));
+    const getJson = await getResp.json();
+    webhookProfileResp = { postCode: postJson.code, getCount: getJson.count, getCode: getJson.code };
+  } catch (err) {
+    webhookProfileResp = { error: err.message };
+  }
+  const isWebhookProfileOk = webhookProfileResp && webhookProfileResp.postCode === 0 && webhookProfileResp.getCode === 0 && webhookProfileResp.getCount >= 1;
+  logStep("Step 7.124: 配置预设 Webhook (GET/POST /api/profile) 远程管理断言", isWebhookProfileOk, `响应: ${JSON.stringify(webhookProfileResp)}`);
+
+  // Step 7.125: Test ExternalApiBridge Profile Capture Webhook (GET /api/profile/capture)
+  let webhookProfileCapResp;
+  try {
+    const resp = await fetch("http://127.0.0.1:43990/api/profile/capture?type=s3&name=" + encodeURIComponent("测试S3萃取"));
+    webhookProfileCapResp = await resp.json();
+  } catch (err) {
+    webhookProfileCapResp = { error: err.message };
+  }
+  const isWebhookProfileCapOk = webhookProfileCapResp && webhookProfileCapResp.code === 0 && webhookProfileCapResp.data.Type === "s3";
+  logStep("Step 7.125: 配置预设萃取 Webhook (GET /api/profile/capture) 探针断言", isWebhookProfileCapOk, `响应: ${JSON.stringify(webhookProfileCapResp)}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

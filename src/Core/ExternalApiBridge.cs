@@ -238,15 +238,29 @@ namespace XiaoLv.Desktop.Core
 	                    return;
 	                }
 
-	                // L. 任务打勾完成: /api/task/complete
-	                if (rawPath.Equals("/api/task/complete", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/task/complete", StringComparison.OrdinalIgnoreCase))
-	                {
-	                    HandleTaskCompleteRequest(req, resp);
-	                    return;
-	                }
+		                // L. 任务打勾完成: /api/task/complete
+		                if (rawPath.Equals("/api/task/complete", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/task/complete", StringComparison.OrdinalIgnoreCase))
+		                {
+		                    HandleTaskCompleteRequest(req, resp);
+		                    return;
+		                }
 
-	                // 未匹配到路由
-	                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
+		                // M. 思源配置与模型预设中枢: /api/profile
+		                if (rawPath.Equals("/api/profile", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/profile", StringComparison.OrdinalIgnoreCase))
+		                {
+		                    HandleProfileRequest(req, resp);
+		                    return;
+		                }
+
+		                // N. 萃取当前实时配置为预设: /api/profile/capture
+		                if (rawPath.Equals("/api/profile/capture", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/profile/capture", StringComparison.OrdinalIgnoreCase))
+		                {
+		                    HandleProfileCaptureRequest(req, resp);
+		                    return;
+		                }
+
+		                // 未匹配到路由
+		                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
             }
             catch (Exception ex)
             {
@@ -654,14 +668,56 @@ namespace XiaoLv.Desktop.Core
 	                return;
 	            }
 
-	            ThreadPool.QueueUserWorkItem(async s =>
-	            {
-	                bool ok = await FlowTimerManager.CompleteAssociatedTaskAsync(id);
-	                WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, msg = ok ? "任务已打勾完成" : "任务完成失败或未找到待办块", id = id });
-	            });
-	        }
+		            ThreadPool.QueueUserWorkItem(async s =>
+		            {
+		                bool ok = await FlowTimerManager.CompleteAssociatedTaskAsync(id);
+		                WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, msg = ok ? "任务已打勾完成" : "任务完成失败或未找到待办块", id = id });
+		            });
+		        }
 
-	        private static string ReadRequestBody(HttpListenerRequest req)
+		        private static void HandleProfileRequest(HttpListenerRequest req, HttpListenerResponse resp)
+		        {
+		            if (req.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+		            {
+		                string body = ReadRequestBody(req);
+		                var dict = JsonHelper.ParseDict(body);
+		                var entry = new SiYuanProfileEntry
+		                {
+		                    Name = JsonHelper.GetString(dict, "name"),
+		                    Type = JsonHelper.GetString(dict, "type", "s3"),
+		                    Description = JsonHelper.GetString(dict, "description")
+		                };
+		                var configDict = JsonHelper.GetDict(dict, "configData");
+		                if (configDict != null) entry.ConfigData = configDict;
+
+		                ThreadPool.QueueUserWorkItem(async s =>
+		                {
+		                    bool ok = await SiYuanProfileHub.SaveProfileAsync(entry);
+		                    WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, msg = ok ? "配置预设已保存" : "保存失败", entry = entry });
+		                });
+		                return;
+		            }
+
+		            // GET: 检索配置预设
+		            string q = GetQueryStringUtf8(req, "q");
+		            string type = req.QueryString["type"] ?? "all";
+		            ThreadPool.QueueUserWorkItem(async s =>
+		            {
+		                var all = await SiYuanProfileHub.LoadProfilesAsync(type);
+		                var filtered = SiYuanProfileHub.Search(all, q, type);
+		                WriteJsonResponse(resp, 200, new { code = 0, count = filtered.Count, data = filtered });
+		            });
+		        }
+
+		        private static void HandleProfileCaptureRequest(HttpListenerRequest req, HttpListenerResponse resp)
+		        {
+		            string type = req.QueryString["type"] ?? "s3";
+		            string name = GetQueryStringUtf8(req, "name");
+		            var captured = SiYuanProfileHub.CaptureCurrentLiveProfile(type, name);
+		            WriteJsonResponse(resp, 200, new { code = 0, msg = "萃取成功", data = captured });
+		        }
+
+		        private static string ReadRequestBody(HttpListenerRequest req)
         {
             try
             {

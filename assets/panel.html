@@ -2567,8 +2567,9 @@
 	      <span class="intent-chip" onclick="insertPrefix('zotero:')" title="唤起本地 Zotero 学术文献管理库"><b>📖</b> Zotero</span>
 			      <span class="intent-chip" onclick="insertPrefix('bm:')" title="输入 bm: 穿透检索 Edge/Chrome 本地浏览器书签与收藏夹"><b>🔖</b> 浏览器书签</span>
 			      <span class="intent-chip" onclick="insertPrefix('fav:')" title="输入 fav: 打开全景网站收藏中枢，跨浏览器统一秒搜、一键收录并沉淀至思源专属文档"><b>🌐</b> 网站收藏</span>
-			      <span class="intent-chip" onclick="insertPrefix('fold:')" title="输入 fold: 打开本地文件夹导航中枢，支持 #32770 对话框原位穿透与思源工程锚定"><b>📂</b> 文件夹导航</span>
-			      <span class="intent-chip" onclick="insertPrefix('vault:')" title="输入 vault: 穿透检索外部 Markdown 知识库与本地目录"><b>🗄️</b> 外部库</span>
+				      <span class="intent-chip" onclick="insertPrefix('fold:')" title="输入 fold: 打开本地文件夹导航中枢，支持 #32770 对话框原位穿透与思源工程锚定"><b>📂</b> 文件夹导航</span>
+				      <span class="intent-chip" onclick="insertPrefix('cfg:')" title="输入 cfg: 查看与管理思源 S3 存储桶、AI 大模型与常用配置预设"><b>⚙️</b> 配置预设</span>
+				      <span class="intent-chip" onclick="insertPrefix('vault:')" title="输入 vault: 穿透检索外部 Markdown 知识库与本地目录"><b>🗄️</b> 外部库</span>
 	      <span class="intent-chip" onclick="insertPrefix('tab:')" title="输入 tab: 检索全库数据表格，支持排版美化与1键导出Excel"><b>📊</b> 表格透视</span>
 	      <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
@@ -2598,11 +2599,11 @@
   <!-- Controls Bar: Category Tabs & Layout Switcher -->
   <div class="controls-bar">
     <nav class="category-tabs" id="category-tabs">
-      <button class="cat-btn active" id="cat-btn-all" onclick="setCategoryFilter('all')">全部 (29)</button>
+      <button class="cat-btn active" id="cat-btn-all" onclick="setCategoryFilter('all')">全部 (30)</button>
       <button class="cat-btn" id="cat-btn-capture" onclick="setCategoryFilter('capture')">📝 极速捕获 (6)</button>
       <button class="cat-btn" id="cat-btn-search" onclick="setCategoryFilter('search')">🔍 搜索资产 (10)</button>
       <button class="cat-btn" id="cat-btn-learning" onclick="setCategoryFilter('learning')">🧩 生态直达 (8 · Alt+1~8)</button>
-      <button class="cat-btn" id="cat-btn-commands" onclick="setCategoryFilter('commands')">🌐 格式心流 (3)</button>
+      <button class="cat-btn" id="cat-btn-commands" onclick="setCategoryFilter('commands')">🌐 格式心流 (4)</button>
       <button class="cat-btn" id="cat-btn-maintenance" onclick="setCategoryFilter('maintenance')">⚙️ 系统运维 (2)</button>
     </nav>
     <div class="layout-switcher" title="切换视图排版模式">
@@ -3283,10 +3284,11 @@
       { id: "sybk", actionId: "b9fe5102-420e-40b5-b4e0-b7fd9f895cb9", pluginLaunch: "siyuan-exam|command.openPractice||false|备考与练习台", pluginHotkey: "Alt+7", group: "learning", title: "备考与练习台", desc: "点击执行备考数据概览；点击「🪟 面板」或 Alt+7 唤醒思源打开学习与考试练习台", hotkey: "Alt+Shift+E", iconImg: "icons/siyuan-exam.png", iconType: "spell-check", iconColor: "var(--rose-agent)", badge: "刷题与错题", badgeCls: "badge-plugin", pinyin: "bkccyishipan sybk bk ys", synonyms: ["备考", "学习", "考试", "错题", "exam"] },
       { id: "sylq", actionId: "b415379a-a959-4ded-8e1d-3d17ddbfd1e7", pluginLaunch: "siyuan-speed-switch|switchTabs||false|标签快速切换", pluginHotkey: "Alt+8", group: "learning", title: "标签快速切换", desc: "点击执行快速切换动作；点击「🪟 面板」或 Alt+8 唤醒思源秒开雷切切换器", hotkey: "sylq", iconImg: "icons/siyuan-speed-switch.png", iconType: "bolt", iconColor: "var(--indigo-light)", badge: "快速切换", badgeCls: "badge-plugin", pinyin: "lqksqhzd sylq lq qh", synonyms: ["雷切", "快速切换", "启动器", "launcher"] },
 
-      // 🌐 格式化与扩展心流 (3)
+      // 🌐 格式化与扩展心流 (4)
       { id: "syx", actionId: "5191f0a1-0f41-4af8-9696-6b02011a2514", group: "commands", title: "纯净 Markdown 复制", desc: "一键剥离思源内部 {: id} 属性杂质，双链还原自然标题发微信/知乎", hotkey: "Alt+Shift+X", iconType: "share", iconColor: "var(--emerald-mint)", badge: "杂质清洗", badgeCls: "badge-native", pinyin: "cjmd fzfx syx cj md", synonyms: ["纯净", "markdown", "复制", "微信", "知乎", "clean", "share", "导出"] },
       { id: "syp", actionId: "f7908778-f80d-4335-95fb-a48f387469b3", group: "commands", title: "原色高亮美化", desc: "严格基于 var(--b3-font-color*) 原生 CSS 变量设色与荧光高亮，支持一键清格式", hotkey: "syp", iconType: "brush", iconColor: "var(--cyber-sky)", badge: "原生调色盘", badgeCls: "badge-bridge", pinyin: "kjgshyysmh syp ys gsh", synonyms: ["格式化", "美化", "颜色", "高亮", "清除格式", "style", "format"] },
       { id: "sycmd", group: "commands", title: "插件命令调度", desc: "支持输入 p: 实时搜索思源中已安装的任意第三方社区插件命令并唤起执行", hotkey: "p:", iconType: "terminal", iconColor: "var(--indigo-light)", badge: "全量命令", badgeCls: "badge-bridge", pinyin: "ssbzhyzcjml sycmd ml", synonyms: ["插件命令", "第三方命令", "穿透", "调度", "commands"] },
+      { id: "syprofile", actionId: "syprofile", group: "commands", title: "配置与模型预设", desc: "脱敏管理思源 S3 存储桶、AI 大模型驱动与 WebDAV 常用配置，随时复制参数蓝图或切换预设", hotkey: "cfg:", iconType: "terminal", iconColor: "var(--indigo-light)", badge: "脱敏预设", badgeCls: "badge-native", pinyin: "pz ysymxys syprofile cfg s3 ai", synonyms: ["配置", "预设", "s3", "ai", "webdav", "模型", "存储桶", "profile", "cfg"] },
 
       // ⚙️ 系统与数据运维 (2)
       { id: "sytrash", actionId: "sytrash", group: "maintenance", title: "回收站", desc: "专属文档回收站：毫秒级检索数据历史与快照库，查看最近被删除、被 AI 覆盖的笔记，支持 1 键打捞复原", hotkey: "trash:", iconType: "trash", iconColor: "var(--rose-agent)", badge: "数据回收站", badgeCls: "badge-native", pinyin: "hsz trash recycle wsdl", synonyms: ["回收站", "垃圾桶", "数据历史", "误删", "打捞", "找回", "trash", "recycle"] },
@@ -4048,6 +4050,9 @@
       } else if (q.startsWith("fold:") || q.startsWith("fold：") || q.startsWith("folder:") || q.startsWith("folder：")) {
         banner.style.display = "flex";
         banner.innerHTML = `<div><span class="intent-tag">📂 文件夹导航中枢</span>系统级目录收藏与 #32770 对话框穿透，回车原位秒跳或资源管理器秒开</div><span style="font-size: 10px; opacity: 0.8;">↵ 穿透秒跳 · Shift+↵ 贴路径</span>`;
+      } else if (q.startsWith("cfg:") || q.startsWith("cfg：") || q.startsWith("s3:") || q.startsWith("s3：") || q.startsWith("ai:") || q.startsWith("ai：")) {
+        banner.style.display = "flex";
+        banner.innerHTML = `<div><span class="intent-tag">⚙️ 配置预设中枢</span>脱敏管理与一键切换 S3 存储桶、AI 大模型及系统预设</div><span style="font-size: 10px; opacity: 0.8;">↵ 查看详情 · 复制配置</span>`;
       } else {
         banner.style.display = "none";
       }
@@ -4212,6 +4217,19 @@
         const subKw = q.replace(/^(fold:|fold：|folder:|folder：)/, "").trim();
         if (window.chrome && window.chrome.webview) {
           window.chrome.webview.postMessage(JSON.stringify({ op: 'searchFolderBookmarks', keyword: subKw }));
+        } else {
+          filteredItems = [];
+          renderItems();
+        }
+        return;
+      }
+
+      // cfg: 或 s3: 或 ai: 模式：思源常用配置与模型预设中枢
+      if (q.startsWith("cfg:") || q.startsWith("cfg：") || q.startsWith("s3:") || q.startsWith("s3：") || q.startsWith("ai:") || q.startsWith("ai：") || q === "cfg" || q === "s3" || q === "ai") {
+        const type = (q.startsWith("s3:") || q === "s3") ? "s3" : ((q.startsWith("ai:") || q === "ai") ? "ai" : "all");
+        const subKw = q.replace(/^(cfg:|cfg：|s3:|s3：|ai:|ai：)/, "").trim();
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'searchProfiles', keyword: subKw, type: type }));
         } else {
           filteredItems = [];
           renderItems();
@@ -5039,6 +5057,12 @@
       // 呼出心流番茄与行动闭环
       if (item.id === "sypom") {
         insertPrefix("pom:25 ");
+        return;
+      }
+
+      // 呼出思源常用配置与模型预设中枢
+      if (item.id === "syprofile") {
+        insertPrefix("cfg:");
         return;
       }
 
@@ -8493,6 +8517,146 @@
       if (res && res.success) {
         showToast("🎉 文件夹导航已成功沉淀至思源专属文档与本地缓存！");
         insertPrefix('fold:');
+      }
+    };
+
+    // ==========================================================
+    // 思源常用配置预设与大模型切换中枢 (SiYuanProfileHub) 交互管线
+    // ==========================================================
+    window.onProfilesLoaded = function(res) {
+      if (!res || !Array.isArray(res.data)) return;
+      const profiles = res.data;
+      const items = [];
+
+      items.push({
+        id: "action_capture_current_profile",
+        group: "search",
+        title: "⚡ [一键预设] 萃取当前思源实时 S3 / AI 配置入库",
+        desc: "自动读取当前思源内核生效的 S3 存储桶或 AI 大模型驱动源，严格脱敏剥离密钥后沉淀为独立预设",
+        hotkey: "Ctrl+S",
+        iconType: "terminal",
+        iconColor: "var(--indigo-light)",
+        badge: "一键萃取",
+        badgeCls: "badge-native",
+        action: () => {
+          promptCaptureCurrentProfile();
+        }
+      });
+
+      for (const p of profiles) {
+        items.push({
+          id: `profile_${p.Id}`,
+          group: "search",
+          title: `⚙️ [${p.Type.toUpperCase()}] ${escapeHtml(p.Name)}`,
+          desc: `${escapeHtml(p.Description || '预设配置')} · 更新于: ${p.UpdatedTime || p.CreatedTime}`,
+          hotkey: "Enter",
+          iconType: p.Type === "ai" ? "sparkles" : (p.Type === "webdav" ? "cloud" : "database"),
+          iconColor: p.Type === "ai" ? "var(--cyber-purple)" : "var(--cyber-sky)",
+          badge: p.Type.toUpperCase(),
+          badgeCls: p.Type === "ai" ? "badge-plugin" : "badge-bridge",
+          profileData: p,
+          action: () => {
+            inspectProfileItem(p);
+          }
+        });
+      }
+
+      filteredItems = items;
+      selectedIndex = 0;
+      renderItems();
+      if (filteredItems.length > 1) {
+        inspectProfileItem(filteredItems[1].profileData);
+      }
+    };
+
+    function inspectProfileItem(p) {
+      if (!p) return;
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+
+      const jsonStr = JSON.stringify(p.ConfigData || {}, null, 2);
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">⚙️ 配置预设中枢</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${p.Type.toUpperCase()}</span>
+          </div>
+          <div class="inspector-doc-title">⚙️ ${escapeHtml(p.Name)}</div>
+        </div>
+        <div class="inspector-body" style="padding: 14px; max-height: 420px; overflow-y: auto;">
+          <div style="font-size: 11px; padding: 10px 14px; background: rgba(99,102,241,0.08); border-radius: 8px; border: 1px dashed var(--border-hairline); margin-bottom: 12px; line-height: 1.7;">
+            <div>🏷️ <b>预设名称</b>: ${escapeHtml(p.Name)} · <b>类型</b>: <span class="badge-native">${p.Type.toUpperCase()}</span></div>
+            <div>📝 <b>描述说明</b>: ${escapeHtml(p.Description || '无说明')}</div>
+            <div style="margin-top: 4px; color: var(--emerald-mint);">🛡️ <b>隐私凭据脱敏</b>: AccessKey / SecretKey / ApiKey 已安全屏蔽，零密钥外泄风险</div>
+            <div style="margin-top: 4px; color: var(--text-muted);">💾 <b>存储终态</b>: 思源原生文档 <code>/配置预设</code></div>
+          </div>
+          <div style="padding: 10px 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-hairline); border-radius: 6px;">
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">配置参数 JSON 蓝图:</div>
+            <pre style="margin: 0; font-size: 11.5px; color: var(--cyber-sky); font-family: monospace; white-space: pre-wrap; word-break: break-all;">${escapeHtml(jsonStr)}</pre>
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="copyToClipboard('${escapeQuote(jsonStr)}', '配置 JSON 已复制！')" title="复制标准 JSON 配置到剪贴板，可粘贴至思源或配置文件">📋 复制配置 JSON</button>
+            <button class="inspector-dock-btn" onclick="pasteAtCursor('${escapeQuote(jsonStr)}')" title="在外部活动光标处原位粘贴配置 JSON (Shift+Enter)">⚡ Shift+↵ 贴配置</button>
+            <button class="inspector-dock-btn danger" onclick="deleteProfileById('${escapeQuote(p.Id)}')" style="color: var(--rose-agent); border-color: rgba(244,63,94,0.3);" title="从配置预设中移除">🗑️ 移除预设</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function promptCaptureCurrentProfile() {
+      const type = prompt("请输入要萃取的思源配置类型 (s3 / ai / webdav):", "s3");
+      if (!type) return;
+      const name = prompt("请输入预设别名 (例如 '腾讯云 COS 南京桶' 或 'DeepSeek V3 官方'):", "");
+      if (!name) return;
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'captureCurrentProfile',
+          type: type.toLowerCase(),
+          name: name
+        }));
+      }
+    }
+
+    window.onProfileCaptured = function(res) {
+      if (!res || !res.data) {
+        showToast("⚠️ 未能从当前思源配置中萃取到该类型的有效参数。");
+        return;
+      }
+      const p = res.data;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'saveProfile',
+          name: p.Name,
+          type: p.Type,
+          description: p.Description,
+          configData: p.ConfigData
+        }));
+      }
+    };
+
+    function deleteProfileById(id) {
+      if (!confirm("确定移除此配置预设吗？")) return;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'deleteProfile', id: id }));
+      }
+    }
+
+    window.onProfileDeleted = function(res) {
+      if (res && res.success) {
+        showToast("✓ 配置预设已成功移除！");
+        insertPrefix('cfg:');
+      }
+    };
+
+    window.onProfileSaved = function(res) {
+      if (res && res.success) {
+        showToast("🎉 配置预设已安全脱敏沉淀至思源专属文档与本地缓存！");
+        insertPrefix('cfg:');
       }
     };
 

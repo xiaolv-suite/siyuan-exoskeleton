@@ -1295,16 +1295,116 @@ namespace XiaoLv.Desktop.UI
 									                    return;
 									                }
 
-									                if (op.Equals("navigateFolderBookmark", StringComparison.OrdinalIgnoreCase))
-									                {
-									                    string targetPath = JsonHelper.GetString(msg, "path");
-									                    if (!string.IsNullOrEmpty(targetPath))
-									                    {
-									                        Hide();
-									                        FolderBookmarkHub.NavigateToFolder(targetPath, LastExternalForegroundHwnd);
-									                    }
-									                    return;
-									                }
+										                if (op.Equals("navigateFolderBookmark", StringComparison.OrdinalIgnoreCase))
+										                {
+										                    string targetPath = JsonHelper.GetString(msg, "path");
+										                    if (!string.IsNullOrEmpty(targetPath))
+										                    {
+										                        Hide();
+										                        FolderBookmarkHub.NavigateToFolder(targetPath, LastExternalForegroundHwnd);
+										                    }
+										                    return;
+										                }
+
+										                // 3.71 思源常用配置预设与大模型切换中枢 (cfg: / s3: / ai:)
+										                if (op.Equals("searchProfiles", StringComparison.OrdinalIgnoreCase))
+										                {
+										                    string kw = JsonHelper.GetString(msg, "keyword");
+										                    string type = JsonHelper.GetString(msg, "type", "all");
+										                    ThreadPool.QueueUserWorkItem(async s =>
+										                    {
+										                        try
+										                        {
+										                            var all = await SiYuanProfileHub.LoadProfilesAsync(type);
+										                            var filtered = SiYuanProfileHub.Search(all, kw, type);
+										                            Dispatcher.Invoke(() =>
+										                            {
+										                                if (_webView != null && _webView.CoreWebView2 != null)
+										                                {
+										                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onProfilesLoaded) window.onProfilesLoaded(" + JsonHelper.ToJson(new { code = 0, data = filtered }) + ");");
+										                                }
+										                            });
+										                        }
+										                        catch { }
+										                    });
+										                    return;
+										                }
+
+										                if (op.Equals("saveProfile", StringComparison.OrdinalIgnoreCase))
+										                {
+										                    var entry = new SiYuanProfileEntry
+										                    {
+										                        Name = JsonHelper.GetString(msg, "name"),
+										                        Type = JsonHelper.GetString(msg, "type", "s3"),
+										                        Description = JsonHelper.GetString(msg, "description")
+										                    };
+										                    var configDict = JsonHelper.GetDict(msg, "configData");
+										                    if (configDict != null) entry.ConfigData = configDict;
+
+										                    ThreadPool.QueueUserWorkItem(async s =>
+										                    {
+										                        try
+										                        {
+										                            bool ok = await SiYuanProfileHub.SaveProfileAsync(entry);
+										                            Dispatcher.Invoke(() =>
+										                            {
+										                                if (_webView != null && _webView.CoreWebView2 != null)
+										                                {
+										                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onProfileSaved) window.onProfileSaved(" + JsonHelper.ToJson(new { code = 0, success = ok }) + ");");
+										                                }
+										                            });
+										                            if (ok && OnNotificationRequested != null)
+										                            {
+										                                OnNotificationRequested("配置预设中枢", "✓ 预设【" + entry.Name + "】已安全脱敏沉淀至思源文档与本地缓存！");
+										                            }
+										                        }
+										                        catch { }
+										                    });
+										                    return;
+										                }
+
+										                if (op.Equals("deleteProfile", StringComparison.OrdinalIgnoreCase))
+										                {
+										                    string pid = JsonHelper.GetString(msg, "id");
+										                    ThreadPool.QueueUserWorkItem(async s =>
+										                    {
+										                        try
+										                        {
+										                            bool ok = await SiYuanProfileHub.DeleteProfileAsync(pid);
+										                            Dispatcher.Invoke(() =>
+										                            {
+										                                if (_webView != null && _webView.CoreWebView2 != null)
+										                                {
+										                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onProfileDeleted) window.onProfileDeleted(" + JsonHelper.ToJson(new { code = 0, success = ok, id = pid }) + ");");
+										                                }
+										                            });
+										                        }
+										                        catch { }
+										                    });
+										                    return;
+										                }
+
+										                if (op.Equals("captureCurrentProfile", StringComparison.OrdinalIgnoreCase))
+										                {
+										                    string cType = JsonHelper.GetString(msg, "type", "s3");
+										                    string cName = JsonHelper.GetString(msg, "name");
+										                    ThreadPool.QueueUserWorkItem(s =>
+										                    {
+										                        try
+										                        {
+										                            var captured = SiYuanProfileHub.CaptureCurrentLiveProfile(cType, cName);
+										                            Dispatcher.Invoke(() =>
+										                            {
+										                                if (_webView != null && _webView.CoreWebView2 != null)
+										                                {
+										                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onProfileCaptured) window.onProfileCaptured(" + JsonHelper.ToJson(new { code = 0, data = captured }) + ");");
+										                                }
+										                            });
+										                        }
+										                        catch { }
+										                    });
+										                    return;
+										                }
 
 				                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
                 if (op.Equals("searchDocs", StringComparison.OrdinalIgnoreCase))

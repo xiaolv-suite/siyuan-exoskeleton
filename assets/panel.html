@@ -2544,6 +2544,7 @@
       <span class="intent-chip" onclick="insertPrefix('!')" title="输入 ! 快速将待办事项存入今日日记"><b>!</b> 待办</span>
       <span class="intent-chip" onclick="insertPrefix('¥')" title="输入 ¥ 快速记录一笔生活账目花销"><b>💰</b> 记账</span>
       <span class="intent-chip" onclick="insertPrefix('~25m')" title="输入 ~ 快速记录一段专注时间流"><b>⏱️</b> 专注</span>
+      <span class="intent-chip" onclick="insertPrefix('pom:25 ')" title="输入 pom:25 任务名 快速开启心流专注倒计时，到期自动记入今日日记"><b>🍅</b> 番茄钟</span>
       <span class="intent-chip" onclick="insertPrefix('+water 500ml')" title="快速记录一条习惯打卡"><b>🏃</b> 打卡</span>
       <span class="intent-chip" onclick="insertPrefix('@')" title="输入 @ 记录人脉互动与双链时间线"><b>@</b> 人脉</span>
       <span class="intent-chip" onclick="insertPrefix('?')" title="输入 ? 制作原生 FSRS 闪卡"><b>?</b> 闪卡</span>
@@ -2565,6 +2566,7 @@
 	      <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
       <span class="intent-chip" onclick="insertPrefix('c:')" title="输入 c: 实时查看并调用最近 30 条清洗剪贴板；支持 c:url/c:code/c:table/c:cite/c:math/c:img 分类筛选"><b>c:</b> 剪贴板</span>
+      <span class="intent-chip" onclick="insertPrefix('c:merge')" title="输入 c:merge 一键将最近剪贴板多条碎片合并为结构化清单"><b>📋</b> 剪贴板合并</span>
       <span class="intent-chip" onclick="insertPrefix(':')" title="输入 : 快速调用简码扩词与动态模板变量"><b>:</b> 简码</span>
       <span class="chip-divider"></span>
       <span class="intent-chip" onclick="executeItem({ id: 'syg', title: '极速网页剪藏卡' })" title="输入 g: 或按 Alt+Shift+G 免扩展极速剪藏网页"><b>g:</b> 网页剪藏</span>
@@ -4171,6 +4173,35 @@
         } else {
           filteredItems = [];
           renderItems();
+        }
+        return;
+      }
+
+      // pom: 或 timer: 模式：桌面轻量敏捷心流计时器
+      if (q.startsWith("pom:") || q.startsWith("pom：") || q.startsWith("timer:") || q.startsWith("timer：")) {
+        const sub = q.replace(/^(pom:|pom：|timer:|timer：)/, "").trim();
+        const m = sub.match(/^(\d+)(?:\s+(.*))?$/);
+        const mins = m ? parseInt(m[1], 10) : 25;
+        const task = (m && m[2]) ? m[2].trim() : "心流专注";
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'startFlowTimer', minutes: mins, task: task }));
+          showToast(`⏱️ 已开启 ${mins} 分钟专注【${task}】！`);
+        }
+        return;
+      }
+
+      // c:merge 模式：剪贴板碎片批量合并工作台
+      if (q === "c:merge" || q === "c:合并") {
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'mergeClipboardHistory', mode: 'bullets' }));
+        }
+        return;
+      }
+
+      // syh:deadlink 或 deadlink 模式：全库失效死链与幽灵空块诊断
+      if (q === "syh:deadlink" || q === "deadlink") {
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'diagnoseDeadLinks' }));
         }
         return;
       }
@@ -7982,6 +8013,86 @@
         showToast("✓ 书签已剪藏存入今日日记！");
       }
     }
+
+    window.onClipboardMerged = function(res) {
+      if (!res || !res.markdown) return;
+      const md = res.markdown;
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">📋 剪贴板合并工作台</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">多段碎片聚合</span>
+          </div>
+          <div class="inspector-doc-title">📑 结构化排版汇编预览</div>
+        </div>
+        <div class="inspector-body" style="padding: 14px; max-height: 420px; overflow-y: auto;">
+          <div style="font-size: 11px; padding: 6px 10px; background: rgba(16,185,129,0.08); border-radius: 6px; border: 1px dashed var(--emerald-mint); margin-bottom: 12px; color: var(--emerald-mint);">
+            ✓ 已自动完成去重、去噪与盘古中英空格排版！
+          </div>
+          <pre style="margin: 0; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 12px; line-height: 1.6; color: var(--text-primary); white-space: pre-wrap; word-break: break-all;">${escapeHtml(md)}</pre>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="pasteAtCursor('${escapeQuote(md)}')" title="在外部活动光标处原位粘贴合并后的结构化列表 (Shift+Enter)">⚡ Shift+↵ 贴合并内容</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(md)}', '已复制合并清单！')">📋 复制全部</button>
+            <button class="inspector-dock-btn" onclick="appendMergedToDaily('${escapeQuote(md)}')" title="将合并后的内容作为小节沉淀入今日日记">📥 写入今日日记</button>
+          </div>
+        </div>
+      `;
+    };
+
+    function appendMergedToDaily(markdown) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'quickNote', text: markdown }));
+        showToast("✓ 已将合并内容写入今日日记！");
+      }
+    }
+
+    window.onDeadLinkReportLoaded = function(res) {
+      if (!res || !res.data) return;
+      const rep = res.data;
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">🩺 知识库健康体检</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">悬空死链与空块诊断</span>
+          </div>
+          <div class="inspector-doc-title">📊 发现 ${rep.TotalDeadRefs} 处死链 · ${rep.TotalEmptyBlocks} 处空块</div>
+        </div>
+        <div class="inspector-body" style="padding: 14px; max-height: 420px; overflow-y: auto;">
+          <div style="font-size: 11px; padding: 8px 12px; background: rgba(244,63,94,0.08); border-radius: 6px; border: 1px dashed rgba(244,63,94,0.3); margin-bottom: 12px; line-height: 1.6; color: var(--text-primary);">
+            <div>⚠️ 悬空死链说明：引用的笔记块已在思源中物理删除，但原文中残留有 ((id)) 锚点。</div>
+          </div>
+          <div style="margin-bottom: 14px;">
+            <div style="font-size: 12px; font-weight: 700; color: var(--rose-agent); margin-bottom: 6px;">❌ 悬空死链清单 (${rep.TotalDeadRefs} 项)</div>
+            ${rep.TotalDeadRefs === 0 ? '<div style="font-size: 11px; color: var(--emerald-mint); padding: 8px;">✓ 全库双链健康度 100%！未发现任何失效死链。</div>' :
+              rep.DeadRefs.map(d => `
+                <div class="search-item" style="padding: 6px 8px; margin-bottom: 4px; border-radius: 6px; background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center;" onclick="openBlockById('${d.BlockId}')">
+                  <div style="flex: 1; overflow: hidden;">
+                    <div style="font-size: 11.5px; font-weight: 600; color: var(--rose-agent);">锚文本: 「${escapeHtml(d.AnchorText)}」 · 缺失目标: ${d.MissingDefId.substring(0, 10)}...</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">出处文档: 《${escapeHtml(d.DocTitle)}》</div>
+                  </div>
+                  <button class="card-launch-btn" style="padding: 2px 6px; font-size: 10px;">🌐 定位修复</button>
+                </div>
+              `).join('')}
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="copyToClipboard('${escapeQuote(rep.SummaryMarkdown)}', '体检报告已复制！')">📋 复制体检报告</button>
+            <button class="inspector-dock-btn" onclick="appendMergedToDaily('${escapeQuote(rep.SummaryMarkdown)}')" title="将死链体检报告沉淀入今日日记作为自查清单">📥 沉淀入日记</button>
+          </div>
+        </div>
+      `;
+    };
 
     function renderRescueInspector(item) {
       const inspector = document.getElementById("search-inspector-pane");

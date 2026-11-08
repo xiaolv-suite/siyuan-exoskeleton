@@ -1648,6 +1648,90 @@ async function main() {
   const isBibOk = bibRes.includes("True|True");
   logStep("Step 7.70: 学术文献 BibTeX 源码生成与多格式 Callout 卡片套件断言", isBibOk, `BibTeX与卡片套件断言: ${bibRes.trim()}`);
 
+  // Step 7.71: Test FlowTimerManager (Lightweight Pomodoro & Focus Lifelog Integration)
+  const timerScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $ftm = $asm.GetType('XiaoLv.Desktop.Core.FlowTimerManager');
+
+    $mStart = $ftm.GetMethod('StartTimer', [System.Reflection.BindingFlags]'Public,Static');
+    $mStart.Invoke($null, @(25, '外骨骼架构演进'));
+
+    $mStatus = $ftm.GetProperty('CurrentStatus', [System.Reflection.BindingFlags]'Public,Static');
+    $st = $mStatus.GetValue($null, $null);
+
+    $okStart = ($st.IsRunning -eq $true) -and ($st.TotalMinutes -eq 25) -and ($st.TaskDescription -eq '外骨骼架构演进');
+
+    $mStop = $ftm.GetMethod('StopTimer', [System.Reflection.BindingFlags]'Public,Static');
+    $mStop.Invoke($null, @($false));
+    $stAfter = $mStatus.GetValue($null, $null);
+    $okStop = ($stAfter.IsRunning -eq $false);
+
+    Write-Output ($okStart.ToString() + '|' + $okStop.ToString());
+  `;
+  const timerRes = runPs(timerScript);
+  const isTimerOk = timerRes.includes("True|True");
+  logStep("Step 7.71: 桌面轻量敏捷心流计时器与时序状态 (FlowTimerManager) 断言", isTimerOk, `番茄钟状态断言: ${timerRes.trim()}`);
+
+  // Step 7.72: Test ClipboardBatchMerger (Multi-Snippet Deduplication & Markdown Harmonization)
+  const mergerScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $cbm = $asm.GetType('XiaoLv.Desktop.Core.ClipboardBatchMerger');
+    $mMerge = $cbm.GetMethod('MergeSnippets', [System.Reflection.BindingFlags]'Public,Static');
+
+    $snippets = @(
+      '自注意力机制是Transformer模型的核心。',
+      '自注意力机制是Transformer模型的核心。',
+      '多头机制允许模型联合关注来自不同位置的不同表征子空间信息。'
+    );
+    $modeType = $asm.GetType('XiaoLv.Desktop.Core.MergeMode');
+    $mode = [Enum]::ToObject($modeType, 0);
+    $resMd = $mMerge.Invoke($null, @($snippets, $mode, '技术研读汇总'));
+
+    $okBullets = $resMd.Contains('Transformer') -and $resMd.Contains('custom-type="merged-bullets"') -and $resMd.Contains('custom-count="2"');
+    Write-Output ($okBullets.ToString());
+  `;
+  const mergerRes = runPs(mergerScript);
+  const isMergerOk = mergerRes.includes("True");
+  logStep("Step 7.72: 剪贴板历史批量合并排版工作台 (ClipboardBatchMerger) 断言", isMergerOk, `剪贴板多段合并断言: ${mergerRes.trim()}`);
+
+  // Step 7.73: Test DeadLinkDoctor (Broken References & Empty Blocks Deep Diagnosis)
+  const deadLinkScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $dld = $asm.GetType('XiaoLv.Desktop.Core.DeadLinkDoctor');
+    $mDiag = $dld.GetMethod('DiagnoseAsync', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+    $task = $mDiag.Invoke($null, $null);
+    $rep = $task.GetAwaiter().GetResult();
+
+    $okRep = ($null -ne $rep) -and ($rep.SummaryMarkdown.Contains('知识库死链与空块深度体检报告')) -and ($rep.SummaryMarkdown.Contains('custom-type="deadlink-doctor-report"'));
+    Write-Output ($okRep.ToString() + '|' + $rep.TotalDeadRefs + '|' + $rep.TotalEmptyBlocks);
+  `;
+  const deadLinkRes = runPs(deadLinkScript);
+  const isDeadLinkOk = deadLinkRes.includes("True");
+  logStep("Step 7.73: 全库失效死链与幽灵空块深度诊断医生 (DeadLinkDoctor) 断言", isDeadLinkOk, `死链体检断言: ${deadLinkRes.trim()}`);
+
+  // Step 7.74: Test CLI Timer Dispatcher Routing (-pom / -timer)
+  const cliTimerScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $prog = $asm.GetType('XiaoLv.Desktop.Program');
+    $mParse = $prog.GetMethod('ParseCommandLineOrProtocol', [System.Reflection.BindingFlags]'NonPublic,Static');
+
+    $arrPom = [string[]]@('-pom', '30', '系统架构重构');
+    $resPom = $mParse.Invoke($null, (,$arrPom));
+
+    $okPom = $resPom.Contains('\"cmd\":\"start_timer\"') -and $resPom.Contains('\"text\":\"30\"') -and $resPom.Contains('系统架构重构');
+    Write-Output ($okPom.ToString());
+  `;
+  const cliTimerRes = runPs(cliTimerScript);
+  const isCliTimerOk = cliTimerRes.includes("True");
+  logStep("Step 7.74: 命令行心流番茄钟 CLI 极速调度器 (-pom / -timer) 路由穿透断言", isCliTimerOk, `CLI番茄钟断言: ${cliTimerRes.trim()}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

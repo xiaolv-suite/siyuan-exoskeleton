@@ -289,18 +289,21 @@ namespace XiaoLv.Desktop
                 });
             };
 
-            // Office 本地文档联动热重载监听
-            OfficeFileWatcher.NotificationHandler = (title, text) => SafeNotify(title, text);
-            OfficeFileWatcher.OnOfficeFileChanged += (filePath) =>
-            {
-                if (_wpfApp != null && _wpfApp.Dispatcher != null && _bentoWindow != null)
-                {
-                    _wpfApp.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        _bentoWindow.NotifyOfficeFileChanged(filePath);
-                    }));
-                }
-            };
+	            // Office 本地文档联动热重载监听
+	            OfficeFileWatcher.NotificationHandler = (title, text) => SafeNotify(title, text);
+	            OfficeFileWatcher.OnOfficeFileChanged += (filePath) =>
+	            {
+	                if (_wpfApp != null && _wpfApp.Dispatcher != null && _bentoWindow != null)
+	                {
+	                    _wpfApp.Dispatcher.BeginInvoke(new Action(() =>
+	                    {
+	                        _bentoWindow.NotifyOfficeFileChanged(filePath);
+	                    }));
+	                }
+	            };
+
+	            // 心流番茄钟通知与完成联动
+	            FlowTimerManager.NotificationHandler = (title, text) => SafeNotify(title, text);
 
             // 系统托盘初始化
             _tray = new SystemTray();
@@ -389,11 +392,19 @@ namespace XiaoLv.Desktop
                             _bentoWindow.Hide();
                             return;
                         }
-                        if (eCmd.Equals("trim_memory", StringComparison.OrdinalIgnoreCase) || eCmd.Equals("trim", StringComparison.OrdinalIgnoreCase))
-                        {
-                            MemoryOptimizer.PerformDeepTrim();
-                            return;
-                        }
+	                        if (eCmd.Equals("trim_memory", StringComparison.OrdinalIgnoreCase) || eCmd.Equals("trim", StringComparison.OrdinalIgnoreCase))
+	                        {
+	                            MemoryOptimizer.PerformDeepTrim();
+	                            return;
+	                        }
+	                        if (eCmd.Equals("start_timer", StringComparison.OrdinalIgnoreCase))
+	                        {
+	                            int mins = 25;
+	                            int.TryParse(eText, out mins);
+	                            string task = extra != null && extra.ContainsKey("task") ? extra["task"].ToString() : "心流专注";
+	                            FlowTimerManager.StartTimer(mins, task);
+	                            return;
+	                        }
                         DispatchInternal(eCmd, eText, extra);
                         return;
                     }
@@ -912,10 +923,20 @@ namespace XiaoLv.Desktop
 	            {
 	                return JsonHelper.ToJson(new { cmd = "SYS", text = "!" + args[1].Trim() });
 	            }
-	            if ((arg.Equals("-card", StringComparison.OrdinalIgnoreCase) || arg.Equals("--card", StringComparison.OrdinalIgnoreCase)) && args.Length > 1)
-	            {
-	                return JsonHelper.ToJson(new { cmd = "SYS", text = "?" + args[1].Trim() });
-	            }
+		            if ((arg.Equals("-card", StringComparison.OrdinalIgnoreCase) || arg.Equals("--card", StringComparison.OrdinalIgnoreCase)) && args.Length > 1)
+		            {
+		                return JsonHelper.ToJson(new { cmd = "SYS", text = "?" + args[1].Trim() });
+		            }
+		            if ((arg.Equals("-pom", StringComparison.OrdinalIgnoreCase) || arg.Equals("--pom", StringComparison.OrdinalIgnoreCase) ||
+		                 arg.Equals("-timer", StringComparison.OrdinalIgnoreCase) || arg.Equals("--timer", StringComparison.OrdinalIgnoreCase)) && args.Length > 1)
+		            {
+		                int mins = 25;
+		                int.TryParse(args[1].Trim(), out mins);
+		                string desc = args.Length > 2 ? args[2].Trim() : "心流专注";
+		                var extraDict = new Dictionary<string, object>();
+		                extraDict["task"] = desc;
+		                return JsonHelper.ToJson(new { cmd = "start_timer", text = mins.ToString(), extra = extraDict });
+		            }
 
             string cmd = "";
             string paramText = "";

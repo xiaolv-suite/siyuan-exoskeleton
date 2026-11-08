@@ -812,18 +812,98 @@ namespace XiaoLv.Desktop.UI
 				                                }
 				                            }
 				                            string suiteMd = CitationFormatter.BuildCitationMarkdownSuite(info);
-				                            Dispatcher.Invoke(() =>
-				                            {
-				                                if (_webView != null && _webView.CoreWebView2 != null)
-				                                {
-				                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onCitationFormatted) window.onCitationFormatted(" + JsonHelper.ToJson(new { code = 0, markdown = suiteMd, gbt = CitationFormatter.FormatGbT7714(info, 1), apa = CitationFormatter.FormatApa(info), bibtex = CitationFormatter.FormatBibTeX(info) }) + ");");
-				                                }
-				                            });
-				                        }
-				                        catch { }
-				                    });
-				                    return;
-				                }
+					                            Dispatcher.Invoke(() =>
+					                            {
+					                                if (_webView != null && _webView.CoreWebView2 != null)
+					                                {
+					                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onCitationFormatted) window.onCitationFormatted(" + JsonHelper.ToJson(new { code = 0, markdown = suiteMd, gbt = CitationFormatter.FormatGbT7714(info, 1), apa = CitationFormatter.FormatApa(info), bibtex = CitationFormatter.FormatBibTeX(info) }) + ");");
+					                                }
+					                            });
+					                        }
+					                        catch { }
+					                    });
+					                    return;
+					                }
+
+					                // 3.58 桌面轻量敏捷心流计时器 (pom: / timer:)
+					                if (op.Equals("startFlowTimer", StringComparison.OrdinalIgnoreCase))
+					                {
+					                    int minutes = JsonHelper.GetInt(msg, "minutes", 25);
+					                    string task = JsonHelper.GetString(msg, "task", "心流专注");
+					                    FlowTimerManager.StartTimer(minutes, task);
+					                    return;
+					                }
+
+					                if (op.Equals("stopFlowTimer", StringComparison.OrdinalIgnoreCase))
+					                {
+					                    bool recordPartial = JsonHelper.GetBool(msg, "recordPartial", false);
+					                    FlowTimerManager.StopTimer(recordPartial);
+					                    return;
+					                }
+
+					                if (op.Equals("getFlowTimerStatus", StringComparison.OrdinalIgnoreCase))
+					                {
+					                    var status = FlowTimerManager.CurrentStatus;
+					                    if (_webView != null && _webView.CoreWebView2 != null)
+					                    {
+					                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onFlowTimerStatus) window.onFlowTimerStatus(" + JsonHelper.ToJson(status) + ");");
+					                    }
+					                    return;
+					                }
+
+					                // 3.59 剪贴板历史批量合并排版工作台 (c:merge)
+					                if (op.Equals("mergeClipboardHistory", StringComparison.OrdinalIgnoreCase))
+					                {
+					                    string modeStr = JsonHelper.GetString(msg, "mode", "bullets");
+					                    var rawList = JsonHelper.GetList(msg, "snippets");
+					                    var snippets = new List<string>();
+
+					                    if (rawList != null && rawList.Count > 0)
+					                    {
+					                        foreach (var it in rawList) if (it != null) snippets.Add(it.ToString());
+					                    }
+					                    else
+					                    {
+					                        var recent = ClipboardWatcher.GetRecentItemsSnapshot();
+						                        for (int i = 0; i < Math.Min(5, recent.Count); i++)
+						                        {
+						                            string t = !string.IsNullOrEmpty(recent[i].RawText) ? recent[i].RawText : recent[i].EnrichedMarkdown;
+						                            if (!string.IsNullOrEmpty(t)) snippets.Add(t);
+						                        }
+					                    }
+
+					                    MergeMode mode = MergeMode.Bullets;
+					                    if (modeStr.Equals("quotes", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Quotes;
+					                    else if (modeStr.Equals("sections", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Sections;
+
+					                    string merged = ClipboardBatchMerger.MergeSnippets(snippets, mode, "剪贴板多段合并");
+					                    if (_webView != null && _webView.CoreWebView2 != null)
+					                    {
+					                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onClipboardMerged) window.onClipboardMerged(" + JsonHelper.ToJson(new { code = 0, markdown = merged }) + ");");
+					                    }
+					                    return;
+					                }
+
+					                // 3.60 全库失效死链与空块深度诊断医生 (syh:deadlink)
+					                if (op.Equals("diagnoseDeadLinks", StringComparison.OrdinalIgnoreCase))
+					                {
+					                    ThreadPool.QueueUserWorkItem(async s =>
+					                    {
+					                        try
+					                        {
+					                            var rep = await DeadLinkDoctor.DiagnoseAsync();
+					                            Dispatcher.Invoke(() =>
+					                            {
+					                                if (_webView != null && _webView.CoreWebView2 != null)
+					                                {
+					                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onDeadLinkReportLoaded) window.onDeadLinkReportLoaded(" + JsonHelper.ToJson(new { code = 0, data = rep }) + ");");
+					                                }
+					                            });
+					                        }
+					                        catch { }
+					                    });
+					                    return;
+					                }
 
 			                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
                 if (op.Equals("searchDocs", StringComparison.OrdinalIgnoreCase))

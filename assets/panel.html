@@ -2559,7 +2559,8 @@
       <span class="intent-chip" onclick="insertPrefix('epub:')" title="输入 epub: 检索本地 EPUB 电子书并流式透视章节目录"><b>📚</b> EPUB</span>
       <span class="intent-chip" onclick="insertPrefix('xmind:')" title="输入 xmind: 检索本地思维导图并流式透视层级树生成思源大纲"><b>🧠</b> XMind</span>
       <span class="intent-chip" onclick="insertPrefix('listary:')" title="直通本地 Listary 极速全盘文件检索"><b>🔍</b> Listary</span>
-      <span class="intent-chip" onclick="insertPrefix('zotero:')" title="唤起本地 Zotero 学术文献管理库"><b>📖</b> Zotero</span>
+	      <span class="intent-chip" onclick="insertPrefix('zotero:')" title="唤起本地 Zotero 学术文献管理库"><b>📖</b> Zotero</span>
+	      <span class="intent-chip" onclick="insertPrefix('bm:')" title="输入 bm: 穿透检索 Edge/Chrome 本地浏览器书签与收藏夹"><b>🔖</b> 浏览器书签</span>
 	      <span class="intent-chip" onclick="insertPrefix('tab:')" title="输入 tab: 检索全库数据表格，支持排版美化与1键导出Excel"><b>📊</b> 表格透视</span>
 	      <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
@@ -4162,6 +4163,18 @@
         return;
       }
 
+      // bm: 或 book: 模式：全量穿透 Edge / Chrome 本地浏览器书签
+      if (q.startsWith("bm:") || q.startsWith("bm：") || q.startsWith("book:") || q.startsWith("book：")) {
+        const subKw = q.replace(/^(bm:|bm：|book:|book：)/, "").trim();
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'searchBrowserBookmarks', keyword: subKw }));
+        } else {
+          filteredItems = [];
+          renderItems();
+        }
+        return;
+      }
+
       // office: / word: / excel: / ppt: / pdf: / epub: / xmind: 模式：全库本地文档极速检索与穿透
       if (q.startsWith("office:") || q.startsWith("office：") || q.startsWith("word:") || q.startsWith("word：") || q.startsWith("excel:") || q.startsWith("excel：") || q.startsWith("ppt:") || q.startsWith("ppt：") || q.startsWith("pdf:") || q.startsWith("pdf：") || q.startsWith("epub:") || q.startsWith("epub：") || q.startsWith("xmind:") || q.startsWith("xmind：")) {
         let subKw = q.replace(/^(office:|office：|word:|word：|excel:|excel：|ppt:|ppt：|pdf:|pdf：|epub:|epub：|xmind:|xmind：)/, "").trim();
@@ -4801,6 +4814,9 @@
         } else if (item.isAssetItem && item.assetData) {
           pasteAtCursor(`[${item.assetData.fileName}](${item.assetData.assetRel})`);
           return;
+        } else if (item.isBookmarkItem && item.bmData) {
+          pasteAtCursor(`[${item.bmData.Title}](${item.bmData.CleanUrl || item.bmData.Url})`);
+          return;
         } else if (item.pluginLaunch) {
           launchPluginDirect(item);
           return;
@@ -5160,6 +5176,10 @@
       }
       if (item.isVoiceItem) {
         renderVoiceInspector(item);
+        return;
+      }
+      if (item.isBookmarkItem && item.bmData) {
+        inspectBookmarkItem(item.bmData);
         return;
       }
       if (item.isRescueItem) {
@@ -7887,6 +7907,79 @@
       if (window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({ op: 'flushOfflineQueue' }));
         showToast("✓ 正在尝试合流写入思源笔记...");
+      }
+    }
+
+    window.onBrowserBookmarksLoaded = function(res) {
+      if (!res || !Array.isArray(res.data)) return;
+      const bms = res.data;
+      filteredItems = bms.map(b => ({
+        id: `bm_${Math.random().toString(36).slice(2)}`,
+        group: "search",
+        title: `🔖 [${b.BrowserName}] ${escapeHtml(b.Title)}`,
+        desc: `${b.FolderPath ? `📂 ${escapeHtml(b.FolderPath)} · ` : ''}${escapeHtml(b.CleanUrl || b.Url)}`,
+        hotkey: "Enter",
+        iconType: "globe",
+        iconColor: "var(--cyber-sky)",
+        badge: b.BrowserName,
+        badgeCls: "badge-native",
+        isBookmarkItem: true,
+        bmData: b,
+        action: () => {
+          inspectBookmarkItem(b);
+        }
+      }));
+      selectedIndex = 0;
+      renderItems();
+      if (filteredItems.length > 0) {
+        inspectBookmarkItem(filteredItems[0].bmData);
+      }
+    };
+
+    function inspectBookmarkItem(b) {
+      if (!b) return;
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+
+      const mdLink = `[${b.Title}](${b.CleanUrl || b.Url})`;
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">🔖 浏览器收藏夹</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${escapeHtml(b.BrowserName)}</span>
+            ${b.FolderPath ? `<span class="breadcrumb-sep">/</span><span class="breadcrumb-crumb">${escapeHtml(b.FolderPath)}</span>` : ''}
+          </div>
+          <div class="inspector-doc-title">🌐 ${escapeHtml(b.Title)}</div>
+        </div>
+        <div class="inspector-body" style="padding: 14px; max-height: 420px; overflow-y: auto;">
+          <div style="font-size: 11px; padding: 8px 12px; background: rgba(56,189,248,0.08); border-radius: 6px; border: 1px dashed var(--border-hairline); margin-bottom: 12px; line-height: 1.6;">
+            <div>🔗 <b>规范网址</b>: <code style="word-break: break-all;">${escapeHtml(b.CleanUrl || b.Url)}</code></div>
+            ${b.DateAddedFormatted ? `<div style="margin-top: 4px;">📅 <b>收藏时间</b>: ${b.DateAddedFormatted}</div>` : ''}
+          </div>
+          <div style="padding: 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-hairline); border-radius: 6px;">
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Markdown 超链接语法预览:</div>
+            <code style="display: block; font-size: 12px; color: var(--cyber-sky); word-break: break-all;">${escapeHtml(mdLink)}</code>
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="pasteAtCursor('${escapeQuote(mdLink)}')" title="在外部活动光标处原位粘贴标准 Markdown 超链接 (Shift+Enter)">⚡ Shift+↵ 贴超链</button>
+            <button class="inspector-dock-btn" onclick="openAssetLocalFile('${escapeQuote(b.Url)}')" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="调起默认浏览器秒开访问此网址">🌐 浏览器秒开</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(b.CleanUrl || b.Url)}', '网址已复制！')">📋 复制网址</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(mdLink)}', '超链接已复制！')">📝 复制MD超链</button>
+            <button class="inspector-dock-btn" onclick="appendBookmarkToDaily('${escapeQuote(b.Title)}', '${escapeQuote(b.CleanUrl || b.Url)}')" title="作为文献卡片直接剪藏追加至今日日记">📥 剪藏入日记</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function appendBookmarkToDaily(title, url) {
+      if (window.chrome && window.chrome.webview) {
+        const text = `* [${title}](${url})\n  * 🔖 来自浏览器书签 · ${new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'quickNote', text: text }));
+        showToast("✓ 书签已剪藏存入今日日记！");
       }
     }
 

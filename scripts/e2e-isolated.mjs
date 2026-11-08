@@ -1572,6 +1572,82 @@ async function main() {
   const isQueueOk = queueRes.includes("True");
   logStep("Step 7.67: 离岸脱机缓冲队列透视与队列重置管道 (OfflineQueueManager) 断言", isQueueOk, `离线队列管道断言: ${queueRes.trim()}`);
 
+  // Step 7.68: Test BrowserBookmarkSearcher (Edge / Chrome Bookmarks Stream Parsing)
+  const bookmarkScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $bms = $asm.GetType('XiaoLv.Desktop.Core.BrowserBookmarkSearcher');
+    $mSearch = $bms.GetMethod('SearchBookmarks', [System.Reflection.BindingFlags]'Public,Static');
+
+    $list = $mSearch.Invoke($null, @('', 50));
+    $okList = ($null -ne $list);
+    $firstItem = if ($list.Count -gt 0) { $list[0].Title + ' (' + $list[0].BrowserName + ')' } else { 'EMPTY' };
+    Write-Output ($okList.ToString() + '|' + $list.Count + '|' + $firstItem);
+  `;
+  const bookmarkRes = runPs(bookmarkScript);
+  const isBookmarkOk = bookmarkRes.includes("True");
+  logStep("Step 7.68: 本地浏览器书签零依赖极速流式解析 (BrowserBookmarkSearcher) 断言", isBookmarkOk, `书签解析断言: ${bookmarkRes.trim()}`);
+
+  // Step 7.69: Test CitationFormatter (GB/T 7714-2015 & APA 7th Edition)
+  const citeScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $cf = $asm.GetType('XiaoLv.Desktop.Core.CitationFormatter');
+    $ciType = $asm.GetType('XiaoLv.Desktop.Core.CitationInfo');
+
+    $ci = [Activator]::CreateInstance($ciType);
+    $ci.Title = 'Attention Is All You Need';
+    $ci.Year = '2017';
+    $ci.Publication = 'Advances in Neural Information Processing Systems';
+    $ci.Doi = '10.5555/3295222.3295349';
+    $ci.Authors.Add('Vaswani, A.');
+    $ci.Authors.Add('Shazeer, N.');
+    $ci.Authors.Add('Parmar, N.');
+    $ci.Authors.Add('Uszkoreit, J.');
+
+    $mGbt = $cf.GetMethod('FormatGbT7714', [System.Reflection.BindingFlags]'Public,Static');
+    $gbt = $mGbt.Invoke($null, @($ci, 1));
+
+    $mApa = $cf.GetMethod('FormatApa', [System.Reflection.BindingFlags]'Public,Static');
+    $apa = $mApa.Invoke($null, @($ci));
+
+    $okGbt = $gbt.Contains('[1]') -and $gbt.Contains('Attention Is All You Need[J]') -and $gbt.Contains('2017') -and $gbt.Contains('et al.');
+    $okApa = $apa.Contains('(2017)') -and $apa.Contains('Attention Is All You Need') -and $apa.Contains('doi.org');
+    Write-Output ($okGbt.ToString() + '|' + $okApa.ToString());
+  `;
+  const citeRes = runPs(citeScript);
+  const isCiteOk = citeRes.includes("True|True");
+  logStep("Step 7.69: 学术文献国家标准引文著录 (GB/T 7714-2015 & APA 7th) 断言", isCiteOk, `标准著录断言: ${citeRes.trim()}`);
+
+  // Step 7.70: Test CitationFormatter (BibTeX Generation & Citation Markdown Suite)
+  const bibScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $cf = $asm.GetType('XiaoLv.Desktop.Core.CitationFormatter');
+    $ciType = $asm.GetType('XiaoLv.Desktop.Core.CitationInfo');
+
+    $ci = [Activator]::CreateInstance($ciType);
+    $ci.Title = 'Deep Residual Learning for Image Recognition';
+    $ci.Year = '2016';
+    $ci.Authors.Add('He, Kaiming');
+    $ci.Authors.Add('Zhang, Xiangyu');
+    $ci.Publication = 'IEEE Conference on Computer Vision and Pattern Recognition';
+    $ci.Doi = '10.1109/CVPR.2016.90';
+
+    $mBib = $cf.GetMethod('FormatBibTeX', [System.Reflection.BindingFlags]'Public,Static');
+    $bib = $mBib.Invoke($null, @($ci));
+
+    $mSuite = $cf.GetMethod('BuildCitationMarkdownSuite', [System.Reflection.BindingFlags]'Public,Static');
+    $suite = $mSuite.Invoke($null, @($ci));
+
+    $okBib = $bib.Contains('@article{') -and $bib.Contains('title = {Deep Residual Learning') -and $bib.Contains('year = {2016}');
+    $okSuite = $suite.Contains('国家标准 GB/T 7714-2015') -and $suite.Contains('国际标准 APA 7th') -and $suite.Contains('custom-type="citation-card"');
+    Write-Output ($okBib.ToString() + '|' + $okSuite.ToString());
+  `;
+  const bibRes = runPs(bibScript);
+  const isBibOk = bibRes.includes("True|True");
+  logStep("Step 7.70: 学术文献 BibTeX 源码生成与多格式 Callout 卡片套件断言", isBibOk, `BibTeX与卡片套件断言: ${bibRes.trim()}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

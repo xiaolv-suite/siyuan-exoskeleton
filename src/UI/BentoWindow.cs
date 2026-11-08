@@ -741,26 +741,89 @@ namespace XiaoLv.Desktop.UI
 			                    return;
 			                }
 
-			                if (op.Equals("flushOfflineQueue", StringComparison.OrdinalIgnoreCase))
-			                {
-			                    ThreadPool.QueueUserWorkItem(s =>
-			                    {
-			                        try
-			                        {
-			                            var conn = SiYuanClient.GetConnectionInfo(false);
-			                            bool ok = OfflineQueueManager.FlushQueue(conn.Url, conn.Token, (t, m) =>
-			                            {
-			                                if (OnNotificationRequested != null) OnNotificationRequested(t, m);
-			                            });
-			                            if (ok && OnNotificationRequested != null)
-			                            {
-			                                OnNotificationRequested("离线缓冲队列", "✓ 离线速记已全部合流补录至今日日记！");
-			                            }
-			                        }
-			                        catch { }
-			                    });
-			                    return;
-			                }
+				                if (op.Equals("flushOfflineQueue", StringComparison.OrdinalIgnoreCase))
+				                {
+				                    ThreadPool.QueueUserWorkItem(s =>
+				                    {
+				                        try
+				                        {
+				                            var conn = SiYuanClient.GetConnectionInfo(false);
+				                            bool ok = OfflineQueueManager.FlushQueue(conn.Url, conn.Token, (t, m) =>
+				                            {
+				                                if (OnNotificationRequested != null) OnNotificationRequested(t, m);
+				                            });
+				                            if (ok && OnNotificationRequested != null)
+				                            {
+				                                OnNotificationRequested("离线缓冲队列", "✓ 离线速记已全部合流补录至今日日记！");
+				                            }
+				                        }
+				                        catch { }
+				                    });
+				                    return;
+				                }
+
+				                // 3.56 本地浏览器书签穿透检索 (bm: / book: 语法)
+				                if (op.Equals("searchBrowserBookmarks", StringComparison.OrdinalIgnoreCase))
+				                {
+				                    string kw = JsonHelper.GetString(msg, "keyword");
+				                    ThreadPool.QueueUserWorkItem(s =>
+				                    {
+				                        try
+				                        {
+				                            var bms = BrowserBookmarkSearcher.SearchBookmarks(kw);
+				                            Dispatcher.Invoke(() =>
+				                            {
+				                                if (_webView != null && _webView.CoreWebView2 != null)
+				                                {
+				                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onBrowserBookmarksLoaded) window.onBrowserBookmarksLoaded(" + JsonHelper.ToJson(new { code = 0, data = bms }) + ");");
+				                                }
+				                            });
+				                        }
+				                        catch { }
+				                    });
+				                    return;
+				                }
+
+				                // 3.57 学术文献国家标准引用 (GB/T 7714 / APA / BibTeX) 1 键转译
+				                if (op.Equals("formatCitationSuite", StringComparison.OrdinalIgnoreCase))
+				                {
+				                    string title = JsonHelper.GetString(msg, "title");
+				                    string author = JsonHelper.GetString(msg, "author");
+				                    string year = JsonHelper.GetString(msg, "year");
+				                    string doi = JsonHelper.GetString(msg, "doi");
+				                    string arxiv = JsonHelper.GetString(msg, "arxiv");
+
+				                    ThreadPool.QueueUserWorkItem(s =>
+				                    {
+				                        try
+				                        {
+				                            var info = new CitationInfo
+				                            {
+				                                Title = title,
+				                                Year = !string.IsNullOrEmpty(year) ? year : DateTime.Now.Year.ToString(),
+				                                Doi = doi,
+				                                ArxivId = arxiv
+				                            };
+				                            if (!string.IsNullOrEmpty(author))
+				                            {
+				                                foreach (var a in author.Split(new char[] { ',', '、', ';' }, StringSplitOptions.RemoveEmptyEntries))
+				                                {
+				                                    info.Authors.Add(a.Trim());
+				                                }
+				                            }
+				                            string suiteMd = CitationFormatter.BuildCitationMarkdownSuite(info);
+				                            Dispatcher.Invoke(() =>
+				                            {
+				                                if (_webView != null && _webView.CoreWebView2 != null)
+				                                {
+				                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onCitationFormatted) window.onCitationFormatted(" + JsonHelper.ToJson(new { code = 0, markdown = suiteMd, gbt = CitationFormatter.FormatGbT7714(info, 1), apa = CitationFormatter.FormatApa(info), bibtex = CitationFormatter.FormatBibTeX(info) }) + ");");
+				                                }
+				                            });
+				                        }
+				                        catch { }
+				                    });
+				                    return;
+				                }
 
 			                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
                 if (op.Equals("searchDocs", StringComparison.OrdinalIgnoreCase))

@@ -68,9 +68,6 @@ namespace XiaoLv.Desktop.Core
             // 忽略 Office 临时互斥锁文件 (形如 ~$Doc.docx)
             if (fn.StartsWith("~$")) return;
 
-            string ext = Path.GetExtension(fullPath).ToLowerInvariant();
-            if (ext != ".docx" && ext != ".xlsx" && ext != ".pptx" && ext != ".pdf" && ext != ".epub" && ext != ".xmind") return;
-
             lock (_lock)
             {
                 if (!_watchedFiles.Contains(fullPath)) return;

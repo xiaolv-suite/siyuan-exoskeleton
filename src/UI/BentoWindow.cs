@@ -884,26 +884,67 @@ namespace XiaoLv.Desktop.UI
 					                    return;
 					                }
 
-					                // 3.60 全库失效死链与空块深度诊断医生 (syh:deadlink)
-					                if (op.Equals("diagnoseDeadLinks", StringComparison.OrdinalIgnoreCase))
-					                {
-					                    ThreadPool.QueueUserWorkItem(async s =>
-					                    {
-					                        try
-					                        {
-					                            var rep = await DeadLinkDoctor.DiagnoseAsync();
-					                            Dispatcher.Invoke(() =>
-					                            {
-					                                if (_webView != null && _webView.CoreWebView2 != null)
-					                                {
-					                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onDeadLinkReportLoaded) window.onDeadLinkReportLoaded(" + JsonHelper.ToJson(new { code = 0, data = rep }) + ");");
-					                                }
-					                            });
-					                        }
-					                        catch { }
-					                    });
-					                    return;
-					                }
+						                // 3.60 全库失效死链与空块深度诊断医生 (syh:deadlink)
+						                if (op.Equals("diagnoseDeadLinks", StringComparison.OrdinalIgnoreCase))
+						                {
+						                    ThreadPool.QueueUserWorkItem(async s =>
+						                    {
+						                        try
+						                        {
+						                            var rep = await DeadLinkDoctor.DiagnoseAsync();
+						                            Dispatcher.Invoke(() =>
+						                            {
+						                                if (_webView != null && _webView.CoreWebView2 != null)
+						                                {
+						                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onDeadLinkReportLoaded) window.onDeadLinkReportLoaded(" + JsonHelper.ToJson(new { code = 0, data = rep }) + ");");
+						                                }
+						                            });
+						                        }
+						                        catch { }
+						                    });
+						                    return;
+						                }
+
+						                // 3.61 全库双链失效死链一键重定向自愈 (syh:heal)
+						                if (op.Equals("healDeadLinks", StringComparison.OrdinalIgnoreCase))
+						                {
+						                    ThreadPool.QueueUserWorkItem(async s =>
+						                    {
+						                        try
+						                        {
+						                            var rep = await LinkAutoHealer.AutoHealDeadLinksAsync();
+						                            Dispatcher.Invoke(() =>
+						                            {
+						                                if (_webView != null && _webView.CoreWebView2 != null)
+						                                {
+						                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onDeadLinksHealed) window.onDeadLinksHealed(" + JsonHelper.ToJson(new { code = 0, data = rep }) + ");");
+						                                }
+						                            });
+						                            if (rep.HealedCount > 0 && OnNotificationRequested != null)
+						                            {
+						                                OnNotificationRequested("双链智能自愈", string.Format("✓ 成功自愈重定向 {0} 处悬空死链！", rep.HealedCount));
+						                            }
+						                        }
+						                        catch { }
+						                    });
+						                    return;
+						                }
+
+						                // 3.62 零依赖独立单文件 HTML 网页导出并在系统浏览器秒开
+						                if (op.Equals("exportDocHtml", StringComparison.OrdinalIgnoreCase))
+						                {
+						                    string md = JsonHelper.GetString(msg, "markdown");
+						                    string title = JsonHelper.GetString(msg, "title");
+						                    ThreadPool.QueueUserWorkItem(s =>
+						                    {
+						                        string outPath = DocStandaloneHtmlExporter.ExportToHtmlAndOpen(md, title);
+						                        if (!string.IsNullOrEmpty(outPath) && OnNotificationRequested != null)
+						                        {
+						                            OnNotificationRequested("独立HTML导出", "✓ 已成功导出单文件网页并在系统默认浏览器秒开！");
+						                        }
+						                    });
+						                    return;
+						                }
 
 			                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
                 if (op.Equals("searchDocs", StringComparison.OrdinalIgnoreCase))

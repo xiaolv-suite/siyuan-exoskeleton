@@ -1732,6 +1732,98 @@ async function main() {
   const isCliTimerOk = cliTimerRes.includes("True");
   logStep("Step 7.74: 命令行心流番茄钟 CLI 极速调度器 (-pom / -timer) 路由穿透断言", isCliTimerOk, `CLI番茄钟断言: ${cliTimerRes.trim()}`);
 
+  // Step 7.75: Test FileDispatcher External Markdown & CSV Table Direct Ingestion
+  const mdCsvScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $fd = $asm.GetType('XiaoLv.Desktop.Core.FileDispatcher');
+    $mBuild = $fd.GetMethod('BuildStructuredFileMarkdown', [System.Reflection.BindingFlags]'Public,Static');
+
+    $tmpDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'XiaoLvTest_Dispatch');
+    [System.IO.Directory]::CreateDirectory($tmpDir) | Out-Null;
+
+    $tmpMd = [System.IO.Path]::Combine($tmpDir, '测试笔记.md');
+    [System.IO.File]::WriteAllText($tmpMd, '# 核心结论' + [Environment]::NewLine + '> [!TIP] 架构优化', [System.Text.Encoding]::UTF8);
+
+    $tmpCsv = [System.IO.Path]::Combine($tmpDir, '数据报表.csv');
+    [System.IO.File]::WriteAllText($tmpCsv, '姓名,分数' + [Environment]::NewLine + '张三,98', [System.Text.Encoding]::UTF8);
+
+    $argsMd = [object[]]@($tmpMd, $false);
+    $resMd = $mBuild.Invoke($null, $argsMd);
+
+    $argsCsv = [object[]]@($tmpCsv, $false);
+    $resCsv = $mBuild.Invoke($null, $argsCsv);
+
+    try { [System.IO.File]::Delete($tmpMd); } catch {}
+    try { [System.IO.File]::Delete($tmpCsv); } catch {}
+
+    $okMd = $resMd.Contains('imported-markdown') -and $resMd.Contains('> 💡 **TIP**: 架构优化');
+    $okCsv = $resCsv.Contains('imported-csv-table') -and $resCsv.Contains('张三');
+    Write-Output ($okMd.ToString() + '|' + $okCsv.ToString());
+  `;
+  const mdCsvRes = runPs(mdCsvScript);
+  const isMdCsvOk = mdCsvRes.includes("True|True");
+  logStep("Step 7.75: 外部 Markdown 与 CSV 表格极速直投结构化解析 (FileDispatcher) 断言", isMdCsvOk, `文档表格直投断言: ${mdCsvRes.trim()}`);
+
+  // Step 7.76: Test FileDispatcher Source Code Files (Python/C#/SQL) Direct Ingestion
+  const codeDispatchScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $fd = $asm.GetType('XiaoLv.Desktop.Core.FileDispatcher');
+    $mBuild = $fd.GetMethod('BuildStructuredFileMarkdown', [System.Reflection.BindingFlags]'Public,Static');
+
+    $tmpDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'XiaoLvTest_Dispatch');
+    [System.IO.Directory]::CreateDirectory($tmpDir) | Out-Null;
+    $tmpPy = [System.IO.Path]::Combine($tmpDir, 'model.py');
+    [System.IO.File]::WriteAllText($tmpPy, 'def forward(x): return x * 2', [System.Text.Encoding]::UTF8);
+
+    $argsPy = [object[]]@($tmpPy, $false);
+    $resPy = $mBuild.Invoke($null, $argsPy);
+    try { [System.IO.File]::Delete($tmpPy); } catch {}
+
+    $okPy = $resPy.Contains('imported-source-code') -and $resPy.Contains('custom-language="python"') -and $resPy.Contains('def forward');
+    Write-Output ($okPy.ToString());
+  `;
+  const codeDispatchRes = runPs(codeDispatchScript);
+  const isCodeDispatchOk = codeDispatchRes.includes("True");
+  logStep("Step 7.76: 外部多语言源码文件 (Python/C#/SQL) 极速直投结构化解析断言", isCodeDispatchOk, `源码直投断言: ${codeDispatchRes.trim()}`);
+
+  // Step 7.77: Test LinkAutoHealer (Dead Link Semantic Redirection & Self-Healing Engine)
+  const healScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $lah = $asm.GetType('XiaoLv.Desktop.Core.LinkAutoHealer');
+    $mHeal = $lah.GetMethod('AutoHealDeadLinksAsync', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+    $task = $mHeal.Invoke($null, $null);
+    $rep = $task.GetAwaiter().GetResult();
+
+    $okHeal = ($null -ne $rep) -and ($rep.SummaryMarkdown.Contains('双链自愈重定向审计报告') -or $rep.SummaryMarkdown.Contains('双链健康度 100%'));
+    Write-Output ($okHeal.ToString() + '|' + $rep.HealedCount + '|' + $rep.UnresolvedCount);
+  `;
+  const healRes = runPs(healScript);
+  const isHealOk = healRes.includes("True");
+  logStep("Step 7.77: 全库双链智能自动修复与重定向自愈引擎 (LinkAutoHealer) 断言", isHealOk, `双链自愈断言: ${healRes.trim()}`);
+
+  // Step 7.78: Test DocStandaloneHtmlExporter (Self-Contained Responsive HTML with Sidebar TOC)
+  const htmlExportScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $exporter = $asm.GetType('XiaoLv.Desktop.Core.DocStandaloneHtmlExporter');
+    $mBuild = $exporter.GetMethod('BuildCompleteHtml', [System.Reflection.BindingFlags]'Public,Static');
+
+    $dummyMd = '# 一、 架构总览' + [Environment]::NewLine + '这是正文段落。' + [Environment]::NewLine + '## 1.1 模块设计' + [Environment]::NewLine + '- [ ] 待办事项';
+    $html = $mBuild.Invoke($null, @($dummyMd, '系统架构设计'));
+
+    $okHtml = $html.Contains('<!DOCTYPE html>') -and $html.Contains('class="sidebar-toc"') -and $html.Contains('系统架构设计') -and $html.Contains('class="task-item"');
+    Write-Output ($okHtml.ToString());
+  `;
+  const htmlExportRes = runPs(htmlExportScript);
+  const isHtmlExportOk = htmlExportRes.includes("True");
+  logStep("Step 7.78: 零依赖独立单文件 HTML 网页导出引擎 (DocStandaloneHtmlExporter) 断言", isHtmlExportOk, `HTML单文件导出断言: ${htmlExportRes.trim()}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

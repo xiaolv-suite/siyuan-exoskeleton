@@ -42,94 +42,8 @@ namespace XiaoLv.Desktop.Core
                 string timeStr = DateTime.Now.ToString("HH:mm");
 
                 // 结构化文档透视优先
-                string structuredMd = "";
                 bool isStructured = false;
-                try
-                {
-                    if (ext == ".docx")
-                    {
-                        OfficeFileWatcher.WatchFile(filePath);
-                        var doc = OfficeOpenXmlParser.InspectFile(filePath);
-                        if (doc != null && doc.Headings != null && doc.Headings.Count > 0)
-                        {
-                            structuredMd = OfficeDeepLinkMain.BuildWordOutlineMarkdown(doc);
-                            isStructured = true;
-                        }
-                    }
-                    else if (ext == ".xlsx")
-                    {
-                        OfficeFileWatcher.WatchFile(filePath);
-                        var doc = OfficeOpenXmlParser.InspectFile(filePath);
-                        if (doc != null && doc.Sheets != null && doc.Sheets.Count > 0)
-                        {
-                            var sb = new StringBuilder();
-                            sb.AppendFormat("### 📊 《{0}》 表格结构透视 (共 {1} 个工作表)\n", doc.FileName, doc.Sheets.Count);
-                            string docOpenUrl = "siyuan-exoskeleton://open-office?path=" + Uri.EscapeDataString(doc.FilePath);
-                            sb.AppendFormat("> 📍 **本地底稿**: `{0}` · [⚡ 本地秒开]({1})\n\n", doc.FilePath, docOpenUrl);
-                            sb.AppendLine("#### 📑 工作表清单与单元格速览");
-                            foreach (var sh in doc.Sheets)
-                            {
-                                string shUrl = string.Format("siyuan-exoskeleton://open-office?path={0}&sheet={1}", Uri.EscapeDataString(doc.FilePath), Uri.EscapeDataString(sh.SheetName));
-                                sb.AppendFormat("- 📄 **{0}** ({1} 行) · [定位 ↗]({2})\n", sh.SheetName, sh.RowCount, shUrl);
-                            }
-                            sb.AppendLine();
-                            sb.AppendFormat("{{: custom-type=\"office-excel-outline\" custom-file-path=\"{0}\" }}\n", doc.FilePath.Replace("\"", "\\\""));
-                            structuredMd = sb.ToString();
-                            isStructured = true;
-                        }
-                    }
-                    else if (ext == ".pptx")
-                    {
-                        OfficeFileWatcher.WatchFile(filePath);
-                        var doc = OfficeOpenXmlParser.InspectFile(filePath);
-                        if (doc != null && doc.Slides != null && doc.Slides.Count > 0)
-                        {
-                            structuredMd = OfficeDeepLinkMain.BuildPptFlashcardsMarkdown(doc);
-                            isStructured = true;
-                        }
-                    }
-                    else if (ext == ".pdf")
-                    {
-                        OfficeFileWatcher.WatchFile(filePath);
-                        var pdf = PdfLightParser.InspectPdf(filePath);
-                        if (pdf != null)
-                        {
-                            structuredMd = PdfLightParser.BuildPdfReadingNotesMarkdown(pdf);
-                            isStructured = true;
-                        }
-                    }
-                    else if (ext == ".epub")
-                    {
-                        OfficeFileWatcher.WatchFile(filePath);
-                        var epub = EpubLightParser.InspectEpub(filePath);
-                        if (epub != null)
-                        {
-                            structuredMd = EpubLightParser.BuildEpubReadingNotesMarkdown(epub);
-                            isStructured = true;
-                        }
-                    }
-                    else if (ext == ".xmind")
-                    {
-                        OfficeFileWatcher.WatchFile(filePath);
-                        var xmind = XMindLightParser.InspectXMind(filePath);
-                        if (xmind != null)
-                        {
-                            structuredMd = XMindLightParser.BuildXMindOutlineMarkdown(xmind);
-                            isStructured = true;
-                        }
-                    }
-                    else if (ext == ".mp3" || ext == ".wav" || ext == ".m4a" || ext == ".mp4" || ext == ".mkv" || ext == ".mov")
-                    {
-                        OfficeFileWatcher.WatchFile(filePath);
-                        var media = MediaLightParser.InspectMedia(filePath);
-                        if (media != null)
-                        {
-                            structuredMd = MediaLightParser.BuildMediaNotesMarkdown(media);
-                            isStructured = true;
-                        }
-                    }
-                }
-                catch { }
+                string structuredMd = BuildStructuredFileMarkdown(filePath, out isStructured);
 
                 string assetPath, err;
                 UploadAsset(syUrl, token, filePath, out assetPath, out err);
@@ -266,96 +180,9 @@ namespace XiaoLv.Desktop.Core
             string safeName = fileName.Replace("[", "【").Replace("]", "】");
             string timeStr = DateTime.Now.ToString("HH:mm");
 
-            // 1. 若为本地 Office 或 PDF 结构化文档，执行高精度零依赖流式透视
-            string structuredMd = "";
+            // 1. 若为本地 Office / PDF / Markdown / CSV / 源码结构化文档，执行高精度零依赖流式透视
             bool isStructured = false;
-
-            try
-            {
-                if (ext == ".docx")
-                {
-                    OfficeFileWatcher.WatchFile(filePath);
-                    var doc = OfficeOpenXmlParser.InspectFile(filePath);
-                    if (doc != null && doc.Headings != null && doc.Headings.Count > 0)
-                    {
-                        structuredMd = OfficeDeepLinkMain.BuildWordOutlineMarkdown(doc);
-                        isStructured = true;
-                    }
-                }
-                else if (ext == ".xlsx")
-                {
-                    OfficeFileWatcher.WatchFile(filePath);
-                    var doc = OfficeOpenXmlParser.InspectFile(filePath);
-                    if (doc != null && doc.Sheets != null && doc.Sheets.Count > 0)
-                    {
-                        var sb = new StringBuilder();
-                        sb.AppendFormat("### 📊 《{0}》 表格结构透视 (共 {1} 个工作表)\n", doc.FileName, doc.Sheets.Count);
-                        string docOpenUrl = "siyuan-exoskeleton://open-office?path=" + Uri.EscapeDataString(doc.FilePath);
-                        sb.AppendFormat("> 📍 **本地底稿**: `{0}` · [⚡ 本地秒开]({1})\n\n", doc.FilePath, docOpenUrl);
-                        sb.AppendLine("#### 📑 工作表清单与单元格速览");
-                        foreach (var sh in doc.Sheets)
-                        {
-                            string shUrl = string.Format("siyuan-exoskeleton://open-office?path={0}&sheet={1}", Uri.EscapeDataString(doc.FilePath), Uri.EscapeDataString(sh.SheetName));
-                            sb.AppendFormat("- 📄 **{0}** ({1} 行) · [定位 ↗]({2})\n", sh.SheetName, sh.RowCount, shUrl);
-                        }
-                        sb.AppendLine();
-                        sb.AppendFormat("{{: custom-type=\"office-excel-outline\" custom-file-path=\"{0}\" }}\n", doc.FilePath.Replace("\"", "\\\""));
-                        structuredMd = sb.ToString();
-                        isStructured = true;
-                    }
-                }
-                else if (ext == ".pptx")
-                {
-                    OfficeFileWatcher.WatchFile(filePath);
-                    var doc = OfficeOpenXmlParser.InspectFile(filePath);
-                    if (doc != null && doc.Slides != null && doc.Slides.Count > 0)
-                    {
-                        structuredMd = OfficeDeepLinkMain.BuildPptFlashcardsMarkdown(doc);
-                        isStructured = true;
-                    }
-                }
-                else if (ext == ".pdf")
-                {
-                    OfficeFileWatcher.WatchFile(filePath);
-                    var pdf = PdfLightParser.InspectPdf(filePath);
-                    if (pdf != null)
-                    {
-                        structuredMd = PdfLightParser.BuildPdfReadingNotesMarkdown(pdf);
-                        isStructured = true;
-                    }
-                }
-                else if (ext == ".epub")
-                {
-                    OfficeFileWatcher.WatchFile(filePath);
-                    var epub = EpubLightParser.InspectEpub(filePath);
-                    if (epub != null)
-                    {
-                        structuredMd = EpubLightParser.BuildEpubReadingNotesMarkdown(epub);
-                        isStructured = true;
-                    }
-                }
-                else if (ext == ".xmind")
-                {
-                    OfficeFileWatcher.WatchFile(filePath);
-                    var xmind = XMindLightParser.InspectXMind(filePath);
-                    if (xmind != null)
-                    {
-                        structuredMd = XMindLightParser.BuildXMindOutlineMarkdown(xmind);
-                        isStructured = true;
-                    }
-                }
-                else if (ext == ".mp3" || ext == ".wav" || ext == ".m4a" || ext == ".mp4" || ext == ".mkv" || ext == ".mov")
-                {
-                    OfficeFileWatcher.WatchFile(filePath);
-                    var media = MediaLightParser.InspectMedia(filePath);
-                    if (media != null)
-                    {
-                        structuredMd = MediaLightParser.BuildMediaNotesMarkdown(media);
-                        isStructured = true;
-                    }
-                }
-            }
-            catch { }
+            string structuredMd = BuildStructuredFileMarkdown(filePath, out isStructured);
 
             // 2. 尝试上传至思源资产库作为备份
             string assetPath = null;
@@ -645,6 +472,157 @@ namespace XiaoLv.Desktop.Core
                     try { File.Delete(tmpFile); } catch { }
                 }
             }
+        }
+
+        public static string BuildStructuredFileMarkdown(string filePath, out bool isStructured)
+        {
+            isStructured = false;
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return "";
+
+            try
+            {
+                var fi = new FileInfo(filePath);
+                string ext = fi.Extension.ToLowerInvariant();
+
+                if (ext == ".docx")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    var doc = OfficeOpenXmlParser.InspectFile(filePath);
+                    if (doc != null && doc.Headings != null && doc.Headings.Count > 0)
+                    {
+                        isStructured = true;
+                        return OfficeDeepLinkMain.BuildWordOutlineMarkdown(doc);
+                    }
+                }
+                else if (ext == ".xlsx")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    var doc = OfficeOpenXmlParser.InspectFile(filePath);
+                    if (doc != null && doc.Sheets != null && doc.Sheets.Count > 0)
+                    {
+                        var sb = new StringBuilder();
+                        sb.AppendFormat("### 📊 《{0}》 表格结构透视 (共 {1} 个工作表)\n", doc.FileName, doc.Sheets.Count);
+                        string docOpenUrl = "siyuan-exoskeleton://open-office?path=" + Uri.EscapeDataString(doc.FilePath);
+                        sb.AppendFormat("> 📍 **本地底稿**: `{0}` · [⚡ 本地秒开]({1})\n\n", doc.FilePath, docOpenUrl);
+                        sb.AppendLine("#### 📑 工作表清单与单元格速览");
+                        foreach (var sh in doc.Sheets)
+                        {
+                            string shUrl = string.Format("siyuan-exoskeleton://open-office?path={0}&sheet={1}", Uri.EscapeDataString(doc.FilePath), Uri.EscapeDataString(sh.SheetName));
+                            sb.AppendFormat("- 📄 **{0}** ({1} 行) · [定位 ↗]({2})\n", sh.SheetName, sh.RowCount, shUrl);
+                        }
+                        sb.AppendLine();
+                        sb.AppendFormat("{{: custom-type=\"office-excel-outline\" custom-file-path=\"{0}\" }}\n", doc.FilePath.Replace("\"", "\\\""));
+                        isStructured = true;
+                        return sb.ToString();
+                    }
+                }
+                else if (ext == ".pptx")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    var doc = OfficeOpenXmlParser.InspectFile(filePath);
+                    if (doc != null && doc.Slides != null && doc.Slides.Count > 0)
+                    {
+                        isStructured = true;
+                        return OfficeDeepLinkMain.BuildPptFlashcardsMarkdown(doc);
+                    }
+                }
+                else if (ext == ".pdf")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    var pdf = PdfLightParser.InspectPdf(filePath);
+                    if (pdf != null)
+                    {
+                        isStructured = true;
+                        return PdfLightParser.BuildPdfReadingNotesMarkdown(pdf);
+                    }
+                }
+                else if (ext == ".epub")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    var epub = EpubLightParser.InspectEpub(filePath);
+                    if (epub != null)
+                    {
+                        isStructured = true;
+                        return EpubLightParser.BuildEpubReadingNotesMarkdown(epub);
+                    }
+                }
+                else if (ext == ".xmind")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    var xmind = XMindLightParser.InspectXMind(filePath);
+                    if (xmind != null)
+                    {
+                        isStructured = true;
+                        return XMindLightParser.BuildXMindOutlineMarkdown(xmind);
+                    }
+                }
+                else if (ext == ".mp3" || ext == ".wav" || ext == ".m4a" || ext == ".mp4" || ext == ".mkv" || ext == ".mov")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    var media = MediaLightParser.InspectMedia(filePath);
+                    if (media != null)
+                    {
+                        isStructured = true;
+                        return MediaLightParser.BuildMediaNotesMarkdown(media);
+                    }
+                }
+                else if (ext == ".md" || ext == ".markdown")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    string rawMd = File.ReadAllText(filePath, Encoding.UTF8);
+                    string cleanMd = TextCleaner.HarmonizeMarkdownSyntax(rawMd);
+                    var sb = new StringBuilder();
+                    sb.AppendFormat("### 📝 《{0}》 导入文档 ({1})\n", Path.GetFileNameWithoutExtension(fi.Name), FormatFileSize(fi.Length));
+                    sb.AppendFormat("> 📍 **本地底稿**: `{0}` · [⚡ 原位打开](siyuan-exoskeleton://open-file?path={1})\n\n",
+                        filePath, Uri.EscapeDataString(filePath));
+                    sb.AppendLine(cleanMd);
+                    sb.AppendFormat("\n{{: custom-type=\"imported-markdown\" custom-file-path=\"{0}\" }}\n", filePath.Replace("\"", "\\\""));
+                    isStructured = true;
+                    return sb.ToString();
+                }
+                else if (ext == ".csv")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    string rawCsv = File.ReadAllText(filePath, Encoding.UTF8);
+                    var tbl = TableToAvConverter.ParseTable(rawCsv);
+                    string prettyTable = TableToAvConverter.FormatBeautifulMarkdownTable(tbl);
+                    var sb = new StringBuilder();
+                    sb.AppendFormat("### 📊 《{0}》 数据表格 (共 {1} 行 · {2} 列)\n", fi.Name, tbl.RowCount, tbl.ColCount);
+                    sb.AppendFormat("> 📍 **本地底稿**: `{0}` · [⚡ 原位打开](siyuan-exoskeleton://open-file?path={1})\n\n",
+                        filePath, Uri.EscapeDataString(filePath));
+                    sb.AppendLine(prettyTable);
+                    sb.AppendFormat("{{: custom-type=\"imported-csv-table\" custom-file-path=\"{0}\" }}\n", filePath.Replace("\"", "\\\""));
+                    isStructured = true;
+                    return sb.ToString();
+                }
+                else if (ext == ".py" || ext == ".cs" || ext == ".js" || ext == ".ts" || ext == ".sql" || ext == ".sh" ||
+                         ext == ".json" || ext == ".html" || ext == ".css" || ext == ".rs" || ext == ".go" || ext == ".cpp" ||
+                         ext == ".c" || ext == ".java" || ext == ".php" || ext == ".yaml" || ext == ".yml")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    string codeText = File.ReadAllText(filePath, Encoding.UTF8);
+                    string lang = ext.TrimStart('.').ToLowerInvariant();
+                    if (lang == "py") lang = "python";
+                    else if (lang == "cs") lang = "csharp";
+                    else if (lang == "js") lang = "javascript";
+                    else if (lang == "ts") lang = "typescript";
+                    else if (lang == "yml") lang = "yaml";
+                    string safeCode = codeText.Replace("\r\n", "\n").Trim();
+                    int lineCount = safeCode.Split('\n').Length;
+                    var sb = new StringBuilder();
+                    sb.AppendFormat("### ⌨️ 《{0}》 源码档案 ({1} 行 · {2})\n", fi.Name, lineCount, FormatFileSize(fi.Length));
+                    sb.AppendFormat("> 📍 **本地源文件**: `{0}` · [⚡ 外部IDE秒开](siyuan-exoskeleton://open-file?path={1})\n\n",
+                        filePath, Uri.EscapeDataString(filePath));
+                    sb.AppendFormat("```{0}\n{1}\n```\n\n", lang, safeCode);
+                    sb.AppendFormat("{{: custom-type=\"imported-source-code\" custom-file-path=\"{0}\" custom-language=\"{1}\" }}\n",
+                        filePath.Replace("\"", "\\\""), lang);
+                    isStructured = true;
+                    return sb.ToString();
+                }
+            }
+            catch { }
+
+            return "";
         }
 
         private static string FormatFileSize(long bytes)

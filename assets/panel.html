@@ -5909,7 +5909,8 @@
             <button class="inspector-dock-btn" onclick="copyBlockRef('${targetId}', '${escapeQuote(targetContent)}')" title="复制双链至剪贴板">📋 复制双链</button>
             <button class="inspector-dock-btn" onclick="copyMarkdownLink('${targetId}', '${escapeQuote(targetContent)}')" title="复制 Markdown 链接">📝 复制MD</button>
             <button class="inspector-dock-btn" onclick="pinAsStickyNote('${escapeQuote(docTitle)}', '${escapeQuote(markdownText)}', '${targetId}')" title="钉在桌面作为半透明浮动参考便签，按 Ctrl+S 实时双向回写">📌 钉在桌面</button>
-            <button class="inspector-dock-btn" onclick="exportCurrentToDocx('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);" title="零依赖逆向导出标准 Word (.docx) 大纲并在本地秒开">📤 导出Word</button>
+	            <button class="inspector-dock-btn" onclick="exportCurrentToDocx('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);" title="零依赖逆向导出标准 Word (.docx) 大纲并在本地秒开">📤 导出Word</button>
+	            <button class="inspector-dock-btn" onclick="exportCurrentToHtml('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="零依赖逆向导出带大纲导航的单文件独立 HTML 网页并在浏览器秒开">🌐 导出HTML</button>
             ${markdownText.includes('|') ? `
               <button class="inspector-dock-btn" onclick="exportCurrentToXlsx('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--tech-amber); border-color: rgba(245,158,11,0.4);" title="零依赖逆向导出标准 Excel (.xlsx) 表格并在本地秒开">📤 导出Excel</button>
             ` : ''}
@@ -8087,12 +8088,35 @@
         </div>
         <div class="inspector-dock">
           <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            ${rep.TotalDeadRefs > 0 ? `<button class="inspector-dock-btn" onclick="triggerHealDeadLinks()" style="background: rgba(16,185,129,0.2); border-color: var(--emerald-mint); color: var(--emerald-mint); font-weight: 700;" title="扫描全库同名有效块并自动将死链重定向自愈修复">🩺 1键双链自愈</button>` : ''}
             <button class="inspector-dock-btn primary" onclick="copyToClipboard('${escapeQuote(rep.SummaryMarkdown)}', '体检报告已复制！')">📋 复制体检报告</button>
             <button class="inspector-dock-btn" onclick="appendMergedToDaily('${escapeQuote(rep.SummaryMarkdown)}')" title="将死链体检报告沉淀入今日日记作为自查清单">📥 沉淀入日记</button>
           </div>
         </div>
       `;
     };
+
+    function triggerHealDeadLinks() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'healDeadLinks' }));
+        showToast("✓ 正在执行全库双链重定向自愈修复...");
+      }
+    }
+
+    window.onDeadLinksHealed = function(res) {
+      if (!res || !res.data) return;
+      const rep = res.data;
+      showToast(`✓ 双链自愈完毕！成功修复 ${rep.HealedCount} 处，剩余 ${rep.UnresolvedCount} 处。`);
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'diagnoseDeadLinks' }));
+      }
+    };
+
+    function exportCurrentToHtml(markdown, title) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'exportDocHtml', markdown: markdown, title: title }));
+      }
+    }
 
     function renderRescueInspector(item) {
       const inspector = document.getElementById("search-inspector-pane");

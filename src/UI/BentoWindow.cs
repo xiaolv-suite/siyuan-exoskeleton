@@ -901,11 +901,16 @@ namespace XiaoLv.Desktop.UI
 						                        }
 					                    }
 
-					                    MergeMode mode = MergeMode.Bullets;
-					                    if (modeStr.Equals("quotes", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Quotes;
-					                    else if (modeStr.Equals("sections", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Sections;
+						                    MergeMode mode = MergeMode.Bullets;
+						                    if (modeStr.Equals("quotes", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Quotes;
+						                    else if (modeStr.Equals("sections", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Sections;
+						                    else if (modeStr.Equals("todo", StringComparison.OrdinalIgnoreCase) || modeStr.Equals("checklist", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Todo;
+						                    else if (modeStr.Equals("table", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Table;
+						                    else if (modeStr.Equals("code", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Code;
+						                    else if (modeStr.Equals("plain", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Plain;
 
-					                    string merged = ClipboardBatchMerger.MergeSnippets(snippets, mode, "剪贴板多段合并");
+						                    string title = JsonHelper.GetString(msg, "title", "剪贴板多段合并");
+						                    string merged = ClipboardBatchMerger.MergeSnippets(snippets, mode, title);
 					                    if (_webView != null && _webView.CoreWebView2 != null)
 					                    {
 					                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onClipboardMerged) window.onClipboardMerged(" + JsonHelper.ToJson(new { code = 0, markdown = merged }) + ");");

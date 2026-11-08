@@ -273,12 +273,19 @@ namespace XiaoLv.Desktop.Core
 				                    return;
 				                }
 
-				                // Q. 全景启动台大盘与极速启动: /api/launchpad
-				                if (rawPath.Equals("/api/launchpad", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/launchpad", StringComparison.OrdinalIgnoreCase))
-				                {
-				                    HandleLaunchpadRequest(req, resp);
-				                    return;
-				                }
+					                // Q. 全景启动台大盘与极速启动: /api/launchpad
+					                if (rawPath.Equals("/api/launchpad", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/launchpad", StringComparison.OrdinalIgnoreCase))
+					                {
+					                    HandleLaunchpadRequest(req, resp);
+					                    return;
+					                }
+
+					                // R. 剪贴板批量拼版工作台: /api/clip/merge
+					                if (rawPath.Equals("/api/clip/merge", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/clip/merge", StringComparison.OrdinalIgnoreCase))
+					                {
+					                    HandleClipMergeRequest(req, resp);
+					                    return;
+					                }
 
 			                // 未匹配到路由
 			                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
@@ -870,16 +877,78 @@ namespace XiaoLv.Desktop.Core
 	                            web = webFiltered,
 	                            folder = folderFiltered
 	                        }
-	                    });
-	                }
-	                catch (Exception ex)
-	                {
-	                    WriteJsonResponse(resp, 500, new { code = 500, msg = "检索启动台异常: " + ex.Message });
-	                }
-	            });
-	        }
+		                    });
+		                }
+		                catch (Exception ex)
+		                {
+		                    WriteJsonResponse(resp, 500, new { code = 500, msg = "检索启动台异常: " + ex.Message });
+		                }
+		            });
+		        }
 
-	        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
+		        private static void HandleClipMergeRequest(HttpListenerRequest req, HttpListenerResponse resp)
+		        {
+		            try
+		            {
+		                string modeStr = "bullets";
+		                string title = "多源摘录汇总";
+		                var snippets = new List<string>();
+
+		                if (req.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+		                {
+		                    string body = ReadRequestBody(req);
+		                    var dict = JsonHelper.ParseDict(body);
+		                    modeStr = JsonHelper.GetString(dict, "mode", "bullets");
+		                    title = JsonHelper.GetString(dict, "title", "多源摘录汇总");
+		                    var rawList = JsonHelper.GetList(dict, "snippets");
+		                    if (rawList != null)
+		                    {
+		                        foreach (var it in rawList) if (it != null) snippets.Add(it.ToString());
+		                    }
+		                }
+		                else
+		                {
+		                    modeStr = GetQueryStringUtf8(req, "mode");
+		                    if (string.IsNullOrEmpty(modeStr)) modeStr = "bullets";
+		                    title = GetQueryStringUtf8(req, "title");
+		                    if (string.IsNullOrEmpty(title)) title = "多源摘录汇总";
+		                }
+
+		                if (snippets.Count == 0)
+		                {
+		                    var recent = ClipboardWatcher.GetRecentItemsSnapshot();
+		                    for (int i = 0; i < Math.Min(5, recent.Count); i++)
+		                    {
+		                        string t = !string.IsNullOrEmpty(recent[i].RawText) ? recent[i].RawText : recent[i].EnrichedMarkdown;
+		                        if (!string.IsNullOrEmpty(t)) snippets.Add(t);
+		                    }
+		                }
+
+		                MergeMode mode = MergeMode.Bullets;
+		                if (modeStr.Equals("quotes", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Quotes;
+		                else if (modeStr.Equals("sections", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Sections;
+		                else if (modeStr.Equals("todo", StringComparison.OrdinalIgnoreCase) || modeStr.Equals("checklist", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Todo;
+		                else if (modeStr.Equals("table", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Table;
+		                else if (modeStr.Equals("code", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Code;
+		                else if (modeStr.Equals("plain", StringComparison.OrdinalIgnoreCase)) mode = MergeMode.Plain;
+
+		                string merged = ClipboardBatchMerger.MergeSnippets(snippets, mode, title);
+		                WriteJsonResponse(resp, 200, new
+		                {
+		                    code = 0,
+		                    msg = "ok",
+		                    mode = modeStr,
+		                    count = snippets.Count,
+		                    markdown = merged
+		                });
+		            }
+		            catch (Exception ex)
+		            {
+		                WriteJsonResponse(resp, 500, new { code = 500, msg = "拼版处理异常: " + ex.Message });
+		            }
+		        }
+
+		        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
         {
             try
             {

@@ -2596,6 +2596,87 @@
       border-color: rgba(244, 63, 94, 0.4);
     }
 
+    /* Clip Studio Modal Styles */
+    .clip-studio-container {
+      display: flex;
+      gap: 14px;
+      height: 56vh;
+    }
+    .clip-studio-left {
+      width: 44%;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 4px;
+    }
+    .clip-studio-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .clip-snippet-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+    .clip-snippet-item:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .clip-snippet-item.selected {
+      border-color: var(--cyber-sky);
+      background: rgba(56, 189, 248, 0.08);
+    }
+    .clip-snippet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+    }
+    .clip-snippet-body {
+      font-size: 11.5px;
+      color: var(--text-primary);
+      line-height: 1.5;
+      max-height: 4.5em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      word-break: break-all;
+    }
+    .clip-snippet-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border-hairline);
+      padding-top: 6px;
+      font-size: 10.5px;
+      color: var(--text-muted);
+    }
+    .clip-order-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-hairline);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 10px;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+    .clip-order-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: var(--text-primary);
+    }
+
   </style>
 </head>
 <body>
@@ -2647,6 +2728,9 @@
         </div>
       </div>
 
+      <button class="theme-toggle-btn" id="clip-studio-btn" onclick="toggleClipStudioModal()" title="剪贴板多选碎片拼版工作台 (📋)" style="position: relative;">
+        <span>📋</span>
+      </button>
       <button class="theme-toggle-btn" id="launchpad-btn" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台 (🚀)" style="position: relative;">
         <span>🚀</span>
       </button>
@@ -2723,7 +2807,7 @@
 	      <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
       <span class="intent-chip" onclick="insertPrefix('c:')" title="输入 c: 实时查看并调用最近 30 条清洗剪贴板；支持 c:url/c:code/c:table/c:cite/c:math/c:img 分类筛选"><b>c:</b> 剪贴板</span>
-      <span class="intent-chip" onclick="insertPrefix('c:merge')" title="输入 c:merge 一键将最近剪贴板多条碎片合并为结构化清单"><b>📋</b> 剪贴板合并</span>
+      <span class="intent-chip" onclick="toggleClipStudioModal()" title="打开剪贴板多选碎片拼版工作台，自由选段、调序与实时模板化拼版"><b>📋</b> 拼版工作台</span>
       <span class="intent-chip" onclick="insertPrefix(':')" title="输入 : 快速调用简码扩词与动态模板变量"><b>:</b> 简码</span>
       <span class="chip-divider"></span>
       <span class="intent-chip" onclick="executeItem({ id: 'syg', title: '极速网页剪藏卡' })" title="输入 g: 或按 Alt+Shift+G 免扩展极速剪藏网页"><b>g:</b> 网页剪藏</span>
@@ -3415,6 +3499,73 @@
       <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>快捷操作</b>: 键入数字 <code>1~9</code> 直接秒开对应磁贴 · <code>Enter</code> 秒开第 1 项 · <code>Esc</code> 关闭</span>
         <span id="launchpad-modal-stat">已加载 0 个网站 · 0 个文件夹</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 剪贴板多选碎片拼版工作台 (Clipboard Batch Merger Studio Modal) -->
+  <div class="timeline-modal-overlay" id="clip-studio-modal" onclick="closeClipStudioOnBg(event)">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 95%; max-width: 980px; max-height: 88vh;">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">📋</span>
+          <span style="font-weight: 700; font-size: 14px;">剪贴板多选碎片拼版工作台</span>
+          <span class="brand-pill" id="clip-studio-count">0 选 / 0 项</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="pasteClipStudioToCaret()" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.4);" title="将当前拼版结果原位穿透贴入前台活动光标处 (Shift+Enter)">⚡ 穿透直贴</button>
+          <button class="pref-btn" onclick="dumpClipStudioToDaily()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="将拼版结果沉淀写入今日日记">📥 存入日记</button>
+          <button class="pref-btn" onclick="copyClipStudioMarkdown()" style="font-size: 11px; padding: 3px 10px;" title="复制拼版后的 Markdown 源码">📋 复制 MD</button>
+          <button class="pref-btn" onclick="copyClipStudioRichText()" style="font-size: 11px; padding: 3px 10px;" title="复制为外部 Word / 微信可直接贴入的富文本">📋 复制富文本</button>
+          <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleClipStudioModal()">✕</button>
+        </div>
+      </div>
+
+      <!-- Controls Toolbar: Left Selection & Right Template Modes -->
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <!-- Left Pane Controls -->
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button class="cat-btn" id="cs-btn-select-all" onclick="toggleClipStudioSelectAll()">☑️ 全选</button>
+          <button class="cat-btn" onclick="clearClipStudioSelection()">◻️ 清选</button>
+          <input type="text" id="cs-search-input" placeholder="过滤碎片..." oninput="handleClipStudioFilter(this.value)" style="font-size: 11px; padding: 3px 8px; border-radius: 5px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-primary); width: 130px;" />
+        </div>
+
+        <!-- Right Pane Template Switcher -->
+        <div class="timeline-filters" id="cs-template-bar" style="display: flex; gap: 5px; overflow-x: auto; padding: 0;">
+          <button class="cat-btn active" id="cs-tpl-bullets" onclick="switchClipStudioTemplate('bullets')">* 清单列表</button>
+          <button class="cat-btn" id="cs-tpl-quotes" onclick="switchClipStudioTemplate('quotes')">> 引用摘录</button>
+          <button class="cat-btn" id="cs-tpl-sections" onclick="switchClipStudioTemplate('sections')">📑 结构小节</button>
+          <button class="cat-btn" id="cs-tpl-todo" onclick="switchClipStudioTemplate('todo')">☑️ 待办清单</button>
+          <button class="cat-btn" id="cs-tpl-table" onclick="switchClipStudioTemplate('table')">📊 结构表格</button>
+          <button class="cat-btn" id="cs-tpl-code" onclick="switchClipStudioTemplate('code')">⌨️ 源码合集</button>
+          <button class="cat-btn" id="cs-tpl-plain" onclick="switchClipStudioTemplate('plain')">📄 空行段落</button>
+        </div>
+      </div>
+
+      <!-- Studio Dual-Pane Body -->
+      <div class="clip-studio-container" style="padding: 14px 18px; overflow: hidden;">
+        <!-- Left: Snippet Picker Pool -->
+        <div class="clip-studio-left" id="cs-snippets-pool">
+          <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在加载剪贴板历史...</div>
+        </div>
+
+        <!-- Right: Realtime Canvas & Markdown Editor -->
+        <div class="clip-studio-right">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span>📝 拼版标题:</span>
+              <input type="text" id="cs-title-input" value="多源摘录汇总" oninput="handleClipStudioTitleChange(this.value)" style="font-size: 11px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-primary); width: 150px;" />
+            </div>
+            <span id="cs-preview-meta">已拼版 0 段 · 0 字</span>
+          </div>
+          <textarea id="cs-preview-textarea" placeholder="在此实时预览拼版结果，支持二次手工修改润色..." style="flex: 1; width: 100%; border: 1px solid var(--border-hairline); border-radius: 8px; background: rgba(0,0,0,0.3); color: var(--text-primary); font-family: var(--font-mono); font-size: 12px; line-height: 1.6; padding: 12px; resize: none; outline: none;"></textarea>
+        </div>
+      </div>
+
+      <!-- Bottom Footer -->
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+        <span>💡 <b>操作指南</b>: 在左侧勾选多段碎片，点击 ⬆️/⬇️ 微调先后顺序，右侧自由切换 7 套模板实时拼版，支持原地修改润色</span>
+        <span id="clip-studio-stat">已就绪</span>
       </div>
     </div>
   </div>
@@ -4362,6 +4513,9 @@
       } else if (q.startsWith("pad:") || q.startsWith("pad：") || q.startsWith("launch:") || q.startsWith("launch：") || q === "pad" || q === "launch") {
         banner.style.display = "flex";
         banner.innerHTML = `<div><span class="intent-tag">🚀 全景启动台</span>大图标自适应网格，聚合网站与工程文件夹，支持 1~9 盲打秒开</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开启动台大视窗</span>`;
+      } else if (q.startsWith("c:merge") || q.startsWith("clip:") || q.startsWith("clip：") || q.startsWith("studio:") || q === "c:merge" || q === "merge") {
+        banner.style.display = "flex";
+        banner.innerHTML = `<div><span class="intent-tag">📋 剪贴板拼版台</span>自由多选最近剪贴板碎片，调序并以 7 套模板实时拼版与直贴</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开拼版工作台</span>`;
       } else {
         banner.style.display = "none";
       }
@@ -4569,6 +4723,12 @@
             handleLaunchpadLiveFilter(subKw);
           }
         }
+        return;
+      }
+
+      // c:merge 或 clip: 模式：剪贴板多选碎片拼版工作台
+      if (q.startsWith("c:merge") || q.startsWith("clip:") || q.startsWith("clip：") || q.startsWith("studio:") || q === "c:merge" || q === "merge") {
+        toggleClipStudioModal();
         return;
       }
 
@@ -11341,6 +11501,284 @@
             siyuanDocTitle: docTitle
           }));
         }
+      }
+    }
+
+    // ==========================================================
+    // 剪贴板多选碎片拼版工作台 (Clipboard Batch Merger Studio)
+    // ==========================================================
+    let clipStudioSelectedIndices = new Set([0, 1, 2]);
+    let clipStudioOrder = [];
+    let clipStudioCurrentTemplate = "bullets";
+    let clipStudioCurrentTitle = "多源摘录汇总";
+    let clipStudioFilterKeyword = "";
+    window._rawRecentClips = [];
+
+    function toggleClipStudioModal() {
+      const modal = document.getElementById("clip-studio-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) {
+        requestRecentClipsForStudio();
+      }
+    }
+
+    function closeClipStudioOnBg(e) {
+      if (e.target && e.target.id === "clip-studio-modal") {
+        toggleClipStudioModal();
+      }
+    }
+
+    function requestRecentClipsForStudio() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'getRecentClips' }));
+      }
+    }
+
+    // Called when backend returns recent clips
+    window.onRecentClipsLoaded = function(res) {
+      if (!res || !Array.isArray(res.data)) return;
+      window._rawRecentClips = res.data;
+      clipStudioOrder = [];
+      for (let i = 0; i < res.data.length; i++) {
+        clipStudioOrder.push(i);
+      }
+      if (clipStudioSelectedIndices.size === 0 && res.data.length > 0) {
+        for (let i = 0; i < Math.min(3, res.data.length); i++) {
+          clipStudioSelectedIndices.add(i);
+        }
+      }
+      renderClipStudio();
+    };
+
+    function renderClipStudio() {
+      renderClipStudioPool();
+      recomputeClipStudioMerge();
+    }
+
+    function handleClipStudioFilter(kw) {
+      clipStudioFilterKeyword = (kw || "").trim().toLowerCase();
+      renderClipStudioPool();
+    }
+
+    function handleClipStudioTitleChange(val) {
+      clipStudioCurrentTitle = (val || "多源摘录汇总").trim();
+      recomputeClipStudioMerge();
+    }
+
+    function switchClipStudioTemplate(tpl) {
+      clipStudioCurrentTemplate = tpl;
+      const tpls = ["bullets", "quotes", "sections", "todo", "table", "code", "plain"];
+      tpls.forEach(t => {
+        const btn = document.getElementById("cs-tpl-" + t);
+        if (btn) btn.classList.toggle("active", t === tpl);
+      });
+      recomputeClipStudioMerge();
+    }
+
+    function toggleClipStudioSelectAll() {
+      const all = window._rawRecentClips || [];
+      if (clipStudioSelectedIndices.size === all.length) {
+        clipStudioSelectedIndices.clear();
+      } else {
+        clipStudioSelectedIndices.clear();
+        for (let i = 0; i < all.length; i++) {
+          clipStudioSelectedIndices.add(i);
+        }
+      }
+      renderClipStudio();
+    }
+
+    function clearClipStudioSelection() {
+      clipStudioSelectedIndices.clear();
+      renderClipStudio();
+    }
+
+    function toggleClipSnippetSelection(origIdx, e) {
+      if (e) e.stopPropagation();
+      if (clipStudioSelectedIndices.has(origIdx)) {
+        clipStudioSelectedIndices.delete(origIdx);
+      } else {
+        clipStudioSelectedIndices.add(origIdx);
+      }
+      renderClipStudio();
+    }
+
+    function moveClipSnippetOrder(orderPos, direction, e) {
+      if (e) e.stopPropagation();
+      const targetPos = orderPos + direction;
+      if (targetPos < 0 || targetPos >= clipStudioOrder.length) return;
+      const tmp = clipStudioOrder[orderPos];
+      clipStudioOrder[orderPos] = clipStudioOrder[targetPos];
+      clipStudioOrder[targetPos] = tmp;
+      renderClipStudio();
+    }
+
+    function renderClipStudioPool() {
+      const pool = document.getElementById("cs-snippets-pool");
+      if (!pool) return;
+      const all = window._rawRecentClips || [];
+
+      if (all.length === 0) {
+        pool.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:12px;">暂无剪贴板历史，在外部复制内容后将自动捕获显示于此。</div>';
+        return;
+      }
+
+      let html = "";
+      let visibleCount = 0;
+
+      for (let orderPos = 0; orderPos < clipStudioOrder.length; orderPos++) {
+        const origIdx = clipStudioOrder[orderPos];
+        const clip = all[origIdx];
+        if (!clip) continue;
+
+        const text = clip.RawText || clip.EnrichedMarkdown || "";
+        if (clipStudioFilterKeyword && !text.toLowerCase().includes(clipStudioFilterKeyword)) {
+          continue;
+        }
+        visibleCount++;
+
+        const isSelected = clipStudioSelectedIndices.has(origIdx);
+        const typeBadge = clip.SniffedType === "code" ? "⌨️ 代码" :
+                          (clip.SniffedType === "table" ? "📊 表格" :
+                          (clip.SniffedType === "url" ? "🔗 链接" : "📝 文本"));
+
+        const timeStr = clip.Timestamp ? (typeof clip.Timestamp === "string" ? clip.Timestamp.split("T").pop().substring(0, 8) : "") : "";
+
+        html += `
+          <div class="clip-snippet-item ${isSelected ? 'selected' : ''}" onclick="toggleClipSnippetSelection(${origIdx}, event)">
+            <div class="clip-snippet-header">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="checkbox" ${isSelected ? 'checked' : ''} onclick="toggleClipSnippetSelection(${origIdx}, event)" style="cursor: pointer;" />
+                <span style="font-weight: 700; color: var(--cyber-sky);">#${orderPos + 1}</span>
+                <span class="launchpad-card-pill">${typeBadge}</span>
+                <span style="color: var(--text-muted);">${text.length} 字</span>
+              </div>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                ${timeStr ? `<span style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">${timeStr}</span>` : ''}
+                <button class="clip-order-btn" onclick="moveClipSnippetOrder(${orderPos}, -1, event)" title="向上移动顺序" ${orderPos === 0 ? 'disabled style="opacity:0.3;"' : ''}>▲</button>
+                <button class="clip-order-btn" onclick="moveClipSnippetOrder(${orderPos}, 1, event)" title="向下移动顺序" ${orderPos === clipStudioOrder.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>▼</button>
+              </div>
+            </div>
+            <div class="clip-snippet-body" title="${escapeHtml(text)}">
+              ${escapeHtml(text)}
+            </div>
+            <div class="clip-snippet-actions" onclick="event.stopPropagation()">
+              <span>${isSelected ? '✓ 已加入拼版' : '点击勾选加入'}</span>
+              <button class="launchpad-mini-btn" onclick="copyToClipboard('${escapeQuote(text)}', '单条碎片已复制！')">📋 复制</button>
+            </div>
+          </div>
+        `;
+      }
+
+      pool.innerHTML = html;
+
+      // Update counters
+      const countPill = document.getElementById("clip-studio-count");
+      if (countPill) countPill.innerText = `${clipStudioSelectedIndices.size} 选 / ${all.length} 项`;
+
+      const statSpan = document.getElementById("clip-studio-stat");
+      if (statSpan) statSpan.innerText = `已选取 ${clipStudioSelectedIndices.size} 段碎片参与拼版`;
+    }
+
+    function recomputeClipStudioMerge() {
+      const all = window._rawRecentClips || [];
+      const selectedTexts = [];
+
+      for (let orderPos = 0; orderPos < clipStudioOrder.length; orderPos++) {
+        const origIdx = clipStudioOrder[orderPos];
+        if (clipStudioSelectedIndices.has(origIdx) && all[origIdx]) {
+          const t = all[origIdx].RawText || all[origIdx].EnrichedMarkdown || "";
+          if (t.trim()) selectedTexts.push(t.trim());
+        }
+      }
+
+      if (selectedTexts.length === 0) {
+        const txtArea = document.getElementById("cs-preview-textarea");
+        if (txtArea) txtArea.value = "";
+        const meta = document.getElementById("cs-preview-meta");
+        if (meta) meta.innerText = "已拼版 0 段 · 0 字";
+        return;
+      }
+
+      // Request C# backend to merge using robust ClipboardBatchMerger
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'mergeClipboardHistory',
+          mode: clipStudioCurrentTemplate,
+          title: clipStudioCurrentTitle,
+          snippets: selectedTexts
+        }));
+      } else {
+        let localMd = `### 《${clipStudioCurrentTitle}》\n\n` + selectedTexts.map(s => `* ${s}`).join('\n');
+        const txtArea = document.getElementById("cs-preview-textarea");
+        if (txtArea) txtArea.value = localMd;
+      }
+    }
+
+    // Called when backend returns merged markdown
+    window.onClipboardMerged = function(res) {
+      if (!res || !res.markdown) return;
+      const txtArea = document.getElementById("cs-preview-textarea");
+      if (txtArea) {
+        txtArea.value = res.markdown;
+        const meta = document.getElementById("cs-preview-meta");
+        if (meta) {
+          meta.innerText = `已拼版 ${clipStudioSelectedIndices.size} 段 · ${res.markdown.length} 字`;
+        }
+      }
+    };
+
+    function pasteClipStudioToCaret() {
+      const txtArea = document.getElementById("cs-preview-textarea");
+      if (!txtArea || !txtArea.value.trim()) {
+        showToast("暂无可直贴的拼版内容！");
+        return;
+      }
+      pasteAtCursor(txtArea.value);
+      toggleClipStudioModal();
+      showToast("⚡ 已穿透直贴至前台外部光标处！");
+    }
+
+    function copyClipStudioMarkdown() {
+      const txtArea = document.getElementById("cs-preview-textarea");
+      if (!txtArea || !txtArea.value.trim()) {
+        showToast("暂无可复制的拼版内容！");
+        return;
+      }
+      copyToClipboard(txtArea.value, "✓ 拼版 Markdown 源码已复制！");
+    }
+
+    function copyClipStudioRichText() {
+      const txtArea = document.getElementById("cs-preview-textarea");
+      if (!txtArea || !txtArea.value.trim()) {
+        showToast("暂无可复制的内容！");
+        return;
+      }
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'copyAsRichText',
+          markdown: txtArea.value,
+          title: clipStudioCurrentTitle
+        }));
+        showToast("✓ 已复制为外部富文本 (可直接粘贴至 Word/微信)！");
+      } else {
+        copyToClipboard(txtArea.value, "已复制文本！");
+      }
+    }
+
+    function dumpClipStudioToDaily() {
+      const txtArea = document.getElementById("cs-preview-textarea");
+      if (!txtArea || !txtArea.value.trim()) {
+        showToast("暂无可沉淀的内容！");
+        return;
+      }
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'recordMiniInput',
+          text: txtArea.value
+        }));
+        showToast("🎉 拼版结果已成功沉淀至今日日记！");
       }
     }
 

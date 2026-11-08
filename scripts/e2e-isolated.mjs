@@ -3057,6 +3057,91 @@ async function main() {
                       panelContent.includes('launchItemAtIndex(digit - 1)');
   logStep("Step 7.146: 启动台数字键 1~9 盲打秒开与 Enter 首项秒开断言", hasBlindNav, `键盘盲打导航逻辑: ${hasBlindNav}`);
 
+  // Step 7.147: Test Clip Studio Modal UI Template Integrity in panel.html
+  const hasClipStudioModal = panelContent.includes('id="clip-studio-modal"') &&
+                             panelContent.includes('id="cs-snippets-pool"') &&
+                             panelContent.includes('id="cs-preview-textarea"') &&
+                             panelContent.includes('id="clip-studio-count"') &&
+                             panelContent.includes('id="cs-template-bar"');
+  logStep("Step 7.147: 剪贴板多选碎片拼版工作台 (clip-studio-modal) 模版架构断言", hasClipStudioModal, `拼版工作台模版完整性: ${hasClipStudioModal}`);
+
+  // Step 7.148: Test Topbar Clip Studio Button & Intent Chip Linkage
+  const hasClipStudioTopLink = panelContent.includes('id="clip-studio-btn"') &&
+                               panelContent.includes('toggleClipStudioModal()') &&
+                               panelContent.includes('<b>📋</b> 拼版工作台');
+  logStep("Step 7.148: 顶栏 📋 拼版台入口与横向流式意图胶囊直达断言", hasClipStudioTopLink, `顶栏拼版台入口联动: ${hasClipStudioTopLink}`);
+
+  // Step 7.149: Test Clip Studio Dual-Pane Layout & Item Styles in panel.html
+  const hasClipStudioCss = panelContent.includes('.clip-studio-container') &&
+                           panelContent.includes('.clip-studio-left') &&
+                           panelContent.includes('.clip-studio-right') &&
+                           panelContent.includes('.clip-snippet-item') &&
+                           panelContent.includes('.clip-order-btn');
+  logStep("Step 7.149: 拼版工作台左右双栏布局与碎片卡片样式规范断言", hasClipStudioCss, `双栏工作台样式规范: ${hasClipStudioCss}`);
+
+  // Step 7.150: Test ClipboardBatchMerger Advanced Modes (Todo Checklist, Table, Code) in C# Backend
+  const clipMergerScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $mergerType = $asm.GetType('XiaoLv.Desktop.Core.ClipboardBatchMerger');
+    $modeType = $asm.GetType('XiaoLv.Desktop.Core.MergeMode');
+    $mMerge = $mergerType.GetMethod('MergeSnippets', [System.Reflection.BindingFlags]'Public,Static');
+
+    $snippets = @(
+      '核心结论：构建外骨骼剪贴板多段合并',
+      '第二条：零依赖C#纯原生反射拼版'
+    );
+
+    $mTodo = [Enum]::ToObject($modeType, 3);
+    $resTodo = $mMerge.Invoke($null, @($snippets, $mTodo, '待办合集'));
+
+    $mTable = [Enum]::ToObject($modeType, 4);
+    $resTable = $mMerge.Invoke($null, @($snippets, $mTable, '对比矩阵'));
+
+    $mCode = [Enum]::ToObject($modeType, 5);
+    $resCode = $mMerge.Invoke($null, @($snippets, $mCode, '源码合集'));
+
+    $okTodo = $resTodo.Contains('- [ ]');
+    $okTable = $resTable.Contains('碎片对比矩阵');
+    $okCode = $resCode.Contains('\`\`\`');
+
+    Write-Output ($okTodo.ToString() + '|' + $okTable.ToString() + '|' + $okCode.ToString());
+  `;
+  const clipMergerRes = runPs(clipMergerScript);
+  const isClipMergerOk = clipMergerRes.includes("True|True|True");
+  logStep("Step 7.150: 剪贴板拼版引擎高级模板 (Todo清单/Markdown表格/源码块) 深度断言", isClipMergerOk, `高级拼版模式: ${clipMergerRes.trim()}`);
+
+  // Step 7.151: Test Clip Studio Frontend Functions & Dynamic Template Engine
+  const hasClipStudioJs = panelContent.includes('function toggleClipStudioModal') &&
+                          panelContent.includes('function switchClipStudioTemplate') &&
+                          panelContent.includes('function moveClipSnippetOrder') &&
+                          panelContent.includes('function recomputeClipStudioMerge') &&
+                          panelContent.includes('pasteClipStudioToCaret') &&
+                          panelContent.includes('dumpClipStudioToDaily');
+  logStep("Step 7.151: 拼版工作台碎片调序、7套模板与日记/穿透直贴驱动逻辑断言", hasClipStudioJs, `前端拼版交互函数完整性: ${hasClipStudioJs}`);
+
+  // Step 7.152: Test ExternalApiBridge Clip Merge Webhook (POST /api/clip/merge)
+  let webhookClipResp;
+  try {
+    const postResp = await fetch("http://127.0.0.1:43990/api/clip/merge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mode: "table",
+        title: "远程测试拼版矩阵",
+        snippets: ["外部 Quicker 摘录段落一", "外部 AHK 摘录段落二"]
+      })
+    });
+    webhookClipResp = await postResp.json();
+  } catch (err) {
+    webhookClipResp = { error: err.message };
+  }
+  const isWebhookClipOk = webhookClipResp &&
+                          webhookClipResp.code === 0 &&
+                          webhookClipResp.markdown &&
+                          webhookClipResp.markdown.includes("碎片对比矩阵");
+  logStep("Step 7.152: 极速调用桥批量拼版接口 (POST /api/clip/merge) 断言", isWebhookClipOk, `拼版响应: ${JSON.stringify(webhookClipResp)}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

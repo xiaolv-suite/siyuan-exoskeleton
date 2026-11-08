@@ -10,6 +10,9 @@ namespace XiaoLv.Desktop.Core
         Bullets,    // 无序清单列表
         Quotes,     // 引用摘录块
         Sections,   // 小节大纲流
+        Todo,       // 待办 Checklist 任务流
+        Table,      // Markdown 结构化数据表格
+        Code,       // 纯净代码片段合集
         Plain       // 空行隔开自然段
     }
 
@@ -91,6 +94,57 @@ namespace XiaoLv.Desktop.Core
                         sb.AppendLine();
                     }
                     sb.AppendFormat("{{: custom-type=\"merged-sections\" custom-count=\"{0}\" }}\n", cleanList.Count);
+                    break;
+
+                case MergeMode.Todo:
+                    sb.AppendFormat("### 📋 《{0}》 待办分解清单\n", title);
+                    foreach (var it in cleanList)
+                    {
+                        var lines = it.Split('\n');
+                        string first = lines[0].Trim().TrimStart('-', '*', ' ', '[', ']', 'x', 'X');
+                        sb.AppendFormat("- [ ] {0}\n", first);
+                        for (int i = 1; i < lines.Length; i++)
+                        {
+                            if (!string.IsNullOrEmpty(lines[i].Trim()))
+                            {
+                                sb.AppendFormat("  {0}\n", lines[i].Trim());
+                            }
+                        }
+                    }
+                    sb.AppendFormat("{{: custom-type=\"merged-todos\" custom-count=\"{0}\" }}\n", cleanList.Count);
+                    break;
+
+                case MergeMode.Table:
+                    sb.AppendFormat("### 📊 《{0}》 碎片对比矩阵\n\n", title);
+                    sb.AppendLine("| 序号 | 摘录碎片内容 | 长度 | 字符类型 |");
+                    sb.AppendLine("| :--- | :--- | :--- | :--- |");
+                    for (int i = 0; i < cleanList.Count; i++)
+                    {
+                        string safeContent = cleanList[i].Replace("|", "\\|").Replace("\r", "").Replace("\n", " ");
+                        if (safeContent.Length > 80) safeContent = safeContent.Substring(0, 80) + "...";
+                        string charType = cleanList[i].Contains("http://") || cleanList[i].Contains("https://") ? "🔗 链接" :
+                                          (cleanList[i].Contains("SELECT") || cleanList[i].Contains("function") || cleanList[i].Contains("{") ? "⌨️ 代码" : "📝 文本");
+                        sb.AppendFormat("| {0} | {1} | {2} 字 | {3} |\n", i + 1, safeContent, cleanList[i].Length, charType);
+                    }
+                    sb.AppendLine();
+                    sb.AppendFormat("{{: custom-type=\"merged-table\" custom-count=\"{0}\" }}\n", cleanList.Count);
+                    break;
+
+                case MergeMode.Code:
+                    sb.AppendFormat("### ⌨️ 《{0}》 代码片段合集\n\n", title);
+                    foreach (var it in cleanList)
+                    {
+                        string lang = "";
+                        if (it.Contains("def ") || it.Contains("import ")) lang = "python";
+                        else if (it.Contains("function") || it.Contains("const ") || it.Contains("let ")) lang = "javascript";
+                        else if (it.Contains("using System") || it.Contains("public class")) lang = "csharp";
+                        else if (it.Contains("SELECT ") || it.Contains("FROM ")) lang = "sql";
+
+                        sb.AppendFormat("```{0}\n", lang);
+                        sb.AppendLine(it);
+                        sb.AppendLine("```\n");
+                    }
+                    sb.AppendFormat("{{: custom-type=\"merged-code\" custom-count=\"{0}\" }}\n", cleanList.Count);
                     break;
 
                 case MergeMode.Plain:

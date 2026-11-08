@@ -53,6 +53,7 @@ namespace XiaoLv.Desktop.Core
         public int WebhookPort { get; set; }
         public string WebhookToken { get; set; }
         public bool DropZoneEnabled { get; set; }
+        public bool DoubleCtrlActivationEnabled { get; set; }
 
         public AppSettings()
         {
@@ -89,6 +90,7 @@ namespace XiaoLv.Desktop.Core
             WebhookPort = 43989;
             WebhookToken = "";
             DropZoneEnabled = true;
+            DoubleCtrlActivationEnabled = true;
         }
 
         private static string SettingsFilePath
@@ -143,7 +145,8 @@ namespace XiaoLv.Desktop.Core
                     s.WebhookPort = JsonHelper.GetInt(dict, "webhookPort", s.WebhookPort);
                     if (s.WebhookPort <= 0) s.WebhookPort = 43989;
 	                    s.WebhookToken = JsonHelper.GetString(dict, "webhookToken", s.WebhookToken);
-	                    s.DropZoneEnabled = JsonHelper.GetBool(dict, "dropZoneEnabled", s.DropZoneEnabled);
+		                    s.DropZoneEnabled = JsonHelper.GetBool(dict, "dropZoneEnabled", s.DropZoneEnabled);
+		                    s.DoubleCtrlActivationEnabled = JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", s.DoubleCtrlActivationEnabled);
                 }
                 else
                 {

@@ -43,7 +43,7 @@ namespace XiaoLv.Desktop.Core
                 string fn = Path.GetFileName(f);
 
                 // 智能判定：票据/发票图片或文档 -> 小驴管家 / 记账流
-                if (Regex.IsMatch(fn, @"(?:\b发票\b|\b账单\b|\b报销\b|\b收据\b|\binvoice\b|\breceipt\b)", RegexOptions.IgnoreCase))
+                if (Regex.IsMatch(fn, @"(?:发票|账单|报销|收据|\binvoice\b|\breceipt\b)", RegexOptions.IgnoreCase))
                 {
                     res.Category = "expense";
                     res.TargetModule = "siyuan-home";
@@ -87,7 +87,7 @@ namespace XiaoLv.Desktop.Core
             }
 
             // 2. 票据 / 账目 / 花销文本 (¥38.5 瑞幸 或 餐饮 50元) -> 推送至「小驴管家」记账流
-            if (text.StartsWith("¥") || text.StartsWith("￥") || Regex.IsMatch(text, @"(?:\b报销\b|\b支出\b|\b花销\b|\b发票\b)"))
+            if (text.StartsWith("¥") || text.StartsWith("￥") || Regex.IsMatch(text, @"(?:报销|支出|花销|发票|\bexpense\b|\binvoice\b)"))
             {
                 res.Success = true;
                 res.Category = "expense";

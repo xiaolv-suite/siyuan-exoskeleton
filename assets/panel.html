@@ -5852,9 +5852,9 @@
       inspector.innerHTML = `
         <div class="inspector-header">
           <div class="inspector-breadcrumbs">${bcHtml}</div>
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-            <div class="inspector-doc-title">📄 ${escapeHtml(docTitle)}</div>
-            <div class="inspector-tab-bar">
+	          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+	            <div class="inspector-doc-title" style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">📄 ${escapeHtml(docTitle)} <span id="reading-metrics-badge" style="font-size: 10.5px; font-weight: 600; padding: 1.5px 6px; border-radius: 4px; background: rgba(56,189,248,0.14); color: var(--cyber-sky);">📖 计算中...</span></div>
+	            <div class="inspector-tab-bar">
               <button class="inspector-tab-btn ${currentInspectorTab === 'detail' ? 'active' : ''}" id="tab-btn-detail" onclick="switchInspectorTab('detail')" title="查看小节大纲、正文与上下文">📋 大纲与正文</button>
 	              <button class="inspector-tab-btn ${currentInspectorTab === 'mindmap' ? 'active' : ''}" id="tab-btn-mindmap" onclick="switchInspectorTab('mindmap')" title="查看文档树状结构思维导图">🗺️ 视觉导图</button>
 	              <button class="inspector-tab-btn ${currentInspectorTab === 'links' ? 'active' : ''}" id="tab-btn-links" onclick="switchInspectorTab('links')" title="穿透查看双向反向链接与知识图谱">🔗 双链雷达</button>
@@ -5909,17 +5909,22 @@
             <button class="inspector-dock-btn" onclick="copyBlockRef('${targetId}', '${escapeQuote(targetContent)}')" title="复制双链至剪贴板">📋 复制双链</button>
             <button class="inspector-dock-btn" onclick="copyMarkdownLink('${targetId}', '${escapeQuote(targetContent)}')" title="复制 Markdown 链接">📝 复制MD</button>
             <button class="inspector-dock-btn" onclick="pinAsStickyNote('${escapeQuote(docTitle)}', '${escapeQuote(markdownText)}', '${targetId}')" title="钉在桌面作为半透明浮动参考便签，按 Ctrl+S 实时双向回写">📌 钉在桌面</button>
-	            <button class="inspector-dock-btn" onclick="exportCurrentToDocx('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);" title="零依赖逆向导出标准 Word (.docx) 大纲并在本地秒开">📤 导出Word</button>
-	            <button class="inspector-dock-btn" onclick="exportCurrentToHtml('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="零依赖逆向导出带大纲导航的单文件独立 HTML 网页并在浏览器秒开">🌐 导出HTML</button>
+		            <button class="inspector-dock-btn" onclick="exportCurrentToDocx('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);" title="零依赖逆向导出标准 Word (.docx) 大纲并在本地秒开">📤 导出Word</button>
+		            <button class="inspector-dock-btn" onclick="exportCurrentToHtml('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="零依赖逆向导出带大纲导航的单文件独立 HTML 网页并在浏览器秒开">🌐 导出HTML</button>
+		            <button class="inspector-dock-btn" onclick="copyAsExternalRichText('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);" title="一键复制为图文富文本 (可直接粘贴微信/飞书/Word/邮件)">📋 复制富文本</button>
             ${markdownText.includes('|') ? `
               <button class="inspector-dock-btn" onclick="exportCurrentToXlsx('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--tech-amber); border-color: rgba(245,158,11,0.4);" title="零依赖逆向导出标准 Excel (.xlsx) 表格并在本地秒开">📤 导出Excel</button>
             ` : ''}
             <button class="inspector-dock-btn" onclick="togglePinItem(filteredItems[selectedIndex])" title="将此文档置顶常驻到桌面快捷坞 (Ctrl+P)">📌 置顶常驻</button>
           </div>
-          <button class="inspector-dock-btn" onclick="openStandaloneDoc('${b.root_id || targetId}')" title="在思源独立新窗口开启此笔记 (Alt+O)">🌐 独立新窗</button>
-        </div>
-      `;
-    };
+	          <button class="inspector-dock-btn" onclick="openStandaloneDoc('${b.root_id || targetId}')" title="在思源独立新窗口开启此笔记 (Alt+O)">🌐 独立新窗</button>
+	        </div>
+	      `;
+
+	      if (window.chrome && window.chrome.webview && markdownText) {
+	        window.chrome.webview.postMessage(JSON.stringify({ op: 'estimateReadingMetrics', text: markdownText }));
+	      }
+	    };
 
     function promptAppendToDoc(docId, docTitle) {
       const note = prompt(`向文档《${docTitle}》快速追加一条笔记：`, "");
@@ -8117,6 +8122,20 @@
         window.chrome.webview.postMessage(JSON.stringify({ op: 'exportDocHtml', markdown: markdown, title: title }));
       }
     }
+
+    function copyAsExternalRichText(markdown, title) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'copyExternalRichText', markdown: markdown, title: title }));
+      }
+    }
+
+    window.onReadingMetricsLoaded = function(res) {
+      if (!res || !res.data) return;
+      const el = document.getElementById("reading-metrics-badge");
+      if (el) {
+        el.innerText = res.data.FormattedBadge || "📖 统计完毕";
+      }
+    };
 
     function renderRescueInspector(item) {
       const inspector = document.getElementById("search-inspector-pane");

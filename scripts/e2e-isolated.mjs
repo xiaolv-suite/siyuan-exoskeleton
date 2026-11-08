@@ -1936,6 +1936,107 @@ async function main() {
   const isCliExtOk = cliExtRes.includes("True");
   logStep("Step 7.83: 桌面托放中枢与活便签 CLI 调度器 (-sticky / -dropzone) 路由断言", isCliExtOk, `CLI扩展调度断言: ${cliExtRes.trim()}`);
 
+  // Step 7.84: Test DocClipboardExporter (Convert Markdown to Standalone Inline-CSS CF_HTML)
+  const richTextScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $exp = $asm.GetType('XiaoLv.Desktop.Core.DocClipboardExporter');
+    $mConv = $exp.GetMethod('ConvertMarkdownToInlineCssHtml', [System.Reflection.BindingFlags]'Public,Static');
+
+    $s1 = '# 深度架构复盘' + [Environment]::NewLine + '> 核心思考洞见' + [Environment]::NewLine + '- [ ] 行动任务待办';
+    $argsConv = [object[]]@($s1, '复盘专页');
+    $resHtml = $mConv.Invoke($null, $argsConv);
+
+    $okHtml = $resHtml.Contains('font-family:') -and $resHtml.Contains('<h1') -and $resHtml.Contains('复盘专页') -and $resHtml.Contains('<blockquote') -and $resHtml.Contains('☐');
+    Write-Output ($okHtml.ToString());
+  `;
+  const richTextRes = runPs(richTextScript);
+  const isRichTextOk = richTextRes.includes("True");
+  logStep("Step 7.84: 外部富文本图文无损复制 (DocClipboardExporter CF_HTML) 转换断言", isRichTextOk, `富文本编译断言: ${richTextRes.trim()}`);
+
+  // Step 7.85: Test DoubleTapHotkeyActivator (Double Ctrl Low-Level Hook State)
+  const doubleCtrlScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $activator = $asm.GetType('XiaoLv.Desktop.Core.DoubleTapHotkeyActivator');
+    $mStart = $activator.GetMethod('Start', [System.Reflection.BindingFlags]'Public,Static');
+    $mStop = $activator.GetMethod('Stop', [System.Reflection.BindingFlags]'Public,Static');
+    $pRunning = $activator.GetProperty('IsRunning', [System.Reflection.BindingFlags]'Public,Static');
+
+    $mStart.Invoke($null, $null);
+    $running1 = $pRunning.GetValue($null, $null);
+    $mStop.Invoke($null, $null);
+    $running2 = $pRunning.GetValue($null, $null);
+
+    Write-Output ($running1.ToString() + '|' + $running2.ToString());
+  `;
+  const doubleCtrlRes = runPs(doubleCtrlScript);
+  const isDoubleCtrlOk = doubleCtrlRes.includes("True|False");
+  logStep("Step 7.85: 双击 Ctrl 极速呼出微控激活器 (DoubleTapHotkeyActivator) 状态断言", isDoubleCtrlOk, `双击Ctrl激活状态: ${doubleCtrlRes.trim()}`);
+
+  // Step 7.86: Test ReadingProgressEstimator (Chinese & English Cognitive Speed Reading Calculation)
+  const readingScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $rpe = $asm.GetType('XiaoLv.Desktop.Core.ReadingProgressEstimator');
+    $mEst = $rpe.GetMethod('Estimate', [System.Reflection.BindingFlags]'Public,Static');
+
+    $sampleArticle = 'Transformer模型的核心是自注意力机制Self-Attention。它通过Query、Key和Value计算多头注意力。' + [Environment]::NewLine + '\`\`\`python' + [Environment]::NewLine + 'def forward(): pass' + [Environment]::NewLine + '\`\`\`';
+    $argsEst = [object[]]@($sampleArticle);
+    $metrics = $mEst.Invoke($null, $argsEst);
+
+    $okReading = ($metrics.ChineseCharCount -gt 20) -and ($metrics.CodeLineCount -ge 2) -and ($metrics.EstimatedMinutes -ge 1) -and ($metrics.FormattedBadge.Contains('字'));
+    Write-Output ($okReading.ToString() + '|' + $metrics.ChineseCharCount + '|' + $metrics.FormattedBadge);
+  `;
+  const readingRes = runPs(readingScript);
+  const isReadingOk = readingRes.includes("True");
+  logStep("Step 7.86: 阅读字数与耗时智能预估引擎 (ReadingProgressEstimator) 断言", isReadingOk, `阅读预估断言: ${readingRes.trim()}`);
+
+  // Step 7.87: Test DropZoneRouter Invoice & Receipt File Auto-Classification
+  const dropFileScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $router = $asm.GetType('XiaoLv.Desktop.Core.DropZoneRouter');
+    $mFiles = $router.GetMethod('RouteFiles', [System.Reflection.BindingFlags]'Public,Static');
+
+    $tmpInvoice = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), '2026年11月差旅发票.pdf');
+    [System.IO.File]::WriteAllText($tmpInvoice, 'dummy');
+
+    $argsRoute = [object[]]@([string[]]@($tmpInvoice), $null);
+    $routeRes = $mFiles.Invoke($null, $argsRoute);
+    try { [System.IO.File]::Delete($tmpInvoice); } catch {}
+
+    $okInvoice = ($routeRes.Category -eq 'expense') -and ($routeRes.TargetModule -eq 'siyuan-home');
+    Write-Output ($okInvoice.ToString());
+  `;
+  const dropFileRes = runPs(dropFileScript);
+  const isDropFileOk = dropFileRes.includes("True");
+  logStep("Step 7.87: 桌面托放中枢发票票据文件自动分流至小驴管家断言", isDropFileOk, `发票分流断言: ${dropFileRes.trim()}`);
+
+  // Step 7.88: Test Local Asset Image Inlining to Base64 (DocClipboardExporter)
+  const assetInlineScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $exp = $asm.GetType('XiaoLv.Desktop.Core.DocClipboardExporter');
+    $mInline = $exp.GetMethod('InlineLocalAssetsToBase64', [System.Reflection.BindingFlags]'Public,Static');
+
+    $tmpDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'XiaoLvTest_Asset');
+    [System.IO.Directory]::CreateDirectory($tmpDir) | Out-Null;
+    $tmpImg = [System.IO.Path]::Combine($tmpDir, 'test_sample.png');
+    [System.IO.File]::WriteAllBytes($tmpImg, [Convert]::FromBase64String('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='));
+
+    $mdSnippet = '![测试截图](assets/test_sample.png)';
+    $argsInline = [object[]]@($mdSnippet, $tmpDir);
+    $resInlined = $mInline.Invoke($null, $argsInline);
+    try { [System.IO.File]::Delete($tmpImg); } catch {}
+
+    $okInline = $resInlined.Contains('<img src="data:image/png;base64,') -and $resInlined.Contains('alt="测试截图"');
+    Write-Output ($okInline.ToString());
+  `;
+  const assetInlineRes = runPs(assetInlineScript);
+  const isAssetInlineOk = assetInlineRes.includes("True");
+  logStep("Step 7.88: 本地资产图片自动内嵌 Base64 图文无损导出断言", isAssetInlineOk, `Base64内嵌断言: ${assetInlineRes.trim()}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

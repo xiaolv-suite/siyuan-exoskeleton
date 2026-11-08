@@ -938,13 +938,41 @@ namespace XiaoLv.Desktop.UI
 						                    ThreadPool.QueueUserWorkItem(s =>
 						                    {
 						                        string outPath = DocStandaloneHtmlExporter.ExportToHtmlAndOpen(md, title);
-						                        if (!string.IsNullOrEmpty(outPath) && OnNotificationRequested != null)
-						                        {
-						                            OnNotificationRequested("独立HTML导出", "✓ 已成功导出单文件网页并在系统默认浏览器秒开！");
-						                        }
-						                    });
-						                    return;
-						                }
+							                        if (!string.IsNullOrEmpty(outPath) && OnNotificationRequested != null)
+							                        {
+							                            OnNotificationRequested("独立HTML导出", "✓ 已成功导出单文件网页并在系统默认浏览器秒开！");
+							                        }
+							                    });
+							                    return;
+							                }
+
+							                // 3.63 外部富文本图文无损复制 (微信/飞书/Word/邮件 CF_HTML)
+							                if (op.Equals("copyExternalRichText", StringComparison.OrdinalIgnoreCase))
+							                {
+							                    string md = JsonHelper.GetString(msg, "markdown");
+							                    string title = JsonHelper.GetString(msg, "title");
+							                    ThreadPool.QueueUserWorkItem(s =>
+							                    {
+							                        bool ok = DocClipboardExporter.CopyAsExternalRichText(md, title);
+							                        if (ok && OnNotificationRequested != null)
+							                        {
+							                            OnNotificationRequested("外部富文本复制", "✓ 图文富文本已复制！直接粘贴至微信/飞书/Word/邮件即可保真显示。");
+							                        }
+							                    });
+							                    return;
+							                }
+
+							                // 3.64 阅读字数与耗时智能预估
+							                if (op.Equals("estimateReadingMetrics", StringComparison.OrdinalIgnoreCase))
+							                {
+							                    string text = JsonHelper.GetString(msg, "text");
+							                    var metrics = ReadingProgressEstimator.Estimate(text);
+							                    if (_webView != null && _webView.CoreWebView2 != null)
+							                    {
+							                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onReadingMetricsLoaded) window.onReadingMetricsLoaded(" + JsonHelper.ToJson(new { code = 0, data = metrics }) + ");");
+							                    }
+							                    return;
+							                }
 
 			                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
                 if (op.Equals("searchDocs", StringComparison.OrdinalIgnoreCase))

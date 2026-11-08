@@ -214,9 +214,12 @@ namespace XiaoLv.Desktop
 		                    {
 		                        ExternalApiBridge.Stop();
 		                    }
-		                    if (s.DropZoneEnabled) _dropZoneWindow.Show();
-		                    else _dropZoneWindow.Hide();
-		                    SafeNotify("思源外骨骼", "✓ 桌面助手偏好设置已更新并立即生效！");
+			                    if (s.DropZoneEnabled) _dropZoneWindow.Show();
+			                    else _dropZoneWindow.Hide();
+			                    s.DoubleCtrlActivationEnabled = JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", s.DoubleCtrlActivationEnabled);
+			                    if (s.DoubleCtrlActivationEnabled) DoubleTapHotkeyActivator.Start();
+			                    else DoubleTapHotkeyActivator.Stop();
+			                    SafeNotify("思源外骨骼", "✓ 桌面助手偏好设置已更新并立即生效！");
                 }
                 catch { }
             };
@@ -287,7 +290,20 @@ namespace XiaoLv.Desktop
             _hotkeys.OnFsrsReviewRequested += () => StartFsrsReview();
             _hotkeys.OnWebClipRequested += () => StartWebClip();
 
-            bool hotkeysOk = _hotkeys.RegisterConfiguredHotKeys(settings.MasterHotKey, settings.PenHotKey, settings.OcrHotKey, settings.QuickHotKey, settings.FsrsHotKey, settings.ClipHotKey);
+	            bool hotkeysOk = _hotkeys.RegisterConfiguredHotKeys(settings.MasterHotKey, settings.PenHotKey, settings.OcrHotKey, settings.QuickHotKey, settings.FsrsHotKey, settings.ClipHotKey);
+
+	            // 双击 Ctrl 极速呼出微控激活器 (对标 Listary / Raycast)
+	            if (settings.DoubleCtrlActivationEnabled)
+	            {
+	                DoubleTapHotkeyActivator.OnDoubleCtrlTriggered += () =>
+	                {
+	                    if (_wpfApp != null && _wpfApp.Dispatcher != null && _bentoWindow != null)
+	                    {
+	                        _wpfApp.Dispatcher.BeginInvoke(new Action(() => _bentoWindow.ShowPanel()));
+	                    }
+	                };
+	                DoubleTapHotkeyActivator.Start();
+	            }
 
             // 智能划选鼠标微控 (PopClip 模式支持)
             SelectionHelper.StartMouseHook();
@@ -1026,8 +1042,9 @@ namespace XiaoLv.Desktop
                 SiYuanGuardian.Stop();
                 ClipboardWatcher.Stop();
                 SelectionHelper.StopMouseHook();
-                OfficeFileWatcher.StopAll();
-                if (_hotkeys != null) _hotkeys.Dispose();
+	                OfficeFileWatcher.StopAll();
+	                DoubleTapHotkeyActivator.Stop();
+	                if (_hotkeys != null) _hotkeys.Dispose();
                 if (_tray != null) _tray.Dispose();
                 if (_ipcServer != null) _ipcServer.Dispose();
                 if (_mutex != null)

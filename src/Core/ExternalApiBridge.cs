@@ -252,15 +252,29 @@ namespace XiaoLv.Desktop.Core
 		                    return;
 		                }
 
-		                // N. 萃取当前实时配置为预设: /api/profile/capture
-		                if (rawPath.Equals("/api/profile/capture", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/profile/capture", StringComparison.OrdinalIgnoreCase))
-		                {
-		                    HandleProfileCaptureRequest(req, resp);
-		                    return;
-		                }
+			                // N. 萃取当前实时配置为预设: /api/profile/capture
+			                if (rawPath.Equals("/api/profile/capture", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/profile/capture", StringComparison.OrdinalIgnoreCase))
+			                {
+			                    HandleProfileCaptureRequest(req, resp);
+			                    return;
+			                }
 
-		                // 未匹配到路由
-		                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
+			                // O. 全景通知与事件流: /api/notify
+			                if (rawPath.Equals("/api/notify", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/notify", StringComparison.OrdinalIgnoreCase))
+			                {
+			                    HandleNotifyRequest(req, resp);
+			                    return;
+			                }
+
+			                // P. 通知日报沉淀流水: /api/notify/journal
+			                if (rawPath.Equals("/api/notify/journal", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/notify/journal", StringComparison.OrdinalIgnoreCase))
+			                {
+			                    HandleNotifyJournalRequest(req, resp);
+			                    return;
+			                }
+
+			                // 未匹配到路由
+			                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
             }
             catch (Exception ex)
             {
@@ -713,11 +727,43 @@ namespace XiaoLv.Desktop.Core
 		        {
 		            string type = req.QueryString["type"] ?? "s3";
 		            string name = GetQueryStringUtf8(req, "name");
-		            var captured = SiYuanProfileHub.CaptureCurrentLiveProfile(type, name);
-		            WriteJsonResponse(resp, 200, new { code = 0, msg = "萃取成功", data = captured });
-		        }
+			            var captured = SiYuanProfileHub.CaptureCurrentLiveProfile(type, name);
+			            WriteJsonResponse(resp, 200, new { code = 0, msg = "萃取成功", data = captured });
+			        }
 
-		        private static string ReadRequestBody(HttpListenerRequest req)
+			        private static void HandleNotifyRequest(HttpListenerRequest req, HttpListenerResponse resp)
+			        {
+			            if (req.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+			            {
+			                string body = ReadRequestBody(req);
+			                var dict = JsonHelper.ParseDict(body);
+			                string title = JsonHelper.GetString(dict, "title", "外部通知");
+			                string message = JsonHelper.GetString(dict, "message", "");
+			                if (string.IsNullOrEmpty(message)) message = JsonHelper.GetString(dict, "text", "");
+			                string level = JsonHelper.GetString(dict, "level", "info");
+			                string source = JsonHelper.GetString(dict, "source", "webhook");
+
+			                var item = OmniNotificationHub.Push(title, message, level, source);
+			                WriteJsonResponse(resp, 200, new { code = 0, msg = "通知已记录", item = item });
+			                return;
+			            }
+
+			            // GET
+			            string q = GetQueryStringUtf8(req, "q");
+			            string levelFilter = req.QueryString["level"] ?? "all";
+			            string sourceFilter = req.QueryString["source"] ?? "all";
+			            var list = OmniNotificationHub.GetHistory(levelFilter, sourceFilter, q);
+			            WriteJsonResponse(resp, 200, new { code = 0, count = list.Count, data = list });
+			        }
+
+			        private static void HandleNotifyJournalRequest(HttpListenerRequest req, HttpListenerResponse resp)
+			        {
+			            var list = OmniNotificationHub.GetHistory("all", "all", "");
+			            string md = OmniNotificationHub.BuildJournalMarkdown(list);
+			            WriteJsonResponse(resp, 200, new { code = 0, markdown = md, count = list.Count });
+			        }
+
+			        private static string ReadRequestBody(HttpListenerRequest req)
         {
             try
             {

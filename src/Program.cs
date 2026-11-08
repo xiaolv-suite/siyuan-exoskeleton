@@ -715,6 +715,14 @@ namespace XiaoLv.Desktop
         {
             try
             {
+                string level = "info";
+                string full = ((title ?? "") + " " + (message ?? "")).ToLowerInvariant();
+                if (full.Contains("异常") || full.Contains("失败") || full.Contains("error") || full.Contains("🔴")) level = "error";
+                else if (full.Contains("警告") || full.Contains("⚠️") || full.Contains("warn") || full.Contains("🟡")) level = "warn";
+                else if (full.Contains("✓") || full.Contains("完成") || full.Contains("达成") || full.Contains("成功") || full.Contains("🟢") || full.Contains("🎉")) level = "success";
+
+                OmniNotificationHub.Push(title, message, level, "desktop");
+
                 if (_wpfApp != null && _wpfApp.Dispatcher != null && !_wpfApp.Dispatcher.HasShutdownStarted)
                 {
                     _wpfApp.Dispatcher.BeginInvoke(new Action(() =>

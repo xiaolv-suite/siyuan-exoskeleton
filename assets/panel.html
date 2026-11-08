@@ -2568,8 +2568,9 @@
 			      <span class="intent-chip" onclick="insertPrefix('bm:')" title="输入 bm: 穿透检索 Edge/Chrome 本地浏览器书签与收藏夹"><b>🔖</b> 浏览器书签</span>
 			      <span class="intent-chip" onclick="insertPrefix('fav:')" title="输入 fav: 打开全景网站收藏中枢，跨浏览器统一秒搜、一键收录并沉淀至思源专属文档"><b>🌐</b> 网站收藏</span>
 				      <span class="intent-chip" onclick="insertPrefix('fold:')" title="输入 fold: 打开本地文件夹导航中枢，支持 #32770 对话框原位穿透与思源工程锚定"><b>📂</b> 文件夹导航</span>
-				      <span class="intent-chip" onclick="insertPrefix('cfg:')" title="输入 cfg: 查看与管理思源 S3 存储桶、AI 大模型与常用配置预设"><b>⚙️</b> 配置预设</span>
-				      <span class="intent-chip" onclick="insertPrefix('vault:')" title="输入 vault: 穿透检索外部 Markdown 知识库与本地目录"><b>🗄️</b> 外部库</span>
+					      <span class="intent-chip" onclick="insertPrefix('cfg:')" title="输入 cfg: 查看与管理思源 S3 存储桶、AI 大模型与常用配置预设"><b>⚙️</b> 配置预设</span>
+					      <span class="intent-chip" onclick="insertPrefix('notice:')" title="输入 notice: 查看全景系统与思源应用通知事件流，支持一键沉淀日记"><b>📢</b> 通知历史</span>
+					      <span class="intent-chip" onclick="insertPrefix('vault:')" title="输入 vault: 穿透检索外部 Markdown 知识库与本地目录"><b>🗄️</b> 外部库</span>
 	      <span class="intent-chip" onclick="insertPrefix('tab:')" title="输入 tab: 检索全库数据表格，支持排版美化与1键导出Excel"><b>📊</b> 表格透视</span>
 	      <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
@@ -2599,12 +2600,12 @@
   <!-- Controls Bar: Category Tabs & Layout Switcher -->
   <div class="controls-bar">
     <nav class="category-tabs" id="category-tabs">
-      <button class="cat-btn active" id="cat-btn-all" onclick="setCategoryFilter('all')">全部 (30)</button>
+      <button class="cat-btn active" id="cat-btn-all" onclick="setCategoryFilter('all')">全部 (31)</button>
       <button class="cat-btn" id="cat-btn-capture" onclick="setCategoryFilter('capture')">📝 极速捕获 (6)</button>
       <button class="cat-btn" id="cat-btn-search" onclick="setCategoryFilter('search')">🔍 搜索资产 (10)</button>
       <button class="cat-btn" id="cat-btn-learning" onclick="setCategoryFilter('learning')">🧩 生态直达 (8 · Alt+1~8)</button>
       <button class="cat-btn" id="cat-btn-commands" onclick="setCategoryFilter('commands')">🌐 格式心流 (4)</button>
-      <button class="cat-btn" id="cat-btn-maintenance" onclick="setCategoryFilter('maintenance')">⚙️ 系统运维 (2)</button>
+      <button class="cat-btn" id="cat-btn-maintenance" onclick="setCategoryFilter('maintenance')">⚙️ 系统运维 (3)</button>
     </nav>
     <div class="layout-switcher" title="切换视图排版模式">
       <button type="button" class="layout-btn" id="layout-btn-grid" onclick="setLayoutMode('grid')" title="网格便当盒卡片视图">🎴 卡片</button>
@@ -3290,9 +3291,10 @@
       { id: "sycmd", group: "commands", title: "插件命令调度", desc: "支持输入 p: 实时搜索思源中已安装的任意第三方社区插件命令并唤起执行", hotkey: "p:", iconType: "terminal", iconColor: "var(--indigo-light)", badge: "全量命令", badgeCls: "badge-bridge", pinyin: "ssbzhyzcjml sycmd ml", synonyms: ["插件命令", "第三方命令", "穿透", "调度", "commands"] },
       { id: "syprofile", actionId: "syprofile", group: "commands", title: "配置与模型预设", desc: "脱敏管理思源 S3 存储桶、AI 大模型驱动与 WebDAV 常用配置，随时复制参数蓝图或切换预设", hotkey: "cfg:", iconType: "terminal", iconColor: "var(--indigo-light)", badge: "脱敏预设", badgeCls: "badge-native", pinyin: "pz ysymxys syprofile cfg s3 ai", synonyms: ["配置", "预设", "s3", "ai", "webdav", "模型", "存储桶", "profile", "cfg"] },
 
-      // ⚙️ 系统与数据运维 (2)
+      // ⚙️ 系统与数据运维 (3)
       { id: "sytrash", actionId: "sytrash", group: "maintenance", title: "回收站", desc: "专属文档回收站：毫秒级检索数据历史与快照库，查看最近被删除、被 AI 覆盖的笔记，支持 1 键打捞复原", hotkey: "trash:", iconType: "trash", iconColor: "var(--rose-agent)", badge: "数据回收站", badgeCls: "badge-native", pinyin: "hsz trash recycle wsdl", synonyms: ["回收站", "垃圾桶", "数据历史", "误删", "打捞", "找回", "trash", "recycle"] },
-      { id: "syh", actionId: "39911155-60a3-4134-aaf0-6805d625ad09", group: "maintenance", title: "全库与系统体检", desc: "一键综合诊断：排查断链、孤立无主附件、空标题，并深度探测内核端口、Token、IPC管道及离岸队列", hotkey: "syh", iconType: "shield", iconColor: "var(--tech-amber)", badge: "综合诊断", badgeCls: "badge-system", pinyin: "tsglyjktj syh tj dl yj", synonyms: ["体检", "断链", "孤立资源", "空标题", "health", "doctor"] }
+      { id: "syh", actionId: "39911155-60a3-4134-aaf0-6805d625ad09", group: "maintenance", title: "全库与系统体检", desc: "一键综合诊断：排查断链、孤立无主附件、空标题，并深度探测内核端口、Token、IPC管道及离岸队列", hotkey: "syh", iconType: "shield", iconColor: "var(--tech-amber)", badge: "综合诊断", badgeCls: "badge-system", pinyin: "tsglyjktj syh tj dl yj", synonyms: ["体检", "断链", "孤立资源", "空标题", "health", "doctor"] },
+      { id: "synotice", actionId: "synotice", group: "maintenance", title: "通知与事件流", desc: "全景通知与生命事件日志：聚合思源弹窗、Windows系统消息、构建回执与专注达成，支持1键沉淀日记", hotkey: "notice:", iconType: "bell", iconColor: "var(--cyber-sky)", badge: "广义通知", badgeCls: "badge-native", pinyin: "tz yxsj synotice notice notif bell", synonyms: ["通知", "消息", "事件", "广播", "日志", "bell", "notice", "notification"] }
     ];
 
     const GROUP_ORDER = ["capture", "search", "learning", "commands", "maintenance"];
@@ -4053,6 +4055,9 @@
       } else if (q.startsWith("cfg:") || q.startsWith("cfg：") || q.startsWith("s3:") || q.startsWith("s3：") || q.startsWith("ai:") || q.startsWith("ai：")) {
         banner.style.display = "flex";
         banner.innerHTML = `<div><span class="intent-tag">⚙️ 配置预设中枢</span>脱敏管理与一键切换 S3 存储桶、AI 大模型及系统预设</div><span style="font-size: 10px; opacity: 0.8;">↵ 查看详情 · 复制配置</span>`;
+      } else if (q.startsWith("notice:") || q.startsWith("notice：") || q.startsWith("notif:") || q.startsWith("notif：")) {
+        banner.style.display = "flex";
+        banner.innerHTML = `<div><span class="intent-tag">📢 通知与事件流</span>汇总思源弹窗、系统事件与外部自动化回执，支持一键沉淀日记</div><span style="font-size: 10px; opacity: 0.8;">↵ 查看详情 · 沉淀日记</span>`;
       } else {
         banner.style.display = "none";
       }
@@ -4230,6 +4235,18 @@
         const subKw = q.replace(/^(cfg:|cfg：|s3:|s3：|ai:|ai：)/, "").trim();
         if (window.chrome && window.chrome.webview) {
           window.chrome.webview.postMessage(JSON.stringify({ op: 'searchProfiles', keyword: subKw, type: type }));
+        } else {
+          filteredItems = [];
+          renderItems();
+        }
+        return;
+      }
+
+      // notice: 或 notif: 模式：全景系统与应用通知事件流
+      if (q.startsWith("notice:") || q.startsWith("notice：") || q.startsWith("notif:") || q.startsWith("notif：") || q === "notice" || q === "notif") {
+        const subKw = q.replace(/^(notice:|notice：|notif:|notif：)/, "").trim();
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'getNotificationHistory', keyword: subKw }));
         } else {
           filteredItems = [];
           renderItems();
@@ -5063,6 +5080,12 @@
       // 呼出思源常用配置与模型预设中枢
       if (item.id === "syprofile") {
         insertPrefix("cfg:");
+        return;
+      }
+
+      // 呼出全景通知与事件流中枢
+      if (item.id === "synotice") {
+        insertPrefix("notice:");
         return;
       }
 
@@ -8658,6 +8681,122 @@
         showToast("🎉 配置预设已安全脱敏沉淀至思源专属文档与本地缓存！");
         insertPrefix('cfg:');
       }
+    };
+
+    // ==========================================================
+    // 全景系统与应用通知事件流中枢 (OmniNotificationHub) 交互管线
+    // ==========================================================
+    window.onNotificationsLoaded = function(res) {
+      if (!res || !Array.isArray(res.data)) return;
+      const notifs = res.data;
+      const items = [];
+
+      items.push({
+        id: "action_dump_notification_journal",
+        group: "search",
+        title: `📥 [一键日报] 将今日 ${notifs.length} 笔通知事件归流至今日日记`,
+        desc: "结构化汇编思源弹窗、Windows 系统消息与开发自动化回执，生成带时序标记的工作流水沉淀入库",
+        hotkey: "Ctrl+J",
+        iconType: "calendar",
+        iconColor: "var(--emerald-mint)",
+        badge: "一键归流",
+        badgeCls: "badge-native",
+        action: () => {
+          dumpNotificationsToDaily();
+        }
+      });
+
+      for (const n of notifs) {
+        let iconType = "info";
+        let iconColor = "var(--cyber-sky)";
+        let badgeCls = "badge-bridge";
+        if (n.Level === "error") { iconType = "alert-circle"; iconColor = "var(--rose-agent)"; badgeCls = "badge-stale"; }
+        else if (n.Level === "warn") { iconType = "alert-triangle"; iconColor = "var(--tech-amber)"; badgeCls = "badge-native"; }
+        else if (n.Level === "success") { iconType = "check"; iconColor = "var(--emerald-mint)"; badgeCls = "badge-native"; }
+
+        const repeatStr = n.RepeatCount > 1 ? ` (×${n.RepeatCount})` : "";
+        items.push({
+          id: `notif_${n.Id}`,
+          group: "search",
+          title: `[${n.Level.toUpperCase()}] ${escapeHtml(n.Title)}${repeatStr}`,
+          desc: `${escapeHtml(n.Message)} · ${n.TimeFormatted} · 来源: ${n.Source}`,
+          hotkey: "Enter",
+          iconType: iconType,
+          iconColor: iconColor,
+          badge: n.Level.toUpperCase(),
+          badgeCls: badgeCls,
+          notifData: n,
+          action: () => {
+            inspectNotificationItem(n);
+          }
+        });
+      }
+
+      filteredItems = items;
+      selectedIndex = 0;
+      renderItems();
+      if (filteredItems.length > 1) {
+        inspectNotificationItem(filteredItems[1].notifData);
+      }
+    };
+
+    function inspectNotificationItem(n) {
+      if (!n) return;
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+
+      const repeatNotice = n.RepeatCount > 1 ? `<span class="badge-native" style="margin-left:6px;">折叠去重 ×${n.RepeatCount} 次</span>` : "";
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">📢 通知事件流</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${n.Source}</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${n.Level.toUpperCase()}</span>
+          </div>
+          <div class="inspector-doc-title">${escapeHtml(n.Title)}${repeatNotice}</div>
+        </div>
+        <div class="inspector-body" style="padding: 14px; max-height: 420px; overflow-y: auto;">
+          <div style="font-size: 11px; padding: 10px 14px; background: rgba(99,102,241,0.08); border-radius: 8px; border: 1px dashed var(--border-hairline); margin-bottom: 12px; line-height: 1.7;">
+            <div>🕒 <b>发生时间</b>: ${n.TimeFormatted} · 🏷️ <b>来源模块</b>: <span class="badge-native">${n.Source}</span> · 严重度: <b>${n.Level.toUpperCase()}</b></div>
+            <div style="margin-top: 6px; font-size: 12.5px; color: var(--text-primary); line-height: 1.6; word-break: break-all;">
+              ${escapeHtml(n.Message)}
+            </div>
+          </div>
+          <div style="padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 11.5px; color: var(--text-secondary); line-height: 1.5;">
+            💡 <b>广义通知聚合</b>: 该通知中枢不仅监听思源弹窗，还记录 Windows 外部自动化工具 (Quicker/AHK)、编译构建、心流番茄与凭据安全警报。
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="copyToClipboard('${escapeQuote(n.Title + ': ' + n.Message)}', '通知内容已复制！')">📋 复制通知</button>
+            <button class="inspector-dock-btn" onclick="dumpNotificationsToDaily()" title="将全部通知归流写入今日日记">📥 归流入日记</button>
+            <button class="inspector-dock-btn danger" onclick="clearAllNotifications()" style="color: var(--rose-agent); border-color: rgba(244,63,94,0.3);" title="清空全部通知历史记录">🗑️ 清空历史</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function dumpNotificationsToDaily() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'dumpNotificationJournal' }));
+        showToast("✓ 正在将今日通知事件归流入今日日记...");
+      }
+    }
+
+    function clearAllNotifications() {
+      if (!confirm("确定清空全部通知历史记录吗？")) return;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'clearNotificationHistory' }));
+        showToast("✓ 通知历史已全部清空！");
+        insertPrefix('notice:');
+      }
+    }
+
+    window.onNotificationsCleared = function() {
+      insertPrefix('notice:');
     };
 
     window.onClipboardMerged = function(res) {

@@ -2778,6 +2778,136 @@ async function main() {
   const isWebhookProfileCapOk = webhookProfileCapResp && webhookProfileCapResp.code === 0 && webhookProfileCapResp.data.Type === "s3";
   logStep("Step 7.125: 配置预设萃取 Webhook (GET /api/profile/capture) 探针断言", isWebhookProfileCapOk, `响应: ${JSON.stringify(webhookProfileCapResp)}`);
 
+  // Step 7.126: Test OmniNotificationHub Push & 15s Sliding Window Deduplication
+  const notifyPushScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $hub = $asm.GetType('XiaoLv.Desktop.Core.OmniNotificationHub');
+    $mPush = $hub.GetMethod('Push', [System.Reflection.BindingFlags]'Public,Static', $null, @([string], [string], [string], [string], [string]), $null);
+
+    # 连续推送两条相同通知，触发 15s 滑动窗口自动折叠去重
+    $n1 = $mPush.Invoke($null, @('S3云端备份异常', '连接超时(408)，准备重试', 'error', 'siyuan', ''));
+    $n2 = $mPush.Invoke($null, @('S3云端备份异常', '连接超时(408)，准备重试', 'error', 'siyuan', ''));
+
+    $okDedup = ($null -ne $n2) -and ($n2.RepeatCount -ge 2) -and ($n2.Level -eq 'error');
+    Write-Output ($okDedup.ToString() + '|' + $n2.RepeatCount);
+  `;
+  const notifyPushRes = runPs(notifyPushScript);
+  const isNotifyPushOk = notifyPushRes.includes("True");
+  logStep("Step 7.126: 全景通知中枢推送与 15s 滑动窗口折叠去重 (OmniNotificationHub) 断言", isNotifyPushOk, `去重折叠断言: ${notifyPushRes.trim()}`);
+
+  // Step 7.127: Test OmniNotificationHub Level & Keyword Filtering
+  const notifyFilterScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $hub = $asm.GetType('XiaoLv.Desktop.Core.OmniNotificationHub');
+    $mPush = $hub.GetMethod('Push', [System.Reflection.BindingFlags]'Public,Static', $null, @([string], [string], [string], [string], [string]), $null);
+    $mGet = $hub.GetMethod('GetHistory', [System.Reflection.BindingFlags]'Public,Static');
+
+    $mPush.Invoke($null, @('编译构建成功', 'SiYuan Exoskeleton standalone binary ready', 'success', 'dev', ''));
+    $mPush.Invoke($null, @('凭据安全脱敏', '已脱敏 2 处敏感 API 密钥', 'warn', 'security', ''));
+
+    $all = $mGet.Invoke($null, @('all', 'all', ''));
+    $errs = $mGet.Invoke($null, @('error', 'all', ''));
+    $devs = $mGet.Invoke($null, @('all', 'dev', ''));
+
+    $okFilter = ($all.Count -ge 3) -and ($errs.Count -ge 1) -and ($devs.Count -ge 1);
+    Write-Output ($okFilter.ToString() + '|' + $all.Count + '|' + $errs.Count);
+  `;
+  const notifyFilterRes = runPs(notifyFilterScript);
+  const isNotifyFilterOk = notifyFilterRes.includes("True");
+  logStep("Step 7.127: 全景通知四级严重度与来源过滤 (GetHistory) 断言", isNotifyFilterOk, `通知过滤断言: ${notifyFilterRes.trim()}`);
+
+  // Step 7.128: Test OmniNotificationHub BuildJournalMarkdown
+  const notifyMdScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $hub = $asm.GetType('XiaoLv.Desktop.Core.OmniNotificationHub');
+    $mGet = $hub.GetMethod('GetHistory', [System.Reflection.BindingFlags]'Public,Static');
+    $mMd = $hub.GetMethod('BuildJournalMarkdown', [System.Reflection.BindingFlags]'Public,Static');
+
+    $items = $mGet.Invoke($null, @('all', 'all', ''));
+    $md = $mMd.Invoke($null, @($items, '今日系统事件汇总'));
+
+    $okMd = $md.Contains('### 📢 今日系统事件汇总') -and $md.Contains('custom-type="notification-journal"') -and ($md.Contains('🔴') -or $md.Contains('🟢'));
+    Write-Output ($okMd.ToString());
+  `;
+  const notifyMdRes = runPs(notifyMdScript);
+  const isNotifyMdOk = notifyMdRes.includes("True");
+  logStep("Step 7.128: 通知事件流结构化日记 Markdown 汇编 (BuildJournalMarkdown) 断言", isNotifyMdOk, `日记汇编断言: ${notifyMdRes.trim()}`);
+
+  // Step 7.129: Test Program.SafeNotify Auto-Routing to OmniNotificationHub
+  const safeNotifyScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $prog = $asm.GetType('XiaoLv.Desktop.Program');
+    $hub = $asm.GetType('XiaoLv.Desktop.Core.OmniNotificationHub');
+    $mNotify = $prog.GetMethod('SafeNotify', [System.Reflection.BindingFlags]'Public,Static');
+    $mGet = $hub.GetMethod('GetHistory', [System.Reflection.BindingFlags]'Public,Static');
+
+    $mNotify.Invoke($null, @('测试全景通知挂钩', '这是一条自动注入中枢的测试气泡'));
+    $hits = $mGet.Invoke($null, @('all', 'all', '测试全景通知挂钩'));
+
+    $okRoute = ($null -ne $hits) -and ($hits.Count -ge 1) -and ($hits[0].Title -eq '测试全景通知挂钩');
+    Write-Output ($okRoute.ToString());
+  `;
+  const safeNotifyRes = runPs(safeNotifyScript);
+  const isSafeNotifyOk = safeNotifyRes.includes("True");
+  logStep("Step 7.129: 全局气泡通知自动合流中枢 (SafeNotify -> Hub) 闭环断言", isSafeNotifyOk, `气泡合流断言: ${safeNotifyRes.trim()}`);
+
+  // Step 7.130: Test ExternalApiBridge Notification Webhook (POST /api/notify & GET /api/notify)
+  let webhookNotifyResp;
+  try {
+    const postResp = await fetch("http://127.0.0.1:43990/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "Quicker远程触发回执",
+        message: "已执行动作【思源小驴·全局面板】",
+        level: "success",
+        source: "quicker"
+      })
+    });
+    const postJson = await postResp.json();
+    await sleep(200);
+    const getResp = await fetch("http://127.0.0.1:43990/api/notify?q=" + encodeURIComponent("Quicker远程触发"));
+    const getJson = await getResp.json();
+    webhookNotifyResp = { postCode: postJson.code, getCount: getJson.count, getCode: getJson.code };
+  } catch (err) {
+    webhookNotifyResp = { error: err.message };
+  }
+  const isWebhookNotifyOk = webhookNotifyResp && webhookNotifyResp.postCode === 0 && webhookNotifyResp.getCode === 0 && webhookNotifyResp.getCount >= 1;
+  logStep("Step 7.130: 通知中枢 Webhook (GET/POST /api/notify) 远程推送与检索断言", isWebhookNotifyOk, `响应: ${JSON.stringify(webhookNotifyResp)}`);
+
+  // Step 7.131: Test ExternalApiBridge Notification Journal Webhook (GET /api/notify/journal)
+  let webhookJournalResp;
+  try {
+    const resp = await fetch("http://127.0.0.1:43990/api/notify/journal");
+    webhookJournalResp = await resp.json();
+  } catch (err) {
+    webhookJournalResp = { error: err.message };
+  }
+  const isWebhookJournalOk = webhookJournalResp && webhookJournalResp.code === 0 && webhookJournalResp.markdown && webhookJournalResp.markdown.includes("notification-journal");
+  logStep("Step 7.131: 通知日报 Markdown 汇编 Webhook (GET /api/notify/journal) 断言", isWebhookJournalOk, `记录数: ${webhookJournalResp?.count}`);
+
+  // Step 7.132: Test OmniNotificationHub Clear
+  const clearScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $hub = $asm.GetType('XiaoLv.Desktop.Core.OmniNotificationHub');
+    $mClear = $hub.GetMethod('Clear', [System.Reflection.BindingFlags]'Public,Static');
+    $mGet = $hub.GetMethod('GetHistory', [System.Reflection.BindingFlags]'Public,Static');
+
+    $mClear.Invoke($null, $null);
+    $rem = $mGet.Invoke($null, @('all', 'all', ''));
+
+    $okClear = ($rem.Count -eq 0);
+    Write-Output ($okClear.ToString());
+  `;
+  const clearRes = runPs(clearScript);
+  const isClearOk = clearRes.includes("True");
+  logStep("Step 7.132: 全景通知中枢一键清空与重置 (Clear) 断言", isClearOk, `清空断言: ${clearRes.trim()}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

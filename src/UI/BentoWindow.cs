@@ -1406,6 +1406,61 @@ namespace XiaoLv.Desktop.UI
 										                    return;
 										                }
 
+										                // 3.72 全景系统与应用通知事件流中枢 (notice: / notif:)
+										                if (op.Equals("getNotificationHistory", StringComparison.OrdinalIgnoreCase))
+										                {
+										                    string kw = JsonHelper.GetString(msg, "keyword");
+										                    string lvl = JsonHelper.GetString(msg, "level", "all");
+										                    string src = JsonHelper.GetString(msg, "source", "all");
+										                    ThreadPool.QueueUserWorkItem(s =>
+										                    {
+										                        try
+										                        {
+										                            var list = OmniNotificationHub.GetHistory(lvl, src, kw);
+										                            Dispatcher.Invoke(() =>
+										                            {
+										                                if (_webView != null && _webView.CoreWebView2 != null)
+										                                {
+										                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onNotificationsLoaded) window.onNotificationsLoaded(" + JsonHelper.ToJson(new { code = 0, count = list.Count, data = list }) + ");");
+										                                }
+										                            });
+										                        }
+										                        catch { }
+										                    });
+										                    return;
+										                }
+
+										                if (op.Equals("clearNotificationHistory", StringComparison.OrdinalIgnoreCase))
+										                {
+										                    OmniNotificationHub.Clear();
+										                    if (_webView != null && _webView.CoreWebView2 != null)
+										                    {
+										                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onNotificationsCleared) window.onNotificationsCleared();");
+										                    }
+										                    return;
+										                }
+
+										                if (op.Equals("dumpNotificationJournal", StringComparison.OrdinalIgnoreCase))
+										                {
+										                    ThreadPool.QueueUserWorkItem(s =>
+										                    {
+										                        try
+										                        {
+										                            var list = OmniNotificationHub.GetHistory("all", "all", "");
+										                            string md = OmniNotificationHub.BuildJournalMarkdown(list);
+										                            var ctx = new DesktopStepContext("SYS", md);
+										                            ctx.SetVarValue("来源应用", "思源外骨骼 · 通知中枢");
+										                            SmartCaptureMain.Exec(ctx);
+										                            if (OnNotificationRequested != null)
+										                            {
+										                                OnNotificationRequested("通知中枢 · 日报归流", string.Format("✓ 已成功将今日 {0} 条通知事件归流至今日日记！", list.Count));
+										                            }
+										                        }
+										                        catch { }
+										                    });
+										                    return;
+										                }
+
 				                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
                 if (op.Equals("searchDocs", StringComparison.OrdinalIgnoreCase))
                 {

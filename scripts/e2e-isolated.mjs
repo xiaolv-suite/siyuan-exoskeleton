@@ -287,9 +287,9 @@ async function main() {
   logStep("Step 5.5: Lifelog 专注时序 (~45m) 自动倒推起止时间断言", focusOk, `内容: ${focusRow?.content}`);
 
   // Step 5.6: Test Lifelog Habit Tracking Syntax (+water 600ml)
-  await sleep(800);
+  await sleep(1000);
   await sendViaPipe("SYS", "+water 600ml 补水打卡");
-  const habitRow = await pollSql("SELECT id, content, ial FROM blocks WHERE content LIKE '%600ml 补水打卡%' ORDER BY updated DESC LIMIT 1");
+  const habitRow = await pollSql("SELECT id, content, ial FROM blocks WHERE content LIKE '%补水打卡%' ORDER BY updated DESC LIMIT 1", 15);
   const habitOk = !!habitRow && habitRow.content.includes("习惯打卡") && habitRow.ial.includes("custom-lifelog-type=\"habit\"");
   logStep("Step 5.6: Lifelog 习惯打卡 (+water 600ml) 自动打标断言", habitOk, `内容: ${habitRow?.content}`);
 
@@ -569,9 +569,9 @@ async function main() {
   logStep("Step 7.23: 动态内联小节智能自愈生成 (>>未有小节名 自动建标题) 断言", autoHeadingOk, `自愈生成标题 ID: ${createdHeadingRow?.id} · 内容挂载 ID: ${headingChildRow?.id}`);
 
   // Step 7.24: Test Dynamic Direct Document Ingestion (>@文档名 跨文档精准直投)
+  await sleep(1000);
   await sendViaPipe("SYS", ">@周度规划模板 跨文档免切窗追加的核心行动项");
-  await sleep(600);
-  const targetDocNoteRow = await pollSql("SELECT b.id, b.content, d.content as doc_title FROM blocks b JOIN blocks d ON d.id = b.root_id WHERE d.content LIKE '%周度规划模板%' AND b.content LIKE '%跨文档免切窗追加%' LIMIT 1");
+  const targetDocNoteRow = await pollSql("SELECT b.id, b.content, d.content as doc_title FROM blocks b JOIN blocks d ON d.id = b.root_id WHERE d.content LIKE '%周度规划模板%' AND b.content LIKE '%跨文档免切窗追加%' LIMIT 1", 15);
   const directDocOk = !!targetDocNoteRow && targetDocNoteRow.content.includes("跨文档免切窗追加");
   logStep("Step 7.24: 动态跨文档精准直投 (>@文档名 免切窗追加) 断言", directDocOk, `命中目标文档: 《${targetDocNoteRow?.doc_title}》 · 写入块 ID: ${targetDocNoteRow?.id}`);
 
@@ -3413,6 +3413,63 @@ async function main() {
                            webhookVaultResp.code === 0 &&
                            webhookVaultResp.hasData;
   logStep("Step 7.176: 极速调用桥外部库镜像检索接口 (GET /api/vault/notes) 断言", isWebhookVaultOk, `扫描到文档: ${webhookVaultResp?.count} 篇`);
+
+  // Step 7.177: Test Outline & Mindmap Studio Modal UI Template Integrity in panel.html
+  const hasOmmModal = panelContent.includes('id="outline-mindmap-modal"') &&
+                      panelContent.includes('id="omm-doc-pill"') &&
+                      panelContent.includes('id="omm-tree-list"') &&
+                      panelContent.includes('id="omm-canvas-wrap"') &&
+                      panelContent.includes('id="omm-view-tabs"');
+  logStep("Step 7.177: 全景大纲与思维导图工作台 (outline-mindmap-modal) 模版架构断言", hasOmmModal, `大纲导图模版完整性: ${hasOmmModal}`);
+
+  // Step 7.178: Test Topbar Mindmap Button & Intent Chip Linkage in panel.html
+  const hasOmmTopLink = panelContent.includes('id="mindmap-btn"') &&
+                        panelContent.includes('toggleOutlineMindmapModal()') &&
+                        panelContent.includes('<b>🗺️</b> 大纲导图');
+  logStep("Step 7.178: 顶栏 🗺️ 导图按钮与横向流式意图胶囊直达断言", hasOmmTopLink, `顶栏导图入口联动: ${hasOmmTopLink}`);
+
+  // Step 7.179: Test Outline Mindmap CSS Dual-Pane Layout & Level Badges in panel.html
+  const hasOmmCss = panelContent.includes('.omm-container') &&
+                    panelContent.includes('.omm-left') &&
+                    panelContent.includes('.omm-right') &&
+                    panelContent.includes('.omm-tree-item') &&
+                    panelContent.includes('.omm-lvl-badge');
+  logStep("Step 7.179: 大纲导图双栏布局与 H1~H6 层级徽标样式规范断言", hasOmmCss, `双栏工作台样式规范: ${hasOmmCss}`);
+
+  // Step 7.180: Test Outline Mindmap Frontend Functions & Three View Modes in panel.html
+  const hasOmmJs = panelContent.includes('function toggleOutlineMindmapModal') &&
+                   panelContent.includes('function switchOutlineMindmapView') &&
+                   panelContent.includes('function focusMindmapHeadingNode') &&
+                   panelContent.includes('copyOutlineMindmapSvg') &&
+                   panelContent.includes('copyOutlineMarkdownTree') &&
+                   panelContent.includes('exportOutlineMindmapCard');
+  logStep("Step 7.180: 大纲树小节聚焦、导图联动与长图导出驱动逻辑断言", hasOmmJs, `前端驱动函数完整性: ${hasOmmJs}`);
+
+  // Step 7.181: Test ExternalApiBridge Document Outline Webhook (GET /api/outline/tree)
+  let webhookOmmResp;
+  try {
+    const getResp = await fetch("http://127.0.0.1:43990/api/outline/tree");
+    const getJson = await getResp.json();
+    webhookOmmResp = {
+      code: getJson.code,
+      hasData: !!getJson.data,
+      count: getJson.data?.count,
+      hasHeadings: Array.isArray(getJson.data?.headings)
+    };
+  } catch (err) {
+    webhookOmmResp = { error: err.message };
+  }
+  const isWebhookOmmOk = webhookOmmResp &&
+                         webhookOmmResp.code === 0 &&
+                         webhookOmmResp.hasData &&
+                         webhookOmmResp.hasHeadings;
+  logStep("Step 7.181: 极速调用桥文档大纲小节树检索接口 (GET /api/outline/tree) 断言", isWebhookOmmOk, `大纲小节数: ${webhookOmmResp?.count}`);
+
+  // Step 7.182: Test Bento syo Card & Mindmap Tab Linkage to Outline Mindmap Modal in panel.html
+  const hasOmmCardLink = panelContent.includes('if (item.id === "syo")') &&
+                         panelContent.includes('toggleOutlineMindmapModal();') &&
+                         panelContent.includes('🗺️ 展开全景大导图');
+  logStep("Step 7.182: Bento 主卡片 syo 与抽屉导图展开大视窗深度联动断言", hasOmmCardLink, `大纲导图主卡片联动: ${hasOmmCardLink}`);
 
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");

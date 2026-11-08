@@ -2820,6 +2820,60 @@
       text-overflow: ellipsis;
     }
 
+    /* Outline Mindmap Modal Styles */
+    .omm-container {
+      display: flex;
+      gap: 14px;
+      height: 58vh;
+    }
+    .omm-left {
+      width: 32%;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-right: 4px;
+    }
+    .omm-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .omm-tree-item {
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .omm-tree-item:hover {
+      border-color: rgba(99, 102, 241, 0.45);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .omm-tree-item.selected {
+      border-color: var(--cyber-sky);
+      background: rgba(56, 189, 248, 0.08);
+    }
+    .omm-lvl-badge {
+      font-size: 9.5px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .omm-lvl-h1 { background: rgba(168, 85, 247, 0.18); color: var(--cyber-purple); border: 1px solid rgba(168, 85, 247, 0.35); }
+    .omm-lvl-h2 { background: rgba(56, 189, 248, 0.18); color: var(--cyber-sky); border: 1px solid rgba(56, 189, 248, 0.35); }
+    .omm-lvl-h3 { background: rgba(16, 185, 129, 0.18); color: var(--emerald-mint); border: 1px solid rgba(16, 185, 129, 0.35); }
+    .omm-lvl-h4 { background: rgba(245, 158, 11, 0.18); color: var(--tech-amber); border: 1px solid rgba(245, 158, 11, 0.35); }
+    .omm-lvl-h5, .omm-lvl-h6 { background: rgba(148, 163, 184, 0.12); color: var(--text-muted); border: 1px solid var(--border-hairline); }
+
   </style>
 </head>
 <body>
@@ -2888,6 +2942,9 @@
       </button>
       <button class="theme-toggle-btn" id="vault-btn" onclick="toggleVaultMirrorModal()" title="外部知识库与 Markdown 目录镜像透视 (🗄️)" style="position: relative;">
         <span>🗄️</span>
+      </button>
+      <button class="theme-toggle-btn" id="mindmap-btn" onclick="toggleOutlineMindmapModal()" title="全景大纲与交互思维导图大工作台 (🗺️)" style="position: relative;">
+        <span>🗺️</span>
       </button>
       <button class="theme-toggle-btn" id="notice-btn" onclick="toggleNotificationCenterModal()" title="全景通知与生命事件中心 (🔔)" style="position: relative;">
         <span>🔔</span>
@@ -2977,7 +3034,8 @@
 				      <span class="intent-chip" onclick="triggerFlashback()" title="输入 rand: 随机漫游一条历史重点笔记或那年今日"><b>🎲</b> 漫游回顾</span>
 					      <span class="intent-chip" onclick="toggleHeatmapGalleryModal()" title="查看全库 52 周知识心流沉淀大画廊与年轮徽章"><b>🔥</b> 沉淀热力图</span>
 					      <span class="intent-chip" onclick="toggleGraphModal()" title="全景双向知识网络星轨拓扑视窗，辐射漫游与关系拓扑穿透"><b>🌌</b> 星轨图谱</span>
-					      <span class="intent-chip" onclick="toggleSystemDoctorModal()" title="全库死链体检、孤儿附件清道夫与系统健康诊断大视窗"><b>🩺</b> 系统体检</span>
+						      <span class="intent-chip" onclick="toggleSystemDoctorModal()" title="全库死链体检、孤儿附件清道夫与系统健康诊断大视窗"><b>🩺</b> 系统体检</span>
+						      <span class="intent-chip" onclick="toggleOutlineMindmapModal()" title="全景大纲与交互思维导图大工作台 (H1~H6 树状联动)"><b>🗺️</b> 大纲导图</span>
       <span class="chip-divider"></span>
       <span class="intent-chip" style="opacity: 0.75; cursor: pointer;" onclick="toggleCheatsheet()" title="查看完整快捷键心流"><b>Alt+1~8</b> 官方直达</span>
     </div>
@@ -3919,6 +3977,66 @@
       <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 <b>镜像透视特性</b>: 纯流式透视，零物理拷贝，不污染思源 SQLite 与 assets 附件库，支持一键按需切片直投日记</span>
         <span id="vault-modal-status">镜像透视已就绪</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全景大纲与交互思维导图大工作台 (Outline & Mindmap Studio Modal) -->
+  <div class="timeline-modal-overlay" id="outline-mindmap-modal" onclick="closeOutlineMindmapOnBg(event)">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 95%; max-width: 980px; max-height: 88vh;">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">🗺️</span>
+          <span style="font-weight: 700; font-size: 14px;">全景大纲与交互思维导图大工作台</span>
+          <span class="brand-pill" id="omm-doc-pill">当前文档</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="refreshOutlineMindmapData()" style="font-size: 11px; padding: 3px 10px;" title="重新提取当前文档最新大纲小节">🔄 刷新</button>
+          <button class="pref-btn" onclick="openCurrentOutlineDocInSiYuan()" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.4);" title="在思源大窗中原位定位打开此文档">🔗 思源定位</button>
+          <button class="pref-btn" onclick="copyOutlineMarkdownTree()" style="font-size: 11px; padding: 3px 10px;" title="复制 H1~H6 缩进层级大纲 Markdown 文本">📋 复制大纲树</button>
+          <button class="pref-btn" onclick="copyOutlineMindmapSvg()" style="font-size: 11px; padding: 3px 10px;" title="复制思维导图矢量 SVG 源码">📋 复制 SVG</button>
+          <button class="pref-btn" onclick="exportOutlineMindmapCard()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="生成高保真思维导图长图并在本地图片查看器秒开">📸 导出长图</button>
+          <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleOutlineMindmapModal()">✕</button>
+        </div>
+      </div>
+
+      <!-- Mode & Filter Toolbar -->
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div class="timeline-filters" id="omm-view-tabs" style="display: flex; gap: 6px; overflow-x: auto; padding: 0;">
+          <button class="cat-btn active" id="omm-tab-split" onclick="switchOutlineMindmapView('split')">🌟 双栏全景 (大纲+导图)</button>
+          <button class="cat-btn" id="omm-tab-mindmap" onclick="switchOutlineMindmapView('mindmap')">🗺️ 导图独占大画布</button>
+          <button class="cat-btn" id="omm-tab-tree" onclick="switchOutlineMindmapView('tree')">📑 紧凑大纲目录树</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <input type="text" id="omm-filter-input" placeholder="输入小节关键词即搜即跳..." oninput="handleOutlineMindmapFilter(this.value)" style="width: 200px; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-primary);" />
+        </div>
+      </div>
+
+      <!-- Studio Body -->
+      <div class="omm-container" id="omm-container-body" style="padding: 14px 18px; overflow: hidden;">
+        <!-- Left: Headings Tree -->
+        <div class="omm-left" id="omm-left-panel">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">
+            <span>小节目录树:</span>
+            <span><b id="omm-headings-count" style="color: var(--cyber-sky);">0</b> 处小节</span>
+          </div>
+          <div id="omm-tree-list">
+            <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在加载大纲小节...</div>
+          </div>
+        </div>
+
+        <!-- Right: Mindmap SVG Canvas -->
+        <div class="omm-right" id="omm-right-panel">
+          <div id="omm-canvas-wrap" style="flex: 1; padding: 14px; background: #070d18; border-radius: 8px; border: 1px solid var(--border-hairline); min-height: 480px; overflow: auto; display: flex; align-items: center; justify-content: center; position: relative;">
+            <div style="text-align: center; color: var(--text-muted); font-size: 12px;">正在生成交互思维导图...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Footer -->
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+        <span>💡 <b>交互指南</b>: 单击左侧小节可在右侧导图高亮聚焦；双击小节/导图节点在思源大窗中原位打开；纯原生动态矢量渲染</span>
+        <span id="omm-modal-status">大纲与导图就绪</span>
       </div>
     </div>
   </div>
@@ -4875,6 +4993,9 @@
       } else if (q.startsWith("doctor:") || q.startsWith("health:") || q.startsWith("deadlink:") || q === "syh" || q === "doctor") {
         banner.style.display = "flex";
         banner.innerHTML = `<div><span class="intent-tag">🩺 系统综合体检</span>全库死链修复、孤儿附件清道夫与系统健康诊断大盘</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开体检大视窗</span>`;
+      } else if (q.startsWith("syo") || q.startsWith("outline:") || q.startsWith("mindmap:") || q === "syo" || q === "outline") {
+        banner.style.display = "flex";
+        banner.innerHTML = `<div><span class="intent-tag">🗺️ 大纲与导图</span>文档 H1~H6 层级树与轻量交互思维导图大工作台</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开大纲导图视窗</span>`;
       } else {
         banner.style.display = "none";
       }
@@ -5113,6 +5234,12 @@
           filteredItems = [];
           renderItems();
         }
+        return;
+      }
+
+      // syo 或 outline: 或 mindmap: 模式：全景大纲与交互思维导图大工作台
+      if (q.startsWith("outline:") || q.startsWith("mindmap:") || q === "syo" || q === "outline") {
+        toggleOutlineMindmapModal();
         return;
       }
 
@@ -5900,6 +6027,12 @@
       // 呼出附件文献穿透视图
       if (item.id === "syatt") {
         insertPrefix("att:");
+        return;
+      }
+
+      // 呼出全景大纲与思维导图工作台
+      if (item.id === "syo") {
+        toggleOutlineMindmapModal();
         return;
       }
 
@@ -6890,9 +7023,13 @@
             ${backlinkHtml}
             ${assetsHtml}
           </div>
-	          <div id="inspector-mindmap-view" style="display: ${currentInspectorTab === 'mindmap' ? 'block' : 'none'}; overflow: auto; height: 100%;">
-	            ${generateMindmapSvg(docTitle, payload.headings)}
-	          </div>
+		          <div id="inspector-mindmap-view" style="display: ${currentInspectorTab === 'mindmap' ? 'block' : 'none'}; overflow: auto; height: 100%;">
+		            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+		              <span style="font-size: 11px; font-weight: 700; color: var(--indigo-light);">🗺️ 思维导图结构</span>
+		              <button class="pref-btn" onclick="toggleOutlineMindmapModal('${b.root_id || targetId}', '${escapeQuote(docTitle)}')" style="font-size: 10.5px; padding: 2px 8px; color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="展开 980px 全景大纲与思维导图独立大工作台">🗺️ 展开全景大导图</button>
+		            </div>
+		            ${generateMindmapSvg(docTitle, payload.headings)}
+		          </div>
 	          <div id="inspector-links-view" style="display: ${currentInspectorTab === 'links' ? 'block' : 'none'}; overflow: auto; padding: 10px 0;">
 	            <div style="font-size: 11.5px; color: var(--text-muted); text-align: center; padding: 30px;">正在穿透思源知识网络扫描双向反链...</div>
 	          </div>
@@ -13035,6 +13172,245 @@
           text: md
         }));
         showToast("🎉 外部文档已成功结构化引用至今日日记！");
+      }
+    }
+
+    // ==========================================================
+    // 全景大纲与交互思维导图大工作台 (Outline & Mindmap Studio)
+    // ==========================================================
+    let currentOutlineDocId = "";
+    let currentOutlineDocTitle = "";
+    let currentOutlineHeadings = [];
+    let currentOutlineSvg = "";
+    let currentOutlineViewMode = "split";
+    let currentOutlineFilterKeyword = "";
+
+    function toggleOutlineMindmapModal(docId, docTitle) {
+      const modal = document.getElementById("outline-mindmap-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) {
+        if (docId) {
+          currentOutlineDocId = docId;
+          currentOutlineDocTitle = docTitle || "当前文档";
+        }
+        refreshOutlineMindmapData();
+      }
+    }
+
+    function closeOutlineMindmapOnBg(e) {
+      if (e.target && e.target.id === "outline-mindmap-modal") {
+        toggleOutlineMindmapModal();
+      }
+    }
+
+    function refreshOutlineMindmapData() {
+      const pill = document.getElementById("omm-doc-pill");
+      if (pill) pill.innerText = currentOutlineDocTitle || "当前文档";
+
+      const treeList = document.getElementById("omm-tree-list");
+      if (treeList) treeList.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:12px;">正在穿透提取文档大纲小节...</div>';
+
+      const canvasWrap = document.getElementById("omm-canvas-wrap");
+      if (canvasWrap) canvasWrap.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;">正在生成交互思维导图...</div>';
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'getDocOutlineAndMindmap',
+          docId: currentOutlineDocId || ''
+        }));
+      } else {
+        setTimeout(() => {
+          if (window.onDocOutlineLoaded) {
+            window.onDocOutlineLoaded({
+              code: 0,
+              docId: currentOutlineDocId || "mock_doc",
+              docTitle: currentOutlineDocTitle || "思源知识架构导图",
+              headings: [
+                { id: "h1_1", content: "第一章 核心架构", subtype: "h1", sort: 1 },
+                { id: "h2_1", content: "1.1 零外部依赖单文件标准", subtype: "h2", sort: 2 },
+                { id: "h2_2", content: "1.2 原生 SQLite 索引穿透", subtype: "h2", sort: 3 },
+                { id: "h1_2", content: "第二章 桌面生态外显", subtype: "h1", sort: 4 },
+                { id: "h2_3", content: "2.1 独立全屏工作台视窗", subtype: "h2", sort: 5 }
+              ]
+            });
+          }
+        }, 120);
+      }
+    }
+
+    window.onDocOutlineLoaded = function(res) {
+      if (!res) return;
+      currentOutlineDocId = res.docId || "";
+      currentOutlineDocTitle = res.docTitle || "当前文档";
+      currentOutlineHeadings = res.headings || [];
+
+      const pill = document.getElementById("omm-doc-pill");
+      if (pill) pill.innerText = currentOutlineDocTitle;
+
+      const countSpan = document.getElementById("omm-headings-count");
+      if (countSpan) countSpan.innerText = currentOutlineHeadings.length;
+
+      const statusSpan = document.getElementById("omm-modal-status");
+      if (statusSpan) statusSpan.innerText = `已就绪 · 《${currentOutlineDocTitle}》共 ${currentOutlineHeadings.length} 处小节`;
+
+      renderOutlineTreeList();
+      renderOutlineMindmapCanvas();
+    };
+
+    function switchOutlineMindmapView(mode) {
+      currentOutlineViewMode = mode;
+      ["split", "mindmap", "tree"].forEach(m => {
+        const btn = document.getElementById("omm-tab-" + m);
+        if (btn) btn.classList.toggle("active", m === mode);
+      });
+
+      const leftPanel = document.getElementById("omm-left-panel");
+      const rightPanel = document.getElementById("omm-right-panel");
+
+      if (mode === "split") {
+        if (leftPanel) { leftPanel.style.display = "flex"; leftPanel.style.width = "32%"; }
+        if (rightPanel) { rightPanel.style.display = "flex"; rightPanel.style.flex = "1"; }
+      } else if (mode === "mindmap") {
+        if (leftPanel) leftPanel.style.display = "none";
+        if (rightPanel) { rightPanel.style.display = "flex"; rightPanel.style.flex = "1"; }
+      } else if (mode === "tree") {
+        if (leftPanel) { leftPanel.style.display = "flex"; leftPanel.style.width = "100%"; }
+        if (rightPanel) rightPanel.style.display = "none";
+      }
+    }
+
+    function handleOutlineMindmapFilter(val) {
+      currentOutlineFilterKeyword = (val || "").trim().toLowerCase();
+      renderOutlineTreeList();
+    }
+
+    function renderOutlineTreeList() {
+      const treeList = document.getElementById("omm-tree-list");
+      if (!treeList) return;
+
+      let list = currentOutlineHeadings;
+      if (currentOutlineFilterKeyword) {
+        list = list.filter(h => (h.content || "").toLowerCase().includes(currentOutlineFilterKeyword));
+      }
+
+      if (list.length === 0) {
+        treeList.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:12px;">未匹配到小节标题</div>';
+        return;
+      }
+
+      let html = "";
+      list.forEach(h => {
+        const lvl = (h.subtype ? h.subtype.toLowerCase() : "h1");
+        const lvlUpper = lvl.toUpperCase();
+        let indent = (lvl === "h1") ? 0 : (lvl === "h2" ? 12 : (lvl === "h3" ? 22 : (lvl === "h4" ? 30 : 38)));
+        const cleanContent = (h.content || "").replace(/<[^>]+>/g, "").trim();
+
+        html += `
+          <div class="omm-tree-item" style="margin-left: ${indent}px;" onclick="focusMindmapHeadingNode('${h.id}')" ondblclick="openBlockById('${h.id}')" title="单击高亮导图节点 / 双击在思源大窗中原位定位">
+            <span class="omm-lvl-badge omm-lvl-${lvl}">${lvlUpper}</span>
+            <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${escapeHtml(cleanContent)}</span>
+            <button class="launchpad-mini-btn" onclick="event.stopPropagation(); openBlockById('${h.id}')" title="在思源中定位" style="padding: 1px 4px; font-size: 10px;">🎯</button>
+          </div>
+        `;
+      });
+
+      treeList.innerHTML = html;
+    }
+
+    function renderOutlineMindmapCanvas() {
+      const canvasWrap = document.getElementById("omm-canvas-wrap");
+      if (!canvasWrap) return;
+
+      if (currentOutlineHeadings.length === 0) {
+        canvasWrap.innerHTML = `
+          <div style="text-align:center;padding:48px;color:var(--text-muted);font-size:12px;">
+            <div style="font-size:32px;margin-bottom:8px;">🗺️</div>
+            <div>当前文档暂无 H1~H6 层级小节标题</div>
+          </div>
+        `;
+        return;
+      }
+
+      currentOutlineSvg = generateMindmapSvg(currentOutlineDocTitle, currentOutlineHeadings);
+      canvasWrap.innerHTML = currentOutlineSvg;
+    }
+
+    function focusMindmapHeadingNode(nodeId) {
+      if (!nodeId) return;
+      const canvasWrap = document.getElementById("omm-canvas-wrap");
+      if (!canvasWrap) return;
+      const nodeEl = canvasWrap.querySelector(`[onclick*="${nodeId}"]`);
+      if (nodeEl) {
+        const rect = nodeEl.querySelector("rect");
+        if (rect) {
+          rect.setAttribute("stroke", "var(--cyber-sky)");
+          rect.setAttribute("stroke-width", "3");
+          rect.setAttribute("filter", "drop-shadow(0 0 8px rgba(56,189,248,0.8))");
+          setTimeout(() => {
+            rect.setAttribute("stroke-width", "1.2");
+            rect.removeAttribute("filter");
+          }, 1600);
+        }
+        nodeEl.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+        showToast("🗺️ 已在导图中聚焦该小节！");
+      }
+    }
+
+    function openCurrentOutlineDocInSiYuan() {
+      if (!currentOutlineDocId) {
+        showToast("暂无可打开的目标文档！");
+        return;
+      }
+      openBlockById(currentOutlineDocId);
+    }
+
+    function copyOutlineMindmapSvg() {
+      if (!currentOutlineSvg) {
+        showToast("暂无可复制的思维导图 SVG！");
+        return;
+      }
+      copyToClipboard(currentOutlineSvg, "✓ 交互思维导图矢量 SVG 源码已复制！");
+    }
+
+    function copyOutlineMarkdownTree() {
+      if (currentOutlineHeadings.length === 0) {
+        showToast("暂无可导出的小节大纲！");
+        return;
+      }
+      let md = `# 《${currentOutlineDocTitle}》大纲树\n\n`;
+      currentOutlineHeadings.forEach(h => {
+        const lvlNum = parseInt((h.subtype || "h1").replace(/\D/g, ""), 10) || 1;
+        const indent = "  ".repeat(Math.max(0, lvlNum - 1));
+        const cleanContent = (h.content || "").replace(/<[^>]+>/g, "").trim();
+        md += `${indent}- ${cleanContent} ((${h.id}))\n`;
+      });
+      copyToClipboard(md, "✓ 层级 Markdown 大纲树文本已复制！");
+    }
+
+    function exportOutlineMindmapCard() {
+      if (!currentOutlineSvg) {
+        showToast("暂无可导出的思维导图！");
+        return;
+      }
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'exportCardSvg',
+          text: `《${currentOutlineDocTitle}》全景结构大纲与思维导图 · 共 ${currentOutlineHeadings.length} 处小节`,
+          title: `思源外骨骼 · 思维导图`,
+          author: "SiYuan Mindmap Studio"
+        }));
+      }
+    }
+
+    function handleOutlineDocSearchKey(e) {
+      if (e.key === "Enter") {
+        const val = (e.target.value || "").trim();
+        if (!val) return;
+        showToast(`🔍 正在定位匹配文档: ${val}`);
+        currentOutlineDocId = "";
+        currentOutlineDocTitle = val;
+        refreshOutlineMindmapData();
       }
     }
 

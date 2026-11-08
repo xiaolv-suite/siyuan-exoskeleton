@@ -308,12 +308,19 @@ namespace XiaoLv.Desktop.Core
 								                    return;
 								                }
 
-								                // V. 外部知识库笔记读取: /api/vault/read
-								                if (rawPath.Equals("/api/vault/read", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/vault/read", StringComparison.OrdinalIgnoreCase))
-								                {
-								                    HandleVaultReadRequest(req, resp);
-								                    return;
-								                }
+									                // V. 外部知识库笔记读取: /api/vault/read
+									                if (rawPath.Equals("/api/vault/read", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/vault/read", StringComparison.OrdinalIgnoreCase))
+									                {
+									                    HandleVaultReadRequest(req, resp);
+									                    return;
+									                }
+
+									                // W. 文档小节大纲与导图树: /api/outline/tree
+									                if (rawPath.Equals("/api/outline/tree", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/outline/tree", StringComparison.OrdinalIgnoreCase))
+									                {
+									                    HandleOutlineTreeRequest(req, resp);
+									                    return;
+									                }
 
 			                // 未匹配到路由
 			                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
@@ -1096,11 +1103,75 @@ namespace XiaoLv.Desktop.Core
 				                return;
 				            }
 
-				            string content = VaultMirrorInspector.ReadNoteContent(path);
-				            WriteJsonResponse(resp, 200, new { code = 0, path = path, content = content });
-				        }
+					            string content = VaultMirrorInspector.ReadNoteContent(path);
+					            WriteJsonResponse(resp, 200, new { code = 0, path = path, content = content });
+					        }
 
-				        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
+					        private static void HandleOutlineTreeRequest(HttpListenerRequest req, HttpListenerResponse resp)
+					        {
+					            string docId = GetQueryStringUtf8(req, "docId");
+
+					            ThreadPool.QueueUserWorkItem(async s =>
+					            {
+					                try
+					                {
+					                    string targetId = docId;
+					                    string targetTitle = "";
+
+					                    if (string.IsNullOrEmpty(targetId))
+					                    {
+					                        string sql = "SELECT id, content FROM blocks WHERE type='d' ORDER BY updated DESC LIMIT 1";
+					                        var rows = await SiYuanClient.SqlAsync(sql);
+					                        if (rows != null && rows.Count > 0)
+					                        {
+					                            targetId = JsonHelper.GetString(rows[0], "id");
+					                            targetTitle = JsonHelper.GetString(rows[0], "content");
+					                        }
+					                    }
+					                    else
+					                    {
+					                        string sql = "SELECT id, content FROM blocks WHERE id='" + targetId.Replace("'", "''") + "' LIMIT 1";
+					                        var rows = await SiYuanClient.SqlAsync(sql);
+					                        if (rows != null && rows.Count > 0)
+					                        {
+					                            targetTitle = JsonHelper.GetString(rows[0], "content");
+					                        }
+					                    }
+
+					                    if (string.IsNullOrEmpty(targetId))
+					                    {
+					                        WriteJsonResponse(resp, 200, new { code = 1, msg = "未找到目标文档" });
+					                        return;
+					                    }
+
+					                    string safeId = targetId.Replace("'", "''");
+					                    string hSql = "SELECT b.id, b.content, b.subtype, b.sort FROM blocks b " +
+					                                  "WHERE b.root_id = '" + safeId + "' AND b.type = 'h' " +
+					                                  "ORDER BY b.sort ASC LIMIT 100";
+					                    var hRows = await SiYuanClient.SqlAsync(hSql);
+					                    var headings = hRows ?? new List<Dictionary<string, object>>();
+
+					                    WriteJsonResponse(resp, 200, new
+					                    {
+					                        code = 0,
+					                        msg = "ok",
+					                        data = new
+					                        {
+					                            docId = targetId,
+					                            docTitle = targetTitle,
+					                            count = headings.Count,
+					                            headings = headings
+					                        }
+					                    });
+					                }
+					                catch (Exception ex)
+					                {
+					                    WriteJsonResponse(resp, 500, new { code = 500, msg = "提取文档大纲异常: " + ex.Message });
+					                }
+					            });
+					        }
+
+					        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
         {
             try
             {

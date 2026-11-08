@@ -1167,18 +1167,72 @@ namespace XiaoLv.Desktop.UI
 									                    ThreadPool.QueueUserWorkItem(s =>
 									                    {
 									                        string content = VaultMirrorInspector.ReadNoteContent(filePath);
-									                        Dispatcher.Invoke(() =>
-									                        {
-									                            if (_webView != null && _webView.CoreWebView2 != null)
-									                            {
-									                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onVaultNoteContentLoaded) window.onVaultNoteContentLoaded(" + JsonHelper.ToJson(new { code = 0, filePath = filePath, content = content }) + ");");
-									                            }
-									                        });
-									                    });
-									                    return;
-									                }
+										                        Dispatcher.Invoke(() =>
+										                        {
+										                            if (_webView != null && _webView.CoreWebView2 != null)
+										                            {
+										                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onVaultNoteContentLoaded) window.onVaultNoteContentLoaded(" + JsonHelper.ToJson(new { code = 0, filePath = filePath, content = content }) + ");");
+										                            }
+										                        });
+										                    });
+										                    return;
+										                }
 
-									                // 3.67 全库笔记时序热力图 (heat: / habit:)
+										                // 3.66C 全景大纲与导图独立大视窗 (Outline & Mindmap Studio)
+										                if (op.Equals("getDocOutlineAndMindmap", StringComparison.OrdinalIgnoreCase))
+										                {
+										                    string dId = JsonHelper.GetString(msg, "docId");
+										                    ThreadPool.QueueUserWorkItem(async s =>
+										                    {
+										                        try
+										                        {
+										                            string targetId = dId;
+										                            string targetTitle = "";
+
+										                            if (string.IsNullOrEmpty(targetId))
+										                            {
+										                                string sql = "SELECT id, content FROM blocks WHERE type='d' ORDER BY updated DESC LIMIT 1";
+										                                var rows = await SiYuanClient.SqlAsync(sql);
+										                                if (rows != null && rows.Count > 0)
+										                                {
+										                                    targetId = JsonHelper.GetString(rows[0], "id");
+										                                    targetTitle = JsonHelper.GetString(rows[0], "content");
+										                                }
+										                            }
+										                            else
+										                            {
+										                                string sql = "SELECT id, content FROM blocks WHERE id='" + targetId.Replace("'", "''") + "' LIMIT 1";
+										                                var rows = await SiYuanClient.SqlAsync(sql);
+										                                if (rows != null && rows.Count > 0)
+										                                {
+										                                    targetTitle = JsonHelper.GetString(rows[0], "content");
+										                                }
+										                            }
+
+										                            if (!string.IsNullOrEmpty(targetId))
+										                            {
+										                                string safeId = targetId.Replace("'", "''");
+										                                string hSql = "SELECT b.id, b.content, b.subtype, b.sort FROM blocks b " +
+										                                              "WHERE b.root_id = '" + safeId + "' AND b.type = 'h' " +
+										                                              "ORDER BY b.sort ASC LIMIT 100";
+										                                var hRows = await SiYuanClient.SqlAsync(hSql);
+										                                var headings = hRows ?? new List<Dictionary<string, object>>();
+
+										                                Dispatcher.Invoke(() =>
+										                                {
+										                                    if (_webView != null && _webView.CoreWebView2 != null)
+										                                    {
+										                                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onDocOutlineLoaded) window.onDocOutlineLoaded(" + JsonHelper.ToJson(new { code = 0, docId = targetId, docTitle = targetTitle, headings = headings }) + ");");
+										                                    }
+										                                });
+										                            }
+										                        }
+										                        catch { }
+										                    });
+										                    return;
+										                }
+
+										                // 3.67 全库笔记时序热力图 (heat: / habit:)
 								                if (op.Equals("getHabitHeatmap", StringComparison.OrdinalIgnoreCase))
 								                {
 								                    ThreadPool.QueueUserWorkItem(async s =>

@@ -4056,6 +4056,15 @@ async function main() {
                                 panelContent.includes('class="scope-switch-pill"');
   logStep("Step 7.231: 四层交互清晰化 (检索域保留词切换与取消、4分类指令抽屉、3场景工作台矩阵、四步上手与卡片形态徽标) 断言", hasInteractionClarity, `四层交互清晰化闭环: ${hasInteractionClarity}`);
 
+  // Step 7.232: Test 3-Pillar Home Hub, Dual Search/Capture Buttons, Plain-Language How-To Guides & Zero-Blank Prefix Views
+  const hasThreePillarsAndZeroBlank = panelContent.includes('hubEl.id = "home-three-pillars-hub"') &&
+                                      panelContent.includes('function quickSubmitInputToDaily') &&
+                                      panelContent.includes('function promptQuickNoteInlineModal') &&
+                                      panelContent.includes('【怎么用】') &&
+                                      panelContent.includes('点击即用 ▸') &&
+                                      bentoCsContent.includes("WHERE type IN ('p', 'h', 'c', 't', 'i') AND content != ''");
+  logStep("Step 7.232: 首页三大核心直达舱、搜索框「搜笔记/记入日记」双按钮、31卡直白指引与空前缀默认加载断言", hasThreePillarsAndZeroBlank, `首页三大直达舱与零空白交互: ${hasThreePillarsAndZeroBlank}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

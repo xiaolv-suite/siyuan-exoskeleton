@@ -3381,6 +3381,96 @@
       color: var(--text-secondary);
       line-height: 1.4;
     }
+    .search-action-btn {
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .search-scope-btn {
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.42);
+      color: var(--cyber-sky);
+    }
+    .search-scope-btn:hover {
+      background: var(--cyber-sky);
+      color: #0b1120;
+    }
+    .search-capture-btn {
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      color: var(--emerald-mint);
+    }
+    .search-capture-btn:hover {
+      background: var(--emerald-mint);
+      color: #0b1120;
+    }
+    .home-three-pillars-hub {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .pillar-box {
+      background: var(--bg-inset);
+      border: 1px solid var(--border-hairline);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .pillar-box-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .pillar-box-sub {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .pillar-actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .pillar-action-btn {
+      padding: 6px 8px;
+      border-radius: 7px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-primary);
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      text-align: left;
+      font-family: inherit;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pillar-action-btn:hover {
+      border-color: var(--cyber-sky);
+      background: var(--bg-card-hover);
+      transform: translateY(-1px);
+    }
 
     /* Dark-Obsidian Inline Form & Confirm Modal */
     .inline-form-overlay {
@@ -3528,15 +3618,15 @@
         type="text"
         id="search-input"
         class="search-input"
-        placeholder="直接输入关键词搜全库，或点下方胶囊切换检索域 (再次点击已亮起胶囊即可退出该模式)..."
+        placeholder="在此打字：点右侧「🔍 搜笔记」查全库，或点「📥 记入日记」直接写进今日日记..."
         autocomplete="off"
         spellcheck="false"
         autofocus
       />
       <div class="search-shortcuts">
-        <button type="button" id="search-clear-btn" class="search-clear-btn" onclick="clearSearchInput()" style="display: none;" title="清空检索内容 (Esc)">✕</button>
-        <span class="key-badge">↵ 执行</span>
-        <span class="key-badge">Shift+↵ 穿透回贴</span>
+        <button type="button" id="search-clear-btn" class="search-clear-btn" onclick="clearSearchInput()" style="display: none;" title="清空输入内容 (Esc)">✕</button>
+        <button type="button" class="search-action-btn search-scope-btn" onclick="insertPrefix('b:')" title="在思源全库正文块与文档中搜索，支持一键贴双链 (b:)">🔍 搜笔记</button>
+        <button type="button" class="search-action-btn search-capture-btn" onclick="quickSubmitInputToDaily()" title="将输入框文字直接记入今日日记；若为空则弹出速记框">📥 记入日记</button>
         <span class="key-badge">Esc 退出</span>
       </div>
     </div>
@@ -5017,45 +5107,45 @@
     // ==========================================================
     const PANEL_ITEMS = [
       // 📝 极速捕获与速记 (6)
-      { id: "sypen", actionId: "af91cd6a-ce44-4bbd-942b-e04a0783d8d5", group: "capture", title: "随身划笔", desc: "选中文本呼出悬浮胶囊，数字键 1~6 盲打分发（记日记/制闪卡/派任务/查双链/净复制/加批注），支持鼠标划选自动浮现与拖拽", hotkey: "Alt+Shift+W", iconType: "edit", iconColor: "var(--emerald-mint)", badge: "快捷划选", badgeCls: "badge-native", pinyin: "sshcb sypen hc b dt", synonyms: ["划词笔", "随身划词", "数字键盲打", "划选菜单", "pen"] },
-      { id: "sys", actionId: "d7f12ada-92bc-4713-9f76-d08e2ff55fce", group: "capture", title: "多态速记", desc: "自动识别 @人名、#项目、!待办、?闪卡、>>小节 意图前缀，静默分流归集入库，支持 Lifelog 账目/专注/打卡", hotkey: "Alt+Shift+S", iconType: "bolt", iconColor: "var(--emerald-mint)", badge: "意图分流", badgeCls: "badge-native", pinyin: "jsqzznbh sys qz", synonyms: ["前缀", "速记", "人脉", "双链", "待办", "闪卡", "项目", "分流", "capture"] },
-      { id: "syg", actionId: "syg", group: "capture", title: "网页剪藏与批注", desc: "免装扩展，0ms 抓取前台网页文献卡/独立研读专页；支持 g: 思考批注与长文审阅引注，防盗链图床自愈与模板展开", hotkey: "Alt+Shift+G", iconType: "share", iconColor: "var(--cyber-sky)", badge: "双态剪藏", badgeCls: "badge-native", pinyin: "yjwyjc syg g clip pz memo", synonyms: ["剪藏", "网页", "拾遗", "微信", "知乎", "链滴", "小红书", "批注", "审阅", "g", "clip", "web", "memo"] },
-      { id: "syimg", actionId: "eabd1670-e6ba-4eb8-91a7-d3cd6abd12b0", group: "capture", title: "截屏与离线 OCR", desc: "自动调动本地已装 PixPin / Snipaste 或内置硬件加速引擎，文字/表格秒入剪贴板与思源", hotkey: "Alt+Shift+C", iconType: "camera", iconColor: "var(--emerald-mint)", badge: "文字识别", badgeCls: "badge-native", pinyin: "jpsx yxocr syimg jp ocr", synonyms: ["截图", "OCR", "pixpin", "snipaste", "图片", "截屏"] },
-      { id: "syoff", actionId: "8d3842ea-55d0-44ca-bb64-e80e31a9aa15", group: "capture", title: "表格数据清洗", desc: "自动识别 Excel、WPS 选区或复制数据，转为标准 Markdown 结构化表格写入思源", hotkey: "syoff", iconType: "table", iconColor: "var(--emerald-mint)", badge: "表格转换", badgeCls: "badge-native", pinyin: "office wps jghcd syoff bg", synonyms: ["office", "wps", "word", "excel", "表格", "table"] },
-      { id: "syvoice", actionId: "syvoice", group: "capture", title: "语音速记微舱", desc: "融合微信输入法/讯飞/Win+H桌面语音生态，口语语气助词自愈去噪，1秒语音直化今日日记", hotkey: "voice:", iconType: "microphone", iconColor: "var(--cyber-sky)", badge: "口语去噪", badgeCls: "badge-native", pinyin: "yysjwc syvoice yy sj voice speech", synonyms: ["语音", "录音", "听写", "微信输入法", "讯飞", "winh", "speech", "voice"] },
+      { id: "sypen", actionId: "af91cd6a-ce44-4bbd-942b-e04a0783d8d5", group: "capture", title: "随身划笔", desc: "【怎么用】在任意软件选中文字按 Alt+Shift+W（或直接点此卡片），弹出 1~8 数字键微胶囊：按 1 入日记、2 制闪卡、3 派待办、6 贴双链", hotkey: "Alt+Shift+W", iconType: "edit", iconColor: "var(--emerald-mint)", badge: "划词盲打", badgeCls: "badge-native", pinyin: "sshcb sypen hc b dt", synonyms: ["划词笔", "随身划词", "数字键盲打", "划选菜单", "pen"] },
+      { id: "sys", actionId: "d7f12ada-92bc-4713-9f76-d08e2ff55fce", group: "capture", title: "多态速记", desc: "【怎么用】点此卡片弹出速记框（或在任何软件按 Alt+Shift+S），输入文字回车直接写进思源今日日记；前加 ! 变待办、? 变闪卡、¥ 记账", hotkey: "Alt+Shift+S", iconType: "bolt", iconColor: "var(--emerald-mint)", badge: "写进日记", badgeCls: "badge-native", pinyin: "jsqzznbh sys qz", synonyms: ["前缀", "速记", "人脉", "双链", "待办", "闪卡", "项目", "分流", "capture"] },
+      { id: "syg", actionId: "syg", group: "capture", title: "网页剪藏与批注", desc: "【怎么用】浏览器打开网页时按 Alt+Shift+G（或点此卡片），免装浏览器插件直接抓取网页标题、正文与链接存入思源日记或读库", hotkey: "Alt+Shift+G", iconType: "share", iconColor: "var(--cyber-sky)", badge: "网页入库", badgeCls: "badge-native", pinyin: "yjwyjc syg g clip pz memo", synonyms: ["剪藏", "网页", "拾遗", "微信", "知乎", "链滴", "小红书", "批注", "审阅", "g", "clip", "web", "memo"] },
+      { id: "syimg", actionId: "eabd1670-e6ba-4eb8-91a7-d3cd6abd12b0", group: "capture", title: "截屏与离线 OCR", desc: "【怎么用】点击卡片或按 Alt+Shift+C 框选屏幕区域，自动识别图中文字与表格，复制到剪贴板并可一键记入思源日记", hotkey: "Alt+Shift+C", iconType: "camera", iconColor: "var(--emerald-mint)", badge: "截图识字", badgeCls: "badge-native", pinyin: "jpsx yxocr syimg jp ocr", synonyms: ["截图", "OCR", "pixpin", "snipaste", "图片", "截屏"] },
+      { id: "syoff", actionId: "8d3842ea-55d0-44ca-bb64-e80e31a9aa15", group: "capture", title: "表格数据清洗", desc: "【怎么用】点击打开全库表格透视矩阵工作台；支持直接双击修改思源表格单元格、原位保存回思源或一键导出为 Excel 文件", hotkey: "点击打开", iconType: "table", iconColor: "var(--emerald-mint)", badge: "表格矩阵", badgeCls: "badge-native", pinyin: "office wps jghcd syoff bg", synonyms: ["office", "wps", "word", "excel", "表格", "table"] },
+      { id: "syvoice", actionId: "syvoice", group: "capture", title: "语音速记微舱", desc: "【怎么用】点击进入语音听写视图，调用微信输入法语音/Win+H 说话转文字，自动去除“呃、那个”等口头语后存入今日日记", hotkey: "voice:", iconType: "microphone", iconColor: "var(--cyber-sky)", badge: "语音转字", badgeCls: "badge-native", pinyin: "yysjwc syvoice yy sj voice speech", synonyms: ["语音", "录音", "听写", "微信输入法", "讯飞", "winh", "speech", "voice"] },
 
       // 🔍 搜索、导航与资产 (10)
-      { id: "syf", actionId: "125c7d58-89e6-4d48-8983-6fbbd5c72d0f", group: "search", title: "全库快查与双链", desc: "全库文档与块级双链秒搜：支持 d:文档、b:块内容，回车直通思源高亮，Shift+Enter 穿透回贴双链 ((id))", hotkey: "Alt+Shift+F", iconType: "search", iconColor: "var(--cyber-sky)", badge: "双链回贴", badgeCls: "badge-bridge", pinyin: "ss syf qjkc ss ch sql", synonyms: ["搜索", "查找", "全局快查", "sql", "双链", "定位", "search"] },
-      { id: "syfav", actionId: "syfav", group: "search", title: "全景网站收藏", desc: "跨浏览器统一书签，自动剥离 utm/spm 追踪参数，按频次加权推荐秒开，终态沉淀思源原生文档《/网站导航》", hotkey: "fav:", iconType: "globe", iconColor: "var(--cyber-sky)", badge: "书签破岛", badgeCls: "badge-native", pinyin: "qjwzsc syfav fav wz sc", synonyms: ["网站收藏", "收藏夹", "书签", "导航", "bookmark", "url", "fav"] },
-      { id: "syfold", actionId: "syfold", group: "search", title: "文件夹导航与穿透", desc: "系统级本地目录管理，前台若为 Windows 文件选择对话框(#32770)原位秒跳穿透，自动检测物理路径有效性与思源工程锚定", hotkey: "fold:", iconType: "folder", iconColor: "var(--emerald-mint)", badge: "对话框秒跳", badgeCls: "badge-native", pinyin: "wjjdhct syfold fold wjj ml dir", synonyms: ["文件夹", "目录", "对话框秒跳", "listary", "folder", "dir", "fold"] },
-      { id: "sytask", actionId: "sytask", group: "search", title: "全景待办视界", desc: "穿透检索全库未完成任务清单，启发式解析 P1/P2/今日优先级，一键生成交接 Checklist 或启航番茄专注", hotkey: "t:", iconType: "check", iconColor: "var(--tech-amber)", badge: "待办大盘", badgeCls: "badge-native", pinyin: "qjdbsj sytask task db rw", synonyms: ["任务", "待办", "checklist", "清单", "todo", "task"] },
-      { id: "sypom", actionId: "sypom", group: "search", title: "心流番茄与行动闭环", desc: "桌面轻量敏捷心流计时器，与待办任务深度绑定，到期自动打勾完成 (- [x]) 并将带双链的时序成果归流今日日记", hotkey: "pom:", iconType: "clock", iconColor: "var(--rose-agent)", badge: "行动闭环", badgeCls: "badge-native", pinyin: "xlfq sypom pom tomato fq", synonyms: ["番茄钟", "专注", "倒计时", "心流", "timer", "pomodoro", "focus"] },
-      { id: "syatt", actionId: "syatt", group: "search", title: "附件与文献秒查", desc: "穿透检索全库 PDF 文献、表格、图片与压缩包，双栏大抽屉预览，支持本地秒开与 Everything / Listary 联动定位", hotkey: "att:", iconType: "folder", iconColor: "var(--tech-amber)", badge: "资产穿透", badgeCls: "badge-native", pinyin: "qkfjwx att asset fj", synonyms: ["附件", "文献", "pdf", "资产", "文件", "everything", "listary", "att", "asset"] },
-      { id: "sytag", actionId: "sytag", group: "search", title: "全库标签穿透坞", desc: "输入 tag: 或 #标签 穿透聚合全库匹配标签的全部笔记块，专属抽屉直览聚合流并支持一键导出大纲", hotkey: "tag:", iconType: "tag", iconColor: "var(--indigo-light)", badge: "标签聚合", badgeCls: "badge-native", pinyin: "qkbqcytw sytag bq tag", synonyms: ["标签", "tag", "标签聚合", "标签检索", "标签治理"] },
-      { id: "syd", actionId: "syd", group: "search", title: "今日日记", desc: "通过原生 SQL 定位当天日记，若尚未创建则自动按模板创建并激活前置", hotkey: "Enter", iconType: "calendar", iconColor: "var(--cyber-sky)", badge: "秒级直达", badgeCls: "badge-native", pinyin: "dkjrrj syd mr jrrj rj", synonyms: ["日记", "今天", "今日", "daily", "journal", "today", "打开日记"] },
-      { id: "syo", actionId: "c55baaef-de45-4898-9786-08c560036d7e", group: "search", title: "全景大纲与导图", desc: "悬浮弹出文档 H1~H6 大纲目录树，右侧抽屉无缝呈现轻量级 SVG 交互思维导图，拼音即搜即跳", hotkey: "Alt+Shift+O", iconType: "stream", iconColor: "var(--cyber-sky)", badge: "大纲与导图", badgeCls: "badge-bridge", pinyin: "cwdgxfdh syo dg ml dt swdt", synonyms: ["大纲", "目录", "悬浮大纲", "思维导图", "导图", "mermaid", "outline", "tree", "mindmap"] },
-      { id: "syws", actionId: "syws", group: "search", title: "工作现场快照", desc: "联动微软 Windows 虚拟桌面体系：全景快照思源多文档与本地文件(SumatraPDF/Office/VS Code)，0ms 无感切入多项目现场", hotkey: "ws:", iconType: "window-restore", iconColor: "var(--indigo-light)", badge: "虚拟桌面", badgeCls: "badge-native", pinyin: "gzxckz syws xckz session workspace", synonyms: ["工作现场", "现场", "会话", "工作台", "虚拟桌面", "workspace", "session", "ws"] },
+      { id: "syf", actionId: "125c7d58-89e6-4d48-8983-6fbbd5c72d0f", group: "search", title: "全库快查与双链", desc: "【怎么用】点击立即浏览最近 30 条笔记块并支持打字秒搜；回车在思源中打开，按 Shift+Enter 直接把双链 ((id)) 粘贴到当前软件光标处", hotkey: "b: 搜块", iconType: "search", iconColor: "var(--cyber-sky)", badge: "搜块贴双链", badgeCls: "badge-bridge", pinyin: "ss syf qjkc ss ch sql", synonyms: ["搜索", "查找", "全局快查", "sql", "双链", "定位", "search"] },
+      { id: "syfav", actionId: "syfav", group: "search", title: "全景网站收藏", desc: "【怎么用】点击查看已收藏的常用网站列表；支持一键抓取当前浏览器网址入库，并自动同步生成思源《/网站导航》文档", hotkey: "fav:", iconType: "globe", iconColor: "var(--cyber-sky)", badge: "网址收藏", badgeCls: "badge-native", pinyin: "qjwzsc syfav fav wz sc", synonyms: ["网站收藏", "收藏夹", "书签", "导航", "bookmark", "url", "fav"] },
+      { id: "syfold", actionId: "syfold", group: "search", title: "文件夹导航与穿透", desc: "【怎么用】点击管理常用本地工程文件夹；当你在任何软件弹出「打开/保存文件」窗口时，点击目录即可让对话框直接跳转到该文件夹", hotkey: "fold:", iconType: "folder", iconColor: "var(--emerald-mint)", badge: "目录秒跳", badgeCls: "badge-native", pinyin: "wjjdhct syfold fold wjj ml dir", synonyms: ["文件夹", "目录", "对话框秒跳", "listary", "folder", "dir", "fold"] },
+      { id: "sytask", actionId: "sytask", group: "search", title: "全景待办视界", desc: "【怎么用】点击打开四象限待办大看板；自动汇总全库所有未勾选的 - [ ] 任务，支持直接打勾完成、新建任务或开启番茄钟", hotkey: "点击打开", iconType: "check", iconColor: "var(--tech-amber)", badge: "四象限看板", badgeCls: "badge-native", pinyin: "qjdbsj sytask task db rw", synonyms: ["任务", "待办", "checklist", "清单", "todo", "task"] },
+      { id: "sypom", actionId: "sypom", group: "search", title: "心流番茄与行动闭环", desc: "【怎么用】点击立即开启 25 分钟桌面专注倒计时（也可输入 pom:45 任务名 自定义时长），倒计时结束自动将专注记录写入今日日记", hotkey: "pom:25", iconType: "clock", iconColor: "var(--rose-agent)", badge: "专注计时", badgeCls: "badge-native", pinyin: "xlfq sypom pom tomato fq", synonyms: ["番茄钟", "专注", "倒计时", "心流", "timer", "pomodoro", "focus"] },
+      { id: "syatt", actionId: "syatt", group: "search", title: "附件与文献秒查", desc: "【怎么用】点击立即列出思源库内的 PDF、Word、Excel、图片附件；按空格用本地软件秒开，按 Shift+Enter 粘贴附件引用链接", hotkey: "att:", iconType: "folder", iconColor: "var(--tech-amber)", badge: "搜PDF/附件", badgeCls: "badge-native", pinyin: "qkfjwx att asset fj", synonyms: ["附件", "文献", "pdf", "资产", "文件", "everything", "listary", "att", "asset"] },
+      { id: "sytag", actionId: "sytag", group: "search", title: "全库标签穿透坞", desc: "【怎么用】点击立即列出思源全库带有 #标签# 的笔记块；输入标签名即可聚合查看该标签下的所有笔记并一键导出汇总大纲", hotkey: "tag:", iconType: "tag", iconColor: "var(--indigo-light)", badge: "按标签查", badgeCls: "badge-native", pinyin: "qkbqcytw sytag bq tag", synonyms: ["标签", "tag", "标签聚合", "标签检索", "标签治理"] },
+      { id: "syd", actionId: "syd", group: "search", title: "今日日记", desc: "【怎么用】点击立即滑出「今日记事时间轴」查看今天记录的全部灵感与待办；也可在抽屉右上角一键在思源主窗口打开今日日记", hotkey: "点击打开", iconType: "calendar", iconColor: "var(--cyber-sky)", badge: "今日时间轴", badgeCls: "badge-native", pinyin: "dkjrrj syd mr jrrj rj", synonyms: ["日记", "今天", "今日", "daily", "journal", "today", "打开日记"] },
+      { id: "syo", actionId: "c55baaef-de45-4898-9786-08c560036d7e", group: "search", title: "全景大纲与导图", desc: "【怎么用】点击打开文档 H1~H6 大纲目录树与思维导图大视窗；支持直接在树上改标题文字、升降 H1~H6 层级并实时写回思源", hotkey: "Alt+Shift+O", iconType: "stream", iconColor: "var(--cyber-sky)", badge: "大纲与脑图", badgeCls: "badge-bridge", pinyin: "cwdgxfdh syo dg ml dt swdt", synonyms: ["大纲", "目录", "悬浮大纲", "思维导图", "导图", "mermaid", "outline", "tree", "mindmap"] },
+      { id: "syws", actionId: "syws", group: "search", title: "工作现场快照", desc: "【怎么用】点击查看或保存当前正在打开的思源文档、本地 PDF/Office 与网页组合，下次一键恢复整套多项目工作窗口", hotkey: "ws:", iconType: "window-restore", iconColor: "var(--indigo-light)", badge: "保存/恢复现场", badgeCls: "badge-native", pinyin: "gzxckz syws xckz session workspace", synonyms: ["工作现场", "现场", "会话", "工作台", "虚拟桌面", "workspace", "session", "ws"] },
 
       // 🧩 生态插件直达 (8 · 支持 Alt+1~8 跨软件直开)
-      { id: "syda", actionId: "2d029719-8312-4c68-ae64-39ae1d395c67", pluginLaunch: "siyuan-checkin|openCheckin||false|习惯打卡", pluginHotkey: "Alt+1", group: "learning", title: "习惯打卡", desc: "点击执行免切窗打卡记录；点击「🪟 面板」或 Alt+1 唤醒思源打开打卡大窗", hotkey: "Alt+Shift+P", iconImg: "icons/siyuan-checkin.png", iconType: "check", iconColor: "var(--tech-amber)", badge: "打卡大窗", badgeCls: "badge-plugin", pinyin: "xgdkkjmb syda dk liji", synonyms: ["打卡", "习惯", "签到", "连击", "checkin"] },
-      { id: "syhome", actionId: "31f3fd02-7860-42d8-9b07-282ef84f9f3e", pluginLaunch: "siyuan-home|openButler||false|事务管家", pluginHotkey: "Alt+2", group: "learning", title: "事务管家", desc: "点击执行免切窗备忘录入；点击「🪟 面板」或 Alt+2 唤醒思源打开管家总控", hotkey: "Alt+Shift+H", iconImg: "icons/siyuan-home.png", iconType: "house", iconColor: "var(--cyber-sky)", badge: "备忘到期", badgeCls: "badge-plugin", pinyin: "gjswkjt syhome gj bw", synonyms: ["管家", "备忘", "到期", "家庭事务", "home"] },
-      { id: "syrm", actionId: "a3974242-6f81-4a02-957d-10b1ffc567b4", pluginLaunch: "siyuan-contacts|openWorkbench||false|人脉工作台", pluginHotkey: "Alt+3", group: "learning", title: "人脉工作台", desc: "点击执行免切窗互动记录；点击「🪟 面板」或 Alt+3 唤醒思源打开人脉关系网", hotkey: "Alt+Shift+N", iconImg: "icons/siyuan-contacts.png", iconType: "users", iconColor: "var(--cyber-purple)", badge: "互动网络", badgeCls: "badge-plugin", pinyin: "rmsczhyda syrm rm ss da", synonyms: ["人脉", "联系人", "档案", "互动", "contacts"] },
-      { id: "sysg_plugin", actionId: "ce375f25-d937-4348-b924-2bd1e221fe65", pluginLaunch: "siyuan-glean|cmd.openPanel||false|稍后读库", pluginHotkey: "Alt+4", group: "learning", title: "稍后读库", desc: "点击执行稍后读分拣流；点击「🪟 面板」或 Alt+4 唤醒思源打开读库侧栏", hotkey: "Alt+Shift+G", iconImg: "icons/siyuan-glean.png", iconType: "inbox", iconColor: "var(--emerald-mint)", badge: "阅读收件箱", badgeCls: "badge-plugin", pinyin: "xlsy sysg glean", synonyms: ["拾遗", "读库", "剪藏", "glean"] },
-      { id: "syv", actionId: "43568d4c-f644-4e05-ad60-a3c8b45a136a", pluginLaunch: "xiaolv-common|open||false|常用语与Prompt", pluginHotkey: "Alt+5", group: "learning", title: "常用语与 Prompt", desc: "点击执行原地智能 Prompt 喷射；点击「🪟 面板」或 Alt+5 唤醒思源打开常用条目库", hotkey: "Alt+Shift+V", iconImg: "icons/xiaolv-common.png", iconType: "paper-plane", iconColor: "var(--cyber-sky)", badge: "智能喷射", badgeCls: "badge-bridge", pinyin: "cyypromptznps syv cy mb", synonyms: ["常用语", "prompt", "智能喷射", "模板", "宏", "common"] },
-      { id: "syfsrs", actionId: "syfsrs", pluginLaunch: "siyuan-lv-cards|openDashboard||false|闪卡中心", pluginHotkey: "Alt+6", group: "learning", title: "闪卡复习微舱", desc: "回车 0ms 居中弹出微卡片秒刷；Shift+Enter 或点击「🪟 面板」唤醒思源打开复习中心大窗", hotkey: "Alt+Shift+R", iconImg: "icons/siyuan-lv-cards.png", iconType: "brain", iconColor: "var(--cyber-purple)", badge: "3秒微刷", badgeCls: "badge-native", pinyin: "fsrs skwc syfsrs sk", synonyms: ["闪卡", "复习", "fsrs", "刷卡", "记忆"] },
-      { id: "sybk", actionId: "b9fe5102-420e-40b5-b4e0-b7fd9f895cb9", pluginLaunch: "siyuan-exam|command.openPractice||false|备考与练习台", pluginHotkey: "Alt+7", group: "learning", title: "备考与练习台", desc: "点击执行备考数据概览；点击「🪟 面板」或 Alt+7 唤醒思源打开学习与考试练习台", hotkey: "Alt+Shift+E", iconImg: "icons/siyuan-exam.png", iconType: "spell-check", iconColor: "var(--rose-agent)", badge: "刷题与错题", badgeCls: "badge-plugin", pinyin: "bkccyishipan sybk bk ys", synonyms: ["备考", "学习", "考试", "错题", "exam"] },
-      { id: "sylq", actionId: "b415379a-a959-4ded-8e1d-3d17ddbfd1e7", pluginLaunch: "siyuan-speed-switch|switchTabs||false|标签快速切换", pluginHotkey: "Alt+8", group: "learning", title: "标签快速切换", desc: "点击执行快速切换动作；点击「🪟 面板」或 Alt+8 唤醒思源秒开雷切切换器", hotkey: "sylq", iconImg: "icons/siyuan-speed-switch.png", iconType: "bolt", iconColor: "var(--indigo-light)", badge: "快速切换", badgeCls: "badge-plugin", pinyin: "lqksqhzd sylq lq qh", synonyms: ["雷切", "快速切换", "启动器", "launcher"] },
+      { id: "syda", actionId: "2d029719-8312-4c68-ae64-39ae1d395c67", pluginLaunch: "siyuan-checkin|openCheckin||false|习惯打卡", pluginHotkey: "Alt+1", group: "learning", title: "习惯打卡", desc: "【怎么用】点击卡片（或按 Alt+1）直接唤醒思源并打开「小驴打卡」主面板；在搜索框输入 +项目名 可免切窗快速打卡", hotkey: "Alt+Shift+P", iconImg: "icons/siyuan-checkin.png", iconType: "check", iconColor: "var(--tech-amber)", badge: "打卡插件", badgeCls: "badge-plugin", pinyin: "xgdkkjmb syda dk liji", synonyms: ["打卡", "习惯", "签到", "连击", "checkin"] },
+      { id: "syhome", actionId: "31f3fd02-7860-42d8-9b07-282ef84f9f3e", pluginLaunch: "siyuan-home|openButler||false|事务管家", pluginHotkey: "Alt+2", group: "learning", title: "事务管家", desc: "【怎么用】点击卡片（或按 Alt+2）直接唤醒思源并打开「小驴管家」生活与账目总控；在搜索框输入 ¥金额 可快速记账", hotkey: "Alt+Shift+H", iconImg: "icons/siyuan-home.png", iconType: "house", iconColor: "var(--cyber-sky)", badge: "管家插件", badgeCls: "badge-plugin", pinyin: "gjswkjt syhome gj bw", synonyms: ["管家", "备忘", "到期", "家庭事务", "home"] },
+      { id: "syrm", actionId: "a3974242-6f81-4a02-957d-10b1ffc567b4", pluginLaunch: "siyuan-contacts|openWorkbench||false|人脉工作台", pluginHotkey: "Alt+3", group: "learning", title: "人脉工作台", desc: "【怎么用】点击卡片（或按 Alt+3）唤醒思源打开「人脉关系网」；在搜索框输入 @姓名 内容 可免切窗记录人脉交往", hotkey: "Alt+Shift+N", iconImg: "icons/siyuan-contacts.png", iconType: "users", iconColor: "var(--cyber-purple)", badge: "人脉插件", badgeCls: "badge-plugin", pinyin: "rmsczhyda syrm rm ss da", synonyms: ["人脉", "联系人", "档案", "互动", "contacts"] },
+      { id: "sysg_plugin", actionId: "ce375f25-d937-4348-b924-2bd1e221fe65", pluginLaunch: "siyuan-glean|cmd.openPanel||false|稍后读库", pluginHotkey: "Alt+4", group: "learning", title: "稍后读库", desc: "【怎么用】点击卡片（或按 Alt+4）唤醒思源打开「小驴拾遗」稍后读收件箱；浏览网页时按 Alt+Shift+G 可一键剪藏入库", hotkey: "Alt+Shift+G", iconImg: "icons/siyuan-glean.png", iconType: "inbox", iconColor: "var(--emerald-mint)", badge: "拾遗插件", badgeCls: "badge-plugin", pinyin: "xlsy sysg glean", synonyms: ["拾遗", "读库", "剪藏", "glean"] },
+      { id: "syv", actionId: "43568d4c-f644-4e05-ad60-a3c8b45a136a", pluginLaunch: "xiaolv-common|open||false|常用语与Prompt", pluginHotkey: "Alt+5", group: "learning", title: "常用语与 Prompt", desc: "【怎么用】点击立即展开晨间复盘、会议纪要、文献卡等常用模板（回车写入日记，Shift+Enter 贴到当前光标）；点「面板」打开思源插件", hotkey: "v: 模板", iconImg: "icons/xiaolv-common.png", iconType: "paper-plane", iconColor: "var(--cyber-sky)", badge: "模板速贴", badgeCls: "badge-bridge", pinyin: "cyypromptznps syv cy mb", synonyms: ["常用语", "prompt", "智能喷射", "模板", "宏", "common"] },
+      { id: "syfsrs", actionId: "syfsrs", pluginLaunch: "siyuan-lv-cards|openDashboard||false|闪卡中心", pluginHotkey: "Alt+6", group: "learning", title: "闪卡复习微舱", desc: "【怎么用】点击卡片（或按 Alt+Shift+R）在桌面弹出微刷卡窗：按空格翻看答案、按 1~4 评分；点「面板」打开思源闪卡中心", hotkey: "Alt+Shift+R", iconImg: "icons/siyuan-lv-cards.png", iconType: "brain", iconColor: "var(--cyber-purple)", badge: "桌面刷卡", badgeCls: "badge-native", pinyin: "fsrs skwc syfsrs sk", synonyms: ["闪卡", "复习", "fsrs", "刷卡", "记忆"] },
+      { id: "sybk", actionId: "b9fe5102-420e-40b5-b4e0-b7fd9f895cb9", pluginLaunch: "siyuan-exam|command.openPractice||false|备考与练习台", pluginHotkey: "Alt+7", group: "learning", title: "备考与练习台", desc: "【怎么用】点击卡片（或按 Alt+7）直接唤醒思源并打开「备考与错题练习台」插件大窗", hotkey: "Alt+Shift+E", iconImg: "icons/siyuan-exam.png", iconType: "spell-check", iconColor: "var(--rose-agent)", badge: "备考插件", badgeCls: "badge-plugin", pinyin: "bkccyishipan sybk bk ys", synonyms: ["备考", "学习", "考试", "错题", "exam"] },
+      { id: "sylq", actionId: "b415379a-a959-4ded-8e1d-3d17ddbfd1e7", pluginLaunch: "siyuan-speed-switch|switchTabs||false|标签快速切换", pluginHotkey: "Alt+8", group: "learning", title: "标签快速切换", desc: "【怎么用】点击卡片（或按 Alt+8）唤醒思源并打开「雷切」文档页签快速切换器", hotkey: "Alt+8", iconImg: "icons/siyuan-speed-switch.png", iconType: "bolt", iconColor: "var(--indigo-light)", badge: "页签切换", badgeCls: "badge-plugin", pinyin: "lqksqhzd sylq lq qh", synonyms: ["雷切", "快速切换", "启动器", "launcher"] },
 
       // 🌐 格式化与扩展心流 (4)
-      { id: "syx", actionId: "5191f0a1-0f41-4af8-9696-6b02011a2514", group: "commands", title: "纯净 Markdown 复制", desc: "一键剥离思源内部 {: id} 属性杂质，双链还原自然标题发微信/知乎", hotkey: "Alt+Shift+X", iconType: "share", iconColor: "var(--emerald-mint)", badge: "杂质清洗", badgeCls: "badge-native", pinyin: "cjmd fzfx syx cj md", synonyms: ["纯净", "markdown", "复制", "微信", "知乎", "clean", "share", "导出"] },
-      { id: "syp", actionId: "f7908778-f80d-4335-95fb-a48f387469b3", group: "commands", title: "原色高亮美化", desc: "严格基于 var(--b3-font-color*) 原生 CSS 变量设色与荧光高亮，支持一键清格式", hotkey: "syp", iconType: "brush", iconColor: "var(--cyber-sky)", badge: "原生调色盘", badgeCls: "badge-bridge", pinyin: "kjgshyysmh syp ys gsh", synonyms: ["格式化", "美化", "颜色", "高亮", "清除格式", "style", "format"] },
-      { id: "sycmd", group: "commands", title: "插件命令调度", desc: "支持输入 p: 实时搜索思源中已安装的任意第三方社区插件命令并唤起执行", hotkey: "p:", iconType: "terminal", iconColor: "var(--indigo-light)", badge: "全量命令", badgeCls: "badge-bridge", pinyin: "ssbzhyzcjml sycmd ml", synonyms: ["插件命令", "第三方命令", "穿透", "调度", "commands"] },
-      { id: "syprofile", actionId: "syprofile", group: "commands", title: "配置与模型预设", desc: "脱敏管理思源 S3 存储桶、AI 大模型驱动与 WebDAV 常用配置，随时复制参数蓝图或切换预设", hotkey: "cfg:", iconType: "terminal", iconColor: "var(--indigo-light)", badge: "脱敏预设", badgeCls: "badge-native", pinyin: "pz ysymxys syprofile cfg s3 ai", synonyms: ["配置", "预设", "s3", "ai", "webdav", "模型", "存储桶", "profile", "cfg"] },
+      { id: "syx", actionId: "5191f0a1-0f41-4af8-9696-6b02011a2514", group: "commands", title: "纯净 Markdown 复制", desc: "【怎么用】复制思源内容后点击此卡（或按 Alt+Shift+X），自动剥离 {: id} 属性并将双链转为普通文字，方便直接粘贴到微信/Word", hotkey: "Alt+Shift+X", iconType: "share", iconColor: "var(--emerald-mint)", badge: "去杂质复制", badgeCls: "badge-native", pinyin: "cjmd fzfx syx cj md", synonyms: ["纯净", "markdown", "复制", "微信", "知乎", "clean", "share", "导出"] },
+      { id: "syp", actionId: "f7908778-f80d-4335-95fb-a48f387469b3", group: "commands", title: "原色高亮美化", desc: "【怎么用】点击弹出思源原生 var(--b3-font-color) 字体设色、背景高亮与一键清除格式调色盘", hotkey: "点击选色", iconType: "brush", iconColor: "var(--cyber-sky)", badge: "文字高亮", badgeCls: "badge-bridge", pinyin: "kjgshyysmh syp ys gsh", synonyms: ["格式化", "美化", "颜色", "高亮", "清除格式", "style", "format"] },
+      { id: "sycmd", group: "commands", title: "插件命令调度", desc: "【怎么用】点击立即列出思源已安装的插件与命令列表，输入关键词过滤并按回车直接跨软件调用", hotkey: "p: 搜插件", iconType: "terminal", iconColor: "var(--indigo-light)", badge: "调用插件", badgeCls: "badge-bridge", pinyin: "ssbzhyzcjml sycmd ml", synonyms: ["插件命令", "第三方命令", "穿透", "调度", "commands"] },
+      { id: "syprofile", actionId: "syprofile", group: "commands", title: "配置与模型预设", desc: "【怎么用】点击打开配置预设工作台；集中管理 AI 大模型 Key（本机 DPAPI 硬件加密）与 S3 云同步参数，支持一键热切换生效", hotkey: "点击打开", iconType: "gear", iconColor: "var(--indigo-light)", badge: "AI与云配置", badgeCls: "badge-native", pinyin: "pz ysymxys syprofile cfg s3 ai", synonyms: ["配置", "预设", "s3", "ai", "webdav", "模型", "存储桶", "profile", "cfg"] },
 
       // ⚙️ 系统与数据运维 (3)
-      { id: "sytrash", actionId: "sytrash", group: "maintenance", title: "回收站", desc: "专属文档回收站：毫秒级检索数据历史与快照库，查看最近被删除、被 AI 覆盖的笔记，支持 1 键打捞复原", hotkey: "trash:", iconType: "trash", iconColor: "var(--rose-agent)", badge: "数据回收站", badgeCls: "badge-native", pinyin: "hsz trash recycle wsdl", synonyms: ["回收站", "垃圾桶", "数据历史", "误删", "打捞", "找回", "trash", "recycle"] },
-      { id: "syh", actionId: "39911155-60a3-4134-aaf0-6805d625ad09", group: "maintenance", title: "全库与系统体检", desc: "一键综合诊断：排查断链、孤立无主附件、空标题，并深度探测内核端口、Token、IPC管道及离岸队列", hotkey: "syh", iconType: "shield", iconColor: "var(--tech-amber)", badge: "综合诊断", badgeCls: "badge-system", pinyin: "tsglyjktj syh tj dl yj", synonyms: ["体检", "断链", "孤立资源", "空标题", "health", "doctor"] },
-      { id: "synotice", actionId: "synotice", group: "maintenance", title: "通知与事件流", desc: "全景通知与生命事件日志：聚合思源弹窗、Windows系统消息、构建回执与专注达成，支持1键沉淀日记", hotkey: "notice:", iconType: "bell", iconColor: "var(--cyber-sky)", badge: "广义通知", badgeCls: "badge-native", pinyin: "tz yxsj synotice notice notif bell", synonyms: ["通知", "消息", "事件", "广播", "日志", "bell", "notice", "notification"] }
+      { id: "sytrash", actionId: "sytrash", group: "maintenance", title: "回收站", desc: "【怎么用】点击立即浏览思源数据历史与最近误删的文档快照，选中后可预览全文并一键恢复到今日日记", hotkey: "trash:", iconType: "trash", iconColor: "var(--rose-agent)", badge: "误删找回", badgeCls: "badge-native", pinyin: "hsz trash recycle wsdl", synonyms: ["回收站", "垃圾桶", "数据历史", "误删", "打捞", "找回", "trash", "recycle"] },
+      { id: "syh", actionId: "39911155-60a3-4134-aaf0-6805d625ad09", group: "maintenance", title: "全库与系统体检", desc: "【怎么用】点击打开系统健康体检工作台；一键扫描全库失效死链、清理无引用的孤儿附件并检测端口与快捷键状态", hotkey: "点击打开", iconType: "shield", iconColor: "var(--tech-amber)", badge: "死链与清理", badgeCls: "badge-system", pinyin: "tsglyjktj syh tj dl yj", synonyms: ["体检", "断链", "孤立资源", "空标题", "health", "doctor"] },
+      { id: "synotice", actionId: "synotice", group: "maintenance", title: "通知与事件流", desc: "【怎么用】点击打开通知中心大视窗；查看近期所有操作回执、同步状态与异常告警，可一键汇总记入今日日记", hotkey: "点击打开", iconType: "bell", iconColor: "var(--cyber-sky)", badge: "历史回执", badgeCls: "badge-native", pinyin: "tz yxsj synotice notice notif bell", synonyms: ["通知", "消息", "事件", "广播", "日志", "bell", "notice", "notification"] }
     ];
 
     const GROUP_ORDER = ["capture", "search", "learning", "commands", "maintenance"];
@@ -6221,13 +6311,28 @@
       // ev: / find: / listary: 模式：直达本地检索工具全盘极速文件穿透 (支持 Everything / Listary / 智能感知)
       if (q.startsWith("ev:") || q.startsWith("ev：") || q.startsWith("find:") || q.startsWith("find：") || q.startsWith("listary:") || q.startsWith("listary：")) {
         const subKw = q.replace(/^(ev:|ev：|find:|find：|listary:|listary：)/, "").trim();
+        const toolName = getPreferredSearchToolName();
         if (subKw) {
-          const toolName = getPreferredSearchToolName();
           if (window.chrome && window.chrome.webview) {
             window.chrome.webview.postMessage(JSON.stringify({ op: 'openInSearchTool', query: subKw }));
           }
           showToast(`🔍 已唤起 ${toolName} 进行【${subKw}】全盘检索`);
         }
+        filteredItems = [{
+          id: "listary_launch_action",
+          group: "search",
+          title: subKw ? `🔍 在 ${toolName} 中检索文件: ${subKw}` : `🔍 唤起本地 ${toolName} 全盘文件秒搜`,
+          desc: "【怎么用】继续在上方输入文件名实时联动本地检索工具，或直接点击此卡片立即呼出检索窗口",
+          hotkey: "Enter",
+          iconType: "search",
+          iconColor: "var(--cyber-sky)",
+          badge: "全盘文件",
+          badgeCls: "badge-native",
+          actionType: "listary-open",
+          searchQuery: subKw
+        }];
+        selectedIndex = 0;
+        renderItems();
         return;
       }
 
@@ -6325,15 +6430,23 @@
         return;
       }
 
-      // b: 模式：实时向 C# 后台请求检索思源块级内容
+      // b: 模式：实时向 C# 后台请求检索思源块级内容（空关键词默认展示最近修改的 30 条笔记块）
       if (q.startsWith("b:") || q.startsWith("b：") || q.startsWith("block:") || q.startsWith("block：")) {
         const subKw = q.replace(/^(b:|b：|block:|block：)/, "").trim();
-        if (subKw) {
-          if (window.chrome && window.chrome.webview) {
-            window.chrome.webview.postMessage({ op: 'searchBlocks', keyword: subKw });
-          }
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage({ op: 'searchBlocks', keyword: subKw });
         } else {
-          filteredItems = [];
+          filteredItems = [{
+            id: "b_demo_block",
+            group: "search",
+            title: subKw ? `🧱 检索笔记块: ${subKw}` : "🧱 最近修改笔记块预览 (继续打字即可秒搜全库正文)",
+            desc: "回车在思源中定位打开 · 按 Shift+Enter 将 ((id \"标题\")) 双链直接粘贴到当前外部软件光标处",
+            hotkey: "Shift+Enter 贴双链",
+            iconType: "search",
+            iconColor: "var(--cyber-sky)",
+            badge: "思源正文块",
+            badgeCls: "badge-native"
+          }];
           renderItems();
         }
         return;
@@ -6423,6 +6536,14 @@
             }
           }
         }
+        if (dynamicList.length === 0) {
+          PANEL_ITEMS.filter(it => it.pluginLaunch).forEach(it => {
+            const fullText = (it.title + " " + it.desc + " " + (it.pinyin || "")).toLowerCase();
+            if (!subKw || fullText.includes(subKw)) {
+              dynamicList.push(it);
+            }
+          });
+        }
         filteredItems = dynamicList;
         selectedIndex = 0;
         renderItems();
@@ -6466,6 +6587,20 @@
               insertContent: insertContent
             });
           }
+        }
+
+        if (dynamicList.length === 0) {
+          dynamicList.push({
+            id: "syoff",
+            group: "commands",
+            title: "📊 打开全库数据表格与属性视图透视矩阵",
+            desc: "【怎么用】点击打开表格透视大工作台，支持浏览全库表格、双击修改单元格并导出 Excel",
+            hotkey: "Enter",
+            iconType: "table",
+            iconColor: "var(--emerald-mint)",
+            badge: "表格工作台",
+            badgeCls: "badge-native"
+          });
         }
 
         filteredItems = dynamicList;
@@ -6593,8 +6728,51 @@
       const queryVal = document.getElementById("search-input") ? document.getElementById("search-input").value.trim() : "";
       let itemsToRender = [...filteredItems];
 
-      // 仅当 "all" 分类且无搜索词时，先聚类排序，确保每个分组标题严格只出现一次
+      // 仅当 "all" 分类且无搜索词时，先在首屏顶部渲染「三大核心操作直达舱」，再按分组聚类排序
       if (currentCategory === "all" && !queryVal && !editMode) {
+        const hubEl = document.createElement("section");
+        hubEl.className = "home-three-pillars-hub";
+        hubEl.id = "home-three-pillars-hub";
+        hubEl.innerHTML = `
+          <article class="pillar-box">
+            <div class="pillar-box-header">
+              <span>① 📝 记一笔 · 写入思源</span>
+              <span class="pillar-box-sub">Alt+Shift+S</span>
+            </div>
+            <div class="pillar-actions-grid">
+              <button type="button" class="pillar-action-btn" onclick="promptQuickNoteInlineModal()" title="弹出速记框，写一条灵感、待办或记账直接存入今日日记">⚡ 写灵感 / 待办</button>
+              <button type="button" class="pillar-action-btn" onclick="executeItem(PANEL_ITEMS.find(x => x.id === 'syg'))" title="抓取当前浏览器打开的网页存入思源">🌐 剪藏当前网页</button>
+              <button type="button" class="pillar-action-btn" onclick="executeItem(PANEL_ITEMS.find(x => x.id === 'syimg'))" title="框选屏幕截图并自动识别图中文字">📸 截屏识别文字</button>
+              <button type="button" class="pillar-action-btn" onclick="toggleTodayTimeline()" title="查看今天已经记入日记的所有内容">📅 看今日日记流</button>
+            </div>
+          </article>
+          <article class="pillar-box">
+            <div class="pillar-box-header">
+              <span>② 🔍 找内容 · 贴入双链</span>
+              <span class="pillar-box-sub">Shift+Enter 贴光标</span>
+            </div>
+            <div class="pillar-actions-grid">
+              <button type="button" class="pillar-action-btn" onclick="insertPrefix('b:')" title="浏览最近笔记块或打字搜正文，Shift+Enter 贴双链">🧱 搜正文块贴双链</button>
+              <button type="button" class="pillar-action-btn" onclick="insertPrefix('d:')" title="搜索思源全库文档标题并一键打开">📄 搜全库文档</button>
+              <button type="button" class="pillar-action-btn" onclick="insertPrefix('att:')" title="搜索库内 PDF、Office 文档与图片附件">📎 搜PDF与附件</button>
+              <button type="button" class="pillar-action-btn" onclick="insertPrefix('c:')" title="查看最近复制的 30 条剪贴板记录">📋 搜最近剪贴板</button>
+            </div>
+          </article>
+          <article class="pillar-box">
+            <div class="pillar-box-header">
+              <span>③ 🎛️ 开工作台 · 深度整理</span>
+              <span class="pillar-box-sub">支持双向写回思源</span>
+            </div>
+            <div class="pillar-actions-grid">
+              <button type="button" class="pillar-action-btn" onclick="toggleCodeStudioModal()" title="浏览全库代码块，支持外部 VS Code 编辑自动回写">⌨️ 代码工作台</button>
+              <button type="button" class="pillar-action-btn" onclick="toggleTableGridModal()" title="浏览与编辑全库表格，支持一键导出 Excel">📊 表格透视编辑</button>
+              <button type="button" class="pillar-action-btn" onclick="toggleOutlineMindmapModal()" title="查看文档 H1~H6 大纲与思维导图，支持原位改名">🗺️ 大纲与导图</button>
+              <button type="button" class="pillar-action-btn" onclick="toggleTasksKanbanModal()" title="打开四象限待办看板，集中处理未完成任务">🎴 四象限待办</button>
+            </div>
+          </article>
+        `;
+        container.appendChild(hubEl);
+
         const topFavorites = PANEL_ITEMS
           .filter(it => (usageStats[it.id] || 0) > 0 && !isHidden(it.id))
           .sort((a, b) => (usageStats[b.id] || 0) - (usageStats[a.id] || 0))
@@ -6663,7 +6841,7 @@
               </div>
               <div class="card-footer-right">
                 ${actionButtons}
-                <span class="card-code">${item.id}</span>
+                <span class="card-code" data-card-id="${item.id}" title="内部指令码: ${item.id}" style="color: var(--cyber-sky); opacity: 0.85;">点击即用 ▸</span>
               </div>
             </div>
           `;
@@ -6702,7 +6880,6 @@
               ${index < 9 ? `<span class="quick-num-badge" title="按 Ctrl+${index + 1} 直接执行">^${index + 1}</span>` : ""}
               ${item.pluginHotkey ? `<span class="plugin-alt-key">${item.pluginHotkey}</span>` : ""}
               ${actionButtons}
-              <span class="card-code" style="font-size: 10px;">${item.id}</span>
               <span class="card-hotkey">${item.hotkey}</span>
             </div>
           `;
@@ -6916,6 +7093,53 @@
         return;
       }
 
+      // Listary / Everything 本地文件检索直达分支
+      if (item.actionType === "listary-open") {
+        locateInSearchTool(item.searchQuery || "");
+        return;
+      }
+
+      // 呼出全库块级快查与双链视图
+      if (item.id === "syf" && !customText) {
+        insertPrefix("b:");
+        return;
+      }
+
+      // 呼出多态速记内联输入框（当搜索框无文字直接点卡片时，在窗内弹出速记框而不闪退主面板）
+      if (item.id === "sys" && !customText) {
+        const si = document.getElementById("search-input");
+        const curVal = si ? si.value.trim() : "";
+        if (!curVal) {
+          promptQuickNoteInlineModal();
+          return;
+        }
+        customText = curVal;
+      }
+
+      // 呼出系统健康综合体检大工作台
+      if (item.id === "syh") {
+        toggleSystemDoctorModal();
+        return;
+      }
+
+      // 呼出今日日记记事时间轴抽屉
+      if (item.id === "syd") {
+        toggleTodayTimeline();
+        return;
+      }
+
+      // 呼出表格透视与数据清洗大工作台
+      if (item.id === "syoff" && !customText) {
+        toggleTableGridModal();
+        return;
+      }
+
+      // 呼出常用语与结构化模板速贴视图
+      if (item.id === "syv" && !customText) {
+        insertPrefix("v:");
+        return;
+      }
+
       // 呼出附件文献穿透视图
       if (item.id === "syatt") {
         insertPrefix("att:");
@@ -7056,6 +7280,12 @@
         } else {
           window.open(`siyuan://blocks/${item.blockId}`, "_blank");
         }
+        return;
+      }
+
+      // 若为生态插件直达卡片（group === 'learning' 且带 pluginLaunch）且当前无输入参数，直接唤醒思源对应插件大窗
+      if (item.pluginLaunch && item.id !== "syfsrs" && !customText) {
+        launchPluginDirect(item);
         return;
       }
 
@@ -8395,6 +8625,81 @@
         navigator.clipboard?.writeText(ref);
         showToast("✓ 已复制双链");
       }
+    }
+
+    function quickSubmitInputToDaily() {
+      const si = document.getElementById("search-input");
+      const val = si ? si.value.trim() : "";
+      if (val) {
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({
+            op: "appendToDailyNote",
+            text: val,
+            keepOpen: true
+          }));
+        }
+        showToast("📥 已记入今日日记: " + val.substring(0, 24));
+        if (si) {
+          si.value = "";
+          updateSearchClearBtn();
+          handleSearch("");
+        }
+      } else {
+        promptQuickNoteInlineModal();
+      }
+    }
+
+    function promptQuickNoteInlineModal(defaultPrefix) {
+      showInlineFormModal({
+        title: "⚡ 随手记一笔 (直接写入思源今日日记)",
+        icon: "📝",
+        message: "支持前置语法：! 待办事项 · ? 问题 // 答案 (闪卡) · ¥38.5 记账 · ~25m 专注 · +打卡 · @人脉",
+        submitText: "📥 写入今日日记 (Enter)",
+        fields: [
+          {
+            key: "typePrefix",
+            label: "选择记录类型 (可选)",
+            type: "select",
+            value: defaultPrefix || "💡 灵感笔记 (默认)",
+            options: [
+              "💡 灵感笔记 (默认)",
+              "! 待办事项 (- [ ])",
+              "? 问答闪卡 (FSRS)",
+              "¥ 账目花销 (Lifelog)",
+              "~25m 专注记录",
+              "+ 习惯打卡",
+              "@ 人脉互动"
+            ]
+          },
+          {
+            key: "content",
+            label: "笔记内容",
+            placeholder: "在此输入要记入今日日记的内容，按回车立即保存...",
+            value: "",
+            required: true
+          }
+        ],
+        onSubmit: (vals) => {
+          let txt = (vals.content || "").trim();
+          if (!txt) return;
+          const tp = vals.typePrefix || "";
+          if (tp.startsWith("!") && !txt.startsWith("!")) txt = "! " + txt;
+          else if (tp.startsWith("?") && !txt.startsWith("?")) txt = "? " + txt;
+          else if (tp.startsWith("¥") && !txt.startsWith("¥")) txt = "¥" + txt;
+          else if (tp.startsWith("~") && !txt.startsWith("~")) txt = "~25m " + txt;
+          else if (tp.startsWith("+") && !txt.startsWith("+")) txt = "+" + txt;
+          else if (tp.startsWith("@") && !txt.startsWith("@")) txt = "@" + txt;
+
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({
+              op: "appendToDailyNote",
+              text: txt,
+              keepOpen: true
+            }));
+          }
+          showToast("✓ 已写入思源今日日记！");
+        }
+      });
     }
 
     function syncActiveIntentChipHighlight(rawVal) {

@@ -517,7 +517,7 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
-                // 3. 毫秒级原生块搜索 (b: 语法)
+                // 3. 毫秒级原生块搜索 (b: 语法，空关键词默认呈现最近修改的 30 条正文块)
                 if (op.Equals("searchBlocks", StringComparison.OrdinalIgnoreCase))
                 {
                     string kw = JsonHelper.GetString(msg, "keyword");
@@ -525,24 +525,31 @@ namespace XiaoLv.Desktop.UI
                     {
                         try
                         {
-                            if (!string.IsNullOrEmpty(kw))
+                            string safeLike = (kw ?? "").Trim().Replace("'", "''");
+                            string sql;
+                            if (!string.IsNullOrEmpty(safeLike))
                             {
-                                string safeLike = kw.Replace("'", "''");
-                                string sql = "SELECT id, root_id, content, hpath, type, updated FROM blocks " +
-                                             "WHERE content LIKE '%" + safeLike + "%' AND type NOT IN ('d') " +
-                                             "ORDER BY (CASE " +
-                                             "  WHEN content = '" + safeLike + "' THEN 100 " +
-                                             "  WHEN content LIKE '" + safeLike + "%' THEN 60 " +
-                                             "  WHEN type = 'h' THEN 40 " +
-                                             "  WHEN type = 'p' THEN 20 " +
-                                             "  ELSE 10 " +
-                                             "END) DESC, updated DESC LIMIT 30";
-                                var rows = await SiYuanClient.SqlAsync(sql);
-                                Dispatcher.Invoke(() =>
-                                {
-                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onBlockSearchResults) window.onBlockSearchResults(" + JsonHelper.ToJson(new { code = 0, data = rows }) + ");");
-                                });
+                                sql = "SELECT id, root_id, content, hpath, type, updated FROM blocks " +
+                                      "WHERE content LIKE '%" + safeLike + "%' AND type NOT IN ('d') " +
+                                      "ORDER BY (CASE " +
+                                      "  WHEN content = '" + safeLike + "' THEN 100 " +
+                                      "  WHEN content LIKE '" + safeLike + "%' THEN 60 " +
+                                      "  WHEN type = 'h' THEN 40 " +
+                                      "  WHEN type = 'p' THEN 20 " +
+                                      "  ELSE 10 " +
+                                      "END) DESC, updated DESC LIMIT 30";
                             }
+                            else
+                            {
+                                sql = "SELECT id, root_id, content, hpath, type, updated FROM blocks " +
+                                      "WHERE type IN ('p', 'h', 'c', 't', 'i') AND content != '' " +
+                                      "ORDER BY updated DESC LIMIT 30";
+                            }
+                            var rows = await SiYuanClient.SqlAsync(sql);
+                            Dispatcher.Invoke(() =>
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onBlockSearchResults) window.onBlockSearchResults(" + JsonHelper.ToJson(new { code = 0, data = rows }) + ");");
+                            });
                         }
                         catch { }
                     });
@@ -2238,6 +2245,11 @@ namespace XiaoLv.Desktop.UI
                             XiaoLv.Desktop.Program.StartFsrsReview();
                             return;
                         }
+                        if (cmd.Equals("sypen", StringComparison.OrdinalIgnoreCase))
+                        {
+                            XiaoLv.Desktop.Program.OpenPenCapsule(text);
+                            return;
+                        }
                         if (OnSubActionRequested != null)
                         {
                             OnSubActionRequested(cmd, text);
@@ -3044,11 +3056,8 @@ namespace XiaoLv.Desktop.UI
                 {
                     string q = JsonHelper.GetString(msg, "query");
                     if (string.IsNullOrEmpty(q)) q = JsonHelper.GetString(msg, "keyword");
-                    if (!string.IsNullOrEmpty(q))
-                    {
-                        var pref = AppSettings.Instance.PreferredSearchEngine;
-                        ToolDetector.OpenInSearchTool(q, pref);
-                    }
+                    var pref = AppSettings.Instance.PreferredSearchEngine;
+                    ToolDetector.OpenInSearchTool(q ?? "", pref);
                     return;
                 }
 

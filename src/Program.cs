@@ -845,6 +845,18 @@ namespace XiaoLv.Desktop
             }
         }
 
+        public static void OpenPenCapsule(string initialText = null)
+        {
+            if (_wpfApp != null && _capsuleWindow != null)
+            {
+                _wpfApp.Dispatcher.Invoke(() =>
+                {
+                    string selected = !string.IsNullOrEmpty(initialText) ? initialText : SelectionHelper.CaptureSelectedText(180);
+                    _capsuleWindow.ShowNearCursor(selected);
+                });
+            }
+        }
+
         public static void StartWebClip()
         {
             string defaultMode = AppSettings.Instance.WebClipDefaultMode;

@@ -81,6 +81,15 @@
       --amber-glow: #d97706;
       --border-card-bottom: #94A3B8;
       --b3-font-color: #0F172A;
+      --b3-font-background: rgba(245, 158, 11, 0.22);
+      --b3-font-color1: #ef4444;
+      --b3-font-color2: #10b981;
+      --b3-font-color4: #38bdf8;
+      --b3-font-color6: #a855f7;
+      --b3-font-background1: rgba(244, 63, 94, 0.24);
+      --b3-font-background2: rgba(16, 185, 129, 0.24);
+      --b3-font-background3: rgba(245, 158, 11, 0.28);
+      --b3-font-background4: rgba(56, 189, 248, 0.24);
       --bg-editor-well: #F8FAFC;
       --bg-inset: #F1F5F9;
       --bg-inset-deep: #E2E8F0;
@@ -3522,6 +3531,120 @@
       box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
     }
 
+    .back-home-pill-btn {
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: var(--indigo-primary);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      flex-shrink: 0;
+    }
+    .back-home-pill-btn:hover {
+      background: var(--cyber-sky);
+      color: #0b1120;
+      transform: translateX(-1px);
+    }
+    .card-howto-btn {
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--cyber-sky);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.14s ease;
+      font-family: inherit;
+    }
+    .card-howto-btn:hover {
+      background: var(--cyber-sky);
+      color: #0b1120;
+      border-color: var(--cyber-sky);
+    }
+    .fg-step-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .fg-step-box {
+      background: var(--bg-inset);
+      border: 1px solid var(--border-hairline);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .fg-step-badge {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: var(--cyber-sky);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .fg-step-text {
+      font-size: 11.5px;
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+    .fg-try-btn {
+      padding: 6px 11px;
+      border-radius: 7px;
+      background: var(--bg-card);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: var(--cyber-sky);
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .fg-try-btn:hover {
+      background: var(--cyber-sky);
+      color: #0b1120;
+      transform: translateY(-1px);
+    }
+    .b3-swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .b3-swatch-btn {
+      padding: 7px 10px;
+      border-radius: 7px;
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-card);
+      cursor: pointer;
+      font-size: 11.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.14s ease;
+      font-family: inherit;
+    }
+    .b3-swatch-btn:hover {
+      border-color: var(--cyber-sky);
+      transform: translateY(-1px);
+    }
+
   </style>
 </head>
 <body>
@@ -4977,6 +5100,28 @@
     </div>
   </div>
 
+  <!-- 单项功能 3 步极速上手与互动演练弹窗 (Feature 3-Step Interactive Guide Modal) -->
+  <div class="timeline-modal-overlay" id="feature-guide-modal" onclick="closeFeatureGuideOnBg(event)">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 92%; max-width: 680px;">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="fg-icon-wrap" style="color: var(--cyber-sky); display: inline-flex; align-items: center;"></span>
+          <span style="font-weight: 700; font-size: 14px;" id="fg-title">功能上手指南</span>
+          <span class="brand-pill" id="fg-hotkey-pill">Enter</span>
+        </div>
+        <button type="button" class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="closeFeatureGuideModal()">✕</button>
+      </div>
+      <div class="timeline-body" id="fg-body" style="padding: 16px 20px; gap: 14px;"></div>
+      <div style="padding: 10px 20px; border-top: 1px solid var(--border-hairline); background: var(--bg-inset); display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 11px; color: var(--text-muted);">💡 提示：点击上方演练按钮可直接体验，按 Esc 关闭此说明</span>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="pref-btn" onclick="closeFeatureGuideModal()">关闭 (Esc)</button>
+          <button type="button" class="pref-btn pref-btn-primary" id="fg-run-btn" onclick="runCurrentGuidedFeature()" style="background: var(--indigo-primary); color: #fff; font-weight: 700; padding: 5px 16px;">🚀 立即使用此功能</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 暗夜黑曜通用内联表单与确认弹窗 (Inline Form & Confirm Modal · 全面替代原生 prompt/confirm) -->
   <div class="inline-form-overlay" id="inline-form-modal" onclick="closeInlineFormOnBg(event)">
     <div class="inline-form-box" onclick="event.stopPropagation()">
@@ -4998,6 +5143,7 @@
   <!-- Floating Card Context Menu -->
   <div id="card-context-menu" class="card-context-menu" style="display: none;">
     <div class="context-menu-item" onclick="contextActionExecute()">▶️ 执行此动作 (Enter)</div>
+    <div class="context-menu-item" onclick="contextActionHowTo()">💡 查看 3 步上手教程与演练</div>
     <div class="context-menu-item" onclick="contextActionPasteCaret()">⚡ 光标穿透直贴 (Shift+Enter)</div>
     <div class="context-menu-item" onclick="contextActionCopy()">📋 复制动作指令码与名称</div>
     <div class="context-menu-sep"></div>
@@ -5621,6 +5767,13 @@
       executeItem(target);
     }
 
+    function contextActionHowTo() {
+      if (!activeContextItem) return;
+      const targetId = activeContextItem.id;
+      closeCardContextMenu();
+      openFeatureGuideModal(targetId);
+    }
+
     function contextActionPasteCaret() {
       if (!activeContextItem) return;
       const target = activeContextItem;
@@ -5724,9 +5877,39 @@
     function setCategoryFilter(cat) {
       currentCategory = cat;
       document.querySelectorAll(".cat-btn").forEach(btn => {
-        btn.classList.toggle("active", btn.getAttribute("onclick").includes(`'${cat}'`));
+        const oc = btn.getAttribute("onclick") || "";
+        btn.classList.toggle("active", oc.includes(`'${cat}'`));
       });
-      handleSearch(document.getElementById("search-input").value);
+      const si = document.getElementById("search-input");
+      if (si) {
+        const curVal = si.value.trim();
+        if (hasPrefixSearch(curVal) || /^([!！?？@#＃¥￥~～+＋]|>>|》》|>@|》@)/.test(curVal)) {
+          si.value = "";
+          updateSearchClearBtn();
+        }
+      }
+      handleSearch(si ? si.value : "");
+    }
+
+    function setSearchInputValue(val) {
+      const si = document.getElementById("search-input");
+      if (!si) return;
+      si.value = val;
+      si.focus();
+      si.setSelectionRange(si.value.length, si.value.length);
+      updateSearchClearBtn();
+      handleSearch(si.value);
+    }
+
+    function renderModeBanner(tagText, guideHtml, rightHint = "Esc 返回主页") {
+      return `
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="back-home-pill-btn" onclick="clearSearchInput()" title="退回 31 项全部功能主页 (Esc)">⬅️ 返回主页</button>
+          <span class="intent-tag" style="margin-right: 2px;">${tagText}</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">${guideHtml}</span>
+        </div>
+        <span style="font-size: 10px; opacity: 0.85; white-space: nowrap;">${rightHint}</span>
+      `;
     }
 
     function cycleCategory() {
@@ -5823,115 +6006,196 @@
       if (raw.startsWith("@") || raw.startsWith("＠")) {
         activeIntentAction = "sys";
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">👥 人脉速记</span>识别到联系人，回车后台静默记录互动与原生双链</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认入库</span>`;
+        banner.innerHTML = renderModeBanner("👥 人脉速记", "【怎么用】输入 <b>@姓名 互动内容</b>，按回车直接记录人脉往来并生成双链", "↵ 确认入库");
       } else if (raw.startsWith(">>") || raw.startsWith("》》")) {
         activeIntentAction = "sys";
         banner.style.display = "flex";
         const heading = raw.replace(/^(>>|》》)/, "").trim().split(/\s+/)[0] || "小节名";
-        banner.innerHTML = `<div><span class="intent-tag">📌 小节换轨</span>识别到内联小节换轨，回车追加至今日日记的《${escapeHtml(heading)}》小节</div><span style="font-size: 10px; opacity: 0.8;">↵ 换轨追加</span>`;
+        banner.innerHTML = renderModeBanner("📌 小节换轨", `【怎么用】按回车自动追加至今日日记的《<b>${escapeHtml(heading)}</b>》小节（不存在则自动建标题）`, "↵ 换轨追加");
       } else if (raw.startsWith(">@") || raw.startsWith("》@") || raw.startsWith("》＠")) {
         activeIntentAction = "sys";
         banner.style.display = "flex";
         const targetDoc = raw.replace(/^(>@|》@|》＠)/, "").trim().split(/\s+/)[0] || "文档名";
-        banner.innerHTML = `<div><span class="intent-tag">🎯 跨文档直投</span>识别到跨文档直投目标，回车无需切窗直接追加写入《${escapeHtml(targetDoc)}》</div><span style="font-size: 10px; opacity: 0.8;">↵ 精准直投</span>`;
+        banner.innerHTML = renderModeBanner("🎯 跨文档直投", `【怎么用】按回车免切窗直接把内容追加写入《<b>${escapeHtml(targetDoc)}</b>》文末`, "↵ 精准直投");
       } else if (raw.startsWith("¥") || raw.startsWith("￥") || raw.startsWith("$")) {
         activeIntentAction = "sys";
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">💰 账目花销</span>识别到开销记账，回车自动打标金额与时序 IAL 并归类入今日日记</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认记账</span>`;
+        banner.innerHTML = renderModeBanner("💰 账目花销", "【怎么用】输入 <b>¥38.5 咖啡</b>，按回车自动打标金额并记入今日日记账目小节", "↵ 确认记账");
       } else if (raw.startsWith("~") || raw.startsWith("～")) {
         activeIntentAction = "sys";
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">⏱️ 专注时序</span>识别到专注时长，回车自动倒推起止时间区间并结构化归档</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认专注</span>`;
+        banner.innerHTML = renderModeBanner("⏱️ 专注时序", "【怎么用】输入 <b>~45m 写方案</b>，按回车自动倒推起止时间段记入今日日记", "↵ 确认专注");
       } else if (raw.startsWith("+") || raw.startsWith("＋")) {
         activeIntentAction = "sys";
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">💧 习惯打卡</span>识别到习惯打卡语法，回车自动生成习惯打卡结构化记录</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认打卡</span>`;
+        banner.innerHTML = renderModeBanner("💧 习惯打卡", "【怎么用】输入 <b>+阅读 30min</b>，按回车自动生成习惯打卡记录写入今日日记", "↵ 确认打卡");
       } else if (raw.startsWith("!") || raw.startsWith("！")) {
         activeIntentAction = "sys";
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">📋 任务待办</span>识别到待办事项，回车直接注入今日日记待办池</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认入库</span>`;
+        banner.innerHTML = renderModeBanner("📋 任务待办", "【怎么用】输入待办事项内容，按回车自动转为 <b>- [ ] 任务</b> 存入今日日记", "↵ 确认入库");
       } else if (raw.startsWith("?") || raw.startsWith("？")) {
         activeIntentAction = "sys";
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">🧠 闪卡制作</span>识别到问答闪卡，回车自动注入 FSRS 复习库</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认入库</span>`;
+        banner.innerHTML = renderModeBanner("🧠 闪卡制作", "【怎么用】输入 <b>? 问题 // 答案</b>，按回车自动生成问答闪卡加入 FSRS 复习库", "↵ 确认入库");
       } else if (raw.startsWith("#") || raw.startsWith("＃")) {
         if (!raw.includes(" ") && raw.length > 1) {
           activeIntentAction = null;
           const tagKw = raw.substring(1).trim();
           banner.style.display = "flex";
-          banner.innerHTML = `<div><span class="intent-tag">🏷️ 标签穿透</span>全库聚合检索标签 #${tagKw}#</div><span style="font-size: 10px; opacity: 0.8;">↵ 定位标签</span>`;
+          banner.innerHTML = renderModeBanner("🏷️ 标签穿透", `全库聚合检索标签 <b>#${escapeHtml(tagKw)}#</b> · 点击左侧笔记在右侧查看并一键导出大纲`, "↵ 定位标签");
         } else {
           activeIntentAction = "sys";
           banner.style.display = "flex";
-          banner.innerHTML = `<div><span class="intent-tag">📁 项目归流</span>识别到项目标签，回车归流至项目专页或日记</div><span style="font-size: 10px; opacity: 0.8;">↵ 确认入库</span>`;
+          banner.innerHTML = renderModeBanner("📁 项目归流", "【怎么用】输入 <b>#项目名 进展内容</b>，按回车归流至项目专页或今日日记", "↵ 确认入库");
         }
       } else if (q.startsWith("tag:") || q.startsWith("tag：")) {
         banner.style.display = "flex";
         const tagKw = raw.replace(/^(tag:|tag：)/i, "").trim();
-        banner.innerHTML = `<div><span class="intent-tag">🏷️ 标签穿透</span>全库聚合检索标签 #${tagKw}#</div><span style="font-size: 10px; opacity: 0.8;">↵ 定位标签</span>`;
+        banner.innerHTML = renderModeBanner("🏷️ 标签穿透", `【怎么用】直接输入标签名过滤${tagKw ? ` (当前: <b>#${escapeHtml(tagKw)}#</b>)` : ''} · 右侧支持一键复制/写入聚合大纲`, "↵ 定位笔记");
       } else if (q.startsWith("sql:") || q.startsWith("sql：")) {
         activeIntentAction = "syf";
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">⚡ SQL 直查</span>识别到安全只读 SQL，回车直接检索目标块</div><span style="font-size: 10px; opacity: 0.8;">↵ 执行检索</span>`;
+        banner.innerHTML = renderModeBanner("⚡ SQL 直查", "识别到安全只读 SQL，按回车直接检索目标块", "↵ 执行检索");
       } else if (q.startsWith("p:") || q.startsWith("p：") || q.startsWith("plugin:")) {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">🌐 社区插件</span>输入关键词即可跨软件检索并一键打开任意第三方已装插件命令</div><span style="font-size: 10px; opacity: 0.8;">↵ 唤起插件</span>`;
+        banner.innerHTML = renderModeBanner("🌐 插件调度", "【怎么用】继续打字过滤思源已装插件命令，点击或按回车直接跨软件唤醒执行", "↵ 唤起插件");
       } else if (q.startsWith("d:") || q.startsWith("d：") || q.startsWith("doc:") || q.startsWith("doc：")) {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">📄 文档直达</span>检索思源全库最近修改文档，回车一键跳转至对应笔记</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开文档</span>`;
+        banner.innerHTML = renderModeBanner(
+          "📄 文档秒搜",
+          `<span>打字搜文档标题 · <b>Enter</b> 打开 · <b>Shift+Enter</b> 贴文档链接</span>
+           <span class="scope-switch-pill" onclick="insertPrefix('b:')">🧱 切到搜正文块(b:)</span>
+           <span class="scope-switch-pill" onclick="insertPrefix('att:')">📎 切到搜附件(att:)</span>`,
+          "↵ 打开文档"
+        );
       } else if (q.startsWith("b:") || q.startsWith("b：") || q.startsWith("block:") || q.startsWith("block：")) {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">🔗 块级秒搜</span>检索全库块内容，回车直达具体块，点 <b>(( ))</b> 复制思源双链</div><span style="font-size: 10px; opacity: 0.8;">↵ 定位目标块</span>`;
+        banner.innerHTML = renderModeBanner(
+          "🔗 块级秒搜",
+          `<span>打字搜全库正文 · <b>Enter</b> 在思源打开 · <b>Shift+Enter</b> 把双链贴到当前外部软件光标处</span>
+           <span class="scope-switch-pill" onclick="insertPrefix('d:')">📄 切到搜文档(d:)</span>
+           <span class="scope-switch-pill" onclick="insertPrefix('att:')">📎 切到搜附件(att:)</span>`,
+          "↵ 打开 · ⇧↵ 贴双链"
+        );
+      } else if (q.startsWith("att:") || q.startsWith("att：") || q.startsWith("asset:") || q.startsWith("asset：") || q.startsWith("office:") || q.startsWith("word:") || q.startsWith("excel:") || q.startsWith("ppt:") || q.startsWith("pdf:") || q.startsWith("epub:") || q.startsWith("xmind:")) {
+        banner.style.display = "flex";
+        banner.innerHTML = renderModeBanner(
+          "📎 附件与文献坞",
+          `<span><b>Enter</b> 本地秒开 · <b>Shift+Enter</b> 贴链接 · 快速筛选：</span>
+           <span class="scope-switch-pill" onclick="setSearchInputValue('att:')">全部</span>
+           <span class="scope-switch-pill" onclick="setSearchInputValue('pdf:')">📕 PDF</span>
+           <span class="scope-switch-pill" onclick="setSearchInputValue('word:')">📝 Word</span>
+           <span class="scope-switch-pill" onclick="setSearchInputValue('excel:')">📊 Excel</span>
+           <span class="scope-switch-pill" onclick="setSearchInputValue('epub:')">📚 EPUB</span>
+           <span class="scope-switch-pill" onclick="setSearchInputValue('xmind:')">🧠 XMind</span>`,
+          "↵ 本地打开 · ⇧↵ 贴链接"
+        );
       } else if (q.startsWith("av:") || q.startsWith("av：")) {
         activeIntentAction = "syav";
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">📊 属性视图 (AV库)</span>识别到数据库直投，回车将内容结构化追加至思源数据库表格中</div><span style="font-size: 10px; opacity: 0.8;">↵ 录入数据库</span>`;
+        banner.innerHTML = renderModeBanner("📊 数据库直投", "【怎么用】输入 <b>av:表名 新记录内容</b> 按回车直接追加一行 · 或点击 <span class='scope-switch-pill' onclick='toggleTableGridModal()'>📊 打开表格矩阵工作台</span>", "↵ 录入数据库");
       } else if (q.startsWith("m:") || q.startsWith("m：") || q.startsWith("mark:") || q.startsWith("mark：")) {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">⭐ 收藏书签</span>检索全库已加书签或收藏的重点块与文档，回车直达</div><span style="font-size: 10px; opacity: 0.8;">↵ 定位目标块</span>`;
+        banner.innerHTML = renderModeBanner("⭐ 收藏书签", "【怎么用】列出思源中设置了书签的重点块，点击或按回车在思源中打开", "↵ 定位目标块");
       } else if (q.startsWith("t:") || q.startsWith("t：") || q.startsWith("todo:") || q.startsWith("todo：")) {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">📋 待办清单</span>检索全库未完成的任务清单，回车直达或在抽屉一键勾选完成</div><span style="font-size: 10px; opacity: 0.8;">↵ 定位任务 · 点击勾选</span>`;
+        banner.innerHTML = renderModeBanner(
+          "📋 待办清单",
+          `<span>点击左侧任务在右侧开启番茄专注或直接勾选完成</span>
+           <span class="scope-switch-pill" onclick="promptCreateNewTaskModal()">+ 新建待办</span>
+           <span class="scope-switch-pill" onclick="toggleTasksKanbanModal()">🎴 展开四象限大看板</span>`,
+          "↵ 查看详情"
+        );
       } else if (q.startsWith("v:") || q.startsWith("v：") || q.startsWith("prompt:") || q.startsWith("val:")) {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">📝 模板直贴</span>选择模板，回车沉淀至日记，Shift+Enter 穿透贴入当前光标</div><span style="font-size: 10px; opacity: 0.8;">↵ 录入日记 · Shift+↵ 贴光标</span>`;
+        banner.innerHTML = renderModeBanner("📝 模板与常用语", "【怎么用】选择模板后：按 <b>Enter</b> 写入今日日记 · 按 <b>Shift+Enter</b> 直接粘贴到外部软件光标处", "↵ 入日记 · ⇧↵ 贴光标");
       } else if (q.startsWith("c:") || q.startsWith("c：") || q.startsWith("clip:") || q.startsWith("clip：")) {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">📋 剪贴板历史</span>检索最近复制并结构化清洗的 15 条剪贴板快照</div><span style="font-size: 10px; opacity: 0.8;">↵ 入日记 · Shift+↵ 贴光标</span>`;
+        banner.innerHTML = renderModeBanner(
+          "📋 剪贴板历史",
+          `<span><b>Enter</b> 记入日记 · <b>Shift+Enter</b> 贴到光标 · 筛选：</span>
+           <span class="scope-switch-pill" onclick="setSearchInputValue('c:')">全部</span>
+           <span class="scope-switch-pill" onclick="setSearchInputValue('c:url')">🔗 链接</span>
+           <span class="scope-switch-pill" onclick="setSearchInputValue('c:code')">⌨️ 代码</span>
+           <span class="scope-switch-pill" onclick="setSearchInputValue('c:table')">📊 表格</span>
+           <span class="scope-switch-pill" onclick="toggleClipStudioModal()">🎛️ 多段拼版工作台</span>`,
+          "↵ 入日记 · ⇧↵ 贴光标"
+        );
       } else if (q.startsWith("fav:") || q.startsWith("fav：") || q.startsWith("url:") || q.startsWith("url：")) {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">🌐 网站收藏中枢</span>跨浏览器统一收藏，回车直达或一键收录当前前台网址，沉淀至思源</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开 · Shift+↵ 贴超链</span>`;
+        banner.innerHTML = renderModeBanner(
+          "🌐 网站收藏中枢",
+          `<span>点击网址在浏览器打开 · <b>Shift+Enter</b> 贴超链 · 快捷操作：</span>
+           <span class="scope-switch-pill" onclick="triggerLaunchpadCaptureBrowser()">🌐 嗅探当前浏览器网址</span>
+           <span class="scope-switch-pill" onclick="promptAddLaunchpadItem()">+ 手动添加</span>
+           <span class="scope-switch-pill" onclick="toggleLaunchpadModal('web')">🚀 大图标启动台</span>`,
+          "↵ 打开网址 · ⇧↵ 贴超链"
+        );
       } else if (q.startsWith("fold:") || q.startsWith("fold：") || q.startsWith("folder:") || q.startsWith("folder：")) {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">📂 文件夹导航中枢</span>系统级目录收藏与 #32770 对话框穿透，回车原位秒跳或资源管理器秒开</div><span style="font-size: 10px; opacity: 0.8;">↵ 穿透秒跳 · Shift+↵ 贴路径</span>`;
+        banner.innerHTML = renderModeBanner(
+          "📂 文件夹导航",
+          `<span>在「打开/保存文件」窗口呼出时点击目录可原位秒跳 · 快捷操作：</span>
+           <span class="scope-switch-pill" onclick="triggerLaunchpadCaptureExplorer()">📂 嗅探当前资源管理器目录</span>
+           <span class="scope-switch-pill" onclick="promptAddLaunchpadItem()">+ 手动添加</span>
+           <span class="scope-switch-pill" onclick="toggleLaunchpadModal('folder')">🚀 大图标启动台</span>`,
+          "↵ 穿透秒开 · ⇧↵ 贴路径"
+        );
+      } else if (q.startsWith("bm:") || q.startsWith("bm：") || q.startsWith("book:") || q.startsWith("book：")) {
+        banner.style.display = "flex";
+        banner.innerHTML = renderModeBanner("🔖 浏览器书签", "【怎么用】打字检索本机 Edge / Chrome 收藏夹，回车打开网页，Shift+Enter 贴 Markdown 超链", "↵ 打开网页 · ⇧↵ 贴超链");
+      } else if (q.startsWith("ws:") || q.startsWith("ws：") || q.startsWith("session:") || q.startsWith("workspace:")) {
+        banner.style.display = "flex";
+        banner.innerHTML = renderModeBanner("🏢 工作现场快照", "【怎么用】在右侧输入名称保存当前打开的思源文档/本地文件/网页组合，下次一键恢复全部窗口", "↵ 保存或恢复现场");
+      } else if (q.startsWith("voice:") || q.startsWith("voice：") || q.startsWith("say:") || q === "voice") {
+        banner.style.display = "flex";
+        banner.innerHTML = renderModeBanner("🎙️ 语音速记微舱", "【怎么用】点右侧「激活语音听写」对着麦克风说话 ➔ 点「口语去噪」➔ 点「存入今日日记」", "语音转字去噪");
+      } else if (q.startsWith("trash:") || q.startsWith("trash：") || q.startsWith("recycle:") || q.startsWith("rescue:") || q.startsWith("hist:")) {
+        banner.style.display = "flex";
+        banner.innerHTML = renderModeBanner(
+          "🗑️ 回收站与历史打捞",
+          `<span>点击左侧历史快照预览全文，支持一键恢复至今日日记</span>
+           <span class="scope-switch-pill" onclick="openNativeDataHistory()">🪟 打开思源官方数据历史</span>`,
+          "↵ 一键打捞恢复"
+        );
+      } else if (q.startsWith("pom:") || q.startsWith("pom：") || q.startsWith("timer:") || q.startsWith("timer：")) {
+        banner.style.display = "flex";
+        banner.innerHTML = renderModeBanner("🍅 心流番茄专注", "【怎么用】输入 <b>pom:25 任务名称</b> 或在右侧面板选择时长，点击「开启专注」启动桌面倒计时", "↵ 开启专注计时");
+      } else if (q.startsWith("x:") || q.startsWith("x：") || q.startsWith("clean:") || q === "x" || q === "syx") {
+        banner.style.display = "flex";
+        banner.innerHTML = renderModeBanner("✨ 纯净 Markdown 复制", "【怎么用】自动剥离思源 {: id} 属性并将 ((双链)) 转为纯文字，支持一键复制为微信/Word 富文本或隐私脱敏", "↵ 净化复制 · ⇧↵ 贴光标");
+      } else if (q.startsWith("color:") || q.startsWith("color：") || q.startsWith("style:") || q === "color" || q === "syp") {
+        banner.style.display = "flex";
+        banner.innerHTML = renderModeBanner("🎨 原色高亮美化", "【怎么用】点击右侧思源原生 B3 色板，一键对思源选中文字上色/高亮，或生成带配色的笔记块写入日记", "↵ 应用配色");
       } else if (q.startsWith("cfg:") || q.startsWith("cfg：") || q.startsWith("s3:") || q.startsWith("s3：") || q.startsWith("ai:") || q.startsWith("ai：")) {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">⚙️ 配置预设中枢</span>脱敏管理与一键切换 S3 存储桶、AI 大模型及系统预设</div><span style="font-size: 10px; opacity: 0.8;">↵ 查看详情 · 复制配置</span>`;
+        banner.innerHTML = renderModeBanner("⚙️ 配置预设中枢", "脱敏管理与一键切换 S3 存储桶、AI 大模型及系统预设", "↵ 查看详情 · 复制配置");
       } else if (q.startsWith("notice:") || q.startsWith("notice：") || q.startsWith("notif:") || q.startsWith("notif：")) {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">📢 通知与事件流</span>汇总思源弹窗、系统事件与外部自动化回执，支持一键沉淀日记</div><span style="font-size: 10px; opacity: 0.8;">↵ 查看详情 · 沉淀日记</span>`;
+        banner.innerHTML = renderModeBanner("📢 通知与事件流", "汇总思源弹窗、系统事件与外部自动化回执，支持一键沉淀日记", "↵ 查看详情 · 沉淀日记");
       } else if (q.startsWith("pad:") || q.startsWith("pad：") || q.startsWith("launch:") || q.startsWith("launch：") || q === "pad" || q === "launch") {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">🚀 全景启动台</span>大图标自适应网格，聚合网站与工程文件夹，支持 1~9 盲打秒开</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开启动台大视窗</span>`;
-      } else if (q.startsWith("c:merge") || q.startsWith("clip:") || q.startsWith("clip：") || q.startsWith("studio:") || q === "c:merge" || q === "merge") {
+        banner.innerHTML = renderModeBanner("🚀 全景启动台", "大图标自适应网格，聚合网站与工程文件夹，支持 1~9 盲打秒开", "↵ 打开启动台大视窗");
+      } else if (q.startsWith("c:merge") || q.startsWith("studio:") || q === "c:merge" || q === "merge") {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">📋 剪贴板拼版台</span>自由多选最近剪贴板碎片，调序并以 7 套模板实时拼版与直贴</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开拼版工作台</span>`;
+        banner.innerHTML = renderModeBanner("📋 剪贴板拼版台", "自由多选最近剪贴板碎片，调序并以 7 套模板实时拼版与直贴", "↵ 打开拼版工作台");
       } else if (q.startsWith("graph:") || q.startsWith("graph：") || q.startsWith("star:") || q.startsWith("star：") || q.startsWith("net:") || q === "graph" || q === "star") {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">🌌 星轨图谱</span>全屏双向知识网络拓扑，单击节点无缝漫游重构</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开星轨大视窗</span>`;
+        banner.innerHTML = renderModeBanner("🌌 星轨图谱", "全屏双向知识网络拓扑，单击节点无缝漫游重构", "↵ 打开星轨大视窗");
       } else if (q.startsWith("doctor:") || q.startsWith("health:") || q.startsWith("deadlink:") || q === "syh" || q === "doctor") {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">🩺 系统综合体检</span>全库死链修复、孤儿附件清道夫与系统健康诊断大盘</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开体检大视窗</span>`;
+        banner.innerHTML = renderModeBanner("🩺 系统综合体检", "全库死链修复、孤儿附件清道夫与系统健康诊断大盘", "↵ 打开体检大视窗");
       } else if (q.startsWith("syo") || q.startsWith("outline:") || q.startsWith("mindmap:") || q === "syo" || q === "outline") {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">🗺️ 大纲与导图</span>文档 H1~H6 层级树与轻量交互思维导图大工作台</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开大纲导图视窗</span>`;
+        banner.innerHTML = renderModeBanner("🗺️ 大纲与导图", "文档 H1~H6 层级树与轻量交互思维导图大工作台", "↵ 打开大纲导图视窗");
       } else if (q.startsWith("tab:") || q.startsWith("tab：") || q.startsWith("table:") || q.startsWith("table：") || q === "tab" || q === "table") {
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">📊 表格透视矩阵</span>全库数据表格透视，列排序、单行过滤与1键导出Excel</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开表格矩阵视窗</span>`;
+        banner.innerHTML = renderModeBanner("📊 表格透视矩阵", "全库数据表格透视，列排序、单行过滤与1键导出Excel", "↵ 打开表格矩阵视窗");
       } else if (raw.length > 0) {
         banner.style.display = "flex";
         banner.innerHTML = `
           <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <button type="button" class="back-home-pill-btn" onclick="clearSearchInput()" title="清空搜索词返回主页 (Esc)">⬅️ 返回主页</button>
             <span class="intent-tag">🔍 切换检索域</span>
             <span class="scope-switch-pill" onclick="insertPrefix('b:')">🧱 搜正文块 (b:)</span>
             <span class="scope-switch-pill" onclick="insertPrefix('d:')">📄 搜文档 (d:)</span>
@@ -6205,16 +6469,248 @@
         return;
       }
 
-      // pom: 或 timer: 模式：桌面轻量敏捷心流计时器
+      // pom: 或 timer: 模式：桌面轻量敏捷心流计时器（交互式专注控制台，避免每次敲字重复启动计时器）
       if (q.startsWith("pom:") || q.startsWith("pom：") || q.startsWith("timer:") || q.startsWith("timer：")) {
-        const sub = q.replace(/^(pom:|pom：|timer:|timer：)/, "").trim();
+        const sub = raw.replace(/^(pom:|pom：|timer:|timer：)/i, "").trim();
         const m = sub.match(/^(\d+)(?:\s+(.*))?$/);
         const mins = m ? parseInt(m[1], 10) : 25;
-        const task = (m && m[2]) ? m[2].trim() : "心流专注";
-        if (window.chrome && window.chrome.webview) {
-          window.chrome.webview.postMessage(JSON.stringify({ op: 'startFlowTimer', minutes: mins, task: task }));
-          showToast(`⏱️ 已开启 ${mins} 分钟专注【${task}】！`);
-        }
+        const task = (m && m[2]) ? m[2].trim() : ((!m && sub) ? sub : "心流专注");
+        filteredItems = [
+          {
+            id: "pom_start_custom",
+            group: "search",
+            title: `🍅 开启 ${mins} 分钟专注：【${task}】`,
+            desc: "【怎么用】点击或按回车立即开始倒计时，倒计时结束自动将专注记录写入今日日记",
+            hotkey: "Enter",
+            iconType: "clock",
+            iconColor: "var(--rose-agent)",
+            badge: `${mins}分钟`,
+            badgeCls: "badge-native",
+            isFlowTimerItem: true,
+            timerMins: mins,
+            timerTask: task
+          },
+          {
+            id: "pom_start_45",
+            group: "search",
+            title: `🔥 开启 45 分钟深度攻坚：【${task}】`,
+            desc: "适合论文研读、架构编码与长文写作，结束后自动归档专注时长",
+            hotkey: "点击启动",
+            iconType: "flame",
+            iconColor: "var(--tech-amber)",
+            badge: "45分钟",
+            badgeCls: "badge-plugin",
+            isFlowTimerItem: true,
+            timerMins: 45,
+            timerTask: task
+          },
+          {
+            id: "pom_start_15",
+            group: "search",
+            title: `⚡ 开启 15 分钟快速冲刺：【${task}】`,
+            desc: "适合快速清理琐碎待办、邮件回复与晨间复盘",
+            hotkey: "点击启动",
+            iconType: "bolt",
+            iconColor: "var(--emerald-mint)",
+            badge: "15分钟",
+            badgeCls: "badge-native",
+            isFlowTimerItem: true,
+            timerMins: 15,
+            timerTask: task
+          },
+          {
+            id: "pom_stop_timer",
+            group: "search",
+            title: "⏹️ 停止当前专注计时并结算",
+            desc: "提前结束当前正在运行的番茄钟并将已完成时长记入今日日记",
+            hotkey: "点击停止",
+            iconType: "rotate-ccw",
+            iconColor: "var(--cyber-sky)",
+            badge: "停止结算",
+            badgeCls: "badge-bridge",
+            isFlowTimerItem: true,
+            timerAction: "stop",
+            timerMins: mins,
+            timerTask: task
+          }
+        ];
+        selectedIndex = 0;
+        renderItems();
+        renderFlowTimerInspector(filteredItems[0]);
+        return;
+      }
+
+      // x: / clean: / syx 模式：纯净 Markdown 复制与外部富文本转换工作台
+      if (q.startsWith("x:") || q.startsWith("x：") || q.startsWith("clean:") || q.startsWith("syx:") || q === "x" || q === "syx") {
+        const subText = raw.replace(/^(x:|x：|clean:|syx:)/i, "").trim();
+        filteredItems = [
+          {
+            id: "clean_md_copy",
+            group: "commands",
+            title: "📋 一键净化并复制纯净 Markdown",
+            desc: "自动剥离思源 {: id=\"...\"} 属性并将 ((id \"双链\")) 转为普通文字，适合发往微信/知乎/邮件",
+            hotkey: "Enter",
+            iconType: "share",
+            iconColor: "var(--emerald-mint)",
+            badge: "去杂质MD",
+            badgeCls: "badge-native",
+            isCleanMdItem: true,
+            cleanMode: "md",
+            customInput: subText
+          },
+          {
+            id: "clean_rich_copy",
+            group: "commands",
+            title: "💬 复制为微信 / 飞书 / Word 富文本",
+            desc: "将 Markdown 标题、引用、加粗与列表转为带排版样式的富文本，在 Word/微信中直接 Ctrl+V 保真粘贴",
+            hotkey: "点击转换",
+            iconType: "edit",
+            iconColor: "var(--cyber-sky)",
+            badge: "带排版富文本",
+            badgeCls: "badge-bridge",
+            isCleanMdItem: true,
+            cleanMode: "richtext",
+            customInput: subText
+          },
+          {
+            id: "clean_privacy_copy",
+            group: "commands",
+            title: "🛡️ 隐私脱敏复制 (自动隐藏手机号 / 密钥)",
+            desc: "自动识别并打码文本中的手机号、身份证、密码与 sk- 开头的大模型 API Key，安全分享不泄密",
+            hotkey: "点击脱敏",
+            iconType: "shield",
+            iconColor: "var(--tech-amber)",
+            badge: "安全脱敏",
+            badgeCls: "badge-plugin",
+            isCleanMdItem: true,
+            cleanMode: "privacy",
+            customInput: subText
+          },
+          {
+            id: "clean_paste_caret",
+            group: "commands",
+            title: "⚡ 净化后直接粘贴到外部软件光标处",
+            desc: "净化当前文本并立即穿透贴回刚才正在编辑的外部窗口光标位置",
+            hotkey: "Shift+Enter",
+            iconType: "bolt",
+            iconColor: "var(--cyber-purple)",
+            badge: "穿透直贴",
+            badgeCls: "badge-native",
+            isCleanMdItem: true,
+            cleanMode: "paste",
+            customInput: subText
+          }
+        ];
+        selectedIndex = 0;
+        renderItems();
+        renderCleanMdInspector(filteredItems[0]);
+        return;
+      }
+
+      // color: / style: / syp 模式：思源原生 B3 原色高亮美化调色台
+      if (q.startsWith("color:") || q.startsWith("color：") || q.startsWith("style:") || q.startsWith("syp:") || q === "color" || q === "syp") {
+        const subText = raw.replace(/^(color:|color：|style:|syp:)/i, "").trim();
+        filteredItems = [
+          {
+            id: "b3_bg_yellow",
+            group: "commands",
+            title: "🖍️ 荧光黄背景高亮 (重点标记)",
+            desc: "应用思源原生 var(--b3-font-background3) 荧光黄背景色，突出核心句子",
+            hotkey: "Enter",
+            iconType: "brush",
+            iconColor: "var(--tech-amber)",
+            badge: "背景高亮",
+            badgeCls: "badge-native",
+            isColorStyleItem: true,
+            styleCode: "bg3",
+            styleLabel: "荧光黄背景高亮",
+            b3Style: "background-color: var(--b3-font-background3);",
+            customInput: subText
+          },
+          {
+            id: "b3_color_red",
+            group: "commands",
+            title: "🔴 重点红色文字 (警示与核心结论)",
+            desc: "应用思源原生 var(--b3-font-color1) 醒目红字",
+            hotkey: "点击应用",
+            iconType: "brush",
+            iconColor: "var(--rose-agent)",
+            badge: "红色字体",
+            badgeCls: "badge-stale",
+            isColorStyleItem: true,
+            styleCode: "c1",
+            styleLabel: "重点红色文字",
+            b3Style: "color: var(--b3-font-color1);",
+            customInput: subText
+          },
+          {
+            id: "b3_color_blue",
+            group: "commands",
+            title: "🔵 科技蓝色文字 (概念与定义)",
+            desc: "应用思源原生 var(--b3-font-color4) 科技蓝字",
+            hotkey: "点击应用",
+            iconType: "brush",
+            iconColor: "var(--cyber-sky)",
+            badge: "蓝色字体",
+            badgeCls: "badge-bridge",
+            isColorStyleItem: true,
+            styleCode: "c4",
+            styleLabel: "科技蓝色文字",
+            b3Style: "color: var(--b3-font-color4);",
+            customInput: subText
+          },
+          {
+            id: "b3_color_green",
+            group: "commands",
+            title: "🟢 翡翠绿色文字 (正向与已验证)",
+            desc: "应用思源原生 var(--b3-font-color2) 翡翠绿字",
+            hotkey: "点击应用",
+            iconType: "brush",
+            iconColor: "var(--emerald-mint)",
+            badge: "绿色字体",
+            badgeCls: "badge-native",
+            isColorStyleItem: true,
+            styleCode: "c2",
+            styleLabel: "翡翠绿色文字",
+            b3Style: "color: var(--b3-font-color2);",
+            customInput: subText
+          },
+          {
+            id: "b3_color_purple",
+            group: "commands",
+            title: "🟣 暗夜紫色文字 (洞察与金句)",
+            desc: "应用思源原生 var(--b3-font-color6) 紫色字体",
+            hotkey: "点击应用",
+            iconType: "brush",
+            iconColor: "var(--cyber-purple)",
+            badge: "紫色字体",
+            badgeCls: "badge-plugin",
+            isColorStyleItem: true,
+            styleCode: "c6",
+            styleLabel: "暗夜紫色文字",
+            b3Style: "color: var(--b3-font-color6);",
+            customInput: subText
+          },
+          {
+            id: "b3_style_clear",
+            group: "commands",
+            title: "🧹 一键清除样式与中英盘古排版",
+            desc: "清除多余内联颜色样式并自动规范中英文数字空格间距",
+            hotkey: "点击清理",
+            iconType: "rotate-ccw",
+            iconColor: "var(--indigo-light)",
+            badge: "清除格式",
+            badgeCls: "badge-system",
+            isColorStyleItem: true,
+            styleCode: "clear",
+            styleLabel: "清除样式与盘古排版",
+            b3Style: "",
+            customInput: subText
+          }
+        ];
+        selectedIndex = 0;
+        renderItems();
+        renderColorStyleInspector(filteredItems[0]);
         return;
       }
 
@@ -6359,10 +6855,14 @@
 
       // g: 模式：触发网页免扩展双态剪藏 (支持文献卡片 vs 独立研读专页 + 即时思考批注)
       if (q.startsWith("g:") || q.startsWith("g：") || q === "g") {
-        const subKw = q.replace(/^(g:|g：)/, "").trim();
+        const subKw = raw.replace(/^(g:|g：)/i, "").trim();
         activeIntentAction = "webclip";
         banner.style.display = "flex";
-        banner.innerHTML = `<div><span class="intent-tag">🌐 网页双态剪藏</span>回车【存为文献卡】· Shift+Enter【另存为研读专页】${subKw ? ` · 批注: “${escapeHtml(subKw)}”` : ''}</div><span style="font-size: 10px; opacity: 0.8;">↵ 存卡 / ⇧↵ 建文档</span>`;
+        banner.innerHTML = renderModeBanner(
+          "🌐 网页双态剪藏",
+          `<span>① 确保浏览器打开了目标网页 ➔ ② 在右侧输入批注或直接点按钮入库${subKw ? ` (当前批注: “<b>${escapeHtml(subKw)}</b>”)` : ''}</span>`,
+          "↵ 存文献卡 · ⇧↵ 建专页"
+        );
         filteredItems = [
           {
             id: "syg_card",
@@ -6693,7 +7193,36 @@
 
     function hasPrefixSearch(str) {
       if (!str) return false;
-      const prefixes = ["b:", "b：", "d:", "d：", "att:", "att：", "asset:", "asset：", "office:", "office：", "word:", "word：", "excel:", "excel：", "ppt:", "ppt：", "zotero:", "zotero：", "tag:", "tag：", "t:", "t：", "m:", "m：", "v:", "v：", "c:", "c：", "p:", "p：", "ev:", "ev：", "g:", "g：", "av:", "av：", "trash:", "trash：", "recycle:", "rescue:", "hist:", "ws:", "ws：", "session:", "workspace:", "voice:", "voice："];
+      const prefixes = [
+        "b:", "b：", "block:", "block：",
+        "d:", "d：", "doc:", "doc：",
+        "att:", "att：", "asset:", "asset：",
+        "office:", "office：", "word:", "word：", "excel:", "excel：", "ppt:", "ppt：", "pdf:", "pdf：", "epub:", "epub：", "xmind:", "xmind：",
+        "zotero:", "zotero：",
+        "tag:", "tag：",
+        "t:", "t：", "todo:", "todo：",
+        "m:", "m：", "mark:", "mark：",
+        "v:", "v：", "prompt:", "val:",
+        "c:", "c：", "clip:", "clip：",
+        "p:", "p：", "plugin:",
+        "ev:", "ev：", "find:", "listary:", "listary：",
+        "g:", "g：",
+        "av:", "av：",
+        "trash:", "trash：", "recycle:", "rescue:", "hist:",
+        "ws:", "ws：", "session:", "workspace:",
+        "voice:", "voice：", "say:",
+        "fav:", "fav：", "url:", "url：",
+        "fold:", "fold：", "folder:", "folder：",
+        "bm:", "bm：", "book:", "book：",
+        "cfg:", "cfg：", "s3:", "s3：", "ai:", "ai：",
+        "notice:", "notice：", "notif:", "notif：",
+        "code:", "code：", "snip:", "snip：",
+        "tab:", "tab：", "table:", "table：",
+        "vault:", "vault：", "dir:", "dir：",
+        "pom:", "pom：", "timer:", "timer：",
+        "x:", "x：", "clean:", "syx:",
+        "color:", "color：", "style:", "syp:"
+      ];
       return prefixes.some(p => str.toLowerCase().startsWith(p));
     }
 
@@ -6841,7 +7370,8 @@
               </div>
               <div class="card-footer-right">
                 ${actionButtons}
-                <span class="card-code" data-card-id="${item.id}" title="内部指令码: ${item.id}" style="color: var(--cyber-sky); opacity: 0.85;">点击即用 ▸</span>
+                <button type="button" class="card-howto-btn" onclick="event.stopPropagation(); openFeatureGuideModal('${item.id}')" title="查看【${escapeQuote(item.title)}】3 步上手教程与互动演练">💡 怎么用</button>
+                <span class="card-code" data-card-id="${item.id}" title="点击立即打开或执行 (${item.id})" style="color: var(--cyber-sky); opacity: 0.85;">点击即用 ▸</span>
               </div>
             </div>
           `;
@@ -6880,6 +7410,7 @@
               ${index < 9 ? `<span class="quick-num-badge" title="按 Ctrl+${index + 1} 直接执行">^${index + 1}</span>` : ""}
               ${item.pluginHotkey ? `<span class="plugin-alt-key">${item.pluginHotkey}</span>` : ""}
               ${actionButtons}
+              <button type="button" class="card-howto-btn" onclick="event.stopPropagation(); openFeatureGuideModal('${item.id}')" title="查看 3 步上手教程与演练">💡 怎么用</button>
               <span class="card-hotkey">${item.hotkey}</span>
             </div>
           `;
@@ -6976,6 +7507,23 @@
           pasteAtCursor(item.templateContent);
           return;
         }
+        if (item.isCodeSnippet && item.snippetData) {
+          pasteAtCursor(item.snippetData.Code || "");
+          return;
+        }
+        if (item.favData) {
+          const b = item.favData;
+          pasteAtCursor(`[${b.Title}](${b.CleanUrl || b.Url})`);
+          return;
+        }
+        if (item.folderData) {
+          pasteAtCursor(item.folderData.Path || "");
+          return;
+        }
+        if (item.isCleanMdItem) {
+          executeCleanMdAction(Object.assign({}, item, { cleanMode: "paste" }));
+          return;
+        }
         // Shift+Enter 快捷光标穿透回贴双链
         if (item.blockId) {
           const clean = (item.blockContent || item.title || "").replace(/["\r\n]/g, " ").trim();
@@ -7055,6 +7603,88 @@
       showToast(`✓ 已执行: ${item.title}`);
       recordItemUsage(item.id);
 
+      // 优先执行列表项上显式挂载的自定义闭包动作 (如 fav:/fold:/cfg:/notice: 快捷操作项)
+      if (typeof item.action === "function") {
+        item.action();
+        return;
+      }
+
+      // 网站收藏条目点击直达
+      if (item.favData) {
+        openWebBookmarkUrl(item.favData.CleanUrl || item.favData.Url);
+        return;
+      }
+
+      // 文件夹收藏条目点击原位穿透/秒开
+      if (item.folderData) {
+        navigateFolderBookmarkPath(item.folderData.Path);
+        return;
+      }
+
+      // 浏览器书签条目点击秒开
+      if (item.isBookmarkItem && item.bmData) {
+        openWebBookmarkUrl(item.bmData.CleanUrl || item.bmData.Url);
+        return;
+      }
+
+      // 待办清单条目点击打开思源对应块
+      if (item.taskData) {
+        if (item.taskData.BlockId) {
+          openBlockById(item.taskData.BlockId);
+        } else {
+          inspectTaskItem(item.taskData);
+        }
+        return;
+      }
+
+      // 配置预设条目点击热切换激活
+      if (item.profileData) {
+        applyProfileById(item.profileData.Id);
+        return;
+      }
+
+      // 通知历史条目点击查看详情
+      if (item.notifData) {
+        inspectNotificationItem(item.notifData);
+        return;
+      }
+
+      // 代码片段条目点击展开代码工作台
+      if (item.isCodeSnippet && item.snippetData) {
+        toggleCodeStudioModal(item.snippetData.BlockId);
+        return;
+      }
+
+      // 表格块条目点击展开表格透视矩阵工作台
+      if (item.isTableBlock && item.tableData) {
+        toggleTableGridModal(item.blockId, item.tableData.markdown || item.tableData.content || "");
+        return;
+      }
+
+      // 外部知识库文档条目点击展开外部库工作台
+      if (item.isVaultItem && item.vaultData) {
+        toggleVaultMirrorModal(item.vaultData.FilePath);
+        return;
+      }
+
+      // 番茄专注控制台条目点击启动或停止计时
+      if (item.isFlowTimerItem) {
+        executeFlowTimerAction(item);
+        return;
+      }
+
+      // 纯净 Markdown 净化台条目点击执行净化动作
+      if (item.isCleanMdItem) {
+        executeCleanMdAction(item);
+        return;
+      }
+
+      // 原色高亮美化台条目点击执行配色动作
+      if (item.isColorStyleItem) {
+        executeColorStyleAction(item);
+        return;
+      }
+
       // Zotero 文献库调动分支
       if (item.actionType === "zotero-open") {
         if (window.chrome && window.chrome.webview) {
@@ -7066,10 +7696,30 @@
         return;
       }
 
-      // 网页双态剪藏分支 (文献卡片 vs 独立研读专页)
-      if (item.isWebClipItem || item.id === "syg" || item.id === "syg_card" || item.id === "syg_doc") {
+      // 主页点击「网页剪藏与批注 (syg)」先进入窗内双态剪藏看板 (g:)，让用户看清卡片/专页/AI提炼选项与批注框
+      if (item.id === "syg" && !item.isWebClipItem && !item.clipMode && !customText) {
+        insertPrefix("g:");
+        return;
+      }
+
+      // 主页点击「纯净 Markdown 复制 (syx)」进入窗内净化与富文本转换工作台 (x:)
+      if (item.id === "syx" && !customText) {
+        insertPrefix("x:");
+        return;
+      }
+
+      // 主页点击「原色高亮美化 (syp)」进入窗内思源原生 B3 调色工作台 (color:)
+      if (item.id === "syp" && !customText) {
+        insertPrefix("color:");
+        return;
+      }
+
+      // 网页双态剪藏执行分支 (文献卡片 vs 独立研读专页)
+      if (item.isWebClipItem || item.clipMode || item.id === "syg_card" || item.id === "syg_doc") {
         const mode = item.clipMode || (item.id === "syg_doc" ? "doc" : "card");
-        const annotation = item.userAnnotation || customText || "";
+        const inlineAnnoEl = document.getElementById("webclip-inline-annotation");
+        const inlineAnno = inlineAnnoEl ? inlineAnnoEl.value.trim() : "";
+        const annotation = inlineAnno || item.userAnnotation || customText || "";
         if (window.chrome && window.chrome.webview) {
           window.chrome.webview.postMessage({
             op: 'executeWebClip',
@@ -7417,22 +8067,15 @@
 
     function isSplitSearchModeActive() {
       const q = document.getElementById("search-input") ? document.getElementById("search-input").value.trim().toLowerCase() : "";
-      if (q.startsWith("b:") || q.startsWith("b：") || q.startsWith("block:") || q.startsWith("block：") ||
-          q.startsWith("d:") || q.startsWith("d：") || q.startsWith("doc:") || q.startsWith("doc：") ||
-          q.startsWith("m:") || q.startsWith("m：") || q.startsWith("mark:") || q.startsWith("mark：") ||
-          q.startsWith("t:") || q.startsWith("t：") || q.startsWith("todo:") || q.startsWith("todo：") ||
-          q.startsWith("c:") || q.startsWith("c：") || q.startsWith("clip:") || q.startsWith("clip：") ||
-          q.startsWith("v:") || q.startsWith("v：") || q.startsWith("prompt:") || q.startsWith("val:") ||
-          q.startsWith("att:") || q.startsWith("att：") || q.startsWith("asset:") || q.startsWith("asset：") ||
-	          q.startsWith("trash:") || q.startsWith("trash：") || q.startsWith("recycle:") || q.startsWith("recycle：") ||
-	          q.startsWith("rescue:") || q.startsWith("rescue：") || q.startsWith("hist:") || q.startsWith("hist：") ||
-	          q.startsWith("vault:") || q.startsWith("vault：") || q.startsWith("dir:") || q.startsWith("dir：") ||
-          q.startsWith("ws:") || q.startsWith("ws：") || q.startsWith("session:") || q.startsWith("workspace:") ||
-          q.startsWith("voice:") || q.startsWith("voice：") ||
-          q.startsWith("g:") || q.startsWith("g：") || q === "g") {
+      if (hasPrefixSearch(q) || q === "g" || q === "x" || q === "syx" || q === "color" || q === "syp" || q === "voice" || (q.startsWith("#") && !q.includes(" ") && q.length > 1)) {
         return true;
       }
-      if (filteredItems.length > 0 && filteredItems.every(it => it.blockId || it.docId || it.isAssetItem || it.isRescueItem || it.isWorkspaceItem || it.isVoiceItem || it.isWebClipItem)) {
+      if (filteredItems.length > 0 && filteredItems.every(it =>
+        it.blockId || it.docId || it.isAssetItem || it.isRescueItem || it.isWorkspaceItem ||
+        it.isVoiceItem || it.isWebClipItem || it.favData || it.folderData || it.isBookmarkItem ||
+        it.profileData || it.notifData || it.isCodeSnippet || it.isTableBlock || it.isTagItem ||
+        it.taskData || it.isFlowTimerItem || it.isCleanMdItem || it.isColorStyleItem || it.isClipItem
+      )) {
         return true;
       }
       return false;
@@ -7443,6 +8086,38 @@
       if (!item) return;
       if (item.isWebClipItem || item.id === "syg" || item.id === "syg_card" || item.id === "syg_doc") {
         renderWebClipInspector(item);
+        return;
+      }
+      if (item.isFlowTimerItem) {
+        renderFlowTimerInspector(item);
+        return;
+      }
+      if (item.isCleanMdItem) {
+        renderCleanMdInspector(item);
+        return;
+      }
+      if (item.isColorStyleItem) {
+        renderColorStyleInspector(item);
+        return;
+      }
+      if (item.favData) {
+        inspectWebBookmarkItem(item.favData);
+        return;
+      }
+      if (item.folderData) {
+        inspectFolderBookmarkItem(item.folderData);
+        return;
+      }
+      if (item.taskData) {
+        inspectTaskItem(item.taskData);
+        return;
+      }
+      if (item.profileData) {
+        inspectProfileItem(item.profileData);
+        return;
+      }
+      if (item.notifData) {
+        inspectNotificationItem(item.notifData);
         return;
       }
       if (item.avId || item.actionType === "av-insert") {
@@ -7491,6 +8166,14 @@
       }
       if (item.isTagItem) {
         renderTagInspector(item);
+        return;
+      }
+      if (item.pluginLaunch) {
+        renderPluginCmdInspector(item);
+        return;
+      }
+      if (typeof item.action === "function" || item.actionType === "listary-open" || item.actionType === "zotero-open") {
+        renderActionItemInspector(item);
         return;
       }
       const targetId = item.blockId || item.docId;
@@ -7594,38 +8277,361 @@
         </div>
         <div class="inspector-body">
           <div class="inspector-preview-card" style="font-size: 12px; border-left-color: var(--cyber-sky); line-height: 1.6;">
-            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">🎯 剪藏模式特性对比：</div>
+            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">🎯 怎么用（免装浏览器扩展，2 步剪藏）：</div>
+            <div style="font-size: 11.5px; color: var(--text-secondary); margin-bottom: 8px;">
+              ① 先在浏览器（Edge/Chrome/Firefox）打开你想保存的网页（可选中重点段落）；<br/>
+              ② 在下方输入你的阅读批注（可留空），点击底部按钮即可存入思源！
+            </div>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-              <div style="padding: 6px 10px; border-radius: 6px; background: ${!isDocMode ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.03)'}; border: 1px solid ${!isDocMode ? 'rgba(56,189,248,0.4)' : 'var(--border-hairline)'};">
-                <div style="font-weight: 700; color: var(--cyber-sky);">📑 模式 1: 文献卡片流 (Insight Card) · 默认 [Enter]</div>
-                <div style="font-size: 11px; opacity: 0.85; margin-top: 2px;">将前台浏览器标题、网址、划选段落按标准大纲列表注入今日日记或收集箱，适合碎片阅读与要点摘抄。</div>
+              <div style="padding: 6px 10px; border-radius: 6px; background: ${!isDocMode ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.03)'}; border: 1px solid ${!isDocMode ? 'rgba(56,189,248,0.4)' : 'var(--border-hairline)'}; cursor: pointer;" onclick="executeItem({ isWebClipItem: true, clipMode: 'card', userAnnotation: document.getElementById('webclip-inline-annotation')?.value || '' })">
+                <div style="font-weight: 700; color: var(--cyber-sky);">📑 模式 1: 存为文献卡片 (记入今日日记) · 默认 [Enter]</div>
+                <div style="font-size: 11px; opacity: 0.85; margin-top: 2px;">将网页标题、网址、划选段落按嵌套列表注入今日日记，适合碎片阅读与要点摘抄。</div>
               </div>
-              <div style="padding: 6px 10px; border-radius: 6px; background: ${isDocMode ? 'rgba(168,85,247,0.15)' : 'rgba(255,255,255,0.03)'}; border: 1px solid ${isDocMode ? 'rgba(168,85,247,0.4)' : 'var(--border-hairline)'};">
-                <div style="font-weight: 700; color: var(--cyber-purple);">📄 模式 2: 另存为研读专页 (Full Article Doc) [Shift+Enter]</div>
-                <div style="font-size: 11px; opacity: 0.85; margin-top: 2px;">在读库中建立整篇独立研读专页笔记，生成 Callout 来源看板并自动将微信/知乎防盗链图片转存至本地资产库。</div>
+              <div style="padding: 6px 10px; border-radius: 6px; background: ${isDocMode ? 'rgba(168,85,247,0.15)' : 'rgba(255,255,255,0.03)'}; border: 1px solid ${isDocMode ? 'rgba(168,85,247,0.4)' : 'var(--border-hairline)'}; cursor: pointer;" onclick="executeItem({ isWebClipItem: true, clipMode: 'doc', userAnnotation: document.getElementById('webclip-inline-annotation')?.value || '' })">
+                <div style="font-weight: 700; color: var(--cyber-purple);">📄 模式 2: 另存为独立研读专页 (新建文档) [Shift+Enter]</div>
+                <div style="font-size: 11px; opacity: 0.85; margin-top: 2px;">在读库中建立整篇独立笔记，生成 Callout 来源看板并自动将微信/知乎防盗链图片转存至本地资产库。</div>
               </div>
             </div>
           </div>
-          ${annotation ? `
-            <div style="font-size: 11.5px; padding: 8px 12px; background: rgba(99,102,241,0.08); border-radius: 6px; border: 1px dashed var(--indigo-border); margin-top: 8px;">
-              <div style="color: var(--indigo-light); font-weight: 700; font-size: 11px;">💡 即时思考批注 (已注入)：</div>
-              <div style="margin-top: 4px; color: var(--text-primary); font-weight: 500;">“${escapeHtml(annotation)}”</div>
-            </div>
-          ` : `
-            <div style="font-size: 11px; color: var(--text-dim); padding: 8px 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px dashed var(--border-hairline); margin-top: 8px;">
-              💡 提示：在输入框直接键入 <code style="color: var(--cyber-sky); background: var(--bg-inset-deep); padding: 1px 4px; border-radius: 3px;">g: 你的思考批注</code>，即可在剪藏同时自动附带即时研读笔记！
-            </div>
-          `}
-          <div style="font-size: 11px; color: var(--text-muted); margin-top: 10px; padding: 6px 10px; background: rgba(16,185,129,0.06); border-radius: 6px;">
-            🛡️ <b>全平台支持</b>：无需安装浏览器插件，支持 Edge、Chrome、Brave、Firefox 等全系浏览器，自动感知微信/知乎/B站/GitHub/arXiv 14大平台并打标。
+          <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 5px;">
+            <label style="font-size: 11.5px; font-weight: 700; color: var(--indigo-light);">✍️ 附带阅读批注 / 个人思考 (可选)：</label>
+            <input type="text" id="webclip-inline-annotation" class="search-input" style="height: 32px; width: 100%; font-size: 12px; padding: 0 10px; border-radius: 6px; background: var(--bg-card);" value="${escapeQuote(annotation)}" placeholder="在此输入你的批注或感悟，剪藏时将自动附带写入..." onkeydown="if(event.key==='Enter'){ event.preventDefault(); executeItem({ isWebClipItem: true, clipMode: event.shiftKey ? 'doc' : 'card', userAnnotation: this.value }); }" />
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px; padding: 6px 10px; background: rgba(16,185,129,0.06); border-radius: 6px;">
+            🛡️ <b>全平台支持</b>：日常浏览网页时，无需打开本面板，直接按全局快捷键 <span class="hint-kbd">Alt+Shift+G</span> 即可秒速剪藏！
           </div>
         </div>
         <div class="inspector-dock">
           <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="inspector-dock-btn primary" onclick="executeItem({ clipMode: 'card', userAnnotation: '${escapeQuote(annotation)}' })" title="保存为文献卡片存入日记 (Enter)">📑 存为文献卡片 (Enter)</button>
-            <button class="inspector-dock-btn" style="background: rgba(168,85,247,0.18); border-color: rgba(168,85,247,0.5); color: #c084fc; font-weight: 700;" onclick="executeItem({ clipMode: 'doc', userAnnotation: '${escapeQuote(annotation)}' })" title="新建独立研读专页笔记 (Shift+Enter)">📄 新建研读专页 (Shift+↵)</button>
+            <button class="inspector-dock-btn primary" onclick="executeItem({ isWebClipItem: true, clipMode: 'card', userAnnotation: document.getElementById('webclip-inline-annotation')?.value || '${escapeQuote(annotation)}' })" title="保存为文献卡片存入日记 (Enter)">📑 存为文献卡片 (Enter)</button>
+            <button class="inspector-dock-btn" style="background: rgba(168,85,247,0.18); border-color: rgba(168,85,247,0.5); color: #c084fc; font-weight: 700;" onclick="executeItem({ isWebClipItem: true, clipMode: 'doc', userAnnotation: document.getElementById('webclip-inline-annotation')?.value || '${escapeQuote(annotation)}' })" title="新建独立研读专页笔记 (Shift+Enter)">📄 新建研读专页 (Shift+↵)</button>
             <button class="inspector-dock-btn" style="background: rgba(56,189,248,0.14); border-color: rgba(56,189,248,0.45); color: var(--cyber-sky); font-weight: 700;" onclick="triggerWebClipWithAi('card')" title="自动调用大模型提炼核心要点后存入今日日记">🤖 AI提炼后存卡</button>
             <button class="inspector-dock-btn" style="background: rgba(99,102,241,0.14); border-color: rgba(99,102,241,0.45); color: #a5b4fc; font-weight: 700;" onclick="triggerWebClipWithAi('doc')" title="自动调用大模型提炼核心要点后建立独立专页">🤖 AI提炼建专页</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderFlowTimerInspector(item) {
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+      const mins = (item && item.timerMins) ? item.timerMins : 25;
+      const task = (item && item.timerTask) ? item.timerTask : "心流专注";
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">🍅 心流番茄与专注闭环</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${mins} 分钟专注</span>
+          </div>
+          <div class="inspector-doc-title">🍅 开启桌面专注倒计时</div>
+        </div>
+        <div class="inspector-body">
+          <div class="inspector-preview-card" style="border-left-color: var(--rose-agent); font-size: 12px; line-height: 1.6;">
+            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">🎯 怎么用：</div>
+            <div style="color: var(--text-secondary);">
+              设定专注事项与时长后点击下方「立即开启专注」。倒计时将在顶栏实时跳动，专注结束时自动发出提醒并将专注起止时间段写入思源今日日记！
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+            <div>
+              <label style="font-size: 11.5px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">📝 本次专注目标事项：</label>
+              <input type="text" id="flow-timer-task-input" class="search-input" style="height: 32px; width: 100%; font-size: 12.5px; padding: 0 10px; border-radius: 6px; background: var(--bg-card);" value="${escapeQuote(task)}" placeholder="例如：撰写季度报告 / 阅读论文第三章" onkeydown="if(event.key==='Enter'){ event.preventDefault(); startCustomFlowTimerFromInspector(); }" />
+            </div>
+            <div>
+              <label style="font-size: 11.5px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">⏱️ 选择专注时长 (分钟)：</label>
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <input type="number" id="flow-timer-mins-input" class="search-input" style="height: 30px; width: 80px; font-size: 12.5px; font-weight: 700; padding: 0 8px; border-radius: 6px; background: var(--bg-card);" value="${mins}" min="1" max="240" />
+                <button type="button" class="scope-switch-pill" onclick="document.getElementById('flow-timer-mins-input').value='15'">⚡ 15 分钟</button>
+                <button type="button" class="scope-switch-pill" onclick="document.getElementById('flow-timer-mins-input').value='25'">🍅 25 分钟</button>
+                <button type="button" class="scope-switch-pill" onclick="document.getElementById('flow-timer-mins-input').value='45'">🔥 45 分钟</button>
+                <button type="button" class="scope-switch-pill" onclick="document.getElementById('flow-timer-mins-input').value='60'">💎 60 分钟</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="startCustomFlowTimerFromInspector()">▶️ 立即开启专注倒计时 (Enter)</button>
+            <button class="inspector-dock-btn" onclick="stopFlowTimerFromInspector()" style="color: var(--rose-agent); border-color: rgba(244,63,94,0.4);">⏹️ 停止当前计时并结算</button>
+            <button class="inspector-dock-btn" onclick="toggleTasksKanbanModal()">🎴 从待办看板选题专注</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function executeFlowTimerAction(item) {
+      if (!item) return;
+      if (item.timerAction === "stop") {
+        stopFlowTimerFromInspector();
+        return;
+      }
+      const minsEl = document.getElementById("flow-timer-mins-input");
+      const taskEl = document.getElementById("flow-timer-task-input");
+      const mins = item.timerMins || (minsEl ? parseInt(minsEl.value, 10) : 25) || 25;
+      const task = (taskEl && taskEl.value.trim()) ? taskEl.value.trim() : (item.timerTask || "心流专注");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'startFlowTimer', minutes: mins, task: task }));
+      }
+      showToast(`🍅 已开启 ${mins} 分钟专注：【${task}】！`);
+    }
+
+    function startCustomFlowTimerFromInspector() {
+      const minsEl = document.getElementById("flow-timer-mins-input");
+      const taskEl = document.getElementById("flow-timer-task-input");
+      const mins = (minsEl ? parseInt(minsEl.value, 10) : 25) || 25;
+      const task = (taskEl && taskEl.value.trim()) ? taskEl.value.trim() : "心流专注";
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'startFlowTimer', minutes: mins, task: task }));
+      }
+      showToast(`🍅 已开启 ${mins} 分钟专注：【${task}】！`);
+    }
+
+    function stopFlowTimerFromInspector() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'stopFlowTimer', recordPartial: true }));
+      }
+      showToast("⏹️ 已停止专注计时并结算记录！");
+    }
+
+    function cleanSiYuanMarkdownToPlain(rawText) {
+      if (!rawText) return "";
+      return String(rawText)
+        .replace(/\{:\s*[^}\n]+\}/g, "")
+        .replace(/\(\(\d{14}-[a-z0-9]{7}\s+["']([^"']+)["']\)\)/gi, "$1")
+        .replace(/\(\(\d{14}-[a-z0-9]{7}\)\)/gi, "")
+        .replace(/[\u200B-\u200D\uFEFF]/g, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    function renderCleanMdInspector(item) {
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+      const latestClip = (window.__OMNI_RUNTIME__ && window.__OMNI_RUNTIME__.latestClipboard && window.__OMNI_RUNTIME__.latestClipboard.markdown) || "";
+      const initialText = (item && item.customInput) || latestClip || "这是一段包含思源双链 ((20261109120000-abcdefg \"核心架构文档\")) 与块属性 {: id=\"20261109120000-abcdefg\" custom-type=\"note\"} 的示例文本。";
+      const cleanedPreview = cleanSiYuanMarkdownToPlain(initialText);
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">✨ 纯净 Markdown 与富文本转换台</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">去杂质导出</span>
+          </div>
+          <div class="inspector-doc-title">✨ 剥离思源块属性与双链符号 · 保真外发</div>
+        </div>
+        <div class="inspector-body">
+          <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.55;">
+            <b>【怎么用】</b>：从思源复制内容后，这里会自动加载剪贴板文本（也可在下方直接粘贴修改），一键剥离 <code>{: id="..."}</code> 属性与 <code>((id "双链"))</code> 括号，方便直接发往微信、飞书或 Word！
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <label style="font-size: 11px; font-weight: 700; color: var(--cyber-sky);">📥 原始文本 (可在此粘贴或编辑)：</label>
+            <textarea id="clean-md-source-textarea" class="search-input" style="height: 86px; width: 100%; font-size: 12px; line-height: 1.5; padding: 8px 10px; border-radius: 6px; resize: vertical; font-family: var(--font-mono); background: var(--bg-card);" oninput="const out = document.getElementById('clean-md-output-preview'); if(out) out.innerText = cleanSiYuanMarkdownToPlain(this.value);">${escapeHtml(initialText)}</textarea>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <label style="font-size: 11px; font-weight: 700; color: var(--emerald-mint);">✨ 净化后预览 (已剥离 {: id} 与双链 ID)：</label>
+            <div id="clean-md-output-preview" class="inspector-preview-card" style="border-left-color: var(--emerald-mint); font-size: 12px; max-height: 110px; overflow-y: auto;">${escapeHtml(cleanedPreview)}</div>
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="executeCleanMdAction({ cleanMode: 'md' })" title="复制剥离杂质后的纯净 Markdown (Enter)">📋 复制纯净 Markdown</button>
+            <button class="inspector-dock-btn" onclick="executeCleanMdAction({ cleanMode: 'richtext' })" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="复制为带标题/列表排版的富文本，可直接粘贴到微信/Word">💬 复制为微信/Word富文本</button>
+            <button class="inspector-dock-btn" onclick="executeCleanMdAction({ cleanMode: 'privacy' })" style="color: var(--tech-amber); border-color: rgba(245,158,11,0.4);" title="自动打码手机号、身份证与 API 密钥后复制">🛡️ 隐私脱敏复制</button>
+            <button class="inspector-dock-btn" onclick="executeCleanMdAction({ cleanMode: 'paste' })" title="净化后直接粘贴到当前外部窗口光标处 (Shift+Enter)">⚡ Shift+↵ 贴到外部光标</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function executeCleanMdAction(item) {
+      const srcEl = document.getElementById("clean-md-source-textarea");
+      const rawText = srcEl ? srcEl.value : ((item && item.customInput) || "");
+      const cleaned = cleanSiYuanMarkdownToPlain(rawText);
+      const mode = (item && item.cleanMode) || "md";
+
+      if (!cleaned) {
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage({ op: 'executeCommand', cmd: 'syx', text: '', keepOpen: true });
+        }
+        showToast("✨ 已对当前系统剪贴板执行纯净 Markdown 清洗！");
+        return;
+      }
+
+      if (mode === "richtext") {
+        copyAsExternalRichText(cleaned, "思源笔记导出");
+        showToast("💬 已复制为带排版的富文本，可直接粘贴至微信/飞书/Word！");
+      } else if (mode === "privacy") {
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'sanitizePrivacyText', text: cleaned }));
+        } else {
+          copyToClipboard(cleaned, "🛡️ 已执行隐私脱敏并复制！");
+        }
+      } else if (mode === "paste") {
+        pasteAtCursor(cleaned);
+      } else {
+        copyToClipboard(cleaned, "📋 已复制剥离属性与双链后的纯净 Markdown！");
+      }
+    }
+
+    function renderColorStyleInspector(item) {
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+      const latestClip = (window.__OMNI_RUNTIME__ && window.__OMNI_RUNTIME__.latestClipboard && window.__OMNI_RUNTIME__.latestClipboard.markdown) || "";
+      const initialText = (item && item.customInput) || latestClip || "重点高亮的核心结论与知识要点";
+      const curStyle = (item && item.b3Style) || "background-color: var(--b3-font-background3);";
+      const curLabel = (item && item.styleLabel) || "荧光黄背景高亮";
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">🎨 思源原生 B3 原色高亮调色台</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb" id="b3-active-style-crumb">${escapeHtml(curLabel)}</span>
+          </div>
+          <div class="inspector-doc-title">🎨 点击色板一键应用思源原生 B3 配色</div>
+        </div>
+        <div class="inspector-body">
+          <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.5;">
+            <b>【怎么用】</b>：① 在下方输入或粘贴文字，点击任意色板即可生成思源原生 <code>{: style="..."}</code> 彩色块记入日记或贴入思源；② 也可点底部「打开思源悬浮调色盘」对思源内选中文字直接上色。
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <span style="font-size: 11px; font-weight: 700; color: var(--cyber-sky);">🖍️ 思源原生背景高亮色 (var(--b3-font-background))：</span>
+            <div class="b3-swatch-grid">
+              <button type="button" class="b3-swatch-btn" style="background: rgba(245, 158, 11, 0.28); color: #fbbf24; border-color: rgba(245, 158, 11, 0.5);" onclick="applyB3SwatchStyle('background-color: var(--b3-font-background3);', '荧光黄高亮')">🖍️ 荧光黄</button>
+              <button type="button" class="b3-swatch-btn" style="background: rgba(244, 63, 94, 0.25); color: #fb7185; border-color: rgba(244, 63, 94, 0.5);" onclick="applyB3SwatchStyle('background-color: var(--b3-font-background1);', '珊瑚红高亮')">🌺 珊瑚红</button>
+              <button type="button" class="b3-swatch-btn" style="background: rgba(16, 185, 129, 0.25); color: #34d399; border-color: rgba(16, 185, 129, 0.5);" onclick="applyB3SwatchStyle('background-color: var(--b3-font-background2);', '薄荷绿高亮')">🌿 薄荷绿</button>
+              <button type="button" class="b3-swatch-btn" style="background: rgba(56, 189, 248, 0.25); color: #38bdf8; border-color: rgba(56, 189, 248, 0.5);" onclick="applyB3SwatchStyle('background-color: var(--b3-font-background4);', '冰川蓝高亮')">💎 冰川蓝</button>
+            </div>
+            <span style="font-size: 11px; font-weight: 700; color: var(--indigo-light); margin-top: 2px;">🔤 思源原生文字颜色 (var(--b3-font-color))：</span>
+            <div class="b3-swatch-grid">
+              <button type="button" class="b3-swatch-btn" style="color: #f87171;" onclick="applyB3SwatchStyle('color: var(--b3-font-color1);', '重点红字')">🔴 重点红字</button>
+              <button type="button" class="b3-swatch-btn" style="color: #38bdf8;" onclick="applyB3SwatchStyle('color: var(--b3-font-color4);', '科技蓝字')">🔵 科技蓝字</button>
+              <button type="button" class="b3-swatch-btn" style="color: #34d399;" onclick="applyB3SwatchStyle('color: var(--b3-font-color2);', '翡翠绿字')">🟢 翡翠绿字</button>
+              <button type="button" class="b3-swatch-btn" style="color: #c084fc;" onclick="applyB3SwatchStyle('color: var(--b3-font-color6);', '暗夜紫字')">🟣 暗夜紫字</button>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 4px;">
+            <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary);">✍️ 要上色的笔记内容：</label>
+            <input type="text" id="b3-color-text-input" class="search-input" style="height: 32px; width: 100%; font-size: 12.5px; padding: 0 10px; border-radius: 6px; background: var(--bg-card);" value="${escapeQuote(initialText)}" data-b3-style="${escapeQuote(curStyle)}" />
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="submitB3ColoredBlockToDaily()" title="将带思源原生配色的块直接写入今日日记">📥 彩色块记入日记 (Enter)</button>
+            <button class="inspector-dock-btn" onclick="pasteB3ColoredBlockToCaret()" title="将带思源原生 style 属性的块粘贴到思源光标处 (Shift+Enter)">⚡ Shift+↵ 贴入思源光标</button>
+            <button class="inspector-dock-btn" onclick="copyB3ColoredBlockMarkdown()" title="复制带 {: style} 的思源 Kramdown 语法">📋 复制配色块</button>
+            <button class="inspector-dock-btn" onclick="openNativeSypDialog()" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="呼出独立悬浮调色盘对思源当前选中文字上色">🪟 悬浮调色盘</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function applyB3SwatchStyle(b3Style, label) {
+      const inp = document.getElementById("b3-color-text-input");
+      if (inp) inp.setAttribute("data-b3-style", b3Style);
+      const crumb = document.getElementById("b3-active-style-crumb");
+      if (crumb) crumb.innerText = label;
+      const txt = inp ? inp.value.trim() : "重点高亮内容";
+      const kram = b3Style ? `${txt}\n{: style="${b3Style}" }` : txt;
+      copyToClipboard(kram, `🎨 已切换为【${label}】并复制思源原生配色语法！`);
+    }
+
+    function buildB3ColoredKramdown() {
+      const inp = document.getElementById("b3-color-text-input");
+      const txt = inp ? inp.value.trim() : "重点高亮内容";
+      const st = inp ? (inp.getAttribute("data-b3-style") || "") : "background-color: var(--b3-font-background3);";
+      return st ? `${txt}\n{: style="${st}" }` : txt;
+    }
+
+    function submitB3ColoredBlockToDaily() {
+      const kram = buildB3ColoredKramdown();
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'appendToDailyNote', text: kram, keepOpen: true }));
+      }
+      showToast("🎨 已将带思源原生配色的重点块写入今日日记！");
+    }
+
+    function pasteB3ColoredBlockToCaret() {
+      pasteAtCursor(buildB3ColoredKramdown());
+    }
+
+    function copyB3ColoredBlockMarkdown() {
+      copyToClipboard(buildB3ColoredKramdown(), "📋 已复制思源原生 {: style} 配色语法！");
+    }
+
+    function openNativeSypDialog() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage({ op: 'executeCommand', cmd: 'syp', text: '' });
+      }
+    }
+
+    function executeColorStyleAction(item) {
+      if (!item) return;
+      renderColorStyleInspector(item);
+      if (item.b3Style) {
+        applyB3SwatchStyle(item.b3Style, item.styleLabel || item.title);
+      } else {
+        const inp = document.getElementById("b3-color-text-input");
+        if (inp) {
+          inp.value = cleanSiYuanMarkdownToPlain(inp.value);
+          inp.setAttribute("data-b3-style", "");
+        }
+        copyToClipboard(inp ? inp.value : "", "🧹 已清除样式并复制纯净文本！");
+      }
+    }
+
+    function renderPluginCmdInspector(item) {
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector || !item) return;
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">🧩 思源生态插件调度</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${escapeHtml(item.badge || '插件命令')}</span>
+          </div>
+          <div class="inspector-doc-title">${escapeHtml(item.title)}</div>
+        </div>
+        <div class="inspector-body">
+          <div class="inspector-preview-card" style="border-left-color: var(--indigo-light); font-size: 12px; line-height: 1.6;">
+            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">🎯 怎么用：</div>
+            <div style="color: var(--text-secondary);">${escapeHtml(item.desc || '点击下方按钮或按回车，即可跨软件唤醒思源并执行该插件命令。')}</div>
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions">
+            <button class="inspector-dock-btn primary" onclick="launchPluginDirect(filteredItems[selectedIndex])">🪟 唤醒思源并打开此插件 (Enter)</button>
+            <button class="inspector-dock-btn" onclick="clearSearchInput()">⬅️ 返回功能主页</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderActionItemInspector(item) {
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector || !item) return;
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">⚡ 快捷功能直达</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${escapeHtml(item.badge || '快捷操作')}</span>
+          </div>
+          <div class="inspector-doc-title">${escapeHtml(item.title)}</div>
+        </div>
+        <div class="inspector-body">
+          <div class="inspector-preview-card" style="border-left-color: var(--cyber-sky); font-size: 12px; line-height: 1.65;">
+            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">💡 操作说明：</div>
+            <div style="color: var(--text-secondary);">${escapeHtml(item.desc || '点击左侧条目或下方按钮立即执行。')}</div>
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions">
+            <button class="inspector-dock-btn primary" onclick="executeItem(filteredItems[selectedIndex])">▶️ 立即执行此操作 (Enter)</button>
+            <button class="inspector-dock-btn" onclick="clearSearchInput()">⬅️ 返回功能主页</button>
           </div>
         </div>
       `;
@@ -7738,17 +8744,100 @@
       }
     }
 
+    function getSplitModeEmptyStateHtml(rawQuery) {
+      const q = (rawQuery || "").trim().toLowerCase();
+      let title = "当前模式下暂无匹配记录";
+      let desc = "可在上方搜索框更换关键词，或点击下方按钮执行快捷操作";
+      let actions = `<button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回 31 项功能主页</button>`;
+
+      if (q.startsWith("t:") || q.startsWith("t：") || q.startsWith("todo:")) {
+        title = "🎉 当前没有未完成的待办任务";
+        desc = "你可以在思源中使用 - [ ] 创建任务，或直接点击下方按钮新建一条待办事项";
+        actions = `
+          <button type="button" class="fg-try-btn" onclick="promptCreateNewTaskModal()">+ 立即新建一条待办</button>
+          <button type="button" class="fg-try-btn" onclick="toggleTasksKanbanModal()">🎴 打开四象限大看板</button>
+          <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回主页</button>
+        `;
+      } else if (q.startsWith("m:") || q.startsWith("m：") || q.startsWith("mark:")) {
+        title = "⭐ 暂未在思源中检测到书签块";
+        desc = "在思源笔记中右键任意块选择「属性 -> 书签」后，即可在此秒速检索直达";
+        actions = `
+          <button type="button" class="fg-try-btn" onclick="insertPrefix('b:')">🧱 改用块级秒搜 (b:)</button>
+          <button type="button" class="fg-try-btn" onclick="insertPrefix('d:')">📄 改用文档秒搜 (d:)</button>
+          <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回主页</button>
+        `;
+      } else if (q.startsWith("tag:") || q.startsWith("tag：") || q.startsWith("#")) {
+        title = "🏷️ 未找到匹配的 #标签# 笔记块";
+        desc = "在思源或速记框中输入 #标签名# 即可打标；点击下方按钮可立即记一条带标签的笔记";
+        actions = `
+          <button type="button" class="fg-try-btn" onclick="promptQuickNoteInlineModal()">⚡ 记一条带 #标签# 的笔记</button>
+          <button type="button" class="fg-try-btn" onclick="setSearchInputValue('tag:')">🔄 查看全库全部标签</button>
+          <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回主页</button>
+        `;
+      } else if (q.startsWith("att:") || q.startsWith("att：") || q.startsWith("asset:") || q.startsWith("pdf:") || q.startsWith("word:") || q.startsWith("excel:") || q.startsWith("office:") || q.startsWith("epub:") || q.startsWith("xmind:")) {
+        title = "📎 未找到匹配的库内附件或文献";
+        desc = "可切换查看全部附件类型，或直接调用本地 Everything / Listary 检索全盘文件";
+        actions = `
+          <button type="button" class="fg-try-btn" onclick="setSearchInputValue('att:')">📎 查看全库全部附件</button>
+          <button type="button" class="fg-try-btn" onclick="locateInSearchTool('')">🔍 调用 Everything 搜全盘文件</button>
+          <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回主页</button>
+        `;
+      } else if (q.startsWith("c:") || q.startsWith("c：") || q.startsWith("clip:")) {
+        title = "📋 当前筛选下暂无剪贴板记录";
+        desc = "在任何软件按 Ctrl+C 复制文字、网址、代码或表格后，外骨骼会自动捕获并保存在此";
+        actions = `
+          <button type="button" class="fg-try-btn" onclick="setSearchInputValue('c:')">📋 查看全部剪贴板记录</button>
+          <button type="button" class="fg-try-btn" onclick="toggleClipStudioModal()">🎛️ 打开多段拼版工作台</button>
+          <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回主页</button>
+        `;
+      } else if (q.startsWith("trash:") || q.startsWith("trash：") || q.startsWith("recycle:") || q.startsWith("rescue:")) {
+        title = "🗑️ 未找到匹配的回收站或历史快照";
+        desc = "可打开思源官方「数据历史」大窗查看完整时间线快照";
+        actions = `
+          <button type="button" class="fg-try-btn" onclick="openNativeDataHistory()">🪟 打开思源官方数据历史</button>
+          <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回主页</button>
+        `;
+      } else if (q.startsWith("fav:") || q.startsWith("fav：") || q.startsWith("url:")) {
+        title = "🌐 暂无匹配的收藏网址";
+        desc = "点击下方按钮可一键抓取当前浏览器正在浏览的网页入库，或手动添加常用网址";
+        actions = `
+          <button type="button" class="fg-try-btn" onclick="triggerLaunchpadCaptureBrowser()">🌐 嗅探当前浏览器网址入库</button>
+          <button type="button" class="fg-try-btn" onclick="promptAddLaunchpadItem()">+ 手动登记网址</button>
+          <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回主页</button>
+        `;
+      } else if (q.startsWith("fold:") || q.startsWith("fold：") || q.startsWith("folder:")) {
+        title = "📂 暂无匹配的收藏文件夹";
+        desc = "点击下方按钮可一键嗅探当前打开的资源管理器目录，或浏览选择本地文件夹加入导航";
+        actions = `
+          <button type="button" class="fg-try-btn" onclick="triggerLaunchpadCaptureExplorer()">📂 嗅探当前资源管理器目录</button>
+          <button type="button" class="fg-try-btn" onclick="promptAddLaunchpadItem()">+ 添加本地工程文件夹</button>
+          <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回主页</button>
+        `;
+      } else if (q.startsWith("bm:") || q.startsWith("bm：") || q.startsWith("book:")) {
+        title = "🔖 未匹配到浏览器本地书签";
+        desc = "请尝试更换关键词搜索 Edge / Chrome 收藏夹中的网页标题或域名";
+        actions = `
+          <button type="button" class="fg-try-btn" onclick="setSearchInputValue('bm:')">🔖 显示全部浏览器书签</button>
+          <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回主页</button>
+        `;
+      }
+
+      return `
+        <div style="text-align: center; padding: 38px 18px; color: var(--text-muted); font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+          <div style="font-size: 14px; font-weight: 700; color: var(--text-primary);">${title}</div>
+          <div style="font-size: 11.5px; color: var(--text-secondary); max-width: 360px; line-height: 1.55;">${desc}</div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 4px;">
+            ${actions}
+          </div>
+        </div>
+      `;
+    }
+
     function renderSplitSearchResults(container, items, selectedIdx) {
       const q = document.getElementById("search-input") ? document.getElementById("search-input").value.trim() : "";
       container.innerHTML = `
         <div class="search-results-pane" id="search-results-pane">
-          ${items.length === 0 ? `
-            <div style="text-align: center; padding: 48px 16px; color: var(--text-muted); font-size: 13px;">
-              <div style="font-size: 26px; margin-bottom: 8px;">🔍</div>
-              <div>未找到匹配的块或文档内容</div>
-              <div style="font-size: 11px; margin-top: 4px; opacity: 0.75;">支持中文拼音首字母、全文内容与小节路径匹配</div>
-            </div>
-          ` : items.map((it, idx) => {
+          ${items.length === 0 ? getSplitModeEmptyStateHtml(q) : items.map((it, idx) => {
             const isSel = (idx === selectedIdx);
             return `
               <div class="search-item-row ${isSel ? 'selected' : ''}" data-index="${idx}" onclick="executeItem(filteredItems[${idx}])" onmouseenter="onHoverSearchItem(${idx})">
@@ -7768,10 +8857,12 @@
           }).join("")}
         </div>
         <div class="search-inspector-pane" id="search-inspector-pane">
-          <div style="text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 13px;">
-            <div style="font-size: 28px; margin-bottom: 8px;">📄</div>
-            <div>选择左侧条目实时查看上下文与全景面包屑</div>
-          </div>
+          ${items.length === 0 ? getSplitModeEmptyStateHtml(q) : `
+            <div style="text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 13px;">
+              <div style="font-size: 28px; margin-bottom: 8px;">📄</div>
+              <div>选择左侧条目实时查看上下文与可执行操作</div>
+            </div>
+          `}
         </div>
       `;
 
@@ -12192,9 +13283,14 @@
         return;
       }
       if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'close' }));
-        executeItem({ id: 'sys', title: '语音速记' }, "🎙️ 语音口述: " + txt);
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: "appendToDailyNote",
+          text: "🎙️ 语音口述: " + txt,
+          keepOpen: true
+        }));
       }
+      if (area) area.value = "";
+      showToast("✓ 语音笔记已成功写入思源今日日记！");
     }
 
     function copyBlockRef(blockId, content, event) {
@@ -15636,8 +16732,471 @@
       "preferences-modal",
       "cheatsheet-modal",
       "ai-result-modal",
-      "offline-queue-modal"
+      "offline-queue-modal",
+      "feature-guide-modal"
     ];
+
+    let _currentGuidedFeatureId = "";
+    const FEATURE_USAGE_GUIDES = {
+      sypen: {
+        summary: "在浏览器、PDF、Word 等任何软件里用鼠标选中一段文字，不用复制切换窗口，按一下快捷键即可把这段文字存入思源或变成闪卡/待办。",
+        steps: [
+          "① 怎么呼出：在任何软件里用鼠标涂黑选中一段文字，按键盘 Alt+Shift+W（也可直接点击本卡片体验）。",
+          "② 怎么操作：鼠标旁会弹出 1~8 数字微胶囊，直接按键盘数字 1（入日记）、2（制闪卡）、3（派待办）、6（贴双链）、8（钉桌面便签）。",
+          "③ 达成效果：选中的文字瞬间写进思源今日日记并自动附带来源网页/软件名称，全程零切窗。"
+        ],
+        examples: [
+          { label: "🚀 立即弹出随身划笔体验 1~8 键", action: "run" },
+          { label: "📅 查看今日已记入的日记流", action: "timeline" }
+        ]
+      },
+      sys: {
+        summary: "随手记灵感、记待办、做闪卡、记账的极速入口。30 秒内连续记录会自动合并成同一段落，告别碎块。",
+        steps: [
+          "① 怎么呼出：在任何软件按 Alt+Shift+S 呼出迷你速记条，或直接点击本面板右上角「📥 记入日记」按钮。",
+          "② 怎么操作：直接打字回车即存为灵感；开头加 ! 变待办任务、加 ? 问题 // 答案 变复习闪卡、加 ¥35 变记账、加 >@文档名 直投指定文档。",
+          "③ 达成效果：内容直接追加到思源《今日日记》对应小节，即使思源没打开也会暂存到离线队列。"
+        ],
+        examples: [
+          { label: "📝 打开速记框写一条笔记", action: "quicknote" },
+          { label: "📋 演练待办语法 (! 下午开周会)", prefix: "! 下午3点准备项目周会材料" },
+          { label: "🧠 演练闪卡语法 (? 问题 // 答案)", prefix: "? 什么是思源双链 // 通过 ((块ID)) 实现的双向块级引用" },
+          { label: "💰 演练记账语法 (¥38.5 咖啡)", prefix: "¥38.5 瑞幸生椰拿铁" }
+        ]
+      },
+      syg: {
+        summary: "无需在浏览器安装任何扩展插件，一键抓取当前正在浏览的微信、知乎、GitHub、arXiv 等网页存入思源。",
+        steps: [
+          "① 怎么呼出：当浏览器打开目标网页时，按 Alt+Shift+G，或点击本卡片进入「网页双态剪藏看板」。",
+          "② 怎么操作：可在右侧输入框写一句自己的阅读批注，选择「📑 存为文献卡片（入日记）」或「📄 新建独立研读专页」。",
+          "③ 达成效果：自动剔除网页广告尾巴，保存标题、干净链接与正文，微信/知乎防盗链图片自动下载存入本地 assets。"
+        ],
+        examples: [
+          { label: "🌐 进入网页双态剪藏看板 (g:)", prefix: "g:" },
+          { label: "✍️ 演练带批注剪藏", prefix: "g: 这篇文章的核心架构图非常值得参考" }
+        ]
+      },
+      syimg: {
+        summary: "框选屏幕任意区域截图，自动调用本地 PixPin / Snipaste 或内置离线 OCR 识别图中文字与表格。",
+        steps: [
+          "① 怎么呼出：在任何界面按下 Alt+Shift+C，或直接点击本卡片。",
+          "② 怎么操作：用鼠标拖拽框选屏幕上的图片、PDF 扫描件或视频字幕区域。",
+          "③ 达成效果：自动识别出图中文字复制到剪贴板，并弹出微胶囊支持按 1 一键图文并茂存入思源今日日记。"
+        ],
+        examples: [
+          { label: "📸 立即开始屏幕框选截图 OCR", action: "run" }
+        ]
+      },
+      syoff: {
+        summary: "把全库所有的 Markdown 表格与属性视图集中在一个大视窗里查看、排序、双击修改单元格，并支持一键导出 Excel。",
+        steps: [
+          "① 怎么呼出：直接点击本卡片，或点击右上角「🎛️ 工作台 -> 表格矩阵」。",
+          "② 怎么操作：在左上角下拉框切换表格，点击表头升降序排序，直接双击任意单元格修改文字，按 Ctrl+S 原位保存回思源。",
+          "③ 达成效果：免去在长文档中翻找表格的烦恼，还能一键生成标准 Excel (.xlsx) 文件用本地表格软件打开。"
+        ],
+        examples: [
+          { label: "📊 立即打开全库表格透视矩阵工作台", action: "run" }
+        ]
+      },
+      syvoice: {
+        summary: "动口不动手：调用微信输入法语音或系统 Win+H 听写，自动过滤“呃、那个、就是说”等口头禅并修复标点。",
+        steps: [
+          "① 怎么呼出：点击本卡片（或在搜索框输入 voice:）进入语音速记微舱。",
+          "② 怎么操作：点击右侧「🎙️ 激活语音听写」对着麦克风说话，说完点「✨ 口语去噪与标点自愈」。",
+          "③ 达成效果：口语废话被自动剔除，英文术语大小写自动规范，点「📝 1键存入今日日记」即刻归档。"
+        ],
+        examples: [
+          { label: "🎙️ 打开语音速记微舱体验口语去噪", prefix: "voice:" }
+        ]
+      },
+      syf: {
+        summary: "毫秒级穿透搜索思源全库每一个段落、标题与代码块，支持在不打开思源的情况下把 ((双链)) 直接贴到当前打字的地方。",
+        steps: [
+          "① 怎么呼出：按 Alt+Shift+Q 打开面板后点搜索框右侧「🔍 搜笔记」，或直接点击本卡片。",
+          "② 怎么操作：直接打字输入关键词过滤；左侧点选条目后，右侧会实时显示上下文、大纲、思维导图与反向链接。",
+          "③ 达成效果：按 Enter 在思源中定位打开；按 Shift+Enter 直接把 ((id \"标题\")) 双链粘贴到你当前正在写的文档光标处！"
+        ],
+        examples: [
+          { label: "🧱 立即浏览最近 30 条笔记块并秒搜 (b:)", prefix: "b:" },
+          { label: "📄 切换为按文档标题搜索 (d:)", prefix: "d:" }
+        ]
+      },
+      syfav: {
+        summary: "跨浏览器统一的效率网址收藏夹，自动去除推广追踪参数，并同步保存到思源《/收藏夹/网站导航》文档。",
+        steps: [
+          "① 怎么呼出：点击本卡片进入网站收藏视图 (fav:)，或点顶栏 🚀 图标打开大图标启动台。",
+          "② 怎么操作：点击「🌐 嗅探当前浏览器网址」可一键把正在看的网页收入收藏夹；在列表中点击网址直接用浏览器打开。",
+          "③ 达成效果：常用网站按频次自动排在最前，支持在启动台中按数字键 1~9 盲打秒开。"
+        ],
+        examples: [
+          { label: "🌐 查看网站收藏列表 (fav:)", prefix: "fav:" },
+          { label: "🚀 打开大图标网站与目录启动台", action: "launchpad" }
+        ]
+      },
+      syfold: {
+        summary: "管理常用的本地项目文件夹；当你在 Word/浏览器弹出「打开/保存文件」窗口时，点一下直接让对话框跳进该目录！",
+        steps: [
+          "① 怎么呼出：点击本卡片进入文件夹导航视图 (fold:)，或点顶栏 🚀 启动台切换到「工程文件夹」。",
+          "② 怎么操作：点击「📂 嗅探当前资源管理器目录」或「+ 手动添加」登记常用文件夹。",
+          "③ 达成效果：平时点击直接在资源管理器打开该目录；若前台正停留在「另存为/打开文件」对话框，点击即原位秒跳该路径！"
+        ],
+        examples: [
+          { label: "📂 进入本地文件夹导航中枢 (fold:)", prefix: "fold:" },
+          { label: "🚀 打开大图标工程目录启动台", action: "launchpad" }
+        ]
+      },
+      sytask: {
+        summary: "自动汇总思源全库所有未勾选的 - [ ] 待办任务，按 P1 紧急重要四象限呈现，支持直接打勾完成或开启番茄专注。",
+        steps: [
+          "① 怎么呼出：点击本卡片，或直接点击面板顶栏的「📋 待办」状态胶囊。",
+          "② 怎么操作：在四象限看板中勾选复选框即可在思源中同步完成任务；点击任务卡上的「🍅 25m 专注」可绑定该任务倒计时。",
+          "③ 达成效果：专注倒计时结束时，外骨骼会自动把思源里的这条待办打勾完成 (- [x]) 并记录专注成果！"
+        ],
+        examples: [
+          { label: "🎴 立即打开四象限待办大看板", action: "run" },
+          { label: "📋 在分栏视图中检索待办清单 (t:)", prefix: "t:" }
+        ]
+      },
+      sypom: {
+        summary: "桌面轻量无打扰的番茄专注计时器，倒计时结束自动将专注起止时间段写入思源今日日记。",
+        steps: [
+          "① 怎么呼出：点击本卡片，或点击顶栏「🍅 专注 25m」胶囊。",
+          "② 怎么操作：在右侧输入本次专注的任务名称，选择 15 / 25 / 45 / 60 分钟，点击「▶️ 立即开启专注倒计时」。",
+          "③ 达成效果：顶栏实时显示剩余时间，到点自动提醒并归档专注时序记录。"
+        ],
+        examples: [
+          { label: "🍅 打开番茄专注控制台 (25分钟)", prefix: "pom:25 " },
+          { label: "🔥 设定 45 分钟深度攻坚", prefix: "pom:45 深度研读与架构设计" }
+        ]
+      },
+      syatt: {
+        summary: "秒查思源库里的 PDF、Word、Excel、PPT、EPUB、XMind 与图片附件，免打开思源即可直接流式透视目录与批注。",
+        steps: [
+          "① 怎么呼出：点击本卡片（或输入 att: / pdf: / word: / excel:）。",
+          "② 怎么操作：左侧点选附件后，右侧可点击「📑 PDF 研读透视」或「📖 Office 深度透视」直接查看章节大纲、审阅批注与工作表。",
+          "③ 达成效果：按 Enter 用本地软件秒开文件，点「📥 大纲/批注转待办入日记」一键把文献骨架抽入思源！"
+        ],
+        examples: [
+          { label: "📎 列出思源全库附件与文献 (att:)", prefix: "att:" },
+          { label: "📕 仅筛选全库 PDF 文献 (pdf:)", prefix: "pdf:" },
+          { label: "📝 仅筛选本地 Office 文档 (office:)", prefix: "office:" }
+        ]
+      },
+      sytag: {
+        summary: "按 #标签# 聚合检索散布在不同笔记本中的所有相关段落，并支持一键生成标签汇总大纲写入今日日记。",
+        steps: [
+          "① 怎么呼出：点击本卡片（或输入 tag:关键词 / #标签名）。",
+          "② 怎么操作：点击左侧匹配的带标签笔记块，在右侧查看原文并可执行「📋 复制全部聚合大纲」或「📥 大纲写入日记」。",
+          "③ 达成效果：瞬间把碎片化的同标签笔记汇编成结构化索引清单。"
+        ],
+        examples: [
+          { label: "🏷️ 浏览全库标签笔记块 (tag:)", prefix: "tag:" }
+        ]
+      },
+      syd: {
+        summary: "不用切换到思源主窗口，0 毫秒滑出今天（及最近 7 天）记录的所有灵感、待办、闪卡与截图时间流。",
+        steps: [
+          "① 怎么呼出：点击本卡片，或点击顶栏绿色的「📅 今日 N 块」状态胶囊。",
+          "② 怎么操作：可在顶部切换最近 7 天日期，按「全部 / 待办 / 闪卡 / 灵感」过滤，或点击「🌅 开启今日心流」插入晨间目标模板。",
+          "③ 达成效果：随时回顾今天记了什么，点击任意记录即可在思源中定位，或一键勾选完成今日待办。"
+        ],
+        examples: [
+          { label: "📅 立即滑出今日日记时间轴", action: "run" }
+        ]
+      },
+      syo: {
+        summary: "提取文档的 H1~H6 标题目录树并自动生成矢量交互思维导图，支持直接在树上改小节标题、调层级并实时写回思源。",
+        steps: [
+          "① 怎么呼出：点击本卡片，或从右上角「🎛️ 工作台 -> 大纲与导图」进入。",
+          "② 怎么操作：单击左侧小节在右侧脑图中高亮聚焦；点小节右侧的「✏️」可直接改名或升降 H1~H6 层级。",
+          "③ 达成效果：双栏对照梳理长文结构，支持一键复制 Markdown 大纲树或导出高保真思维导图长图。"
+        ],
+        examples: [
+          { label: "🗺️ 立即打开全景大纲与思维导图工作台", action: "run" }
+        ]
+      },
+      syws: {
+        summary: "把当前正在处理的思源文档、打开的本地文件与参考网页保存为「工作现场快照」，下次上班一键恢复全套窗口。",
+        steps: [
+          "① 怎么呼出：点击本卡片（或输入 ws:）。",
+          "② 怎么操作：在右侧输入现场名称（如“Q4季报会战”），点击「💾 一键捕获保存现场」。",
+          "③ 达成效果：切换任务时无需逐个找文件，选中已有快照点「⚡ 1键恢复工作现场」即可同时唤醒绑定的文档与文件。"
+        ],
+        examples: [
+          { label: "🏢 进入工作现场快照管理 (ws:)", prefix: "ws:" }
+        ]
+      },
+      syv: {
+        summary: "内置晨间复盘、文献研读、会议纪要、Code Review 等结构化模板与个人简码，一键写入日记或贴到当前光标处。",
+        steps: [
+          "① 怎么呼出：点击本卡片（或输入 v:），点卡片上的「🪟 面板」也可唤醒思源常用语插件。",
+          "② 怎么操作：上下键或鼠标点选模板，右侧实时预览完整 Markdown 内容。",
+          "③ 达成效果：按 Enter 直接把整套模板写进今日日记；按 Shift+Enter 直接粘贴到当前外部软件光标处！"
+        ],
+        examples: [
+          { label: "📝 浏览全部结构化模板与常用语 (v:)", prefix: "v:" }
+        ]
+      },
+      syfsrs: {
+        summary: "在桌面居中弹出精致的 FSRS 间隔重复闪卡微舱，3 秒刷完一张卡，利用碎片时间巩固记忆。",
+        steps: [
+          "① 怎么呼出：按全局热键 Alt+Shift+R，或直接点击本卡片（点「🪟 面板」或按 Alt+6 则打开思源闪卡仪表盘）。",
+          "② 怎么操作：看正面问题思考后，按【空格键】或点击卡片翻看背面答案，再按键盘数字【1 重来 / 2 困难 / 3 良好 / 4 简单】评分。",
+          "③ 达成效果：评分直接同步回思源原生 FSRS 复习库，自动计算下一次复习日期。"
+        ],
+        examples: [
+          { label: "🧠 立即在桌面弹出 FSRS 闪卡微舱刷卡", action: "run" },
+          { label: "➕ 先用 ? 语法制作一张新闪卡", prefix: "? 艾宾浩斯与FSRS的区别 // FSRS基于三组件记忆模型动态计算最佳复习间隔" }
+        ]
+      },
+      syx: {
+        summary: "从思源复制内容发给别人或贴到微信/Word 时，自动剥离 {: id} 乱码属性与 ((双链)) 括号，或转为带排版的富文本。",
+        steps: [
+          "① 怎么呼出：在思源复制文字后按 Alt+Shift+X，或直接点击本卡片打开「纯净 Markdown 与富文本转换台」。",
+          "② 怎么操作：在右侧预览框查看自动去除块属性后的干净文本，也可随时手工微调。",
+          "③ 达成效果：点「📋 复制纯净 Markdown」或「💬 复制为微信/Word富文本」，粘贴到外部软件干干净净、格式完美！"
+        ],
+        examples: [
+          { label: "✨ 打开纯净 Markdown 与富文本转换台 (x:)", prefix: "x:" }
+        ]
+      },
+      syp: {
+        summary: "使用思源原生 var(--b3-font-color) 标准色板，一键给重点句子加上荧光黄背景高亮或红/蓝/绿/紫彩色字体。",
+        steps: [
+          "① 怎么呼出：直接点击本卡片进入「思源原生 B3 原色高亮调色台」。",
+          "② 怎么操作：在右侧输入重点文字，点击「🖍️ 荧光黄 / 🌺 珊瑚红 / 🔴 重点红字 / 🔵 科技蓝字」等色块。",
+          "③ 达成效果：可一键生成带原生 {: style} 的彩色块写入今日日记、贴入思源光标，或点「🪟 悬浮调色盘」对思源已选文字直接上色。"
+        ],
+        examples: [
+          { label: "🎨 打开思源原生 B3 调色与高亮工作台 (color:)", prefix: "color:" }
+        ]
+      },
+      sycmd: {
+        summary: "动态扫描思源中已安装的所有社区插件与命令，无需记忆复杂快捷键，打字搜索一键跨软件调用。",
+        steps: [
+          "① 怎么呼出：点击本卡片（或输入 p:）。",
+          "② 怎么操作：输入插件名称或功能关键词过滤列表。",
+          "③ 达成效果：点击或按回车即可唤醒思源并触发对应插件功能。"
+        ],
+        examples: [
+          { label: "🌐 浏览并搜索已装思源插件命令 (p:)", prefix: "p:" }
+        ]
+      },
+      syprofile: {
+        summary: "集中管理多套 S3 云端存储桶与 AI 大模型配置，真实密钥用 Windows DPAPI 硬件加密锁在本机，笔记库 100% 脱敏。",
+        steps: [
+          "① 怎么呼出：点击本卡片，或从右上角「🎛️ 工作台 -> 配置与模型」进入。",
+          "② 怎么操作：可点击「☁️ 萃取当前S3」或「🤖 萃取当前AI」把思源现有配置存为预设，或点击「+ 新建预设」录入新模型。",
+          "③ 达成效果：点击任意预设卡片上的「⚡ 激活生效」，即可一键热切换大模型或存储桶参数！"
+        ],
+        examples: [
+          { label: "⚙️ 打开配置预设与大模型驱动中枢", action: "run" }
+        ]
+      },
+      sytrash: {
+        summary: "不小心删错了段落或文档？直接穿透检索思源 history 历史快照文件，预览全文并一键打捞恢复到今日日记。",
+        steps: [
+          "① 怎么呼出：点击本卡片（或输入 trash: 关键词）。",
+          "② 怎么操作：左侧点选历史快照，右侧立即呈现完整历史 Markdown 原文。",
+          "③ 达成效果：点击「⚡ 1键打捞恢复」即可把误删内容完整找回并写入今日日记，也可点「🪟 打开思源数据历史」查看官方历史窗。"
+        ],
+        examples: [
+          { label: "🗑️ 浏览思源回收站与历史快照 (trash:)", prefix: "trash:" }
+        ]
+      },
+      syh: {
+        summary: "一键扫描思源全库的失效悬空双链 ((id))、未被任何笔记引用的孤儿附件图片与空白幽灵块，支持安全隔离与一键自愈。",
+        steps: [
+          "① 怎么呼出：点击本卡片，或从右上角「🎛️ 工作台 -> 系统体检」进入。",
+          "② 怎么操作：切换「🔗 悬空死链 / 📦 孤儿附件 / 🧹 空白幽灵块」标签页查看诊断明细。",
+          "③ 达成效果：点「⚡ 双链智能自愈」自动修复同名块引用；点「📦 移至隔离区」安全清理无主附件（随时可原位恢复，绝不误删）。"
+        ],
+        examples: [
+          { label: "🩺 立即打开全库健康体检与死链清道夫工作台", action: "run" }
+        ]
+      },
+      synotice: {
+        summary: "汇总记录思源弹窗、外骨骼操作回执、云同步状态与异常告警，不怕错过一闪而过的提示气泡。",
+        steps: [
+          "① 怎么呼出：点击本卡片，或点击面板顶栏右上角的「🔔」铃铛图标。",
+          "② 怎么操作：可按「全部 / 🔴 仅看错误 / 🟡 警告 / 🟢 成功」过滤，或输入关键词搜索历史事件。",
+          "③ 达成效果：支持单条复制，或点击「📥 归流今日日记」将全天工作流水一键汇总存档。"
+        ],
+        examples: [
+          { label: "🔔 打开全景通知与生命事件中心", action: "run" }
+        ]
+      },
+      syda: {
+        summary: "支持两种用法：① 免切窗在搜索框输入 +项目名 一秒打卡；② 按 Alt+1 唤醒思源打开「小驴打卡」插件看板。",
+        steps: [
+          "① 怎么呼出：在任何软件按 Alt+1（或点击本卡片）唤醒思源打卡主面板；也可直接在上方搜索框输入 + 打卡。",
+          "② 怎么操作：免切窗打卡只需输入 +water 500ml 或 +阅读 30分钟 并按回车。",
+          "③ 达成效果：打卡记录自动归入今日日记并同步连击统计；点击「🔥 沉淀热力图」可查看年度打卡年轮。"
+        ],
+        examples: [
+          { label: "💧 演练免切窗快速打卡 (+water 500ml)", prefix: "+water 500ml 补水打卡" },
+          { label: "🪟 唤醒思源打开【习惯打卡】插件大窗", action: "run" }
+        ]
+      },
+      syhome: {
+        summary: "支持两种用法：① 免切窗在搜索框输入 ¥金额 一秒记账；② 按 Alt+2 唤醒思源打开「小驴管家」生活与账目总控。",
+        steps: [
+          "① 怎么呼出：在任何软件按 Alt+2（或点击本卡片）唤醒思源管家主面板；也可在搜索框输入 ¥ 直接记账。",
+          "② 怎么操作：在搜索框输入 ¥38.5 午餐咖啡 按回车，自动打标金额并写入今日日记。",
+          "③ 达成效果：日常开销随手记，汇总统计与家庭备忘在思源「事务管家」中一站式管理。"
+        ],
+        examples: [
+          { label: "💰 演练免切窗快速记账 (¥38.5 咖啡)", prefix: "¥38.5 瑞幸生椰拿铁" },
+          { label: "🪟 唤醒思源打开【事务管家】插件大窗", action: "run" }
+        ]
+      },
+      syrm: {
+        summary: "支持两种用法：① 免切窗在搜索框输入 @姓名 内容 记录人脉互动；② 按 Alt+3 唤醒思源打开「人脉工作台」。",
+        steps: [
+          "① 怎么呼出：按 Alt+3（或点击本卡片）唤醒思源人脉工作台；也可在搜索框输入 @ 姓名。",
+          "② 怎么操作：输入 @张总 沟通Q4合作方案 按回车，自动在今日日记记录交往并关联人脉双链。",
+          "③ 达成效果：在随身划笔中选中人名时，外骨骼也会自动识别并提示一键贴入该联系人档案双链。"
+        ],
+        examples: [
+          { label: "👥 演练免切窗记录人脉往来 (@姓名)", prefix: "@张经理 确认项目里程碑交付节点" },
+          { label: "🪟 唤醒思源打开【人脉工作台】插件大窗", action: "run" }
+        ]
+      },
+      sysg_plugin: {
+        summary: "与「网页剪藏 (Alt+Shift+G)」无缝配合的稍后读收件箱，按 Alt+4 直接唤醒思源打开「小驴拾遗」插件。",
+        steps: [
+          "① 怎么呼出：点击本卡片或按 Alt+4 唤醒思源打开「稍后读库」；平时看网页按 Alt+Shift+G 剪藏。",
+          "② 怎么操作：外骨骼剪藏的网页会自动打上 custom-triage-status=\"unread\" 未读属性进入拾遗收件箱。",
+          "③ 达成效果：在桌面随手剪藏，回到思源后在「稍后读库」集中阅读、高亮批注与分拣归档。"
+        ],
+        examples: [
+          { label: "🌐 先体验桌面网页剪藏看板 (g:)", prefix: "g:" },
+          { label: "🪟 唤醒思源打开【稍后读库】插件面板", action: "run" }
+        ]
+      },
+      sybk: {
+        summary: "跨软件一键唤醒思源并打开「备考与练习台」插件大窗，集中进行题库刷题、错题复盘与考前冲刺。",
+        steps: [
+          "① 怎么呼出：在任何软件按 Alt+7，或直接点击本卡片。",
+          "② 怎么操作：自动前置思源笔记窗口并直接进入「备考与练习台」练习视图。",
+          "③ 达成效果：配合随身划笔（按 2 制闪卡）与桌面 FSRS 微舱（Alt+Shift+R），构建完整的学习备考闭环。"
+        ],
+        examples: [
+          { label: "🪟 唤醒思源打开【备考与练习台】", action: "run" }
+        ]
+      },
+      sylq: {
+        summary: "跨软件一键唤醒思源并打开「雷切」文档页签快速切换器，在思源打开几十个文档页签时秒速定位。",
+        steps: [
+          "① 怎么呼出：按 Alt+8 或直接点击本卡片；也可在本面板输入 d: 直接搜索全库文档。",
+          "② 怎么操作：唤醒思源雷切切换器后，输入文档名缩写即可切换活动页签。",
+          "③ 达成效果：与外骨骼 d: 全库文档秒搜互补，大幅提升多文档并行编写效率。"
+        ],
+        examples: [
+          { label: "📄 在当前面板直接秒搜全库文档 (d:)", prefix: "d:" },
+          { label: "🪟 唤醒思源打开【标签快速切换】", action: "run" }
+        ]
+      }
+    };
+
+    function openFeatureGuideModal(itemId) {
+      const item = PANEL_ITEMS.find(x => x.id === itemId);
+      if (!item) return;
+      _currentGuidedFeatureId = item.id;
+
+      const modal = document.getElementById("feature-guide-modal");
+      const iconWrap = document.getElementById("fg-icon-wrap");
+      const titleEl = document.getElementById("fg-title");
+      const hkPill = document.getElementById("fg-hotkey-pill");
+      const bodyEl = document.getElementById("fg-body");
+      if (!modal || !bodyEl) return;
+
+      if (iconWrap) {
+        iconWrap.style.color = item.iconColor || "var(--cyber-sky)";
+        iconWrap.innerHTML = renderItemIcon(item);
+      }
+      if (titleEl) titleEl.innerText = `${item.title} · 3 步极速上手`;
+      if (hkPill) hkPill.innerText = item.pluginHotkey || item.hotkey || "点击即用";
+
+      const guide = FEATURE_USAGE_GUIDES[item.id] || {
+        summary: item.desc ? item.desc.replace(/^【怎么用】/, "") : `${item.title} 快捷入口`,
+        steps: [
+          `① 怎么呼出：在主面板点击「${item.title}」卡片${item.pluginHotkey ? `，或按跨软件快捷键 ${item.pluginHotkey}` : (item.hotkey ? `（快捷键：${item.hotkey}）` : "")}。`,
+          `② 怎么操作：${item.pluginLaunch ? "系统将自动唤醒思源笔记并直接打开对应插件主界面；也可在上方搜索框使用快捷前缀免切窗录入。" : "在打开的交互视图中根据顶部提示选择条目或输入内容。"}`,
+          `③ 达成效果：操作结果直接同步写入思源笔记库，按 Esc 随时返回主面板。`
+        ],
+        examples: [
+          { label: `🚀 立即打开【${item.title}】`, action: "run" }
+        ]
+      };
+
+      const stepLabels = ["第一步 · 怎么呼出", "第二步 · 怎么操作", "第三步 · 达成效果"];
+      const stepsHtml = (guide.steps || []).map((st, i) => `
+        <div class="fg-step-box">
+          <span class="fg-step-badge">STEP ${i + 1} · ${stepLabels[i] || "操作说明"}</span>
+          <div class="fg-step-text">${escapeHtml(st)}</div>
+        </div>
+      `).join("");
+
+      const examplesHtml = (guide.examples || []).map((ex, idx) => `
+        <button type="button" class="fg-try-btn" onclick="triggerGuidedExample(${idx})">${escapeHtml(ex.label)}</button>
+      `).join("");
+
+      bodyEl.innerHTML = `
+        <div style="padding: 10px 14px; background: var(--bg-inset); border-left: 3.5px solid ${item.iconColor || 'var(--cyber-sky)'}; border-radius: 7px; font-size: 12.5px; color: var(--text-primary); line-height: 1.6;">
+          <b>🎯 这个功能用来干什么：</b>${escapeHtml(guide.summary)}
+        </div>
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: var(--indigo-light); margin-bottom: 8px;">🧭 三步极速上手：</div>
+          <div class="fg-step-grid">${stepsHtml}</div>
+        </div>
+        ${examplesHtml ? `
+          <div>
+            <div style="font-size: 12px; font-weight: 700; color: var(--emerald-mint); margin-bottom: 8px;">🧪 点击下方按钮直接互动演练：</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">${examplesHtml}</div>
+          </div>
+        ` : ""}
+      `;
+
+      modal.classList.add("open");
+    }
+
+    function triggerGuidedExample(exampleIdx) {
+      const item = PANEL_ITEMS.find(x => x.id === _currentGuidedFeatureId);
+      if (!item) return;
+      const guide = FEATURE_USAGE_GUIDES[item.id];
+      const ex = (guide && Array.isArray(guide.examples)) ? guide.examples[exampleIdx] : null;
+      closeFeatureGuideModal();
+
+      if (!ex || ex.action === "run") {
+        executeItem(item);
+      } else if (ex.action === "quicknote") {
+        promptQuickNoteInlineModal();
+      } else if (ex.action === "timeline") {
+        toggleTodayTimeline();
+      } else if (ex.action === "launchpad") {
+        toggleLaunchpadModal();
+      } else if (ex.prefix) {
+        setSearchInputValue(ex.prefix);
+      }
+    }
+
+    function runCurrentGuidedFeature() {
+      const item = PANEL_ITEMS.find(x => x.id === _currentGuidedFeatureId);
+      closeFeatureGuideModal();
+      if (item) executeItem(item);
+    }
+
+    function closeFeatureGuideModal() {
+      const modal = document.getElementById("feature-guide-modal");
+      if (modal) modal.classList.remove("open");
+    }
+
+    function closeFeatureGuideOnBg(e) {
+      if (e && e.target && e.target.id === "feature-guide-modal") {
+        closeFeatureGuideModal();
+      }
+    }
 
     const ModalStackManager = {
       stack: [],
@@ -16156,13 +17715,13 @@
 
     function getCardModeMeta(item) {
       if (!item) return { label: "⚡ 直接执行", cls: "mode-exec", title: "点击或回车立即执行" };
-      const studioIds = ["sytask", "syo", "syprofile", "synotice", "syh"];
-      const scopeIds = ["syf", "syfav", "syfold", "sypom", "syatt", "sytag", "sycmd", "sytrash", "syws", "syvoice"];
+      const studioIds = ["sytask", "syo", "syprofile", "synotice", "syh", "syoff", "syd"];
+      const scopeIds = ["syf", "syfav", "syfold", "sypom", "syatt", "sytag", "sycmd", "sytrash", "syws", "syvoice", "syg", "syx", "syp"];
       if (studioIds.includes(item.id)) {
         return { label: "🎛️ 独立视窗", cls: "mode-studio", title: "点击打开独立全景工作台大视窗" };
       }
       if (scopeIds.includes(item.id)) {
-        return { label: "🔍 检索视图", cls: "mode-scope", title: "点击切换至该专属检索/交互视图" };
+        return { label: "🔍 交互视图", cls: "mode-scope", title: "点击切换至该专属检索/交互视图" };
       }
       if (item.pluginLaunch) {
         return { label: "🪟 思源联动", cls: "mode-plugin", title: "点击免切窗执行 · 点「面板」唤醒思源对应插件" };

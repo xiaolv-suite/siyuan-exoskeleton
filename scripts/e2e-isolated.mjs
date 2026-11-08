@@ -4065,6 +4065,22 @@ async function main() {
                                       bentoCsContent.includes("WHERE type IN ('p', 'h', 'c', 't', 'i') AND content != ''");
   logStep("Step 7.232: 首页三大核心直达舱、搜索框「搜笔记/记入日记」双按钮、31卡直白指引与空前缀默认加载断言", hasThreePillarsAndZeroBlank, `首页三大直达舱与零空白交互: ${hasThreePillarsAndZeroBlank}`);
 
+  // Step 7.233: Test 31-Feature Interactive 3-Step Guide Modal, Sub-View Back-Home Bar, In-Window CleanMD/B3Color/Pomodoro & STA Snipping
+  const snippingMgrCs = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'SnippingManager.cs'), 'utf8');
+  const hasInteractiveGuideAndSubViewLoop = panelContent.includes('id="feature-guide-modal"') &&
+                                            panelContent.includes('const FEATURE_USAGE_GUIDES =') &&
+                                            panelContent.includes('function openFeatureGuideModal') &&
+                                            panelContent.includes('function renderModeBanner') &&
+                                            panelContent.includes('class="back-home-pill-btn"') &&
+                                            panelContent.includes('function renderCleanMdInspector') &&
+                                            panelContent.includes('function renderColorStyleInspector') &&
+                                            panelContent.includes('function renderFlowTimerInspector') &&
+                                            panelContent.includes('function getSplitModeEmptyStateHtml') &&
+                                            capsuleHtmlContent.includes('function showKeyHint') &&
+                                            capsuleHtmlContent.includes('function enableInlineTextEdit') &&
+                                            snippingMgrCs.includes('watcherThread.SetApartmentState(ApartmentState.STA)');
+  logStep("Step 7.233: 31项功能3步互动上手向导、子视图返回主页导航条、窗内净化/调色/番茄工作台与STA截图剪贴板断言", hasInteractiveGuideAndSubViewLoop, `互动上手向导与子视图全闭环: ${hasInteractiveGuideAndSubViewLoop}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

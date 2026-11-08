@@ -101,8 +101,8 @@ namespace XiaoLv.Desktop.Core
 
         private static void WatchClipboardForExternalSnip(Action<string, Bitmap> onCaptured, Action<string, string> showNotice)
         {
-            // 异步监听剪贴板 30 秒内的产生物
-            ThreadPool.QueueUserWorkItem(state =>
+            // 使用独立 STA 后台线程监听剪贴板 30 秒内的产生物（WinForms Clipboard 必须在 STA 线程访问）
+            var watcherThread = new Thread(() =>
             {
                 int start = Environment.TickCount;
                 string initialText = "";
@@ -140,6 +140,9 @@ namespace XiaoLv.Desktop.Core
                     catch { }
                 }
             });
+            watcherThread.IsBackground = true;
+            watcherThread.SetApartmentState(ApartmentState.STA);
+            watcherThread.Start();
         }
     }
 }

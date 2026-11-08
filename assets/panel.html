@@ -2456,6 +2456,146 @@
       color: var(--rose-agent);
     }
 
+    /* Launchpad & Bookmarks Hub Styles */
+    .launchpad-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .launchpad-card {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      border-radius: 9px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+      user-select: none;
+    }
+    .launchpad-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(56, 189, 248, 0.5);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .launchpad-card.folder-card:hover {
+      border-color: rgba(16, 185, 129, 0.5);
+    }
+    .launchpad-card-num-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      border: 1px solid var(--border-hairline);
+    }
+    .launchpad-card:hover .launchpad-card-num-badge {
+      background: var(--cyber-sky);
+      color: #0b1120;
+      border-color: var(--cyber-sky);
+    }
+    .launchpad-card.folder-card:hover .launchpad-card-num-badge {
+      background: var(--emerald-mint);
+      color: #0b1120;
+      border-color: var(--emerald-mint);
+    }
+    .launchpad-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .launchpad-card-icon-wrap {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 18px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-hairline);
+      overflow: hidden;
+    }
+    .launchpad-card-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .launchpad-card-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.4;
+    }
+    .launchpad-card-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+      font-family: var(--font-mono);
+    }
+    .launchpad-card-tags {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .launchpad-card-pill {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-hairline);
+    }
+    .launchpad-card-actions {
+      display: flex;
+      gap: 6px;
+      border-top: 1px solid var(--border-hairline);
+      padding-top: 8px;
+      justify-content: flex-end;
+    }
+    .launchpad-mini-btn {
+      font-size: 10.5px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid var(--border-hairline);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .launchpad-mini-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text-primary);
+    }
+    .launchpad-mini-btn.primary {
+      color: var(--cyber-sky);
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+    .launchpad-mini-btn.folder-primary {
+      color: var(--emerald-mint);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+    .launchpad-mini-btn.danger:hover {
+      color: var(--rose-agent);
+      border-color: rgba(244, 63, 94, 0.4);
+    }
+
   </style>
 </head>
 <body>
@@ -2507,6 +2647,9 @@
         </div>
       </div>
 
+      <button class="theme-toggle-btn" id="launchpad-btn" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台 (🚀)" style="position: relative;">
+        <span>🚀</span>
+      </button>
       <button class="theme-toggle-btn" id="notice-btn" onclick="toggleNotificationCenterModal()" title="全景通知与生命事件中心 (🔔)" style="position: relative;">
         <span>🔔</span>
         <span class="badge-dot" id="notice-badge-dot" style="display: none; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--rose-agent);"></span>
@@ -2570,8 +2713,9 @@
       <span class="intent-chip" onclick="insertPrefix('listary:')" title="直通本地 Listary 极速全盘文件检索"><b>🔍</b> Listary</span>
 	      <span class="intent-chip" onclick="insertPrefix('zotero:')" title="唤起本地 Zotero 学术文献管理库"><b>📖</b> Zotero</span>
 			      <span class="intent-chip" onclick="insertPrefix('bm:')" title="输入 bm: 穿透检索 Edge/Chrome 本地浏览器书签与收藏夹"><b>🔖</b> 浏览器书签</span>
-			      <span class="intent-chip" onclick="insertPrefix('fav:')" title="输入 fav: 打开全景网站收藏中枢，跨浏览器统一秒搜、一键收录并沉淀至思源专属文档"><b>🌐</b> 网站收藏</span>
-				      <span class="intent-chip" onclick="insertPrefix('fold:')" title="输入 fold: 打开本地文件夹导航中枢，支持 #32770 对话框原位穿透与思源工程锚定"><b>📂</b> 文件夹导航</span>
+				      <span class="intent-chip" onclick="insertPrefix('fav:')" title="输入 fav: 打开全景网站收藏中枢，跨浏览器统一秒搜、一键收录并沉淀至思源专属文档"><b>🌐</b> 网站收藏</span>
+					      <span class="intent-chip" onclick="insertPrefix('fold:')" title="输入 fold: 打开本地文件夹导航中枢，支持 #32770 对话框原位穿透与思源工程锚定"><b>📂</b> 文件夹导航</span>
+					      <span class="intent-chip" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台，大图标磁贴平铺与 1~9 盲打秒开"><b>🚀</b> 启动台</span>
 					      <span class="intent-chip" onclick="insertPrefix('cfg:')" title="输入 cfg: 查看与管理思源 S3 存储桶、AI 大模型与常用配置预设"><b>⚙️</b> 配置预设</span>
 					      <span class="intent-chip" onclick="insertPrefix('notice:')" title="输入 notice: 查看全景系统与思源应用通知事件流，支持一键沉淀日记"><b>📢</b> 通知历史</span>
 					      <span class="intent-chip" onclick="insertPrefix('vault:')" title="输入 vault: 穿透检索外部 Markdown 知识库与本地目录"><b>🗄️</b> 外部库</span>
@@ -3232,6 +3376,45 @@
       <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
         <span>💡 纯原生 SQLite 纳秒级聚合全库块创建时序，0 外部重依赖生成矢量年轮</span>
         <span>对标 GitHub / flomo 心流激励</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全景网站与工程文件夹大图标启动台 (Launchpad & Bookmarks Grid Modal) -->
+  <div class="timeline-modal-overlay" id="launchpad-modal" onclick="closeLaunchpadOnBg(event)">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="width: 95%; max-width: 980px; max-height: 88vh;">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">🚀</span>
+          <span style="font-weight: 700; font-size: 14px;">全景网站与工程文件夹大图标启动台</span>
+          <span class="brand-pill" id="launchpad-modal-count">0 项启动项</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="triggerLaunchpadCaptureBrowser()" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.4);" title="嗅探前台 Edge/Chrome 浏览器当前网页并收录入库">🌐 嗅探网址</button>
+          <button class="pref-btn" onclick="triggerLaunchpadCaptureExplorer()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="嗅探前台文件资源管理器或对话框目录并沉淀入库">📂 嗅探文件夹</button>
+          <button class="pref-btn" onclick="promptAddLaunchpadItem()" style="font-size: 11px; padding: 3px 10px;" title="手动登记一个网站书签或本地工程目录">+ 手动添加</button>
+          <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleLaunchpadModal()">✕</button>
+        </div>
+      </div>
+      <!-- Mode Switcher & Filter Toolbar -->
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div class="timeline-filters" id="launchpad-category-bar" style="display: flex; gap: 6px; overflow-x: auto; padding: 0;">
+          <button class="cat-btn active" id="lp-tab-all" onclick="switchLaunchpadTab('all')">🌟 全部综合</button>
+          <button class="cat-btn" id="lp-tab-web" onclick="switchLaunchpadTab('web')">🌐 网站导航</button>
+          <button class="cat-btn" id="lp-tab-folder" onclick="switchLaunchpadTab('folder')">📂 工程文件夹</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; flex: 1; max-width: 280px;">
+          <input type="text" id="launchpad-search-input" placeholder="实时过滤 (数字 1~9 盲打秒开, Enter 秒开首项)..." oninput="handleLaunchpadLiveFilter(this.value)" style="width: 100%; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-primary);" />
+        </div>
+      </div>
+      <!-- Grid Body Container -->
+      <div id="launchpad-modal-body" style="padding: 16px 18px; overflow-y: auto; max-height: 64vh;">
+        <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在加载启动台项目...</div>
+      </div>
+      <!-- Bottom Footer -->
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+        <span>💡 <b>快捷操作</b>: 键入数字 <code>1~9</code> 直接秒开对应磁贴 · <code>Enter</code> 秒开第 1 项 · <code>Esc</code> 关闭</span>
+        <span id="launchpad-modal-stat">已加载 0 个网站 · 0 个文件夹</span>
       </div>
     </div>
   </div>
@@ -4176,6 +4359,9 @@
       } else if (q.startsWith("notice:") || q.startsWith("notice：") || q.startsWith("notif:") || q.startsWith("notif：")) {
         banner.style.display = "flex";
         banner.innerHTML = `<div><span class="intent-tag">📢 通知与事件流</span>汇总思源弹窗、系统事件与外部自动化回执，支持一键沉淀日记</div><span style="font-size: 10px; opacity: 0.8;">↵ 查看详情 · 沉淀日记</span>`;
+      } else if (q.startsWith("pad:") || q.startsWith("pad：") || q.startsWith("launch:") || q.startsWith("launch：") || q === "pad" || q === "launch") {
+        banner.style.display = "flex";
+        banner.innerHTML = `<div><span class="intent-tag">🚀 全景启动台</span>大图标自适应网格，聚合网站与工程文件夹，支持 1~9 盲打秒开</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开启动台大视窗</span>`;
       } else {
         banner.style.display = "none";
       }
@@ -4368,6 +4554,20 @@
         } else {
           filteredItems = [];
           renderItems();
+        }
+        return;
+      }
+
+      // pad: 或 launch: 模式：全景网站与工程文件夹大图标启动台
+      if (q.startsWith("pad:") || q.startsWith("pad：") || q.startsWith("launch:") || q.startsWith("launch：") || q === "pad" || q === "launch") {
+        const subKw = q.replace(/^(pad:|pad：|launch:|launch：)/, "").trim();
+        toggleLaunchpadModal();
+        if (subKw) {
+          const lpInput = document.getElementById("launchpad-search-input");
+          if (lpInput) {
+            lpInput.value = subKw;
+            handleLaunchpadLiveFilter(subKw);
+          }
         }
         return;
       }
@@ -8604,7 +8804,26 @@
     window.onWebBookmarksLoaded = function(res) {
       if (!res || !Array.isArray(res.data)) return;
       const bms = res.data;
+      window._launchpadWebItems = bms;
+      if (typeof updateLaunchpadGrid === 'function') {
+        updateLaunchpadGrid();
+      }
       const items = [];
+
+      items.push({
+        id: "action_open_launchpad_web",
+        group: "search",
+        title: "🚀 [启动台视窗] 打开全景大图标启动台",
+        desc: "展开 Mac Launchpad 风格大图标自适应网格，支持数字键 1~9 盲打秒开与一键多维检索",
+        hotkey: "pad:",
+        iconType: "compass",
+        iconColor: "var(--cyber-sky)",
+        badge: "启动台",
+        badgeCls: "badge-native",
+        action: () => {
+          toggleLaunchpadModal('web');
+        }
+      });
 
       items.push({
         id: "action_capture_browser_url",
@@ -8709,7 +8928,12 @@
     window.onWebBookmarkDeleted = function(res) {
       if (res && res.success) {
         showToast("✓ 网站收藏已成功移除！");
-        insertPrefix('fav:');
+        const lpModal = document.getElementById("launchpad-modal");
+        if (lpModal && lpModal.classList.contains("open")) {
+          refreshLaunchpadData();
+        } else {
+          insertPrefix('fav:');
+        }
       }
     };
 
@@ -8738,7 +8962,12 @@
     window.onWebBookmarkSaved = function(res) {
       if (res && res.success) {
         showToast("🎉 网站已成功沉淀至思源专属文档与本地缓存！");
-        insertPrefix('fav:');
+        const lpModal = document.getElementById("launchpad-modal");
+        if (lpModal && lpModal.classList.contains("open")) {
+          refreshLaunchpadData();
+        } else {
+          insertPrefix('fav:');
+        }
       }
     };
 
@@ -8748,7 +8977,26 @@
     window.onFolderBookmarksLoaded = function(res) {
       if (!res || !Array.isArray(res.data)) return;
       const folders = res.data;
+      window._launchpadFolderItems = folders;
+      if (typeof updateLaunchpadGrid === 'function') {
+        updateLaunchpadGrid();
+      }
       const items = [];
+
+      items.push({
+        id: "action_open_launchpad_folder",
+        group: "search",
+        title: "🚀 [启动台视窗] 打开工程文件夹网格视窗",
+        desc: "展开大图标网格视窗，健康状态灯、穿透跳跃一目了然",
+        hotkey: "pad:",
+        iconType: "folder",
+        iconColor: "var(--emerald-mint)",
+        badge: "启动台",
+        badgeCls: "badge-native",
+        action: () => {
+          toggleLaunchpadModal('folder');
+        }
+      });
 
       items.push({
         id: "action_capture_explorer_folder",
@@ -8846,7 +9094,12 @@
     window.onFolderBookmarkDeleted = function(res) {
       if (res && res.success) {
         showToast("✓ 文件夹导航已成功移除！");
-        insertPrefix('fold:');
+        const lpModal = document.getElementById("launchpad-modal");
+        if (lpModal && lpModal.classList.contains("open")) {
+          refreshLaunchpadData();
+        } else {
+          insertPrefix('fold:');
+        }
       }
     };
 
@@ -8875,7 +9128,12 @@
     window.onFolderBookmarkSaved = function(res) {
       if (res && res.success) {
         showToast("🎉 文件夹导航已成功沉淀至思源专属文档与本地缓存！");
-        insertPrefix('fold:');
+        const lpModal = document.getElementById("launchpad-modal");
+        if (lpModal && lpModal.classList.contains("open")) {
+          refreshLaunchpadData();
+        } else {
+          insertPrefix('fold:');
+        }
       }
     };
 
@@ -10698,6 +10956,390 @@
       if (e.button === 0 && !e.target.closest("button, .t-pill, input, a, .top-nav-divider")) {
         if (window.chrome && window.chrome.webview) {
           window.chrome.webview.postMessage(JSON.stringify({ op: 'dragMove' }));
+        }
+      }
+    }
+
+    // ==========================================================
+    // 全景网站与工程文件夹大图标启动台 (Launchpad & Bookmarks Hub)
+    // ==========================================================
+    let currentLaunchpadTab = "all";
+    let currentLaunchpadKeyword = "";
+    let currentLaunchpadRenderedItems = [];
+    window._launchpadWebItems = [];
+    window._launchpadFolderItems = [];
+
+    function toggleLaunchpadModal(initialTab) {
+      const modal = document.getElementById("launchpad-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) {
+        if (initialTab) {
+          currentLaunchpadTab = initialTab;
+        }
+        updateLaunchpadTabButtons();
+        const searchInput = document.getElementById("launchpad-search-input");
+        if (searchInput) {
+          searchInput.value = "";
+          currentLaunchpadKeyword = "";
+          setTimeout(() => searchInput.focus(), 80);
+        }
+        refreshLaunchpadData();
+      }
+    }
+
+    function closeLaunchpadOnBg(e) {
+      if (e.target && e.target.id === "launchpad-modal") {
+        toggleLaunchpadModal();
+      }
+    }
+
+    function refreshLaunchpadData() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'searchWebBookmarks', keyword: '' }));
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'searchFolderBookmarks', keyword: '' }));
+      }
+    }
+
+    function switchLaunchpadTab(tab) {
+      currentLaunchpadTab = tab;
+      updateLaunchpadTabButtons();
+      renderLaunchpadGrid();
+    }
+
+    function updateLaunchpadTabButtons() {
+      const bar = document.getElementById("launchpad-category-bar");
+      if (!bar) return;
+      const staticBtns = ["all", "web", "folder"];
+      staticBtns.forEach(t => {
+        const btn = document.getElementById("lp-tab-" + t);
+        if (btn) btn.classList.toggle("active", currentLaunchpadTab === t);
+      });
+      // Dynamic category buttons
+      const dynBtns = bar.querySelectorAll(".lp-dyn-cat");
+      dynBtns.forEach(b => {
+        const cat = b.getAttribute("data-cat");
+        b.classList.toggle("active", currentLaunchpadTab === cat);
+      });
+    }
+
+    function handleLaunchpadLiveFilter(kw) {
+      currentLaunchpadKeyword = (kw || "").trim().toLowerCase();
+      renderLaunchpadGrid();
+    }
+
+    function updateLaunchpadGrid() {
+      const modal = document.getElementById("launchpad-modal");
+      if (modal && modal.classList.contains("open")) {
+        renderLaunchpadGrid();
+      }
+    }
+
+    function renderLaunchpadGrid() {
+      const body = document.getElementById("launchpad-modal-body");
+      if (!body) return;
+
+      const webList = window._launchpadWebItems || [];
+      const folderList = window._launchpadFolderItems || [];
+
+      // Extract dynamic categories across all items
+      const catSet = new Set();
+      webList.forEach(w => {
+        if (w.Category) catSet.add(w.Category.trim());
+      });
+      folderList.forEach(f => {
+        if (f.Tags) {
+          f.Tags.split(/[,，\s]+/).forEach(t => { if (t) catSet.add(t.trim()); });
+        }
+      });
+
+      // Update dynamic category pills in toolbar
+      const bar = document.getElementById("launchpad-category-bar");
+      if (bar) {
+        bar.querySelectorAll(".lp-dyn-cat").forEach(el => el.remove());
+        catSet.forEach(cat => {
+          if (!cat) return;
+          const btn = document.createElement("button");
+          btn.className = `cat-btn lp-dyn-cat ${currentLaunchpadTab === cat ? 'active' : ''}`;
+          btn.setAttribute("data-cat", cat);
+          btn.innerText = `🏷️ ${cat}`;
+          btn.onclick = () => switchLaunchpadTab(cat);
+          bar.appendChild(btn);
+        });
+      }
+
+      // Collect unified items
+      let items = [];
+
+      // 1. Web Bookmarks
+      if (currentLaunchpadTab !== "folder") {
+        webList.forEach(b => {
+          // Category filter
+          if (currentLaunchpadTab !== "all" && currentLaunchpadTab !== "web") {
+            const hasCat = (b.Category && b.Category.toLowerCase() === currentLaunchpadTab.toLowerCase()) ||
+                            (b.Tags && b.Tags.toLowerCase().includes(currentLaunchpadTab.toLowerCase()));
+            if (!hasCat) return;
+          }
+          // Keyword filter
+          if (currentLaunchpadKeyword) {
+            const match = (b.Title && b.Title.toLowerCase().includes(currentLaunchpadKeyword)) ||
+                          (b.CleanUrl && b.CleanUrl.toLowerCase().includes(currentLaunchpadKeyword)) ||
+                          (b.Url && b.Url.toLowerCase().includes(currentLaunchpadKeyword)) ||
+                          (b.Category && b.Category.toLowerCase().includes(currentLaunchpadKeyword)) ||
+                          (b.Tags && b.Tags.toLowerCase().includes(currentLaunchpadKeyword)) ||
+                          (b.Notes && b.Notes.toLowerCase().includes(currentLaunchpadKeyword));
+            if (!match) return;
+          }
+
+          items.push({
+            type: "web",
+            id: b.Id,
+            title: b.Title || b.CleanUrl,
+            subtitle: b.CleanUrl || b.Url,
+            category: b.Category || "常用",
+            tags: b.Tags || "",
+            shortcut: b.Shortcut || "",
+            count: b.VisitCount || 1,
+            raw: b
+          });
+        });
+      }
+
+      // 2. Folder Bookmarks
+      if (currentLaunchpadTab !== "web") {
+        folderList.forEach(f => {
+          // Category filter
+          if (currentLaunchpadTab !== "all" && currentLaunchpadTab !== "folder") {
+            const hasCat = (f.Tags && f.Tags.toLowerCase().includes(currentLaunchpadTab.toLowerCase())) ||
+                            (f.Alias && f.Alias.toLowerCase().includes(currentLaunchpadTab.toLowerCase()));
+            if (!hasCat) return;
+          }
+          // Keyword filter
+          if (currentLaunchpadKeyword) {
+            const match = (f.Alias && f.Alias.toLowerCase().includes(currentLaunchpadKeyword)) ||
+                          (f.Path && f.Path.toLowerCase().includes(currentLaunchpadKeyword)) ||
+                          (f.Tags && f.Tags.toLowerCase().includes(currentLaunchpadKeyword)) ||
+                          (f.Shortcut && f.Shortcut.toLowerCase().includes(currentLaunchpadKeyword)) ||
+                          (f.SiyuanDocTitle && f.SiyuanDocTitle.toLowerCase().includes(currentLaunchpadKeyword));
+            if (!match) return;
+          }
+
+          items.push({
+            type: "folder",
+            id: f.Id,
+            title: f.Alias || f.Path,
+            subtitle: f.Path,
+            isValid: f.IsValid !== false,
+            docTitle: f.SiyuanDocTitle || "",
+            docId: f.SiyuanDocId || "",
+            shortcut: f.Shortcut || "",
+            count: f.AccessCount || 1,
+            raw: f
+          });
+        });
+      }
+
+      // Sort: highest count first
+      items.sort((a, b) => (b.count || 0) - (a.count || 0));
+
+      currentLaunchpadRenderedItems = items;
+
+      // Update counters
+      const countPill = document.getElementById("launchpad-modal-count");
+      if (countPill) countPill.innerText = `${items.length} 项启动项`;
+
+      const statSpan = document.getElementById("launchpad-modal-stat");
+      if (statSpan) {
+        const wCount = items.filter(x => x.type === "web").length;
+        const fCount = items.filter(x => x.type === "folder").length;
+        statSpan.innerText = `当前呈现 ${wCount} 个网站 · ${fCount} 处工程目录`;
+      }
+
+      if (items.length === 0) {
+        body.innerHTML = `
+          <div style="text-align: center; padding: 48px 24px; color: var(--text-muted); font-size: 13px;">
+            <div style="font-size: 32px; margin-bottom: 12px;">🚀</div>
+            <div>暂未匹配到网站或工程文件夹</div>
+            <div style="font-size: 11px; margin-top: 6px; color: var(--cyber-sky);">
+              点击上方【🌐 嗅探网址】或【📂 嗅探文件夹】可从前台活动窗口一键收录！
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      let html = `<div class="launchpad-grid">`;
+      items.forEach((item, index) => {
+        const isNumKey = index < 9;
+        const numBadge = isNumKey ? `<span class="launchpad-card-num-badge" title="按下键盘数字 ${index + 1} 立即盲打秒开">${index + 1}</span>` : '';
+
+        if (item.type === "web") {
+          let domain = "";
+          try {
+            domain = new URL(item.subtitle).hostname;
+          } catch(e) {
+            domain = item.subtitle;
+          }
+          const faviconUrl = domain ? `https://www.google.com/s2/favicons?sz=64&domain=${domain}` : '';
+          const mdLink = `[${item.title}](${item.subtitle})`;
+
+          html += `
+            <div class="launchpad-card web-card" onclick="openWebBookmarkUrl('${escapeQuote(item.subtitle)}')" title="点击秒开: ${escapeHtml(item.subtitle)}">
+              ${numBadge}
+              <div class="launchpad-card-header">
+                <div class="launchpad-card-icon-wrap" style="background: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.25);">
+                  ${faviconUrl ? `<img src="${faviconUrl}" width="22" height="22" style="border-radius: 4px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';" /><span style="display:none; font-size: 16px;">🌐</span>` : `<span style="font-size: 16px;">🌐</span>`}
+                </div>
+                <div class="launchpad-card-info">
+                  <div class="launchpad-card-title">${escapeHtml(item.title)}</div>
+                  <div class="launchpad-card-subtitle" title="${escapeHtml(item.subtitle)}">${escapeHtml(domain || item.subtitle)}</div>
+                </div>
+              </div>
+
+              <div class="launchpad-card-tags">
+                <span class="launchpad-card-pill" style="color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.3);">${escapeHtml(item.category)}</span>
+                ${item.shortcut ? `<span class="launchpad-card-pill" style="font-family: var(--font-mono);">${escapeHtml(item.shortcut)}</span>` : ''}
+                <span class="launchpad-card-pill" style="color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.2);">🔥 ${item.count}次</span>
+              </div>
+
+              <div class="launchpad-card-actions" onclick="event.stopPropagation()">
+                <button class="launchpad-mini-btn primary" onclick="openWebBookmarkUrl('${escapeQuote(item.subtitle)}')" title="调起默认浏览器秒开访问">🚀 秒开</button>
+                <button class="launchpad-mini-btn" onclick="copyToClipboard('${escapeQuote(item.subtitle)}', '网址已复制！')" title="复制干净网址">📋 复制</button>
+                <button class="launchpad-mini-btn" onclick="copyToClipboard('${escapeQuote(mdLink)}', '超链接已复制！')" title="复制Markdown超链接">📝 MD</button>
+                <button class="launchpad-mini-btn" onclick="appendBookmarkToDaily('${escapeQuote(item.title)}', '${escapeQuote(item.subtitle)}')" title="存入今日日记">📥 日记</button>
+                <button class="launchpad-mini-btn danger" onclick="deleteWebBookmarkById('${escapeQuote(item.id)}')" title="从收藏库中删除">🗑️</button>
+              </div>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="launchpad-card folder-card" onclick="navigateFolderBookmarkPath('${escapeQuote(item.subtitle)}')" title="点击穿透/秒开: ${escapeHtml(item.subtitle)}">
+              ${numBadge}
+              <div class="launchpad-card-header">
+                <div class="launchpad-card-icon-wrap" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25);">
+                  <span style="font-size: 20px;">📁</span>
+                </div>
+                <div class="launchpad-card-info">
+                  <div class="launchpad-card-title">${escapeHtml(item.title)}</div>
+                  <div class="launchpad-card-subtitle" title="${escapeHtml(item.subtitle)}">${escapeHtml(item.subtitle)}</div>
+                </div>
+              </div>
+
+              <div class="launchpad-card-tags">
+                <span class="launchpad-card-pill" style="color: ${item.isValid ? 'var(--emerald-mint)' : 'var(--rose-agent)'}; border-color: ${item.isValid ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)'};">
+                  ${item.isValid ? '🟢 有效' : '🔴 缺失'}
+                </span>
+                ${item.docTitle ? `<span class="launchpad-card-pill" style="color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.3); max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="关联思源文档: 《${escapeHtml(item.docTitle)}》">《${escapeHtml(item.docTitle)}》</span>` : ''}
+                ${item.shortcut ? `<span class="launchpad-card-pill" style="font-family: var(--font-mono);">${escapeHtml(item.shortcut)}</span>` : ''}
+                <span class="launchpad-card-pill" style="color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.2);">📁 ${item.count}次</span>
+              </div>
+
+              <div class="launchpad-card-actions" onclick="event.stopPropagation()">
+                <button class="launchpad-mini-btn folder-primary" onclick="navigateFolderBookmarkPath('${escapeQuote(item.subtitle)}')" title="原位穿透对话框或呼出资源管理器">🚀 穿透秒开</button>
+                <button class="launchpad-mini-btn" onclick="copyToClipboard('${escapeQuote(item.subtitle)}', '路径已复制！')" title="复制绝对物理路径">📋 复制</button>
+                ${item.docId ? `<button class="launchpad-mini-btn" onclick="openBlockById('${escapeQuote(item.docId)}')" title="打开关联思源项目文档" style="color: var(--cyber-sky);">🔗 文档</button>` : ''}
+                <button class="launchpad-mini-btn danger" onclick="deleteFolderBookmarkById('${escapeQuote(item.id)}')" title="从目录导航中删除">🗑️</button>
+              </div>
+            </div>
+          `;
+        }
+      });
+      html += `</div>`;
+      body.innerHTML = html;
+    }
+
+    // Keyboard Blind Opening for Launchpad
+    document.addEventListener("keydown", function(e) {
+      const modal = document.getElementById("launchpad-modal");
+      if (!modal || !modal.classList.contains("open")) return;
+
+      if (e.key === "Escape") {
+        toggleLaunchpadModal();
+        e.preventDefault();
+        return;
+      }
+
+      const activeEl = document.activeElement;
+      const isInput = activeEl && activeEl.id === "launchpad-search-input";
+
+      // Enter key: launch 1st item
+      if (e.key === "Enter") {
+        if (currentLaunchpadRenderedItems.length > 0) {
+          launchItemAtIndex(0);
+          e.preventDefault();
+        }
+        return;
+      }
+
+      // Digits 1~9 blind launching
+      const digitMatch = e.key.match(/^[1-9]$/);
+      if (digitMatch) {
+        const digit = parseInt(e.key, 10);
+        const shouldBlindLaunch = e.altKey || !isInput || (isInput && !activeEl.value);
+        if (shouldBlindLaunch && digit >= 1 && digit <= currentLaunchpadRenderedItems.length) {
+          launchItemAtIndex(digit - 1);
+          e.preventDefault();
+        }
+      }
+    });
+
+    function launchItemAtIndex(idx) {
+      if (idx < 0 || idx >= currentLaunchpadRenderedItems.length) return;
+      const it = currentLaunchpadRenderedItems[idx];
+      if (it.type === "web") {
+        openWebBookmarkUrl(it.subtitle);
+      } else {
+        navigateFolderBookmarkPath(it.subtitle);
+      }
+      showToast(`🚀 已秒开启动项 [${idx + 1}]: ${it.title}`);
+    }
+
+    function triggerLaunchpadCaptureBrowser() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'captureActiveBrowserUrl' }));
+      }
+    }
+
+    function triggerLaunchpadCaptureExplorer() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'captureActiveExplorerFolder' }));
+      }
+    }
+
+    function promptAddLaunchpadItem() {
+      const choice = prompt("请选择添加类型 (输入 1: 网站书签, 输入 2: 本地文件夹):", "1");
+      if (choice === "1") {
+        const url = prompt("请输入完整网址 (例如 https://github.com):", "");
+        if (!url) return;
+        const title = prompt("请输入书签标题:", url);
+        if (!title) return;
+        const cat = prompt("请输入分类 (常用/开发/工具/设计/学术/生活):", "常用") || "常用";
+        const tags = prompt("请输入标签 (逗号分隔，可选):", "") || "";
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({
+            op: 'saveWebBookmark',
+            title: title,
+            url: url,
+            category: cat,
+            tags: tags,
+            notes: "由全景启动台手动登记"
+          }));
+        }
+      } else if (choice === "2") {
+        const path = prompt("请输入物理文件夹绝对路径 (例如 D:\\Projects):", "");
+        if (!path) return;
+        const alias = prompt("请输入文件夹别名/工程名:", path.split(/[\\\\/]/).pop() || path);
+        if (!alias) return;
+        const shortcut = prompt("请输入快捷简码 (可选，例如 prj):", "") || "";
+        const docTitle = prompt("关联思源工程文档名称 (可选):", "") || "";
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({
+            op: 'saveFolderBookmark',
+            path: path,
+            alias: alias,
+            shortcut: shortcut,
+            siyuanDocTitle: docTitle
+          }));
         }
       }
     }

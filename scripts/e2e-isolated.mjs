@@ -2994,6 +2994,69 @@ async function main() {
   const isBinaryOk = exeStat.size > 3 * 1024 * 1024 && exeStat.size < 5 * 1024 * 1024;
   logStep("Step 7.140: 零依赖单文件绿色独立程序体积严谨性与资源内嵌断言", isBinaryOk, `二进制大小: ${(exeStat.size / (1024 * 1024)).toFixed(2)} MB (符合 3.1~4.0MB 极致单文件规范)`);
 
+  // Step 7.141: Test Launchpad & Bookmarks Grid Modal UI Template Integrity in panel.html
+  const hasLaunchpadModal = panelContent.includes('id="launchpad-modal"') &&
+                            panelContent.includes('id="launchpad-modal-count"') &&
+                            panelContent.includes('id="launchpad-category-bar"') &&
+                            panelContent.includes('id="launchpad-modal-body"') &&
+                            panelContent.includes('id="launchpad-search-input"');
+  logStep("Step 7.141: 全景网站与工程文件夹大图标启动台 (launchpad-modal) 模版架构断言", hasLaunchpadModal, `启动台模版完整性: ${hasLaunchpadModal}`);
+
+  // Step 7.142: Test Topbar Launchpad Button & Intent Suggestion Linkage
+  const hasLaunchpadTopLink = panelContent.includes('id="launchpad-btn"') &&
+                              panelContent.includes('toggleLaunchpadModal()') &&
+                              panelContent.includes('<b>🚀</b> 启动台');
+  logStep("Step 7.142: 顶栏 🚀 启动台按钮与意图胶囊全局呼出联动断言", hasLaunchpadTopLink, `顶栏启动台入口联动: ${hasLaunchpadTopLink}`);
+
+  // Step 7.143: Test Launchpad CSS Grid Styles & Keycap Badge
+  const hasLaunchpadCss = panelContent.includes('.launchpad-grid') &&
+                          panelContent.includes('.launchpad-card') &&
+                          panelContent.includes('.launchpad-card-num-badge') &&
+                          panelContent.includes('.launchpad-card-icon-wrap');
+  logStep("Step 7.143: 启动台自适应网格与数字键帽徽标样式规范断言", hasLaunchpadCss, `CSS 网格样式规范: ${hasLaunchpadCss}`);
+
+  // Step 7.144: Test Launchpad JavaScript Functions & Data Engine
+  const hasLaunchpadJs = panelContent.includes('function toggleLaunchpadModal') &&
+                         panelContent.includes('function switchLaunchpadTab') &&
+                         panelContent.includes('function renderLaunchpadGrid') &&
+                         panelContent.includes('function launchItemAtIndex') &&
+                         panelContent.includes('triggerLaunchpadCaptureBrowser') &&
+                         panelContent.includes('triggerLaunchpadCaptureExplorer');
+  logStep("Step 7.144: 启动台双模态过滤与响应式渲染驱动逻辑断言", hasLaunchpadJs, `启动台驱动函数完整性: ${hasLaunchpadJs}`);
+
+  // Step 7.145: Test ExternalApiBridge Unified Launchpad Endpoint (GET /api/launchpad & POST /api/launchpad)
+  let webhookLaunchpadResp;
+  try {
+    const getResp = await fetch("http://127.0.0.1:43990/api/launchpad");
+    const getJson = await getResp.json();
+    const postResp = await fetch("http://127.0.0.1:43990/api/launchpad", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "folder", target: "D:\\" })
+    });
+    const postJson = await postResp.json();
+    webhookLaunchpadResp = {
+      getCode: getJson.code,
+      hasData: !!getJson.data,
+      total: getJson.data?.total,
+      postCode: postJson.code,
+      postMsg: postJson.msg
+    };
+  } catch (err) {
+    webhookLaunchpadResp = { error: err.message };
+  }
+  const isWebhookLaunchpadOk = webhookLaunchpadResp &&
+                               webhookLaunchpadResp.getCode === 0 &&
+                               webhookLaunchpadResp.hasData &&
+                               webhookLaunchpadResp.postCode === 0;
+  logStep("Step 7.145: 极速调用桥启动台聚合接口 (GET/POST /api/launchpad) 断言", isWebhookLaunchpadOk, `聚合响应: ${JSON.stringify(webhookLaunchpadResp)}`);
+
+  // Step 7.146: Test Launchpad Keyboard Blind 1~9 & Enter Handling
+  const hasBlindNav = panelContent.includes('e.key === "Enter"') &&
+                      panelContent.includes('e.key.match(/^[1-9]$/)') &&
+                      panelContent.includes('launchItemAtIndex(digit - 1)');
+  logStep("Step 7.146: 启动台数字键 1~9 盲打秒开与 Enter 首项秒开断言", hasBlindNav, `键盘盲打导航逻辑: ${hasBlindNav}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

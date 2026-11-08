@@ -266,12 +266,19 @@ namespace XiaoLv.Desktop.Core
 			                    return;
 			                }
 
-			                // P. 通知日报沉淀流水: /api/notify/journal
-			                if (rawPath.Equals("/api/notify/journal", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/notify/journal", StringComparison.OrdinalIgnoreCase))
-			                {
-			                    HandleNotifyJournalRequest(req, resp);
-			                    return;
-			                }
+				                // P. 通知日报沉淀流水: /api/notify/journal
+				                if (rawPath.Equals("/api/notify/journal", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/notify/journal", StringComparison.OrdinalIgnoreCase))
+				                {
+				                    HandleNotifyJournalRequest(req, resp);
+				                    return;
+				                }
+
+				                // Q. 全景启动台大盘与极速启动: /api/launchpad
+				                if (rawPath.Equals("/api/launchpad", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/launchpad", StringComparison.OrdinalIgnoreCase))
+				                {
+				                    HandleLaunchpadRequest(req, resp);
+				                    return;
+				                }
 
 			                // 未匹配到路由
 			                WriteJsonResponse(resp, 404, new { code = 404, msg = "未找到对应 API 路由: " + rawPath });
@@ -800,13 +807,79 @@ namespace XiaoLv.Desktop.Core
                 {
                     string k = Uri.UnescapeDataString(p.Substring(0, eq).Replace('+', ' '));
                     string v = Uri.UnescapeDataString(p.Substring(eq + 1).Replace('+', ' '));
-                    dict[k] = v;
-                }
-            }
-            return dict;
-        }
+	                    dict[k] = v;
+	                }
+	            }
+	            return dict;
+	        }
 
-        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
+	        private static void HandleLaunchpadRequest(HttpListenerRequest req, HttpListenerResponse resp)
+	        {
+	            if (req.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+	            {
+	                string body = ReadRequestBody(req);
+	                var dict = JsonHelper.ParseDict(body);
+	                string type = JsonHelper.GetString(dict, "type", "web");
+	                string target = JsonHelper.GetString(dict, "target");
+
+	                if (string.IsNullOrEmpty(target))
+	                {
+	                    WriteJsonResponse(resp, 400, new { code = 400, msg = "target 参数不能为空" });
+	                    return;
+	                }
+
+	                bool ok = false;
+	                if (type.Equals("folder", StringComparison.OrdinalIgnoreCase))
+	                {
+	                    ok = FolderBookmarkHub.NavigateToFolder(target);
+	                }
+	                else
+	                {
+	                    try
+	                    {
+	                        System.Diagnostics.Process.Start(target);
+	                        ok = true;
+	                    }
+	                    catch { }
+	                }
+	                WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, msg = ok ? "启动成功" : "启动失败", type = type, target = target });
+	                return;
+	            }
+
+	            // GET: 聚合获取网站与文件夹启动台项
+	            string q = GetQueryStringUtf8(req, "q");
+	            ThreadPool.QueueUserWorkItem(async s =>
+	            {
+	                try
+	                {
+	                    var webAll = await WebBookmarkHub.LoadBookmarksAsync();
+	                    var webFiltered = WebBookmarkHub.Search(webAll, q);
+
+	                    var folderAll = await FolderBookmarkHub.LoadFoldersAsync();
+	                    var folderFiltered = FolderBookmarkHub.Search(folderAll, q);
+
+	                    WriteJsonResponse(resp, 200, new
+	                    {
+	                        code = 0,
+	                        msg = "ok",
+	                        data = new
+	                        {
+	                            total = webFiltered.Count + folderFiltered.Count,
+	                            webCount = webFiltered.Count,
+	                            folderCount = folderFiltered.Count,
+	                            web = webFiltered,
+	                            folder = folderFiltered
+	                        }
+	                    });
+	                }
+	                catch (Exception ex)
+	                {
+	                    WriteJsonResponse(resp, 500, new { code = 500, msg = "检索启动台异常: " + ex.Message });
+	                }
+	            });
+	        }
+
+	        private static string GetQueryStringUtf8(HttpListenerRequest req, string paramName)
         {
             try
             {

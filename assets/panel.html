@@ -2507,6 +2507,10 @@
         </div>
       </div>
 
+      <button class="theme-toggle-btn" id="notice-btn" onclick="toggleNotificationCenterModal()" title="全景通知与生命事件中心 (🔔)" style="position: relative;">
+        <span>🔔</span>
+        <span class="badge-dot" id="notice-badge-dot" style="display: none; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--rose-agent);"></span>
+      </button>
       <button class="theme-toggle-btn" id="help-btn" onclick="toggleCheatsheet()" title="快捷心流与语法罗盘 (?)">⌨️</button>
       <button class="theme-toggle-btn" id="customize-btn" onclick="togglePreferencesModal()" title="设置中枢 (⚙)">⚙️</button>
       <button class="theme-toggle-btn" id="theme-btn" onclick="toggleTheme()" title="切换浅色/深色主题">🌓</button>
@@ -3114,6 +3118,47 @@
       </div>
       <div class="timeline-body" id="timeline-modal-body">
         <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在加载今日记事时间轴...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全景通知中心独立视窗 (Notification Center Modal) -->
+  <div class="timeline-modal-overlay" id="notification-center-modal" onclick="closeNotificationCenterOnBg(event)">
+    <div class="timeline-modal-box" onclick="event.stopPropagation()" style="max-width: 720px;">
+      <div class="timeline-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">🔔</span>
+          <span style="font-weight: 700; font-size: 14px;">全景通知与生命事件中心</span>
+          <span class="brand-pill" id="notif-modal-count">0 笔事件</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="dumpNotificationsToDaily()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="将今日通知事件汇总沉淀至今日日记工作流水">📥 归流今日日记</button>
+          <button class="pref-btn" onclick="copyAllNotificationsText()" style="font-size: 11px; padding: 3px 10px;" title="复制全量通知清单文本">📋 复制全部</button>
+          <button class="pref-btn" onclick="clearAllNotifications()" style="font-size: 11px; padding: 3px 10px; color: var(--rose-agent); border-color: rgba(244, 63, 94, 0.3);" title="清空全部历史记录">🗑️ 清空</button>
+          <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleNotificationCenterModal()">✕</button>
+        </div>
+      </div>
+      <!-- Filters and Search Toolbar -->
+      <div style="display: flex; gap: 8px; padding: 8px 18px; border-bottom: 1px solid var(--border-hairline); background: rgba(0,0,0,0.15); align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div class="timeline-filters" style="display: flex; gap: 6px; overflow-x: auto; padding: 0;">
+          <button class="cat-btn active" id="nc-filter-all" onclick="filterNotificationCenter('all')">全部</button>
+          <button class="cat-btn" id="nc-filter-error" onclick="filterNotificationCenter('error')">🔴 仅看错误</button>
+          <button class="cat-btn" id="nc-filter-warn" onclick="filterNotificationCenter('warn')">🟡 警告</button>
+          <button class="cat-btn" id="nc-filter-success" onclick="filterNotificationCenter('success')">🟢 成功</button>
+          <button class="cat-btn" id="nc-filter-siyuan" onclick="filterNotificationCenter('siyuan')">🌐 思源弹窗</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; flex: 1; max-width: 240px;">
+          <input type="text" id="notif-search-input" placeholder="实时过滤内容..." oninput="handleNotificationLiveFilter(this.value)" style="width: 100%; font-size: 11px; padding: 3px 8px; border-radius: 5px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-primary);" />
+        </div>
+      </div>
+      <!-- Notification Items Body -->
+      <div class="timeline-body" id="notif-modal-body" style="max-height: 58vh; overflow-y: auto; gap: 8px;">
+        <div style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 12px;">正在加载通知历史...</div>
+      </div>
+      <!-- Bottom Footer -->
+      <div style="padding: 8px 18px; border-top: 1px solid var(--border-hairline); background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+        <span>💡 深度记录思源弹窗、系统消息、开发回执与心流达成</span>
+        <span id="notif-modal-stat">已加载 0 笔</span>
       </div>
     </div>
   </div>
@@ -5085,7 +5130,7 @@
 
       // 呼出全景通知与事件流中枢
       if (item.id === "synotice") {
-        insertPrefix("notice:");
+        toggleNotificationCenterModal();
         return;
       }
 
@@ -8686,11 +8731,30 @@
     // ==========================================================
     // 全景系统与应用通知事件流中枢 (OmniNotificationHub) 交互管线
     // ==========================================================
+    let currentNotifCenterFilter = 'all';
+    let currentNotifCenterKeyword = '';
+    let rawLoadedNotifications = [];
+
     window.onNotificationsLoaded = function(res) {
       if (!res || !Array.isArray(res.data)) return;
       const notifs = res.data;
-      const items = [];
+      rawLoadedNotifications = notifs;
 
+      // 更新顶栏铃铛徽章
+      const dot = document.getElementById("notice-badge-dot");
+      if (dot) {
+        dot.style.display = notifs.length > 0 ? "block" : "none";
+        if (notifs.some(n => n.Level === "error")) {
+          dot.style.background = "var(--rose-agent)";
+        } else {
+          dot.style.background = "var(--indigo-light)";
+        }
+      }
+
+      // 如果通知中心弹窗处于打开状态，同步更新列表
+      renderNotificationCenterList();
+
+      const items = [];
       items.push({
         id: "action_dump_notification_journal",
         group: "search",
@@ -8739,6 +8803,133 @@
         inspectNotificationItem(filteredItems[1].notifData);
       }
     };
+
+    function toggleNotificationCenterModal() {
+      const modal = document.getElementById("notification-center-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) {
+        loadNotificationCenterData();
+      }
+    }
+
+    function closeNotificationCenterOnBg(e) {
+      if (e.target && e.target.id === "notification-center-modal") {
+        toggleNotificationCenterModal();
+      }
+    }
+
+    function loadNotificationCenterData() {
+      const body = document.getElementById("notif-modal-body");
+      if (body) body.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);">正在加载通知历史...</div>';
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'getNotificationHistory', keyword: '', level: 'all', source: 'all' }));
+      }
+    }
+
+    function filterNotificationCenter(filter) {
+      currentNotifCenterFilter = filter;
+      ["all", "error", "warn", "success", "siyuan"].forEach(k => {
+        const btn = document.getElementById("nc-filter-" + k);
+        if (btn) btn.classList.toggle("active", k === filter);
+      });
+      renderNotificationCenterList();
+    }
+
+    function handleNotificationLiveFilter(val) {
+      currentNotifCenterKeyword = (val || "").trim().toLowerCase();
+      renderNotificationCenterList();
+    }
+
+    function renderNotificationCenterList() {
+      const body = document.getElementById("notif-modal-body");
+      const countBadge = document.getElementById("notif-modal-count");
+      const statBadge = document.getElementById("notif-modal-stat");
+      if (!body) return;
+
+      let filtered = rawLoadedNotifications;
+      if (currentNotifCenterFilter === "error") {
+        filtered = filtered.filter(n => n.Level === "error");
+      } else if (currentNotifCenterFilter === "warn") {
+        filtered = filtered.filter(n => n.Level === "warn");
+      } else if (currentNotifCenterFilter === "success") {
+        filtered = filtered.filter(n => n.Level === "success");
+      } else if (currentNotifCenterFilter === "siyuan") {
+        filtered = filtered.filter(n => n.Source === "siyuan");
+      }
+
+      if (currentNotifCenterKeyword) {
+        filtered = filtered.filter(n =>
+          (n.Title && n.Title.toLowerCase().includes(currentNotifCenterKeyword)) ||
+          (n.Message && n.Message.toLowerCase().includes(currentNotifCenterKeyword)) ||
+          (n.Source && n.Source.toLowerCase().includes(currentNotifCenterKeyword))
+        );
+      }
+
+      if (countBadge) countBadge.innerText = `${rawLoadedNotifications.length} 笔事件`;
+      if (statBadge) statBadge.innerText = `显示 ${filtered.length} / 共 ${rawLoadedNotifications.length} 笔`;
+
+      if (filtered.length === 0) {
+        body.innerHTML = `
+          <div style="text-align: center; padding: 40px 16px; color: var(--text-muted);">
+            <div style="font-size: 32px; margin-bottom: 8px;">🎉</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">暂无匹配的通知事件</div>
+            <div style="font-size: 11px;">思源内核、系统应用与自动化回执产生时将自动沉淀于此</div>
+          </div>
+        `;
+        return;
+      }
+
+      body.innerHTML = filtered.map(n => {
+        let icon = "🔵";
+        let borderCls = "rgba(56,189,248,0.3)";
+        let bgBadge = "badge-bridge";
+        if (n.Level === "error") { icon = "🔴"; borderCls = "rgba(244,63,94,0.4)"; bgBadge = "badge-stale"; }
+        else if (n.Level === "warn") { icon = "🟡"; borderCls = "rgba(245,158,11,0.4)"; bgBadge = "badge-native"; }
+        else if (n.Level === "success") { icon = "🟢"; borderCls = "rgba(16,185,129,0.4)"; bgBadge = "badge-native"; }
+
+        const repeatBadge = n.RepeatCount > 1 ? `<span class="badge-native" style="margin-left:6px;font-size:10px;">×${n.RepeatCount}</span>` : "";
+        const shortTime = n.TimeFormatted ? (n.TimeFormatted.length >= 16 ? n.TimeFormatted.substring(11, 16) : n.TimeFormatted) : "";
+
+        return `
+          <div style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-left: 3px solid ${borderCls}; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; transition: all 0.15s ease;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span>${icon}</span>
+                <span style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">${escapeHtml(n.Title)}</span>
+                ${repeatBadge}
+                <span class="${bgBadge}" style="font-size: 10px; padding: 1px 5px;">${escapeHtml(n.Source || 'desktop')}</span>
+              </div>
+              <span style="font-family: monospace; font-size: 10.5px; color: var(--text-muted);">${shortTime}</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; word-break: break-all; margin-top: 2px;">
+              ${escapeHtml(n.Message)}
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px;">
+              <button class="card-launch-btn" style="padding: 1px 7px; font-size: 10.5px;" onclick="copyToClipboard('${escapeQuote(n.Title + ': ' + n.Message)}', '通知内容已复制！')">📋 复制</button>
+              <button class="card-launch-btn" style="padding: 1px 7px; font-size: 10.5px;" onclick="appendSingleNotificationToDaily('${escapeQuote(n.Title)}', '${escapeQuote(n.Message)}')">📥 存日记</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function appendSingleNotificationToDaily(title, message) {
+      if (window.chrome && window.chrome.webview) {
+        const text = `* 📢 **[${title}]** ${message} · ${new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'quickNote', text: text }));
+        showToast("✓ 通知已沉淀入今日日记！");
+      }
+    }
+
+    function copyAllNotificationsText() {
+      if (!rawLoadedNotifications || rawLoadedNotifications.length === 0) {
+        showToast("暂无可复制的通知记录");
+        return;
+      }
+      const lines = rawLoadedNotifications.map(n => `[${n.TimeFormatted}] [${n.Level.toUpperCase()}] [${n.Source}] ${n.Title}: ${n.Message}`);
+      copyToClipboard(lines.join('\n'), "已复制全量通知清单！");
+    }
 
     function inspectNotificationItem(n) {
       if (!n) return;
@@ -10144,6 +10335,7 @@
       if (window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({ op: 'getMemoryStatus' }));
         window.chrome.webview.postMessage(JSON.stringify({ op: 'getIntegratedFocusStatus' }));
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'getNotificationHistory', keyword: '', level: 'all', source: 'all' }));
       }
       const input = document.getElementById("search-input");
       if (input) {

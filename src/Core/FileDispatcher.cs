@@ -98,6 +98,36 @@ namespace XiaoLv.Desktop.Core
                             isStructured = true;
                         }
                     }
+                    else if (ext == ".epub")
+                    {
+                        OfficeFileWatcher.WatchFile(filePath);
+                        var epub = EpubLightParser.InspectEpub(filePath);
+                        if (epub != null)
+                        {
+                            structuredMd = EpubLightParser.BuildEpubReadingNotesMarkdown(epub);
+                            isStructured = true;
+                        }
+                    }
+                    else if (ext == ".xmind")
+                    {
+                        OfficeFileWatcher.WatchFile(filePath);
+                        var xmind = XMindLightParser.InspectXMind(filePath);
+                        if (xmind != null)
+                        {
+                            structuredMd = XMindLightParser.BuildXMindOutlineMarkdown(xmind);
+                            isStructured = true;
+                        }
+                    }
+                    else if (ext == ".mp3" || ext == ".wav" || ext == ".m4a" || ext == ".mp4" || ext == ".mkv" || ext == ".mov")
+                    {
+                        OfficeFileWatcher.WatchFile(filePath);
+                        var media = MediaLightParser.InspectMedia(filePath);
+                        if (media != null)
+                        {
+                            structuredMd = MediaLightParser.BuildMediaNotesMarkdown(media);
+                            isStructured = true;
+                        }
+                    }
                 }
                 catch { }
 
@@ -291,6 +321,36 @@ namespace XiaoLv.Desktop.Core
                     if (pdf != null)
                     {
                         structuredMd = PdfLightParser.BuildPdfReadingNotesMarkdown(pdf);
+                        isStructured = true;
+                    }
+                }
+                else if (ext == ".epub")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    var epub = EpubLightParser.InspectEpub(filePath);
+                    if (epub != null)
+                    {
+                        structuredMd = EpubLightParser.BuildEpubReadingNotesMarkdown(epub);
+                        isStructured = true;
+                    }
+                }
+                else if (ext == ".xmind")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    var xmind = XMindLightParser.InspectXMind(filePath);
+                    if (xmind != null)
+                    {
+                        structuredMd = XMindLightParser.BuildXMindOutlineMarkdown(xmind);
+                        isStructured = true;
+                    }
+                }
+                else if (ext == ".mp3" || ext == ".wav" || ext == ".m4a" || ext == ".mp4" || ext == ".mkv" || ext == ".mov")
+                {
+                    OfficeFileWatcher.WatchFile(filePath);
+                    var media = MediaLightParser.InspectMedia(filePath);
+                    if (media != null)
+                    {
+                        structuredMd = MediaLightParser.BuildMediaNotesMarkdown(media);
                         isStructured = true;
                     }
                 }

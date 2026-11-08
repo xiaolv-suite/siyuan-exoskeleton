@@ -481,6 +481,78 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
+                // 3.4 全库代码片段秒搜 (code: 语法)
+                if (op.Equals("searchCodeSnippets", StringComparison.OrdinalIgnoreCase))
+                {
+                    string kw = JsonHelper.GetString(msg, "keyword");
+                    ThreadPool.QueueUserWorkItem(async s =>
+                    {
+                        try
+                        {
+                            string safeLike = (kw ?? "").Replace("'", "''");
+                            string sql = string.IsNullOrEmpty(safeLike)
+                                ? "SELECT id, root_id, content, markdown, hpath, updated FROM blocks WHERE type='c' ORDER BY updated DESC LIMIT 30"
+                                : "SELECT id, root_id, content, markdown, hpath, updated FROM blocks WHERE type='c' AND (content LIKE '%" + safeLike + "%' OR markdown LIKE '%" + safeLike + "%') ORDER BY updated DESC LIMIT 30";
+
+                            var rows = await SiYuanClient.SqlAsync(sql);
+                            var snippets = new List<CodeSnippetItem>();
+                            if (rows != null)
+                            {
+                                foreach (var r in rows)
+                                {
+                                    string rawCode = JsonHelper.GetString(r, "content");
+                                    string rawMd = JsonHelper.GetString(r, "markdown");
+                                    string detectedLang;
+                                    string cleanCode = CodeSnippetManager.ExtractCleanCode(!string.IsNullOrEmpty(rawMd) ? rawMd : rawCode, out detectedLang);
+
+                                    string hpath = JsonHelper.GetString(r, "hpath");
+                                    string docTitle = Path.GetFileName(hpath);
+                                    if (string.IsNullOrEmpty(docTitle)) docTitle = "未命名笔记";
+
+                                    snippets.Add(new CodeSnippetItem
+                                    {
+                                        BlockId = JsonHelper.GetString(r, "id"),
+                                        RootId = JsonHelper.GetString(r, "root_id"),
+                                        DocTitle = docTitle,
+                                        Language = detectedLang,
+                                        Code = cleanCode,
+                                        LineCount = cleanCode.Split('\n').Length,
+                                        FileExtension = CodeSnippetManager.ResolveExtension(detectedLang)
+                                    });
+                                }
+                            }
+
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onCodeSnippetsLoaded) window.onCodeSnippetsLoaded(" + JsonHelper.ToJson(new { code = 0, data = snippets }) + ");");
+                                }
+                            });
+                        }
+                        catch { }
+                    });
+                    return;
+                }
+
+                // 3.45 纯净代码片段本地临时导出秒开
+                if (op.Equals("exportSourceFile", StringComparison.OrdinalIgnoreCase))
+                {
+                    string code = JsonHelper.GetString(msg, "code");
+                    string lang = JsonHelper.GetString(msg, "lang");
+                    string title = JsonHelper.GetString(msg, "docTitle");
+
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        string target = CodeSnippetManager.ExportAndOpenSourceFile(code, lang, title);
+                        if (!string.IsNullOrEmpty(target) && OnNotificationRequested != null)
+                        {
+                            OnNotificationRequested("思源外骨骼 · 源码秒开", "✓ 已生成 " + Path.GetFileName(target) + " 并在本地开发工具中秒开！");
+                        }
+                    });
+                    return;
+                }
+
                 // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
                 if (op.Equals("searchDocs", StringComparison.OrdinalIgnoreCase))
                 {
@@ -1579,6 +1651,29 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
+                // 21.75 一键生成 Zotero 文献卡片并沉淀入今日日记
+                if (op.Equals("importZoteroCard", StringComparison.OrdinalIgnoreCase))
+                {
+                    string key = JsonHelper.GetString(msg, "itemKey");
+                    string title = JsonHelper.GetString(msg, "title");
+                    string creators = JsonHelper.GetString(msg, "creators");
+                    string year = JsonHelper.GetString(msg, "year");
+                    string doi = JsonHelper.GetString(msg, "doi");
+                    string pub = JsonHelper.GetString(msg, "publication");
+                    string pdf = JsonHelper.GetString(msg, "localPdf");
+
+                    var item = ZoteroBridge.CreateItemSummary(key, title, creators, year, doi, pub, pdf);
+                    string md = ZoteroBridge.BuildLiteratureCardMarkdown(item);
+
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        var conn = SiYuanClient.GetConnectionInfo(false);
+                        bool ok = SmartCaptureMain.AppendToDailyNote(conn.Url, conn.Token, md);
+                        if (ok) SoundPlayerHelper.PlayFeedback();
+                    });
+                    return;
+                }
+
                 // 21.8 本地 Office (Word/Excel/PPT) 流式透视与抽取
                 if (op.Equals("inspectOfficeFile", StringComparison.OrdinalIgnoreCase))
                 {
@@ -1629,6 +1724,89 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
+                // 21.83 本地 EPUB 电子书极速流式透视 (书名/作者/章节目录)
+                if (op.Equals("inspectEpub", StringComparison.OrdinalIgnoreCase))
+                {
+                    string p = JsonHelper.GetString(msg, "filePath");
+                    if (!string.IsNullOrEmpty(p) && File.Exists(p))
+                    {
+                        ThreadPool.QueueUserWorkItem(s =>
+                        {
+                            try
+                            {
+                                var summary = EpubLightParser.InspectEpub(p);
+                                Dispatcher.Invoke(() =>
+                                {
+                                    if (_webView != null && _webView.CoreWebView2 != null)
+                                    {
+                                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onEpubInspectionLoaded) window.onEpubInspectionLoaded(" + JsonHelper.ToJson(summary) + ");");
+                                    }
+                                });
+                            }
+                            catch { }
+                        });
+                    }
+                    return;
+                }
+
+                // 21.84 本地思维导图 (.xmind) 极速流式透视与原生大纲生成
+                if (op.Equals("inspectXMind", StringComparison.OrdinalIgnoreCase))
+                {
+                    string p = JsonHelper.GetString(msg, "filePath");
+                    if (!string.IsNullOrEmpty(p) && File.Exists(p))
+                    {
+                        ThreadPool.QueueUserWorkItem(s =>
+                        {
+                            try
+                            {
+                                var summary = XMindLightParser.InspectXMind(p);
+                                Dispatcher.Invoke(() =>
+                                {
+                                    if (_webView != null && _webView.CoreWebView2 != null)
+                                    {
+                                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onXMindInspectionLoaded) window.onXMindInspectionLoaded(" + JsonHelper.ToJson(summary) + ");");
+                                    }
+                                });
+                            }
+                            catch { }
+                        });
+                    }
+                    return;
+                }
+
+                // 21.845 本地多媒体 (音视频) 极速流式透视与时间戳起播
+                if (op.Equals("inspectMedia", StringComparison.OrdinalIgnoreCase))
+                {
+                    string p = JsonHelper.GetString(msg, "filePath");
+                    if (!string.IsNullOrEmpty(p) && File.Exists(p))
+                    {
+                        ThreadPool.QueueUserWorkItem(s =>
+                        {
+                            try
+                            {
+                                var summary = MediaLightParser.InspectMedia(p);
+                                Dispatcher.Invoke(() =>
+                                {
+                                    if (_webView != null && _webView.CoreWebView2 != null)
+                                    {
+                                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onMediaInspectionLoaded) window.onMediaInspectionLoaded(" + JsonHelper.ToJson(summary) + ");");
+                                    }
+                                });
+                            }
+                            catch { }
+                        });
+                    }
+                    return;
+                }
+
+                if (op.Equals("openMediaAtTime", StringComparison.OrdinalIgnoreCase))
+                {
+                    string p = JsonHelper.GetString(msg, "filePath");
+                    int seek = JsonHelper.GetInt(msg, "time", 0);
+                    MediaLightParser.PlayMediaAtTime(p, seek);
+                    return;
+                }
+
                 // 21.85 零依赖逆向导出 Word (.docx) 并本地秒开
                 if (op.Equals("exportDocx", StringComparison.OrdinalIgnoreCase))
                 {
@@ -1656,6 +1834,41 @@ namespace XiaoLv.Desktop.UI
                         if (ok && OnNotificationRequested != null)
                         {
                             OnNotificationRequested("思源外骨骼 · 导出Excel", "✓ 已成功生成标准 .xlsx 表格并在本地秒开！");
+                        }
+                    });
+                    return;
+                }
+
+                // 21.87 资产安全隔离区：移入 .quarantine
+                if (op.Equals("quarantineAssets", StringComparison.OrdinalIgnoreCase))
+                {
+                    var namesObj = JsonHelper.GetList(msg, "fileNames");
+                    var names = new List<string>();
+                    if (namesObj != null)
+                    {
+                        foreach (var n in namesObj) if (n != null) names.Add(n.ToString());
+                    }
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        int count = AssetCleanDoctor.QuarantineAssets(SiYuanClient.WorkspaceAssetsDir, names);
+                        if (OnNotificationRequested != null)
+                        {
+                            OnNotificationRequested("思源外骨骼 · 资产隔离区", "✓ 已将 " + count + " 个无主孤儿附件安全移入 .quarantine 隔离区！");
+                        }
+                    });
+                    return;
+                }
+
+                // 21.88 资产安全隔离区：彻底清空释放
+                if (op.Equals("purgeQuarantine", StringComparison.OrdinalIgnoreCase))
+                {
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        long freed = AssetCleanDoctor.PurgeQuarantine(SiYuanClient.WorkspaceAssetsDir);
+                        string freedStr = AssetCleanDoctor.FormatFileSize(freed);
+                        if (OnNotificationRequested != null)
+                        {
+                            OnNotificationRequested("思源外骨骼 · 隔离区清理", "✓ 已彻底清空隔离区，累计释放 " + freedStr + " 磁盘空间！");
                         }
                     });
                     return;
@@ -2138,6 +2351,39 @@ namespace XiaoLv.Desktop.UI
                             }
                         });
                     }
+                    else if (ext == ".epub")
+                    {
+                        var summary = EpubLightParser.InspectEpub(fullPath);
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onEpubInspectionLoaded) window.onEpubInspectionLoaded(" + JsonHelper.ToJson(summary) + ");");
+                            }
+                        });
+                    }
+                    else if (ext == ".xmind")
+                    {
+                        var summary = XMindLightParser.InspectXMind(fullPath);
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onXMindInspectionLoaded) window.onXMindInspectionLoaded(" + JsonHelper.ToJson(summary) + ");");
+                            }
+                        });
+                    }
+                    else if (ext == ".mp3" || ext == ".wav" || ext == ".m4a" || ext == ".mp4" || ext == ".mkv" || ext == ".mov")
+                    {
+                        var summary = MediaLightParser.InspectMedia(fullPath);
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (_webView != null && _webView.CoreWebView2 != null)
+                            {
+                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onMediaInspectionLoaded) window.onMediaInspectionLoaded(" + JsonHelper.ToJson(summary) + ");");
+                            }
+                        });
+                    }
                     else if (ext == ".docx" || ext == ".xlsx" || ext == ".pptx")
                     {
                         var summary = OfficeOpenXmlParser.InspectFile(fullPath);
@@ -2329,6 +2575,30 @@ namespace XiaoLv.Desktop.UI
                         if (_webView != null && _webView.CoreWebView2 != null)
                         {
                             string js = string.Format("if(window.onPdfInspectionLoaded && window.currentPdfSummary && window.currentPdfSummary.FilePath === {0}) window.onPdfInspectionLoaded({1});", JsonHelper.ToJson(filePath), JsonHelper.ToJson(pdfSummary));
+                            _webView.CoreWebView2.ExecuteScriptAsync(js);
+                        }
+                    });
+                }
+                else if (ext == ".epub")
+                {
+                    var epubSummary = EpubLightParser.InspectEpub(filePath);
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (_webView != null && _webView.CoreWebView2 != null)
+                        {
+                            string js = string.Format("if(window.onEpubInspectionLoaded && window.currentEpubSummary && window.currentEpubSummary.FilePath === {0}) window.onEpubInspectionLoaded({1});", JsonHelper.ToJson(filePath), JsonHelper.ToJson(epubSummary));
+                            _webView.CoreWebView2.ExecuteScriptAsync(js);
+                        }
+                    });
+                }
+                else if (ext == ".xmind")
+                {
+                    var xmindSummary = XMindLightParser.InspectXMind(filePath);
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (_webView != null && _webView.CoreWebView2 != null)
+                        {
+                            string js = string.Format("if(window.onXMindInspectionLoaded && window.currentXMindSummary && window.currentXMindSummary.FilePath === {0}) window.onXMindInspectionLoaded({1});", JsonHelper.ToJson(filePath), JsonHelper.ToJson(xmindSummary));
                             _webView.CoreWebView2.ExecuteScriptAsync(js);
                         }
                     });

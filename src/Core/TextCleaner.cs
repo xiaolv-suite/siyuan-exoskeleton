@@ -136,7 +136,7 @@ namespace XiaoLv.Desktop.Core
                 var trackingKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
                     "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "utm_id",
-                    "spm_id_from", "from_source", "vd_source", "bvid", "broadcast_type", "is_story_h5",
+                    "spm_id_from", "from_source", "vd_source", "broadcast_type", "is_story_h5",
                     "xsec_token", "xsec_source", "app_id", "app_platform",
                     "fbclid", "gclid", "dclid", "msclkid",
                     "isappinstalled", "scene", "clicktime", "enterid", "session_id",
@@ -695,6 +695,7 @@ namespace XiaoLv.Desktop.Core
             if (!string.IsNullOrEmpty(author)) sb.AppendFormat("custom-clip-author=\"{0}\" ", author.Replace("\"", "\\\""));
             sb.AppendFormat("custom-clip-time=\"{0}\" ", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
             sb.Append("custom-clip-status=\"unread\" ");
+            sb.Append("custom-triage-status=\"unread\" ");
             sb.Append("custom-clip-content-type=\"article\" ");
             sb.Append("}");
             return sb.ToString();

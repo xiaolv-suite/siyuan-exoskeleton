@@ -2551,10 +2551,14 @@
       <span class="chip-divider"></span>
       <span class="intent-chip" onclick="insertPrefix('b:')" title="输入 b: 毫秒级检索思源正文块并直接复制/回贴双链"><b>b:</b> 块级秒搜</span>
       <span class="intent-chip" onclick="insertPrefix('d:')" title="输入 d: 检索思源全库文档"><b>d:</b> 文档</span>
+      <span class="intent-chip" onclick="insertPrefix('code:')" title="输入 code: 穿透检索全库代码片段并一键纯净直贴或导出秒开"><b>⌨️</b> 代码秒搜</span>
       <span class="intent-chip" onclick="insertPrefix('tag:')" title="输入 tag: 聚合检索全库标签与聚合笔记流"><b>#</b> 标签</span>
       <span class="intent-chip" onclick="insertPrefix('att:')" title="输入 att: 穿透检索全库 PDF 文献与附件资产秒查坞"><b>att:</b> 附件秒查</span>
       <span class="intent-chip" onclick="insertPrefix('office:')" title="输入 office: 检索与透视本地 Word/Excel/PPT 大纲与批注"><b>🏢</b> Office</span>
       <span class="intent-chip" onclick="insertPrefix('pdf:')" title="输入 pdf: 检索全库学术 PDF 并流式透视大纲书签与页码"><b>📑</b> PDF</span>
+      <span class="intent-chip" onclick="insertPrefix('epub:')" title="输入 epub: 检索本地 EPUB 电子书并流式透视章节目录"><b>📚</b> EPUB</span>
+      <span class="intent-chip" onclick="insertPrefix('xmind:')" title="输入 xmind: 检索本地思维导图并流式透视层级树生成思源大纲"><b>🧠</b> XMind</span>
+      <span class="intent-chip" onclick="insertPrefix('listary:')" title="直通本地 Listary 极速全盘文件检索"><b>🔍</b> Listary</span>
       <span class="intent-chip" onclick="insertPrefix('zotero:')" title="唤起本地 Zotero 学术文献管理库"><b>📖</b> Zotero</span>
       <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
@@ -2814,8 +2818,16 @@
               <span>🔔 操作轻音效反馈</span>
             </label>
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+              <input type="checkbox" id="pref-desktop-shellmenu" style="accent-color: var(--indigo-primary);" checked />
+              <span>📥 资源管理器右键透视与归档</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
               <input type="checkbox" id="pref-desktop-lifelog" style="accent-color: var(--indigo-primary);" checked />
               <span>🌟 Lifelog 智能分流 (账目/专注/打卡)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+              <input type="checkbox" id="pref-desktop-webhook" style="accent-color: var(--indigo-primary);" checked />
+              <span>⚡ Quicker / AHK 外部调用 Webhook 回路 (:43989)</span>
             </label>
           </div>
         </div>
@@ -4110,14 +4122,28 @@
         return;
       }
 
-      // office: / word: / excel: / ppt: / pdf: 模式：全库本地文档极速检索与穿透
-      if (q.startsWith("office:") || q.startsWith("office：") || q.startsWith("word:") || q.startsWith("word：") || q.startsWith("excel:") || q.startsWith("excel：") || q.startsWith("ppt:") || q.startsWith("ppt：") || q.startsWith("pdf:") || q.startsWith("pdf：")) {
-        let subKw = q.replace(/^(office:|office：|word:|word：|excel:|excel：|ppt:|ppt：|pdf:|pdf：)/, "").trim();
+      // code: 或 snip: 模式：全库代码片段秒搜与纯净源码提取
+      if (q.startsWith("code:") || q.startsWith("code：") || q.startsWith("snip:") || q.startsWith("snip：")) {
+        const subKw = q.replace(/^(code:|code：|snip:|snip：)/, "").trim();
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'searchCodeSnippets', keyword: subKw }));
+        } else {
+          filteredItems = [];
+          renderItems();
+        }
+        return;
+      }
+
+      // office: / word: / excel: / ppt: / pdf: / epub: / xmind: 模式：全库本地文档极速检索与穿透
+      if (q.startsWith("office:") || q.startsWith("office：") || q.startsWith("word:") || q.startsWith("word：") || q.startsWith("excel:") || q.startsWith("excel：") || q.startsWith("ppt:") || q.startsWith("ppt：") || q.startsWith("pdf:") || q.startsWith("pdf：") || q.startsWith("epub:") || q.startsWith("epub：") || q.startsWith("xmind:") || q.startsWith("xmind：")) {
+        let subKw = q.replace(/^(office:|office：|word:|word：|excel:|excel：|ppt:|ppt：|pdf:|pdf：|epub:|epub：|xmind:|xmind：)/, "").trim();
         let extFilter = "";
         if (q.startsWith("word:") || q.startsWith("word：")) extFilter = "docx";
         else if (q.startsWith("excel:") || q.startsWith("excel：")) extFilter = "xlsx";
         else if (q.startsWith("ppt:") || q.startsWith("ppt：")) extFilter = "pptx";
         else if (q.startsWith("pdf:") || q.startsWith("pdf：")) extFilter = "pdf";
+        else if (q.startsWith("epub:") || q.startsWith("epub：")) extFilter = "epub";
+        else if (q.startsWith("xmind:") || q.startsWith("xmind：")) extFilter = "xmind";
         const queryTerm = extFilter ? (subKw ? `${subKw} ${extFilter}` : extFilter) : subKw;
 
         if (window.chrome && window.chrome.webview) {
@@ -5110,6 +5136,14 @@
       }
       if (item.isRescueItem) {
         renderRescueInspector(item);
+        return;
+      }
+      if (item.id === "syh") {
+        renderHealthDoctorInspector(item);
+        return;
+      }
+      if (item.isCodeSnippet) {
+        renderCodeSnippetInspector(item);
         return;
       }
       if (item.isAssetItem) {
@@ -6640,6 +6674,15 @@
             ${d.fileName.match(/\.pdf$/i) ? `
               <button class="inspector-dock-btn" style="background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.4); color: #f87171; font-weight: 700;" onclick="inspectPdfDeep('${escapeQuote(d.fullPath)}')" title="流式透视 PDF 页数、元数据与大纲书签目录">📑 PDF 研读透视</button>
             ` : ''}
+            ${d.fileName.match(/\.epub$/i) ? `
+              <button class="inspector-dock-btn" style="background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.4); color: #34d399; font-weight: 700;" onclick="inspectEpubDeep('${escapeQuote(d.fullPath)}')" title="流式透视 EPUB 电子书书名、作者与全书目录树">📚 EPUB 研读透视</button>
+            ` : ''}
+            ${d.fileName.match(/\.xmind$/i) ? `
+              <button class="inspector-dock-btn" style="background: rgba(245,158,11,0.18); border-color: rgba(245,158,11,0.4); color: #fbbf24; font-weight: 700;" onclick="inspectXMindDeep('${escapeQuote(d.fullPath)}')" title="流式透视 XMind 脑图节点树、大纲并生成思维导图">🧠 XMind 导图透视</button>
+            ` : ''}
+            ${d.fileName.match(/\.(mp3|wav|m4a|mp4|mkv|mov)$/i) ? `
+              <button class="inspector-dock-btn" style="background: rgba(168,85,247,0.18); border-color: rgba(168,85,247,0.4); color: #c084fc; font-weight: 700;" onclick="inspectMediaDeep('${escapeQuote(d.fullPath)}')" title="流式透视音视频时长与时间戳研读笔记">🎬 音视频透视</button>
+            ` : ''}
             <button class="inspector-dock-btn" onclick="pasteAtCursor('[${escapeQuote(d.fileName)}](${escapeQuote(d.assetRel)}')">⚡ Shift+↵ 贴链接</button>
             <button class="inspector-dock-btn" onclick="copyToClipboard('[${escapeQuote(d.fileName)}](${escapeQuote(d.assetRel)}')">📋 复制链接</button>
             <button class="inspector-dock-btn" onclick="locateInSearchTool('${escapeQuote(d.fileName)}')" title="在 ${getPreferredSearchToolName()} 中极速定位此文件 (Ctrl+E)">🔍 ${getPreferredSearchToolName()} 定位</button>
@@ -7068,6 +7111,373 @@
       }
     }
 
+    let currentEpubSummary = null;
+
+    function inspectEpubDeep(filePath) {
+      showToast("⏳ 正在零依赖流式透视 EPUB 电子书目录与元数据...");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'inspectEpub', filePath: filePath }));
+      }
+    }
+
+    window.onEpubInspectionLoaded = function(summary) {
+      if (!summary) return;
+      currentEpubSummary = summary;
+      renderEpubDeepInspector();
+    };
+
+    function renderEpubDeepInspector() {
+      const inspector = document.getElementById("search-inspector-pane");
+      const summary = currentEpubSummary;
+      if (!inspector || !summary) return;
+
+      const chapters = summary.Chapters || [];
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">📚 本地电子书透视</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">EPUB</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${chapters.length} 章节</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div class="inspector-doc-title">📖 ${escapeHtml(summary.Title || summary.FileName)}</div>
+          </div>
+        </div>
+        <div class="inspector-body" style="padding: 12px; max-height: 400px; overflow-y: auto;">
+          <div style="background: rgba(16,185,129,0.06); border: 1px dashed rgba(16,185,129,0.3); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 4px;">
+              <span>✍️ <b>作者</b>: ${escapeHtml(summary.Author || '未注明')}</span>
+              <span>💾 <b>文件大小</b>: ${escapeHtml(summary.FileSizeFormatted)}</span>
+            </div>
+            ${summary.Publisher ? `<div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">🏢 出版: ${escapeHtml(summary.Publisher)}</div>` : ''}
+            <div style="font-size: 11px; color: var(--text-muted);">📍 路径: <code>${escapeHtml(summary.FilePath)}</code></div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 12px; font-weight: 700; color: var(--text-primary);">📑 章节目录与研读进度 (${chapters.length} 章):</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            ${chapters.length > 0 ? chapters.map(ch => `
+              <div style="padding: 4px 8px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); border-radius: 4px;">
+                <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1;">
+                  <span class="tag-badge badge-system" style="font-size: 9px; padding: 1px 4px; font-family: monospace;">第 ${ch.Index} 章</span>
+                  <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(ch.Title)}</span>
+                </div>
+                <button class="card-launch-btn" style="padding: 1.5px 6px; font-size: 10px; flex-shrink: 0;" onclick="openLocalFileDoc('${escapeQuote(summary.FilePath)}')">↗ 阅读</button>
+              </div>
+            `).join("") : `
+              <div style="text-align: center; color: var(--text-muted); padding: 20px; font-size: 12px;">未提取到显式章节目录，可直接点击下方本地秒开电子书</div>
+            `}
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="openLocalFileDoc('${escapeQuote(summary.FilePath)}')" title="本地默认电子书阅读器秒开">⚡ 本地秒开</button>
+            <button class="inspector-dock-btn" onclick="importEpubOutlinesDaily()" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);" title="提取全书章节大纲生成打卡清单写入今日日记">📑 提炼研读打卡大纲</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('[📚 《${escapeQuote(summary.Title || summary.FileName)}》](siyuan-exoskeleton://open-file?path=${escapeQuote(summary.FilePath.replace(/\\\\/g, '/'))})', '已复制电子书双向回链！')">🔗 贴电子书深链</button>
+            <button class="inspector-dock-btn" onclick="locateInSearchTool('${escapeQuote(summary.FileName)}')" title="本地检索工具定位">🔍 定位文件</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function openLocalFileDoc(path) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'openLocalFile', path: path }));
+      }
+    }
+
+    function importEpubOutlinesDaily() {
+      const summary = currentEpubSummary;
+      if (!summary) return;
+      const title = summary.Title || summary.FileName;
+      const chapCount = summary.Chapters ? summary.Chapters.length : 0;
+      let md = `### 📚 《${title}》 电子书研读打卡大纲 (共 ${chapCount > 0 ? chapCount : '多'} 章)\n`;
+      if (summary.Author) md += `> ✍️ **作者**: ${summary.Author}${summary.Publisher ? ' · 出版: ' + summary.Publisher : ''}\n`;
+      md += `> 📍 **本地底稿**: \`${summary.FilePath}\` (${summary.FileSizeFormatted}) · [⚡ 本地秒开电子书](siyuan-exoskeleton://open-file?path=${encodeURIComponent(summary.FilePath)})\n\n`;
+      if (summary.Chapters && summary.Chapters.length > 0) {
+        md += `#### 📑 章节目录与研读进度打卡\n`;
+        md += summary.Chapters.map(ch => `- [ ] **第 ${ch.Index} 章**: ${ch.Title} · [阅读 ↗](siyuan-exoskeleton://open-file?path=${encodeURIComponent(summary.FilePath)})`).join("\n");
+      } else {
+        md += `#### 📝 阅读进度打卡\n- [ ] 核心思想研读与摘要 · [打开电子书 ↗](siyuan-exoskeleton://open-file?path=${encodeURIComponent(summary.FilePath)})`;
+      }
+      md += `\n\n{: custom-type="epub-reading-notes" custom-file-path="${summary.FilePath.replace(/"/g, '\\"')}" custom-total-chapters="${chapCount}" }\n`;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'appendToDailyNote', text: md, keepOpen: true }));
+        showToast(`✓ 已将《${title}》研读打卡大纲写入今日日记！`);
+      }
+    }
+
+    let currentXMindSummary = null;
+    let currentXMindTab = "mindmap";
+
+    function inspectXMindDeep(filePath) {
+      showToast("⏳ 正在零依赖流式透视 XMind 脑图节点树与结构大纲...");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'inspectXMind', filePath: filePath }));
+      }
+    }
+
+    window.onXMindInspectionLoaded = function(summary) {
+      if (!summary) return;
+      currentXMindSummary = summary;
+      currentXMindTab = "mindmap";
+      renderXMindDeepInspector();
+    };
+
+    function switchXMindTab(tab) {
+      currentXMindTab = tab;
+      renderXMindDeepInspector();
+    }
+
+    function renderXMindDeepInspector() {
+      const inspector = document.getElementById("search-inspector-pane");
+      const summary = currentXMindSummary;
+      if (!inspector || !summary) return;
+
+      const totalNodes = summary.TotalNodes || 0;
+      const maxDepth = summary.MaxDepth || 1;
+      const flatHeadings = summary.FlatHeadings || [];
+
+      function renderTopicNodeHtml(node, depth) {
+        if (!node || !node.Title) return '';
+        const indentPx = depth * 16;
+        let html = `
+          <div style="padding: 3.5px 8px; margin-left: ${indentPx}px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); border-radius: 4px; margin-bottom: 2px;">
+            <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1;">
+              <span class="tag-badge ${depth === 0 ? 'badge-primary' : 'badge-system'}" style="font-size: 9px; padding: 1px 4px; font-family: monospace;">${depth === 0 ? '中心' : 'L' + depth}</span>
+              <span style="font-size: 11.5px; font-weight: ${depth === 0 ? '700' : '500'}; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(node.Title)}</span>
+            </div>
+          </div>
+        `;
+        if (node.Children && node.Children.length > 0) {
+          html += node.Children.map(c => renderTopicNodeHtml(c, depth + 1)).join('');
+        }
+        return html;
+      }
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">🧠 本地思维导图透视</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">XMind</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${totalNodes} 节点 (${maxDepth} 层级)</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div class="inspector-doc-title">🗺️ ${escapeHtml(summary.Title || summary.FileName)}</div>
+            <div class="inspector-tabs" style="display: flex; gap: 4px;">
+              <button class="cat-btn ${currentXMindTab === 'mindmap' ? 'active' : ''}" onclick="switchXMindTab('mindmap')" style="padding: 2px 8px; font-size: 11px;">🗺️ 原生导图</button>
+              <button class="cat-btn ${currentXMindTab === 'outline' ? 'active' : ''}" onclick="switchXMindTab('outline')" style="padding: 2px 8px; font-size: 11px;">📑 结构大纲</button>
+            </div>
+          </div>
+        </div>
+        <div class="inspector-body" style="padding: 12px; max-height: 400px; overflow-y: auto;">
+          <div style="background: rgba(245,158,11,0.06); border: 1px dashed rgba(245,158,11,0.3); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 4px;">
+              <span>🧠 <b>节点总数</b>: ${totalNodes} 个 (层级: ${maxDepth})</span>
+              <span>💾 <b>文件大小</b>: ${escapeHtml(summary.FileSizeFormatted)}</span>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted);">📍 路径: <code>${escapeHtml(summary.FilePath)}</code></div>
+          </div>
+
+          ${currentXMindTab === 'mindmap' ? `
+            <div style="border: 1px solid var(--border-hairline); border-radius: 6px; overflow: auto; max-height: 290px; background: rgba(0,0,0,0.25);">
+              ${generateMindmapSvg(summary.Title || summary.FileName, flatHeadings)}
+            </div>
+          ` : `
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              ${summary.RootTopic ? renderTopicNodeHtml(summary.RootTopic, 0) : '<div style="color:var(--text-muted); text-align:center; padding:20px;">未提取到节点树</div>'}
+            </div>
+          `}
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="openLocalFileDoc('${escapeQuote(summary.FilePath)}')" title="本地 XMind 软件秒开">⚡ 本地秒开</button>
+            <button class="inspector-dock-btn" onclick="importXMindOutlinesDaily()" style="color: var(--amber-glow); border-color: rgba(245,158,11,0.4);" title="将脑图层级大纲写入今日日记 (思源内可1键无缝切换脑图视图)">📥 存入思源大纲(可切脑图)</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('[🧠 《${escapeQuote(summary.Title || summary.FileName)}》](siyuan-exoskeleton://open-file?path=${escapeQuote(summary.FilePath.replace(/\\\\/g, '/'))})', '已复制思维导图双向回链！')">🔗 贴脑图深链</button>
+            <button class="inspector-dock-btn" onclick="locateInSearchTool('${escapeQuote(summary.FileName)}')" title="本地检索工具定位">🔍 定位文件</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function importXMindOutlinesDaily() {
+      const summary = currentXMindSummary;
+      if (!summary) return;
+      const title = summary.Title || summary.FileName;
+      
+      function renderMdList(node, depth) {
+        if (!node || !node.Title) return '';
+        const indent = '  '.repeat(depth);
+        let text = depth === 0 ? `- **${node.Title}**\n` : `${indent}- ${node.Title}\n`;
+        if (node.Children && node.Children.length > 0) {
+          text += node.Children.map(c => renderMdList(c, depth + 1)).join('');
+        }
+        return text;
+      }
+
+      let md = `### 🧠 《${title}》 思维导图大纲 (共 ${summary.TotalNodes || 0} 个节点)\n`;
+      md += `> 📍 **本地底稿**: \`${summary.FilePath}\` (${summary.FileSizeFormatted}) · [⚡ 本地秒开思维导图](siyuan-exoskeleton://open-file?path=${encodeURIComponent(summary.FilePath)})\n\n`;
+      md += `#### 📑 结构大纲清单 (思源内选中可 1 键切换官方原生思维导图)\n`;
+      if (summary.RootTopic) {
+        md += renderMdList(summary.RootTopic, 0);
+      }
+      md += `\n{: custom-type="xmind-mindmap-outline" custom-file-path="${summary.FilePath.replace(/"/g, '\\"')}" custom-total-nodes="${summary.TotalNodes || 0}" }\n`;
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'appendToDailyNote', text: md, keepOpen: true }));
+        showToast(`✓ 已将《${title}》思维导图大纲写入今日日记！`);
+      }
+    }
+
+    let currentMediaSummary = null;
+
+    function inspectMediaDeep(filePath) {
+      showToast("⏳ 正在流式透视音视频时长与时间戳结构...");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'inspectMedia', filePath: filePath }));
+      }
+    }
+
+    window.onMediaInspectionLoaded = function(summary) {
+      if (!summary) return;
+      currentMediaSummary = summary;
+      renderMediaDeepInspector();
+    };
+
+    function renderMediaDeepInspector() {
+      const inspector = document.getElementById("search-inspector-pane");
+      const summary = currentMediaSummary;
+      if (!inspector || !summary) return;
+
+      const isVideo = summary.MediaKind === "video";
+      const icon = isVideo ? "🎬" : "🎧";
+      const kindLabel = isVideo ? "本地视频" : "本地音频";
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">${icon} ${kindLabel}透视</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${escapeHtml(summary.DurationFormatted)}</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${escapeHtml(summary.FileSizeFormatted)}</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div class="inspector-doc-title">${icon} ${escapeHtml(summary.Title || summary.FileName)}</div>
+          </div>
+        </div>
+        <div class="inspector-body" style="padding: 12px; max-height: 400px; overflow-y: auto;">
+          <div style="background: rgba(168,85,247,0.06); border: 1px dashed rgba(168,85,247,0.3); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 4px;">
+              <span>⏱️ <b>总时长</b>: ${escapeHtml(summary.DurationFormatted)} (${summary.DurationSeconds} 秒)</span>
+              <span>💾 <b>文件大小</b>: ${escapeHtml(summary.FileSizeFormatted)}</span>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted);">📍 路径: <code>${escapeHtml(summary.FilePath)}</code></div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 12px; font-weight: 700; color: var(--text-primary);">⏱️ 时间戳研读锚点 (点击原位起播):</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="padding: 4px 8px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); border-radius: 4px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="tag-badge badge-system" style="font-size: 9px; padding: 1px 4px; font-family: monospace;">00:00</span>
+                <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary);">开场与背景介绍</span>
+              </div>
+              <button class="card-launch-btn" style="padding: 1.5px 6px; font-size: 10px;" onclick="playMediaAt(0)">▶ 起播</button>
+            </div>
+            ${summary.DurationSeconds > 600 ? `
+              <div style="padding: 4px 8px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); border-radius: 4px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="tag-badge badge-system" style="font-size: 9px; padding: 1px 4px; font-family: monospace;">${formatSec(Math.round(summary.DurationSeconds / 3))}</span>
+                  <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary);">核心推演与方案探讨</span>
+                </div>
+                <button class="card-launch-btn" style="padding: 1.5px 6px; font-size: 10px;" onclick="playMediaAt(${Math.round(summary.DurationSeconds / 3)})">▶ 跳转</button>
+              </div>
+              <div style="padding: 4px 8px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); border-radius: 4px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="tag-badge badge-system" style="font-size: 9px; padding: 1px 4px; font-family: monospace;">${formatSec(Math.round((summary.DurationSeconds * 2) / 3))}</span>
+                  <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary);">难点攻坚与行动决议</span>
+                </div>
+                <button class="card-launch-btn" style="padding: 1.5px 6px; font-size: 10px;" onclick="playMediaAt(${Math.round((summary.DurationSeconds * 2) / 3)})">▶ 跳转</button>
+              </div>
+            ` : `
+              <div style="padding: 4px 8px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); border-radius: 4px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="tag-badge badge-system" style="font-size: 9px; padding: 1px 4px; font-family: monospace;">${summary.DurationFormatted}</span>
+                  <span style="font-size: 11.5px; font-weight: 600; color: var(--text-primary);">核心结论与复盘</span>
+                </div>
+                <button class="card-launch-btn" style="padding: 1.5px 6px; font-size: 10px;" onclick="playMediaAt(${summary.DurationSeconds})">▶ 跳转</button>
+              </div>
+            `}
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="playMediaAt(0)" title="调动 PotPlayer 或系统默认播放器秒开">▶ 本地秒开播放</button>
+            <button class="inspector-dock-btn" onclick="importMediaNotesDaily()" style="color: var(--cyber-purple); border-color: rgba(168,85,247,0.4);" title="将时间戳研读清单沉淀写入今日日记">📝 提炼时间戳研读清单</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('[${icon} 《${escapeQuote(summary.Title || summary.FileName)}》](siyuan-exoskeleton://open-media?path=${escapeQuote(summary.FilePath.replace(/\\\\/g, '/'))}&time=0)', '已复制起播深链！')">🔗 贴起播深链</button>
+            <button class="inspector-dock-btn" onclick="locateInSearchTool('${escapeQuote(summary.FileName)}')" title="本地检索工具定位">🔍 定位文件</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function playMediaAt(sec) {
+      const summary = currentMediaSummary;
+      if (!summary || !summary.FilePath) return;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'openMediaAtTime', filePath: summary.FilePath, time: sec || 0 }));
+      }
+    }
+
+    function formatSec(totalSeconds) {
+      if (totalSeconds <= 0) return "00:00";
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+      if (h > 0) {
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      }
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function importMediaNotesDaily() {
+      const summary = currentMediaSummary;
+      if (!summary) return;
+      const title = summary.Title || summary.FileName;
+      const icon = summary.MediaKind === "video" ? "🎬" : "🎧";
+      const pUrl = encodeURIComponent(summary.FilePath);
+
+      let md = `### ${icon} 《${title}》 音频/视频研读笔记 (时长: ${summary.DurationFormatted})\n`;
+      md += `> 📍 **本地底稿**: \`${summary.FilePath}\` (${summary.FileSizeFormatted}) · [⚡ 本地秒开播放](siyuan-exoskeleton://open-media?path=${pUrl}&time=0)\n\n`;
+      md += `#### ⏱️ 关键时间戳与重点纪要\n`;
+      md += `- [ ] **00:00** 开场与背景介绍 · [定位播放 ↗](siyuan-exoskeleton://open-media?path=${pUrl}&time=0)\n`;
+
+      if (summary.DurationSeconds > 600) {
+        const mid1 = Math.round(summary.DurationSeconds / 3);
+        const mid2 = Math.round((summary.DurationSeconds * 2) / 3);
+        md += `- [ ] **${formatSec(mid1)}** 核心推演与方案探讨 · [定位播放 ↗](siyuan-exoskeleton://open-media?path=${pUrl}&time=${mid1})\n`;
+        md += `- [ ] **${formatSec(mid2)}** 难点攻坚与行动决议 · [定位播放 ↗](siyuan-exoskeleton://open-media?path=${pUrl}&time=${mid2})\n`;
+      } else {
+        md += `- [ ] **${summary.DurationFormatted}** 核心结论与复盘 · [定位播放 ↗](siyuan-exoskeleton://open-media?path=${pUrl}&time=${summary.DurationSeconds})\n`;
+      }
+      md += `\n{: custom-type="media-study-notes" custom-file-path="${summary.FilePath.replace(/"/g, '\\"')}" custom-duration="${summary.DurationFormatted}" }\n`;
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'appendToDailyNote', text: md, keepOpen: true }));
+        showToast(`✓ 已将《${title}》时间戳研读清单写入今日日记！`);
+      }
+    }
+
     window.onRescueSearchResults = function(resp) {
       if (!resp || !Array.isArray(resp.data)) return;
       const items = resp.data;
@@ -7091,6 +7501,72 @@
         renderRescueInspector(filteredItems[0]);
       }
     };
+
+    window.onCodeSnippetsLoaded = function(resp) {
+      if (!resp || !Array.isArray(resp.data)) return;
+      const items = resp.data;
+      filteredItems = items.map(s => {
+        const firstLine = (s.Code || "").split('\n')[0].trim();
+        return {
+          id: `code_${s.BlockId}`,
+          group: "search",
+          title: `⌨️ [${(s.Language || 'text').toUpperCase()}] ${firstLine || '代码片段'}`,
+          desc: `《${s.DocTitle}》· ${s.LineCount} 行 · 扩展名: ${s.FileExtension} (回车定位，Shift+↵ 纯净直贴)`,
+          hotkey: "Enter",
+          iconType: "terminal",
+          iconColor: "var(--cyber-sky)",
+          badge: s.Language || "code",
+          badgeCls: "badge-native",
+          isCodeSnippet: true,
+          snippetData: s
+        };
+      });
+      selectedIndex = 0;
+      renderItems();
+      if (filteredItems.length > 0) {
+        renderCodeSnippetInspector(filteredItems[0]);
+      }
+    };
+
+    function renderCodeSnippetInspector(item) {
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector || !item || !item.snippetData) return;
+      const s = item.snippetData;
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">⌨️ 代码片段秒搜</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${escapeHtml((s.Language || 'text').toUpperCase())}</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${s.LineCount} 行</span>
+          </div>
+          <div class="inspector-doc-title">📄 来源文档: 《${escapeHtml(s.DocTitle)}》</div>
+        </div>
+        <div class="inspector-body" style="padding: 12px; max-height: 400px; overflow-y: auto;">
+          <div style="font-size: 11px; padding: 6px 10px; background: rgba(56,189,248,0.06); border-radius: 6px; border: 1px dashed var(--border-hairline); margin-bottom: 10px; display: flex; justify-content: space-between;">
+            <span>💻 <b>语法语言</b>: <code>${escapeHtml(s.Language)}</code></span>
+            <span>📝 <b>默认扩展名</b>: <code>${escapeHtml(s.FileExtension)}</code></span>
+          </div>
+          <pre style="margin: 0; padding: 12px; background: rgba(0,0,0,0.35); border: 1px solid var(--border-hairline); border-radius: 6px; font-family: Consolas, 'Cascadia Code', monospace; font-size: 12px; line-height: 1.5; color: var(--text-primary); overflow-x: auto; white-space: pre;"><code>${escapeHtml(s.Code)}</code></pre>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="pasteAtCursor('${escapeQuote(s.Code)}')" title="在外部活动光标处原位粘贴 100% 纯净代码 (Shift+Enter)">⚡ Shift+↵ 纯净直贴</button>
+            <button class="inspector-dock-btn" onclick="exportCodeFile('${escapeQuote(s.Code)}', '${escapeQuote(s.Language)}', '${escapeQuote(s.DocTitle)}')" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="自动按扩展名生成本地源码文件并在 VS Code / IDE 中秒开">💾 本地源码秒开</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(s.Code)}', '已复制纯净代码！')">📋 复制代码</button>
+            <button class="inspector-dock-btn" onclick="openBlockById('${s.BlockId}')" title="在思源中定位跳转到该代码块">🌐 思源中定位</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function exportCodeFile(code, lang, title) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'exportSourceFile', code: code, lang: lang, docTitle: title }));
+      }
+    }
 
     function renderRescueInspector(item) {
       const inspector = document.getElementById("search-inspector-pane");
@@ -7143,6 +7619,63 @@
         window.chrome.webview.postMessage(JSON.stringify({ op: 'openNativeDataHistory' }));
       }
       showToast(`🪟 正在唤起思源官方「数据历史」大窗...`);
+    }
+
+    function renderHealthDoctorInspector(item) {
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">🛡️ 全库与系统健康体检</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">只读深度扫描</span>
+          </div>
+          <div class="inspector-doc-title">🩺 思源知识库全库健康体检与资产清道夫</div>
+        </div>
+        <div class="inspector-body" style="padding: 12px; max-height: 400px; overflow-y: auto;">
+          <div style="font-size: 11.5px; padding: 10px 12px; background: rgba(245,158,11,0.08); border-radius: 6px; border: 1px dashed rgba(245,158,11,0.35); color: var(--text-primary); line-height: 1.6; margin-bottom: 12px;">
+            <div>🛡️ <b>全库 5 维健康体检体系</b>：</div>
+            <div style="margin-top: 4px; color: var(--text-secondary);">
+              1. 🈳 <b>空壳无内容文档</b>：排查零内容占位空白文档<br/>
+              2. 📑 <b>重复同名文档</b>：排查命名冲突并给出分组统计<br/>
+              3. 🧱 <b>超大体积巨石块</b>：排查超过 10,000 字未拆分的单块<br/>
+              4. 🔗 <b>失效双链引用</b>：排查指向已删除块的破损反链<br/>
+              5. 🗑️ <b>游离无主附件</b>：深度扫描未被任何笔记引用的孤儿图片/PDF
+            </div>
+          </div>
+          <div style="background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.25); border-radius: 6px; padding: 10px 12px;">
+            <div style="font-size: 12px; font-weight: 700; color: var(--emerald-mint); margin-bottom: 4px;">📦 孤儿附件安全隔离区 (.quarantine)</div>
+            <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">
+              遵循【安全第一铁律】：不直接执行物理粉碎，支持一键将无主孤儿文件移动至安全隔离区；若确认无误可一键清空释放，误隔离随时原位打捞！
+            </div>
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="executeItem({ id: 'syh' })" title="启动深度健康体检并沉淀报表至今日日记 (Enter)">🩺 立即执行全库体检</button>
+            <button class="inspector-dock-btn" onclick="quarantineAllOrphans()" style="color: var(--amber-glow); border-color: rgba(245,158,11,0.4);" title="将无主孤儿附件安全移入 .quarantine 隔离区">📦 一键移入隔离区</button>
+            <button class="inspector-dock-btn" onclick="purgeQuarantineFiles()" style="color: var(--rose-agent); border-color: rgba(244,63,94,0.4);" title="彻底清空隔离区释放磁盘空间">🗑️ 彻底释放隔离区</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function quarantineAllOrphans() {
+      if (confirm("确定将当前未被任何笔记引用的孤儿附件移入安全隔离区 (.quarantine) 吗？\n（文件仅被移动暂存，未物理删除，随时可恢复）")) {
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'quarantineAssets', fileNames: [] }));
+        }
+      }
+    }
+
+    function purgeQuarantineFiles() {
+      if (confirm("⚠️ 警告：确定彻底清空并永久释放安全隔离区文件吗？\n（此操作将物理删除 .quarantine 目录下的文件以释放磁盘空间）")) {
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'purgeQuarantine' }));
+        }
+      }
     }
 
     // ==========================================================
@@ -7683,6 +8216,10 @@
         if (aEl) aEl.checked = !!s.autoStart;
         const sndEl = document.getElementById("pref-desktop-sound");
         if (sndEl) sndEl.checked = s.soundFeedbackEnabled != null ? !!s.soundFeedbackEnabled : true;
+        const smEl = document.getElementById("pref-desktop-shellmenu");
+        if (smEl) smEl.checked = s.shellContextMenuEnabled != null ? !!s.shellContextMenuEnabled : true;
+        const whEl = document.getElementById("pref-desktop-webhook");
+        if (whEl) whEl.checked = s.webhookEnabled != null ? !!s.webhookEnabled : true;
         const llEl = document.getElementById("pref-desktop-lifelog");
         if (llEl) llEl.checked = s.lifelogAutoSectionEnabled != null ? !!s.lifelogAutoSectionEnabled : true;
         const tEl = document.getElementById("pref-desktop-sniptool");
@@ -7789,6 +8326,8 @@
       const fVal = !!document.getElementById("pref-desktop-autofloat")?.checked;
       const aVal = !!document.getElementById("pref-desktop-autostart")?.checked;
       const sndVal = !!document.getElementById("pref-desktop-sound")?.checked;
+      const smVal = !!document.getElementById("pref-desktop-shellmenu")?.checked;
+      const whVal = !!document.getElementById("pref-desktop-webhook")?.checked;
       const llVal = !!document.getElementById("pref-desktop-lifelog")?.checked;
       const aiEnVal = !!document.getElementById("pref-desktop-ai-enabled")?.checked;
       const aiUrlVal = (document.getElementById("pref-desktop-ai-url")?.value || "http://localhost:11434/v1").trim();
@@ -7815,7 +8354,9 @@
           autoFloatEnabled: fVal,
           autoStart: aVal,
           soundFeedbackEnabled: sndVal,
-          lifelogAutoSectionEnabled: llVal,
+	          shellContextMenuEnabled: smVal,
+	          webhookEnabled: whVal,
+	          lifelogAutoSectionEnabled: llVal,
           aiEnabled: aiEnVal,
           aiBaseUrl: aiUrlVal,
           aiModel: aiModelVal,

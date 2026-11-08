@@ -35,6 +35,7 @@ namespace XiaoLv.Desktop.Core
         public bool SmartClipboardEnabled { get; set; }
         public bool AutoStart { get; set; }
         public bool SoundFeedbackEnabled { get; set; }
+        public bool ShellContextMenuEnabled { get; set; }
         public string PinnedDocsJson { get; set; }
         public string DefaultTheme { get; set; }
         public double PanelWidth { get; set; }
@@ -48,6 +49,9 @@ namespace XiaoLv.Desktop.Core
         public string AiModel { get; set; }
         public string AiApiKey { get; set; }
         public string CustomSnippetsJson { get; set; }
+        public bool WebhookEnabled { get; set; }
+        public int WebhookPort { get; set; }
+        public string WebhookToken { get; set; }
 
         public AppSettings()
         {
@@ -66,6 +70,7 @@ namespace XiaoLv.Desktop.Core
             SmartClipboardEnabled = true;
             AutoStart = false;
             SoundFeedbackEnabled = true;
+            ShellContextMenuEnabled = true;
             PinnedDocsJson = "[]";
             DefaultTheme = "dark";
             PanelWidth = 1180;
@@ -79,6 +84,9 @@ namespace XiaoLv.Desktop.Core
             AiModel = "qwen2.5:latest";
             AiApiKey = "";
             CustomSnippetsJson = "[]";
+            WebhookEnabled = true;
+            WebhookPort = 43989;
+            WebhookToken = "";
         }
 
         private static string SettingsFilePath
@@ -115,6 +123,7 @@ namespace XiaoLv.Desktop.Core
                     s.SmartClipboardEnabled = JsonHelper.GetBool(dict, "smartClipboardEnabled", s.SmartClipboardEnabled);
                     s.AutoStart = JsonHelper.GetBool(dict, "autoStart", s.AutoStart);
                     s.SoundFeedbackEnabled = JsonHelper.GetBool(dict, "soundFeedbackEnabled", s.SoundFeedbackEnabled);
+                    s.ShellContextMenuEnabled = JsonHelper.GetBool(dict, "shellContextMenuEnabled", s.ShellContextMenuEnabled);
                     s.PinnedDocsJson = JsonHelper.GetString(dict, "pinnedDocsJson", s.PinnedDocsJson);
                     s.PanelWidth = JsonHelper.GetDouble(dict, "panelWidth", s.PanelWidth);
                     s.PanelHeight = JsonHelper.GetDouble(dict, "panelHeight", s.PanelHeight);
@@ -128,6 +137,10 @@ namespace XiaoLv.Desktop.Core
                     s.AiApiKey = JsonHelper.GetString(dict, "aiApiKey", s.AiApiKey);
                     s.CustomSnippetsJson = JsonHelper.GetString(dict, "customSnippetsJson", s.CustomSnippetsJson);
                     SnippetExpansionEngine.ReloadCustomSnippets(s.CustomSnippetsJson);
+                    s.WebhookEnabled = JsonHelper.GetBool(dict, "webhookEnabled", s.WebhookEnabled);
+                    s.WebhookPort = JsonHelper.GetInt(dict, "webhookPort", s.WebhookPort);
+                    if (s.WebhookPort <= 0) s.WebhookPort = 43989;
+                    s.WebhookToken = JsonHelper.GetString(dict, "webhookToken", s.WebhookToken);
                 }
                 else
                 {

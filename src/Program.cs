@@ -95,12 +95,43 @@ namespace XiaoLv.Desktop
                 catch { }
             });
 
-            // 启动 IPC 管道服务监听
-            _ipcServer = new IpcManager.Server();
-            _ipcServer.OnMessageReceived += HandleIpcMessage;
-            _ipcServer.Start();
+	            // 启动 IPC 管道服务监听
+	            _ipcServer = new IpcManager.Server();
+	            _ipcServer.OnMessageReceived += HandleIpcMessage;
+	            _ipcServer.Start();
 
-            // 初始化窗口并在消息循环启动后立即离屏预热 WebView2
+	            // 启动本地外部极速调用桥与 Webhook 回路 (Quicker / AutoHotkey / 脚本免切窗调用)
+	            if (AppSettings.Instance.WebhookEnabled)
+	            {
+	                ExternalApiBridge.OnApiShowRequested += (panel, query) =>
+	                {
+	                    if (_wpfApp != null && _wpfApp.Dispatcher != null)
+	                    {
+	                        _wpfApp.Dispatcher.BeginInvoke(new Action(() =>
+	                        {
+	                            if (panel.Equals("pen", StringComparison.OrdinalIgnoreCase) || panel.Equals("capsule", StringComparison.OrdinalIgnoreCase))
+	                            {
+	                                _capsuleWindow.ShowNearCursor(query);
+	                            }
+	                            else if (panel.Equals("quicknote", StringComparison.OrdinalIgnoreCase))
+	                            {
+	                                PromptQuickCapture();
+	                            }
+	                            else if (panel.Equals("fsrs", StringComparison.OrdinalIgnoreCase))
+	                            {
+	                                StartFsrsReview();
+	                            }
+	                            else
+	                            {
+	                                _bentoWindow.ShowPanel(query);
+	                            }
+	                        }));
+	                    }
+	                };
+	                ExternalApiBridge.Start(AppSettings.Instance.WebhookPort);
+	            }
+
+	            // 初始化窗口并在消息循环启动后立即离屏预热 WebView2
             _bentoWindow = new BentoWindow();
             _capsuleWindow = new CapsuleWindow();
             _dialogWindow = new DialogWindow();
@@ -143,6 +174,7 @@ namespace XiaoLv.Desktop
                     s.AutoFloatEnabled = JsonHelper.GetBool(dict, "autoFloatEnabled", s.AutoFloatEnabled);
                     s.AutoStart = JsonHelper.GetBool(dict, "autoStart", s.AutoStart);
                     s.SoundFeedbackEnabled = JsonHelper.GetBool(dict, "soundFeedbackEnabled", s.SoundFeedbackEnabled);
+                    s.ShellContextMenuEnabled = JsonHelper.GetBool(dict, "shellContextMenuEnabled", s.ShellContextMenuEnabled);
                     s.LifelogAutoSectionEnabled = JsonHelper.GetBool(dict, "lifelogAutoSectionEnabled", s.LifelogAutoSectionEnabled);
                     s.WebClipDefaultMode = JsonHelper.GetString(dict, "webClipDefaultMode", s.WebClipDefaultMode);
                     s.WebClipTargetFolder = JsonHelper.GetString(dict, "webClipTargetFolder", s.WebClipTargetFolder);
@@ -152,14 +184,29 @@ namespace XiaoLv.Desktop
                     s.AiBaseUrl = JsonHelper.GetString(dict, "aiBaseUrl", s.AiBaseUrl);
                     s.AiModel = JsonHelper.GetString(dict, "aiModel", s.AiModel);
                     s.AiApiKey = JsonHelper.GetString(dict, "aiApiKey", s.AiApiKey);
-                    s.CustomSnippetsJson = JsonHelper.GetString(dict, "customSnippetsJson", s.CustomSnippetsJson);
-                    SnippetExpansionEngine.ReloadCustomSnippets(s.CustomSnippetsJson);
+	                    s.CustomSnippetsJson = JsonHelper.GetString(dict, "customSnippetsJson", s.CustomSnippetsJson);
+	                    SnippetExpansionEngine.ReloadCustomSnippets(s.CustomSnippetsJson);
+	                    s.WebhookEnabled = JsonHelper.GetBool(dict, "webhookEnabled", s.WebhookEnabled);
+	                    s.WebhookPort = JsonHelper.GetInt(dict, "webhookPort", s.WebhookPort);
+	                    if (s.WebhookPort <= 0) s.WebhookPort = 43989;
+	                    s.WebhookToken = JsonHelper.GetString(dict, "webhookToken", s.WebhookToken);
 
-                    s.Save();
-                    SelectionHelper.AutoFloatEnabled = s.AutoFloatEnabled;
-                    SystemTray.SetAutoStart(s.AutoStart);
-                    _hotkeys.RegisterConfiguredHotKeys(s.MasterHotKey, s.PenHotKey, s.OcrHotKey, s.QuickHotKey, s.FsrsHotKey, s.ClipHotKey);
-                    SafeNotify("思源外骨骼", "✓ 桌面助手偏好设置已更新并立即生效！");
+	                    s.Save();
+	                    SelectionHelper.AutoFloatEnabled = s.AutoFloatEnabled;
+	                    SystemTray.SetAutoStart(s.AutoStart);
+	                    if (s.ShellContextMenuEnabled) ShellContextMenuManager.Register();
+	                    else ShellContextMenuManager.Unregister();
+	                    _hotkeys.RegisterConfiguredHotKeys(s.MasterHotKey, s.PenHotKey, s.OcrHotKey, s.QuickHotKey, s.FsrsHotKey, s.ClipHotKey);
+	                    if (s.WebhookEnabled)
+	                    {
+	                        ExternalApiBridge.Stop();
+	                        ExternalApiBridge.Start(s.WebhookPort);
+	                    }
+	                    else
+	                    {
+	                        ExternalApiBridge.Stop();
+	                    }
+	                    SafeNotify("思源外骨骼", "✓ 桌面助手偏好设置已更新并立即生效！");
                 }
                 catch { }
             };
@@ -471,6 +518,23 @@ namespace XiaoLv.Desktop
                         }
                     }
 
+                    // 3.5 本地音视频时间戳精准起播 (siyuan-exoskeleton://open-media 或 ://media)
+                    if (clean.Contains("://open-media") || clean.Contains("://media"))
+                    {
+                        string p = ExtractQueryParam(clean, "path");
+                        string timeStr = ExtractQueryParam(clean, "time");
+                        int seekSec = 0;
+                        int.TryParse(timeStr, out seekSec);
+                        if (!string.IsNullOrEmpty(p))
+                        {
+                            ThreadPool.QueueUserWorkItem(s =>
+                            {
+                                MediaLightParser.PlayMediaAtTime(p, seekSec);
+                            });
+                            return;
+                        }
+                    }
+
                     // 4. 本地文档极速透视抽屉 (siyuan-exoskeleton://inspect 或 ://preview)
                     if (clean.Contains("://inspect") || clean.Contains("://preview"))
                     {
@@ -659,6 +723,8 @@ namespace XiaoLv.Desktop
                             ctx.SetVarValue("来源链接", snapshot.Url);
                             ctx.SetVarValue("项目名称", snapshot.ProjectName);
                             ctx.SetVarValue("活动文件", snapshot.ActiveFileName);
+                            ctx.SetVarValue("Git分支", snapshot.GitBranch);
+                            ctx.SetVarValue("Git仓库", snapshot.GitRepo);
                         }
                         ctx.OnNotificationRequested += (t, m) => SafeNotify(t, m);
                         SmartCaptureMain.Exec(ctx);
@@ -827,11 +893,15 @@ namespace XiaoLv.Desktop
             return "";
         }
 
+        private static bool _isExiting = false;
         private static void ExitApplication()
         {
+            if (_isExiting) return;
+            _isExiting = true;
             Logger.Info("ExitApplication called! StackTrace=" + Environment.StackTrace);
             try
             {
+                ExternalApiBridge.Stop();
                 SiYuanGuardian.Stop();
                 ClipboardWatcher.Stop();
                 SelectionHelper.StopMouseHook();
@@ -841,12 +911,19 @@ namespace XiaoLv.Desktop
                 if (_ipcServer != null) _ipcServer.Dispose();
                 if (_mutex != null)
                 {
-                    _mutex.ReleaseMutex();
+                    try { _mutex.ReleaseMutex(); } catch { }
                     _mutex.Dispose();
                 }
             }
             catch { }
-            Environment.Exit(0);
+            try
+            {
+                if (_wpfApp != null && _wpfApp.Dispatcher != null && !_wpfApp.Dispatcher.HasShutdownStarted)
+                {
+                    _wpfApp.Dispatcher.InvokeShutdown();
+                }
+            }
+            catch { }
         }
     }
 }

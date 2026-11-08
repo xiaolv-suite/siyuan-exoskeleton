@@ -367,6 +367,31 @@
       }
     }
 
+    let activeContactHit = null;
+    window.onContactMatch = function(info) {
+      if (!info || !info.contactId) return;
+      activeContactHit = info;
+      const tag = document.querySelector(".header-tag");
+      if (tag) {
+        tag.innerHTML = `👤 联系人: 《${info.name || '人脉档案'}》 (Shift+↵ 贴档案)`;
+        tag.style.background = "rgba(56, 189, 248, 0.28)";
+        tag.style.borderColor = "#38bdf8";
+        tag.style.color = "#38bdf8";
+        tag.style.cursor = "pointer";
+        tag.title = "点击或按 Shift+Enter 直接在光标处贴入联系人档案双链";
+        tag.onclick = () => pasteContactRef();
+      }
+    };
+
+    function pasteContactRef() {
+      if (!activeContactHit) return;
+      const cleanName = (activeContactHit.name || currentText || "联系人").replace(/["\r\n]/g, " ").trim();
+      const ref = `((${activeContactHit.contactId} "${cleanName}"))`;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage({ op: 'pasteAtCaret', text: ref });
+      }
+    }
+
     function applyTheme(th) {
       let resolved = th;
       if (th === "auto") {
@@ -498,6 +523,30 @@
                 window.chrome.webview.postMessage(JSON.stringify({ op: 'openPanelWithQuery', query: 'office:' + p }));
               }
             };
+          } else if (/\.epub$/i.test(t) || /file:\/\/\/.*\.epub$/i.test(t)) {
+            sBadge.innerText = "📚 EPUB电子书 (点击研读透视)";
+            sBadge.className = "smart-badge badge-link";
+            sBadge.style.display = "inline-flex";
+            sBadge.title = "检测到本地 EPUB 电子书，点击透视章节大纲并生成打卡清单";
+            sBadge.onclick = (e) => {
+              e.stopPropagation();
+              const p = t.replace(/^file:\/\/\//i, "").replace(/\//g, "\\");
+              if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({ op: 'openPanelWithQuery', query: 'epub:' + p }));
+              }
+            };
+          } else if (/\.xmind$/i.test(t) || /file:\/\/\/.*\.xmind$/i.test(t)) {
+            sBadge.innerText = "🧠 XMind思维导图 (点击脑图透视)";
+            sBadge.className = "smart-badge badge-todo";
+            sBadge.style.display = "inline-flex";
+            sBadge.title = "检测到本地 XMind 思维导图，点击流式透视节点树并查看脑图";
+            sBadge.onclick = (e) => {
+              e.stopPropagation();
+              const p = t.replace(/^file:\/\/\//i, "").replace(/\//g, "\\");
+              if (window.chrome && window.chrome.webview) {
+                window.chrome.webview.postMessage(JSON.stringify({ op: 'openPanelWithQuery', query: 'xmind:' + p }));
+              }
+            };
           } else {
             sBadge.style.display = "none";
           }
@@ -560,9 +609,10 @@
 
     window.addEventListener("keydown", (e) => {
       const isInputFocused = (document.activeElement === document.getElementById("input-fallback"));
-      if ((e.shiftKey && e.key === "Enter") || (e.key === "Tab" && activeRadarHit)) {
+      if ((e.shiftKey && e.key === "Enter") || (e.key === "Tab" && (activeRadarHit || activeContactHit))) {
         e.preventDefault();
-        pasteRadarRef();
+        if (activeContactHit) pasteContactRef();
+        else if (activeRadarHit) pasteRadarRef();
         return;
       }
       if (['1', '2', '3', '4', '5', '6', '7', '8'].includes(e.key) && (!isInputFocused || e.altKey || e.ctrlKey)) {

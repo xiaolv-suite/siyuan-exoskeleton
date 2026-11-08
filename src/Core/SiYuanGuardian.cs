@@ -11,6 +11,8 @@ namespace XiaoLv.Desktop.Core
         private static bool _isRunning = false;
         private static bool _lastOnlineState = false;
 
+        public static bool IsAlive { get { return _lastOnlineState; } }
+
         public static Action<string, string> NotifyCallback { get; set; }
 
         public static void Start()

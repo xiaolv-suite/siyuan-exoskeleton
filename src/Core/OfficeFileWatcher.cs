@@ -69,7 +69,7 @@ namespace XiaoLv.Desktop.Core
             if (fn.StartsWith("~$")) return;
 
             string ext = Path.GetExtension(fullPath).ToLowerInvariant();
-            if (ext != ".docx" && ext != ".xlsx" && ext != ".pptx" && ext != ".pdf") return;
+            if (ext != ".docx" && ext != ".xlsx" && ext != ".pptx" && ext != ".pdf" && ext != ".epub" && ext != ".xmind") return;
 
             lock (_lock)
             {

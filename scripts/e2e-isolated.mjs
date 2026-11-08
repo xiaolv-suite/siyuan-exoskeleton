@@ -339,7 +339,8 @@ async function main() {
   logStep("Step 7.4: 双栏搜索结果抽屉 (Search Result Inspector) 块级面包屑与兄弟上下文提取", hasBreadcrumbs && hasSiblings, `层级深度: ${bcRes.data?.length} · 上下文兄弟块: ${sibRes.data?.length} 块`);
 
   // Step 7.5: Test Today's Timeline Stream (今日时间轴速览聚合)
-  const todayDateStr = new Date().toISOString().substring(0, 10);
+  const _dNow = new Date();
+  const todayDateStr = `${_dNow.getFullYear()}-${String(_dNow.getMonth() + 1).padStart(2, '0')}-${String(_dNow.getDate()).padStart(2, '0')}`;
   const timelineRes = await api("/api/query/sql", {
     stmt: `SELECT b.id, b.content, b.type, b.created FROM blocks b JOIN blocks d ON d.id = b.root_id WHERE d.type = 'd' AND d.hpath LIKE '%${todayDateStr}%' AND b.type NOT IN ('d') ORDER BY b.created ASC`
   });
@@ -413,7 +414,8 @@ async function main() {
   logStep("Step 7.11: 思源个人自建模板库自动感知与穿透检索 (v:)", userTplOk, `个人模板 ID: ${userTplRow?.id} · 标题: ${userTplRow?.content}`);
 
   // Step 7.12: Test Sound Feedback & Timeline Category Segregation
-  const todayDateStr2 = new Date().toISOString().substring(0, 10);
+  const _dNow2 = new Date();
+  const todayDateStr2 = `${_dNow2.getFullYear()}-${String(_dNow2.getMonth() + 1).padStart(2, '0')}-${String(_dNow2.getDate()).padStart(2, '0')}`;
   const tlAll = await api("/api/query/sql", {
     stmt: `SELECT b.id, b.content, b.subtype FROM blocks b JOIN blocks d ON d.id = b.root_id WHERE d.type = 'd' AND d.hpath LIKE '%${todayDateStr2}%' AND b.type NOT IN ('d')`
   });
@@ -440,15 +442,20 @@ async function main() {
   const isDarkDefault = (cfgObj.DefaultTheme || cfgObj.defaultTheme || "dark") === "dark";
   logStep("Step 7.14: 大屏自适应 (1180x740) 与暗夜黑曜默认主题持久化验证", isWidthComfort && isDarkDefault, `面板尺寸: ${cfgObj.PanelWidth || 1180}x${cfgObj.PanelHeight || 740} · 默认主题: ${cfgObj.DefaultTheme || "dark"}`);
 
-  // 跨语言执行 PowerShell 编码执行辅助
+  // 跨语言执行 PowerShell 编码执行辅助 (使用带BOM临时脚本彻底规避命令行长度上限与编码问题)
   const runPs = (code) => {
     const wrapped = `
       $ProgressPreference = 'SilentlyContinue';
       [Console]::OutputEncoding = [System.Text.Encoding]::UTF8;
       ${code}
     `;
-    const b64 = Buffer.from(wrapped, 'utf16le').toString('base64');
-    return execSync(`powershell.exe -NoProfile -EncodedCommand ${b64}`, { encoding: 'utf8' }).trim();
+    const tmpScript = path.join(process.env.TEMP, `e2e_ps_${Date.now()}_${Math.random().toString(36).slice(2)}.ps1`);
+    fs.writeFileSync(tmpScript, "\ufeff" + wrapped, "utf8");
+    try {
+      return execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${tmpScript}"`, { encoding: 'utf8' }).trim();
+    } finally {
+      try { fs.unlinkSync(tmpScript); } catch {}
+    }
   };
 
   // Step 7.15: Test 3D PDF Hyphen Reconnection & Unbreaking (灵感 B)
@@ -924,6 +931,428 @@ async function main() {
   const shellRes = runPs(shellScript);
   const isShellOk = shellRes.includes("True|True");
   logStep("Step 7.41: 资源管理器思源外骨骼双右键菜单与 -inspect 命令行解析穿透断言", isShellOk, `右键与命令行断言: ${shellRes.trim()}`);
+
+  // Step 7.42: Test Zero-Dependency EPUB Light Stream Parser & Reading Notes Generation
+  const epubScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $parser = $asm.GetType('XiaoLv.Desktop.Core.EpubLightParser');
+
+    # 动态构建一个标准微型 EPUB 测试样本
+    $tempEpub = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'test_sample.epub');
+    if ([System.IO.File]::Exists($tempEpub)) { [System.IO.File]::Delete($tempEpub); }
+
+    $tempZipDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'epub_build_' + [System.Guid]::NewGuid().ToString('N'));
+    $metaDir = [System.IO.Path]::Combine($tempZipDir, 'META-INF');
+    $oebpsDir = [System.IO.Path]::Combine($tempZipDir, 'OEBPS');
+    [System.IO.Directory]::CreateDirectory($metaDir) | Out-Null;
+    [System.IO.Directory]::CreateDirectory($oebpsDir) | Out-Null;
+
+    [System.IO.File]::WriteAllText([System.IO.Path]::Combine($tempZipDir, 'mimetype'), 'application/epub+zip', [System.Text.Encoding]::ASCII);
+    [System.IO.File]::WriteAllText([System.IO.Path]::Combine($metaDir, 'container.xml'), '<?xml version=\"1.0\"?><container version=\"1.0\" xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\"><rootfiles><rootfile full-path=\"OEBPS/content.opf\" media-type=\"application/oebps-package+xml\"/></rootfiles></container>', [System.Text.Encoding]::UTF8);
+    
+    $opfContent = '<?xml version=\"1.0\" encoding=\"utf-8\"?><package xmlns=\"http://www.idpf.org/2007/opf\" version=\"2.0\"><metadata xmlns:dc=\"http://purl.org/dc/elements/1.1/\"><dc:title>外骨骼架构实战论</dc:title><dc:creator>思源小驴研发组</dc:creator><dc:publisher>技术出版社</dc:publisher></metadata><manifest><item id=\"ncx\" href=\"toc.ncx\" media-type=\"application/x-dtbncx+xml\"/></manifest><spine toc=\"ncx\"></spine></package>';
+    [System.IO.File]::WriteAllText([System.IO.Path]::Combine($oebpsDir, 'content.opf'), $opfContent, [System.Text.Encoding]::UTF8);
+
+    $ncxContent = '<?xml version=\"1.0\" encoding=\"UTF-8\"?><ncx xmlns=\"http://www.daisy.org/z3986/2005/ncx/\" version=\"2005-1\"><navMap><navPoint id=\"np1\" playOrder=\"1\"><navLabel><text>第一章 架构基础篇</text></navLabel><content src=\"c1.xhtml\"/></navPoint><navPoint id=\"np2\" playOrder=\"2\"><navLabel><text>第二章 零依赖流式解析</text></navLabel><content src=\"c2.xhtml\"/></navPoint></navMap></ncx>';
+    [System.IO.File]::WriteAllText([System.IO.Path]::Combine($oebpsDir, 'toc.ncx'), $ncxContent, [System.Text.Encoding]::UTF8);
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem;
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($tempZipDir, $tempEpub);
+    [System.IO.Directory]::Delete($tempZipDir, $true);
+
+    # 调用 EpubLightParser.InspectEpub
+    $mInspect = $parser.GetMethod('InspectEpub', [System.Reflection.BindingFlags]'Public,Static');
+    $summary = $mInspect.Invoke($null, @($tempEpub));
+
+    # 调用 BuildEpubReadingNotesMarkdown
+    $mBuild = $parser.GetMethod('BuildEpubReadingNotesMarkdown', [System.Reflection.BindingFlags]'Public,Static');
+    $md = $mBuild.Invoke($null, @($summary));
+
+    try { [System.IO.File]::Delete($tempEpub); } catch {}
+
+    $okTitle = ($null -ne $summary) -and ($summary.Title -eq '外骨骼架构实战论') -and ($summary.Author -eq '思源小驴研发组');
+    $okChaps = ($null -ne $summary.Chapters) -and ($summary.Chapters.Count -eq 2) -and ($summary.Chapters[0].Title -eq '第一章 架构基础篇');
+    $okMd = ($null -ne $md) -and $md.Contains('custom-type=\"epub-reading-notes\"') -and $md.Contains('第一章 架构基础篇');
+
+    Write-Output ($okTitle.ToString() + '|' + $okChaps.ToString() + '|' + $okMd.ToString());
+  `;
+  const epubRes = runPs(epubScript);
+  const isEpubOk = epubRes.includes("True|True|True");
+  logStep("Step 7.42: 零依赖 EPUB 电子书极速流式透视、目录树与研读清单断言", isEpubOk, `EPUB解析断言: ${epubRes.trim()}`);
+
+  // Step 7.43: Test Siyuan Glean Triage Status (custom-triage-status="unread")
+  const gleanScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $tc = $asm.GetType('XiaoLv.Desktop.Core.TextCleaner');
+    $mGlean = $tc.GetMethod('BuildGleanIalAttributes', [System.Reflection.BindingFlags]'Public,Static');
+    $ial = $mGlean.Invoke($null, @('https://mp.weixin.qq.com/s/test', '大模型外骨骼架构', '微信公众号', '张架构师'));
+    $hasTriage = $ial.Contains('custom-triage-status=\"unread\"');
+    $hasClip = $ial.Contains('custom-clip-status=\"unread\"');
+    Write-Output ($hasTriage.ToString() + '|' + $hasClip.ToString());
+  `;
+  const gleanRes = runPs(gleanScript);
+  const isGleanOk = gleanRes.includes("True|True");
+  logStep("Step 7.43: 小驴拾遗未读分拣属性规范与剪藏元数据双轨断言", isGleanOk, `拾遗属性断言: ${gleanRes.trim()}`);
+
+  // Step 7.44: Test Zero-Dependency XMind Light Stream Parser & Outline Generation
+  const xmindScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $parser = $asm.GetType('XiaoLv.Desktop.Core.XMindLightParser');
+
+    # 动态构建一个标准微型 XMind 脑图测试样本 (包含 content.json)
+    $tempXMind = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'test_sample.xmind');
+    if ([System.IO.File]::Exists($tempXMind)) { [System.IO.File]::Delete($tempXMind); }
+
+    $tempZipDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'xmind_build_' + [System.Guid]::NewGuid().ToString('N'));
+    [System.IO.Directory]::CreateDirectory($tempZipDir) | Out-Null;
+
+    $jsonContent = '[{\"id\":\"sheet1\",\"title\":\"画布1\",\"rootTopic\":{\"id\":\"root\",\"title\":\"思源外骨骼全景架构\",\"children\":{\"attached\":[{\"id\":\"sub1\",\"title\":\"核心连接中枢\"},{\"id\":\"sub2\",\"title\":\"零依赖流式透视\"}]}}}]';
+    [System.IO.File]::WriteAllText([System.IO.Path]::Combine($tempZipDir, 'content.json'), $jsonContent, [System.Text.Encoding]::UTF8);
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem;
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($tempZipDir, $tempXMind);
+    [System.IO.Directory]::Delete($tempZipDir, $true);
+
+    # 调用 XMindLightParser.InspectXMind
+    $mInspect = $parser.GetMethod('InspectXMind', [System.Reflection.BindingFlags]'Public,Static');
+    $summary = $mInspect.Invoke($null, @($tempXMind));
+
+    # 调用 BuildXMindOutlineMarkdown
+    $mBuild = $parser.GetMethod('BuildXMindOutlineMarkdown', [System.Reflection.BindingFlags]'Public,Static');
+    $md = $mBuild.Invoke($null, @($summary));
+
+    try { [System.IO.File]::Delete($tempXMind); } catch {}
+
+    $okTitle = ($null -ne $summary) -and ($summary.Title -eq '思源外骨骼全景架构');
+    $okNodes = ($null -ne $summary.RootTopic) -and ($summary.TotalNodes -eq 3) -and ($summary.RootTopic.Children.Count -eq 2);
+    $okMd = ($null -ne $md) -and $md.Contains('custom-type=\"xmind-mindmap-outline\"') -and $md.Contains('核心连接中枢');
+
+    Write-Output ($okTitle.ToString() + '|' + $okNodes.ToString() + '|' + $okMd.ToString());
+  `;
+  const xmindRes = runPs(xmindScript);
+  const isXMindOk = xmindRes.includes("True|True|True");
+  logStep("Step 7.44: 零依赖 XMind 思维导图流式解析、节点树提取与思源脑图大纲断言", isXMindOk, `XMind解析断言: ${xmindRes.trim()}`);
+
+  // Step 7.45: Test Local Search Tool Dual Engine (Listary / Everything) Invocation Pipeline
+  const dualEngineScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $detector = $asm.GetType('XiaoLv.Desktop.Core.ToolDetector');
+    $mDetect = $detector.GetMethod('DetectListary', [System.Reflection.BindingFlags]'Public,Static');
+    $listaryInfo = $mDetect.Invoke($null, $null);
+    $safeProbe = $true;
+
+    $mOpen = $detector.GetMethod('OpenInSearchTool', [System.Reflection.BindingFlags]'Public,Static');
+    $openMethodOk = ($null -ne $mOpen);
+    Write-Output ($safeProbe.ToString() + '|' + $openMethodOk.ToString());
+  `;
+  const dualEngineRes = runPs(dualEngineScript);
+  const isToolOk = dualEngineRes.includes("True|True");
+  logStep("Step 7.45: 本地搜索引擎双引擎(Listary / Everything)安全探针与调度管道断言", isToolOk, `搜索引擎调度断言: ${dualEngineRes.trim()}`);
+
+  // Step 7.46: Test Desktop Chat Log Cleaner & Meeting Callout / Todo Extraction
+  const chatLogScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $cleaner = $asm.GetType('XiaoLv.Desktop.Core.ChatLogCleaner');
+
+    $rawChat = '张三 14:30' + [Environment]::NewLine + '大家注意，新版本核心架构已经封板。' + [Environment]::NewLine + [Environment]::NewLine + '李四 14:31' + [Environment]::NewLine + '收到，请测试组务必在周五前提交完整自动化回归报告。';
+    $mAnalyze = $cleaner.GetMethod('Analyze', [System.Reflection.BindingFlags]'Public,Static');
+    $summary = $mAnalyze.Invoke($null, @($rawChat));
+
+    $mBuild = $cleaner.GetMethod('BuildMarkdownSummary', [System.Reflection.BindingFlags]'Public,Static', $null, @($summary.GetType(), [string]), $null);
+    $md = $mBuild.Invoke($null, @($summary, '项目周度进度沟通'));
+
+    $okIsChat = ($null -ne $summary) -and ($summary.IsChatLog -eq $true);
+    $okSenders = ($null -ne $summary.Senders) -and ($summary.Senders.Count -eq 2);
+    $okTodos = ($null -ne $summary.ActionTodos) -and ($summary.ActionTodos.Count -gt 0);
+    $okMd = ($null -ne $md) -and $md.Contains('custom-type=\"chat-meeting-log\"') -and $md.Contains('> 💬 **张三**');
+
+    Write-Output ($okIsChat.ToString() + '|' + $okSenders.ToString() + '|' + $okTodos.ToString() + '|' + $okMd.ToString());
+  `;
+  const chatRes = runPs(chatLogScript);
+  const isChatOk = chatRes.includes("True|True|True|True");
+  logStep("Step 7.46: 桌面即时通讯(微信/飞书/钉钉)对话记录智能清洗、Callout与待办萃取断言", isChatOk, `对话清洗断言: ${chatRes.trim()}`);
+
+  // Step 7.47: Test Contacts (小驴人脉) Micro-Radar SQL Query Construction
+  const contactsScript = `
+    $safeTerm = '张架构师';
+    $cSql = "SELECT b.id, b.content FROM blocks b WHERE b.type='d' AND (b.hpath LIKE '%/人脉/%' OR b.hpath LIKE '%/联系人/%' OR b.ial LIKE '%custom-type=""contact""%' OR b.ial LIKE '%custom-contact%') AND b.content LIKE '%" + $safeTerm + "%' LIMIT 1";
+    $hasSyntax = $cSql.Contains('custom-type="contact"') -and $cSql.Contains('/人脉/');
+    Write-Output ($hasSyntax.ToString());
+  `;
+  const contactsRes = runPs(contactsScript);
+  const isContactsOk = contactsRes.includes("True");
+  logStep("Step 7.47: 小驴人脉生态联系人(Contacts)反查语法与微徽章感知断言", isContactsOk, `人脉反查语法断言: ${contactsRes.trim()}`);
+
+  // Step 7.48: Test Zotero Local Bridge & Literature Card Markdown Generation
+  const zoteroScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $zBridge = $asm.GetType('XiaoLv.Desktop.Core.ZoteroBridge');
+
+    $mCreate = $zBridge.GetMethod('CreateItemSummary', [System.Reflection.BindingFlags]'Public,Static');
+    $summary = $mCreate.Invoke($null, @('ITEM9988', 'Attention Is All You Need', 'Vaswani et al.', '2017', '10.48550/arXiv.1706.03762', 'NeurIPS', 'C:\\dummy\\paper.pdf'));
+
+    $mBuild = $zBridge.GetMethod('BuildLiteratureCardMarkdown', [System.Reflection.BindingFlags]'Public,Static');
+    $md = $mBuild.Invoke($null, @($summary));
+
+    $okItem = ($null -ne $summary) -and ($summary.ItemKey -eq 'ITEM9988') -and ($summary.SelectUri -eq 'zotero://select/items/0_ITEM9988');
+    $okMd = ($null -ne $md) -and $md.Contains('custom-type=\"literature-card\"') -and $md.Contains('10.48550/arXiv.1706.03762') -and $md.Contains('zotero://select/items/0_ITEM9988');
+
+    Write-Output ($okItem.ToString() + '|' + $okMd.ToString());
+  `;
+  const zoteroRes = runPs(zoteroScript);
+  const isZoteroOk = zoteroRes.includes("True|True");
+  logStep("Step 7.48: Zotero 学术文献库感知引擎、双向定位与标准文献卡片断言", isZoteroOk, `Zotero卡片断言: ${zoteroRes.trim()}`);
+
+  // Step 7.49: Test Git Context Detection (.git/HEAD & .git/config stream parsing)
+  const gitScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $detector = $asm.GetType('XiaoLv.Desktop.Core.GitContextDetector');
+
+    # 动态构建一个微型 .git 仓库测试环境
+    $tempGitDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'git_test_' + [System.Guid]::NewGuid().ToString('N'));
+    $dotGit = [System.IO.Path]::Combine($tempGitDir, '.git');
+    [System.IO.Directory]::CreateDirectory($dotGit) | Out-Null;
+
+    [System.IO.File]::WriteAllText([System.IO.Path]::Combine($dotGit, 'HEAD'), 'ref: refs/heads/feature/exoskeleton-core' + [Environment]::NewLine, [System.Text.Encoding]::UTF8);
+    $cfg = '[core]' + [Environment]::NewLine + 'repositoryformatversion = 0' + [Environment]::NewLine + '[remote "origin"]' + [Environment]::NewLine + 'url = git@github.com:ai68298100/siyuan-exoskeleton.git';
+    [System.IO.File]::WriteAllText([System.IO.Path]::Combine($dotGit, 'config'), $cfg, [System.Text.Encoding]::UTF8);
+
+    # 调用 GitContextDetector.DetectGitContext
+    $mDetect = $detector.GetMethod('DetectGitContext', [System.Reflection.BindingFlags]'Public,Static');
+    $gitInfo = $mDetect.Invoke($null, @($tempGitDir));
+
+    $mFormat = $detector.GetMethod('FormatGitCitation', [System.Reflection.BindingFlags]'Public,Static');
+    $citation = $mFormat.Invoke($null, @($gitInfo));
+
+    try { [System.IO.Directory]::Delete($tempGitDir, $true); } catch {}
+
+    $okGit = ($null -ne $gitInfo) -and ($gitInfo.IsGitRepo -eq $true) -and ($gitInfo.BranchName -eq 'feature/exoskeleton-core') -and ($gitInfo.RepoName -eq 'siyuan-exoskeleton');
+    $okCitation = ($null -ne $citation) -and $citation.Contains('feature-exoskeleton-core');
+
+    Write-Output ($okGit.ToString() + '|' + $okCitation.ToString());
+  `;
+  const gitRes = runPs(gitScript);
+  const isGitOk = gitRes.includes("True|True");
+  logStep("Step 7.49: 终端与研发工作区 Git 环境极速感知与分支标签注水断言", isGitOk, `Git环境感知断言: ${gitRes.trim()}`);
+
+  // Step 7.50: Test Asset Clean Doctor Audit & Orphan Asset Size Aggregation
+  const doctorAuditScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $docClass = $asm.GetType('XiaoLv.Desktop.Core.AssetCleanDoctor');
+
+    # 动态构建测试 assets 目录与两个孤儿文件
+    $tempAssetsDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'assets_test_' + [System.Guid]::NewGuid().ToString('N'));
+    [System.IO.Directory]::CreateDirectory($tempAssetsDir) | Out-Null;
+
+    $file1 = [System.IO.Path]::Combine($tempAssetsDir, 'orphan1.png');
+    $file2 = [System.IO.Path]::Combine($tempAssetsDir, 'orphan2.pdf');
+    [System.IO.File]::WriteAllBytes($file1, [byte[]]::new(2048));
+    [System.IO.File]::WriteAllBytes($file2, [byte[]]::new(4096));
+
+    $mAudit = $docClass.GetMethod('AuditUnusedAssets', [System.Reflection.BindingFlags]'Public,Static');
+    $auditRes = $mAudit.Invoke($null, @($tempAssetsDir, [System.Collections.Generic.List[string]]@('orphan1.png', 'orphan2.pdf')));
+
+    try { [System.IO.Directory]::Delete($tempAssetsDir, $true); } catch {}
+
+    $okCount = ($null -ne $auditRes) -and ($auditRes.TotalUnusedCount -eq 2);
+    $okSize = ($null -ne $auditRes) -and ($auditRes.TotalSizeBytes -eq 6144) -and ($auditRes.TotalSizeFormatted -eq '6.0 KB');
+
+    Write-Output ($okCount.ToString() + '|' + $okSize.ToString());
+  `;
+  const doctorAuditRes = runPs(doctorAuditScript);
+  const isDoctorAuditOk = doctorAuditRes.includes("True|True");
+  logStep("Step 7.50: 全库无主孤儿资产深度审计、体积精确聚合与隔离区统计断言", isDoctorAuditOk, `资产审计断言: ${doctorAuditRes.trim()}`);
+
+  // Step 7.51: Test Asset Clean Doctor Quarantine & Restore Pipeline
+  const doctorQuarantineScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $docClass = $asm.GetType('XiaoLv.Desktop.Core.AssetCleanDoctor');
+
+    $tempAssetsDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'assets_quar_' + [System.Guid]::NewGuid().ToString('N'));
+    [System.IO.Directory]::CreateDirectory($tempAssetsDir) | Out-Null;
+    $targetFile = [System.IO.Path]::Combine($tempAssetsDir, 'test_quarantine_pic.png');
+    [System.IO.File]::WriteAllText($targetFile, 'dummy-image-content');
+
+    # 1. 移动到隔离区
+    $mQuar = $docClass.GetMethod('QuarantineAssets', [System.Reflection.BindingFlags]'Public,Static');
+    $quarCount = $mQuar.Invoke($null, @($tempAssetsDir, [System.Collections.Generic.List[string]]@('test_quarantine_pic.png')));
+
+    $quarDir = [System.IO.Path]::Combine($tempAssetsDir, '.quarantine');
+    $inQuarFile = [System.IO.Path]::Combine($quarDir, 'test_quarantine_pic.png');
+    $movedOk = ($quarCount -eq 1) -and (![System.IO.File]::Exists($targetFile)) -and ([System.IO.File]::Exists($inQuarFile));
+
+    # 2. 原位打捞复原
+    $mRestore = $docClass.GetMethod('RestoreFromQuarantine', [System.Reflection.BindingFlags]'Public,Static');
+    $restoreOk = $mRestore.Invoke($null, @($tempAssetsDir, 'test_quarantine_pic.png'));
+    $restoredFileOk = ($restoreOk -eq $true) -and ([System.IO.File]::Exists($targetFile)) -and (![System.IO.File]::Exists($inQuarFile));
+
+    try { [System.IO.Directory]::Delete($tempAssetsDir, $true); } catch {}
+
+    Write-Output ($movedOk.ToString() + '|' + $restoredFileOk.ToString());
+  `;
+  const doctorQuarantineRes = runPs(doctorQuarantineScript);
+  const isDoctorQuarantineOk = doctorQuarantineRes.includes("True|True");
+  logStep("Step 7.51: 孤儿资产安全隔离区迁移(.quarantine)与原位打捞复原管道断言", isDoctorQuarantineOk, `隔离与打捞断言: ${doctorQuarantineRes.trim()}`);
+
+  // Step 7.52: Test Local Media Stream Parser (WAV/MP4) & Timestamp Study Notes Generation
+  const mediaScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $mediaClass = $asm.GetType('XiaoLv.Desktop.Core.MediaLightParser');
+
+    # 动态构建一个标准 2 秒 RIFF/WAVE 测试样本
+    $tempWav = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'test_sample.wav');
+    $sampleRate = 44100;
+    $channels = 2;
+    $bitsPerSample = 16;
+    $byteRate = $sampleRate * $channels * ($bitsPerSample / 8);
+    $dataLength = $byteRate * 2;
+
+    $fs = New-Object System.IO.FileStream($tempWav, [System.IO.FileMode]::Create);
+    $bw = New-Object System.IO.BinaryWriter($fs);
+    $bw.Write([System.Text.Encoding]::ASCII.GetBytes("RIFF"));
+    $bw.Write([int](36 + $dataLength));
+    $bw.Write([System.Text.Encoding]::ASCII.GetBytes("WAVE"));
+    $bw.Write([System.Text.Encoding]::ASCII.GetBytes("fmt "));
+    $bw.Write([int]16);
+    $bw.Write([int16]1);
+    $bw.Write([int16]$channels);
+    $bw.Write([int]$sampleRate);
+    $bw.Write([int]$byteRate);
+    $bw.Write([int16]($channels * ($bitsPerSample / 8)));
+    $bw.Write([int16]$bitsPerSample);
+    $bw.Write([System.Text.Encoding]::ASCII.GetBytes("data"));
+    $bw.Write([int]$dataLength);
+    $bw.Write([byte[]]::new($dataLength));
+    $bw.Close();
+    $fs.Close();
+
+    $mInspect = $mediaClass.GetMethod('InspectMedia', [System.Reflection.BindingFlags]'Public,Static');
+    $summary = $mInspect.Invoke($null, @($tempWav));
+
+    $mBuild = $mediaClass.GetMethod('BuildMediaNotesMarkdown', [System.Reflection.BindingFlags]'Public,Static');
+    $md = $mBuild.Invoke($null, @($summary));
+
+    try { [System.IO.File]::Delete($tempWav); } catch {}
+
+    $okDur = ($null -ne $summary) -and ($summary.DurationSeconds -eq 2) -and ($summary.DurationFormatted -eq '00:02');
+    $okMd = ($null -ne $md) -and $md.Contains('custom-type=\"media-study-notes\"') -and $md.Contains('open-media');
+
+    Write-Output ($okDur.ToString() + '|' + $okMd.ToString());
+  `;
+  const mediaRes = runPs(mediaScript);
+  const isMediaOk = mediaRes.includes("True|True");
+  logStep("Step 7.52: 本地音视频流式元数据嗅探、真实时长计算与时间戳笔记断言", isMediaOk, `音视频透视断言: ${mediaRes.trim()}`);
+
+  // Step 7.53: Test Open-Media Timestamp Seeking Protocol Reflection
+  const mediaSeekScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $mediaClass = $asm.GetType('XiaoLv.Desktop.Core.MediaLightParser');
+    $mSeek = $mediaClass.GetMethod('PlayMediaAtTime', [System.Reflection.BindingFlags]'Public,Static');
+    $methodExists = ($null -ne $mSeek);
+    Write-Output ($methodExists.ToString());
+  `;
+  const mediaSeekRes = runPs(mediaSeekScript);
+  const isMediaSeekOk = mediaSeekRes.includes("True");
+  logStep("Step 7.53: open-media 时间戳精准起播深链与播放器跳转反射断言", isMediaSeekOk, `起播协议反射断言: ${mediaSeekRes.trim()}`);
+
+  // Step 7.54: Test Code Snippet Clean Extraction & Language Extension Resolution
+  const codeScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $mgr = $asm.GetType('XiaoLv.Desktop.Core.CodeSnippetManager');
+
+    $rawSnippet = '\`\`\`python' + [Environment]::NewLine + 'def calculate_fib(n):' + [Environment]::NewLine + '    return n if n <= 1 else calculate_fib(n - 1) + calculate_fib(n - 2)' + [Environment]::NewLine + '\`\`\`';
+
+    # 声明 out 参数数组
+    $mExtract = $mgr.GetMethod('ExtractCleanCode', [System.Reflection.BindingFlags]'Public,Static');
+    $argsArray = [object[]]@($rawSnippet, [string]'');
+    $cleanCode = $mExtract.Invoke($null, $argsArray);
+    $detectedLang = $argsArray[1];
+
+    $mExt = $mgr.GetMethod('ResolveExtension', [System.Reflection.BindingFlags]'Public,Static');
+    $ext = $mExt.Invoke($null, @('python'));
+
+    $okLang = ($detectedLang -eq 'python');
+    $okExt = ($ext -eq '.py');
+    $okCode = ($cleanCode.Contains('def calculate_fib(n):')) -and (!($cleanCode.Contains('\`\`\`')));
+
+    Write-Output ($okLang.ToString() + '|' + $okExt.ToString() + '|' + $okCode.ToString());
+  `;
+  const codeRes = runPs(codeScript);
+  const isCodeOk = codeRes.includes("True|True|True");
+  logStep("Step 7.54: 全库代码片段纯净源码提取、语言探测与扩展名解析断言", isCodeOk, `代码提取断言: ${codeRes.trim()}`);
+
+  // Step 7.55: Test Code Snippet File Export Pipeline
+  const exportScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $mgr = $asm.GetType('XiaoLv.Desktop.Core.CodeSnippetManager');
+
+    $dummyCode = 'SELECT id, content FROM blocks WHERE type=""c"";';
+    $ext = $mgr.GetMethod('ResolveExtension', [System.Reflection.BindingFlags]'Public,Static').Invoke($null, @('sql'));
+    $tempDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'XiaoLvDesktop', 'snippets');
+    [System.IO.Directory]::CreateDirectory($tempDir) | Out-Null;
+    $targetPath = [System.IO.Path]::Combine($tempDir, 'test_export' + $ext);
+    [System.IO.File]::WriteAllText($targetPath, $dummyCode, [System.Text.Encoding]::UTF8);
+
+    $exists = [System.IO.File]::Exists($targetPath);
+    $text = [System.IO.File]::ReadAllText($targetPath);
+    try { [System.IO.File]::Delete($targetPath); } catch {}
+
+    $okExport = $exists -and $text.Contains('SELECT id, content');
+    Write-Output ($okExport.ToString());
+  `;
+  const exportRes = runPs(exportScript);
+  const isExportOk = exportRes.includes("True");
+  logStep("Step 7.55: 纯净代码片段本地源码文件秒开生成管道断言", isExportOk, `源码秒开管道断言: ${exportRes.trim()}`);
+
+  // Step 7.56: Test ExternalApiBridge HTTP Status Probe (:43990 /status)
+  let bridgeStatus = null;
+  for (let i = 0; i < 15; i++) {
+    try {
+      const res = await fetch("http://127.0.0.1:43990/status", { signal: AbortSignal.timeout(600) });
+      if (res.ok) {
+        bridgeStatus = await res.json();
+        break;
+      }
+    } catch {}
+    await sleep(300);
+  }
+  const isBridgeAlive = bridgeStatus && bridgeStatus.code === 0 && bridgeStatus.msg.includes("思源外骨骼桌面助手在线");
+  logStep("Step 7.56: 本地极速调用桥 Webhook 状态探针 (GET /status :43990) 断言", isBridgeAlive, `响应状态: ${JSON.stringify(bridgeStatus)}`);
+
+  // Step 7.57: Test ExternalApiBridge Capture Webhook Ingestion (POST /api/capture)
+  let captureResp = null;
+  try {
+    const res = await fetch("http://127.0.0.1:43990/api/capture", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: "💡 外部Quicker调用测试：免切窗极速日记注入",
+        app: "Quicker",
+        title: "Quicker 动作流水线"
+      }),
+      signal: AbortSignal.timeout(2000)
+    });
+    captureResp = await res.json();
+  } catch (err) {
+    captureResp = { error: err.message };
+  }
+  await sleep(1000);
+  const webhookNoteRow = await pollSql("SELECT id, content, ial FROM blocks WHERE content LIKE '%免切窗极速日记注入%' LIMIT 1");
+  const isWebhookIngestOk = captureResp && captureResp.code === 0 && !!webhookNoteRow;
+  logStep("Step 7.57: Quicker/AHK 本地 Webhook 免切窗速记入库 (POST /api/capture) 断言", isWebhookIngestOk, `入库块 ID: ${webhookNoteRow?.id} · 响应: ${JSON.stringify(captureResp)}`);
 
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");

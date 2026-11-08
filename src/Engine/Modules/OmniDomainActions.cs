@@ -3809,10 +3809,13 @@ public static class LibrarianHealthMain
         }
 
         // -------------------------------------------------------------
-        // 维度 5: 孤立无主资源附件体检 (/api/asset/getUnusedAssets)
+        // 维度 5: 孤立无主资源附件体检 (/api/asset/getUnusedAssets & AssetCleanDoctor)
         // -------------------------------------------------------------
         int unusedAssetCount = 0;
         var unusedAssets = new List<string>();
+        string totalSizeStr = "0 B";
+        int quarantinedCount = 0;
+
         try
         {
             var assetRes = SyKernelRequest.DoRequest(syUrl, token, "/api/asset/getUnusedAssets", "{}");
@@ -3823,29 +3826,43 @@ public static class LibrarianHealthMain
                 if (aList != null)
                 {
                     unusedAssetCount = aList.Count;
-                    for (int i = 0; i < Math.Min(aList.Count, 10); i++)
+                    var allNames = new List<string>();
+                    for (int i = 0; i < aList.Count; i++)
                     {
                         var it = aList[i] as Dictionary<string, object>;
                         if (it != null)
                         {
                             var name = JsonHelper.GetString(it, "name");
-                            if (!string.IsNullOrEmpty(name)) unusedAssets.Add(name);
+                            if (!string.IsNullOrEmpty(name))
+                            {
+                                allNames.Add(name);
+                                if (unusedAssets.Count < 10) unusedAssets.Add(name);
+                            }
                         }
                     }
+
+                    var audit = AssetCleanDoctor.AuditUnusedAssets(SiYuanClient.WorkspaceAssetsDir, allNames);
+                    totalSizeStr = audit.TotalSizeFormatted;
+                    quarantinedCount = audit.QuarantinedCount;
                 }
             }
         }
         catch { }
 
-        report.Append("### 5. 🗑️ 游离无主附件与废弃图片 (").Append(unusedAssetCount).Append(" 个)\n");
+        report.Append("### 5. 🗑️ 游离无主附件与废弃图片 (").Append(unusedAssetCount).Append(" 个 · 占用 ").Append(totalSizeStr).Append(")\n");
         if (unusedAssetCount == 0)
         {
-            report.Append("✓ 优秀：资源资产库纯净，无孤立游离的无主图片或附件。\n\n");
+            report.Append("✓ 优秀：资源资产库纯净，无孤立游离的无主图片或附件。\n");
+            if (quarantinedCount > 0)
+            {
+                report.Append("> ℹ️ 安全隔离区现有 **").Append(quarantinedCount).Append("** 个历史待释放附件。\n");
+            }
+            report.Append("\n");
         }
         else
         {
             penalty += Math.Min(unusedAssetCount * 2, 20);
-            report.Append("> 发现以下已删笔记残留的孤立附件（不再被任何笔记引用，占用磁盘空间）：\n");
+            report.Append("> 发现以下已删笔记残留的孤立附件（共占用 ").Append(totalSizeStr).Append("，支持移入 .quarantine 安全隔离区）：\n");
             foreach (var a in unusedAssets)
             {
                 report.Append("- `").Append(a).Append("`\n");

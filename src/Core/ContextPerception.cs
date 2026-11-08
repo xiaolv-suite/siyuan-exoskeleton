@@ -34,6 +34,8 @@ namespace XiaoLv.Desktop.Core
         public string Url { get; set; }
         public string ProjectName { get; set; }
         public string ActiveFileName { get; set; }
+        public string GitBranch { get; set; }
+        public string GitRepo { get; set; }
 
         public bool HasUrl
         {
@@ -52,6 +54,8 @@ namespace XiaoLv.Desktop.Core
                 string title = !string.IsNullOrEmpty(CleanTitle) ? CleanTitle : FullTitle;
                 if (string.IsNullOrEmpty(title)) title = AppDisplayName;
 
+                string gitBadge = !string.IsNullOrEmpty(GitBranch) ? string.Format(" [🌿 #{0}]", GitBranch.Replace("/", "-")) : "";
+
                 if (HasUrl)
                 {
                     return string.Format("[{0}]({1}) ({2})", title.Replace("[", "\\[").Replace("]", "\\]"), Url, AppDisplayName);
@@ -60,9 +64,13 @@ namespace XiaoLv.Desktop.Core
                 {
                     if (!string.IsNullOrEmpty(ActiveFileName))
                     {
-                        return string.Format("工程【{0}】· {1} ({2})", ProjectName, ActiveFileName, AppDisplayName);
+                        return string.Format("工程【{0}】· {1}{2} ({3})", ProjectName, ActiveFileName, gitBadge, AppDisplayName);
                     }
-                    return string.Format("工程【{0}】 ({1})", ProjectName, AppDisplayName);
+                    return string.Format("工程【{0}】{1} ({2})", ProjectName, gitBadge, AppDisplayName);
+                }
+                if (!string.IsNullOrEmpty(gitBadge))
+                {
+                    return string.Format("{0}{1} ({2})", title, gitBadge, AppDisplayName);
                 }
                 return string.Format("{0} ({1})", title, AppDisplayName);
             }
@@ -117,6 +125,12 @@ namespace XiaoLv.Desktop.Core
             { "dingtalk", "钉钉" },
             { "feishu", "飞书" },
             { "notepad", "记事本" },
+            { "windowsterminal", "Windows Terminal" },
+            { "powershell", "PowerShell" },
+            { "pwsh", "PowerShell" },
+            { "cmd", "命令行提示符" },
+            { "mintty", "Git Bash" },
+            { "bash", "Git Bash" },
             { "siyuan", "思源笔记" }
         };
 
@@ -200,6 +214,35 @@ namespace XiaoLv.Desktop.Core
                     snap.ProjectName = ideInfo.ProjectName;
                     snap.ActiveFileName = ideInfo.ActiveFileName;
                 }
+
+                // 探测研发终端或 IDE 当前工作区 Git 上下文
+                try
+                {
+                    string probeDir = "";
+                    if (!string.IsNullOrEmpty(snap.ActiveFileName) && File.Exists(snap.ActiveFileName))
+                    {
+                        probeDir = Path.GetDirectoryName(snap.ActiveFileName);
+                    }
+                    else if (!string.IsNullOrEmpty(snap.CleanTitle) && Directory.Exists(snap.CleanTitle))
+                    {
+                        probeDir = snap.CleanTitle;
+                    }
+                    else
+                    {
+                        probeDir = Environment.CurrentDirectory;
+                    }
+
+                    if (!string.IsNullOrEmpty(probeDir))
+                    {
+                        var git = GitContextDetector.DetectGitContext(probeDir);
+                        if (git != null && git.IsGitRepo)
+                        {
+                            snap.GitBranch = git.BranchName;
+                            snap.GitRepo = git.RepoName;
+                        }
+                    }
+                }
+                catch { }
             }
             catch { }
 

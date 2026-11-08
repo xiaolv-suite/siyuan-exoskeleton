@@ -354,6 +354,30 @@ public static class SmartCaptureMain
         }
 
         // =============================================================
+        // 分支 0: 桌面 IM 对话记录智能清洗分流 (微信/企业微信/飞书/钉钉)
+        // 自动将杂乱聊天记录重组为思源 Callout 块与行动待办清单
+        // =============================================================
+        if (text.Contains("\n") && text.Length > 20)
+        {
+            var chatSummary = ChatLogCleaner.Analyze(text);
+            if (chatSummary.IsChatLog)
+            {
+                string chatMd = ChatLogCleaner.BuildMarkdownSummary(chatSummary, "群聊纪要与决议摘录");
+                string appendBody = "{\"notebook\":\"" + diaryNotebookId + "\",\"dataType\":\"markdown\",\"data\":\"" + SafeContext.EscapeJson(chatMd) + "\"}";
+                var appRes = SyKernelRequest.DoRequest(syUrl, token, "/api/block/appendDailyNoteBlock", appendBody);
+
+                if (appRes.Success)
+                {
+                    SoundPlayerHelper.PlayFeedback();
+                    SafeContext.Set(context, "是否成功", true);
+                    SafeContext.Set(context, "需要通知", true);
+                    SafeContext.Set(context, "通知反馈", "✓ 已将群聊记录自动清洗为对话流并萃取 " + chatSummary.ActionTodos.Count + " 条待办！");
+                    return;
+                }
+            }
+        }
+
+        // =============================================================
         // 分支 A: '@人名' / '＠人名' 人脉互动分流 (增强: 小驴人脉 | 兜底: 原生双链 [[人名]])
         // =============================================================
         if (text.StartsWith("@") || text.StartsWith("＠"))
@@ -807,8 +831,12 @@ public static class SmartCaptureMain
                 if (!string.IsNullOrEmpty(sourceTitle)) attrs["custom-source-title"] = sourceTitle;
                 string projName = SafeContext.GetString(context, "项目名称");
                 string activeFile = SafeContext.GetString(context, "活动文件");
+                string gitBranch = SafeContext.GetString(context, "Git分支");
+                string gitRepo = SafeContext.GetString(context, "Git仓库");
                 if (!string.IsNullOrEmpty(projName)) attrs["custom-project-name"] = projName;
                 if (!string.IsNullOrEmpty(activeFile)) attrs["custom-active-file"] = activeFile;
+                if (!string.IsNullOrEmpty(gitBranch)) attrs["custom-git-branch"] = gitBranch;
+                if (!string.IsNullOrEmpty(gitRepo)) attrs["custom-git-repo"] = gitRepo;
                 if (attrs.Count > 0)
                 {
                     SyKernelRequest.DoRequest(syUrl, token, "/api/attr/setBlockAttrs", JsonHelper.ToJson(new { id = createdId, attrs = attrs }));
@@ -983,6 +1011,7 @@ public static class SmartCaptureMain
                                 { "custom-source-author", author ?? "" },
                                 { "custom-source-site", siteName ?? "" },
                                 { "custom-clip-status", "unread" },
+                                { "custom-triage-status", "unread" },
                                 { "custom-clip-time", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") }
                             };
                             string docEmoji = TextCleaner.GetSiteEmoji(siteName);

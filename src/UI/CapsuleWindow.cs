@@ -258,6 +258,29 @@ namespace XiaoLv.Desktop.UI
                                 }
                             });
                         }
+
+                        // 人脉生态雷达：嗅探是否属于人脉库联系人 (一人一文档)
+                        if (term.Length >= 2 && term.Length <= 8 && !term.Contains(" "))
+                        {
+                            try
+                            {
+                                string cSql = "SELECT b.id, b.content FROM blocks b WHERE b.type='d' AND (b.hpath LIKE '%/人脉/%' OR b.hpath LIKE '%/联系人/%' OR b.ial LIKE '%custom-type=\"contact\"%' OR b.ial LIKE '%custom-contact%') AND b.content LIKE '%" + safeTerm + "%' LIMIT 1";
+                                var cRows = await SiYuanClient.SqlAsync(cSql);
+                                if (cRows != null && cRows.Count > 0)
+                                {
+                                    string contactId = JsonHelper.GetString(cRows[0], "id");
+                                    string contactName = JsonHelper.GetString(cRows[0], "content");
+                                    Dispatcher.Invoke(() =>
+                                    {
+                                        if (_isPageLoaded && _webView != null && _webView.CoreWebView2 != null)
+                                        {
+                                            _webView.CoreWebView2.ExecuteScriptAsync(string.Format("if(window.onContactMatch) window.onContactMatch({{ contactId: '{0}', name: '{1}' }});", contactId, SafeContext.EscapeJson(contactName)));
+                                        }
+                                    });
+                                }
+                            }
+                            catch { }
+                        }
                     }
                     catch { }
                 });

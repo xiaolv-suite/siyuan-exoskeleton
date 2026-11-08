@@ -2579,7 +2579,8 @@
       <span class="intent-chip" onclick="insertPrefix('voice:')" title="输入 voice: 呼出语音速记微舱与口语去噪自愈"><b>🎙️</b> 语音速记</span>
       <span class="intent-chip" onclick="insertPrefix('trash:')" title="输入 trash: 查看思源文档回收站、误删笔记与历史快照打捞"><b>🗑️</b> 回收站</span>
 	      <span class="intent-chip" onclick="toggleTodayTimeline()" title="无需切入思源，0ms 滑出今日日记记录的全部灵感、待办与笔记"><b>📅</b> 今日时间轴</span>
-	      <span class="intent-chip" onclick="triggerFlashback()" title="输入 rand: 随机漫游一条历史重点笔记或那年今日"><b>🎲</b> 漫游回顾</span>
+		      <span class="intent-chip" onclick="triggerFlashback()" title="输入 rand: 随机漫游一条历史重点笔记或那年今日"><b>🎲</b> 漫游回顾</span>
+		      <span class="intent-chip" onclick="triggerHeatmap()" title="输入 heat: 查看全库过去一年知识心流沉淀 52 周热力图"><b>🔥</b> 沉淀热力图</span>
       <span class="chip-divider"></span>
       <span class="intent-chip" style="opacity: 0.75; cursor: pointer;" onclick="toggleCheatsheet()" title="查看完整快捷键心流"><b>Alt+1~8</b> 官方直达</span>
     </div>
@@ -4215,6 +4216,20 @@
       if (q === "syh:deadlink" || q === "deadlink") {
         if (window.chrome && window.chrome.webview) {
           window.chrome.webview.postMessage(JSON.stringify({ op: 'diagnoseDeadLinks' }));
+        }
+        return;
+      }
+
+      // heat: 模式：全库时序心流热力图
+      if (q.startsWith("heat:") || q.startsWith("heat：") || q === "heat" || q === "heatmap" || q === "热力图") {
+        triggerHeatmap();
+        return;
+      }
+
+      // c:mask 模式：剪贴板隐私脱敏
+      if (q === "c:mask" || q === "c:脱敏") {
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'sanitizePrivacyText', text: lastClipboardRawText || '' }));
         }
         return;
       }
@@ -7879,6 +7894,7 @@
       const outbounds = data.OutboundReferences || [];
 
       container.innerHTML = `
+        ${res.graphSvg ? `<div style="margin-bottom: 12px; border: 1px solid var(--border-hairline); border-radius: 8px; overflow: hidden;">${res.graphSvg}</div>` : ''}
         <div style="font-size: 11px; padding: 6px 10px; background: rgba(56,189,248,0.08); border-radius: 6px; border: 1px dashed var(--border-hairline); margin-bottom: 12px; display: flex; justify-content: space-between;">
           <span>⬅️ <b>反向反链</b> (${inbounds.length})</span>
           <span>➡️ <b>正向出链</b> (${outbounds.length})</span>
@@ -8164,6 +8180,53 @@
         window.chrome.webview.postMessage(JSON.stringify({ op: 'exportCardSvg', text: text, title: title, author: '' }));
       }
     }
+
+    function triggerHeatmap() {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'getHabitHeatmap' }));
+      }
+    }
+
+    window.onHeatmapLoaded = function(res) {
+      if (!res || !res.data) return;
+      const rep = res.data;
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">🔥 知识沉淀心流</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">过去52周沉淀热力图</span>
+          </div>
+          <div class="inspector-doc-title">📊 累计沉淀 ${rep.TotalBlocksThisYear} 块 · 活跃 ${rep.ActiveDaysThisYear} 天</div>
+        </div>
+        <div class="inspector-body" style="padding: 14px; max-height: 440px; overflow-y: auto;">
+          <div style="font-size: 11px; padding: 8px 12px; background: rgba(16,185,129,0.08); border-radius: 6px; border: 1px dashed rgba(16,185,129,0.3); margin-bottom: 12px; line-height: 1.6; color: var(--emerald-mint);">
+            🔥 <b>知识沉淀激励</b>：持续记录，每天记录一点点，知识复利滚雪球！当前连续记录 <b>${rep.CurrentStreak}</b> 天。
+          </div>
+          <div style="border: 1px solid var(--border-hairline); border-radius: 8px; overflow: hidden; margin-bottom: 12px;">
+            ${rep.SvgContent}
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px;">
+            <button class="inspector-dock-btn primary" onclick="triggerHeatmap()">🔄 刷新热力图</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(rep.SvgContent)}', '热力图SVG已复制！')">📋 复制SVG</button>
+          </div>
+        </div>
+      `;
+    };
+
+    window.onPrivacySanitized = function(res) {
+      if (!res) return;
+      if (res.count > 0) {
+        copyToClipboard(res.text, `✓ 已成功脱敏 ${res.count} 处敏感凭据并复制！`);
+      } else {
+        showToast("✓ 剪贴板未发现敏感隐私信息！");
+      }
+    };
 
     window.onVaultNotesLoaded = function(res) {
       if (!res || !Array.isArray(res.data)) return;

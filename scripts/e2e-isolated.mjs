@@ -2124,6 +2124,112 @@ async function main() {
   const isVaultFilterOk = vaultFilterRes.includes("True");
   logStep("Step 7.92: 知识库/目录镜像关键词过滤与相对路径解析断言", isVaultFilterOk, `关键词过滤断言: ${vaultFilterRes.trim()}`);
 
+  // Step 7.93: Test PrivacySanitizer (API Key, Phone, ID Card, Password Masking)
+  const privacyScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $ps = $asm.GetType('XiaoLv.Desktop.Core.PrivacySanitizer');
+    $mSanitize = $ps.GetMethod('SanitizeText', [System.Reflection.BindingFlags]'Public,Static');
+
+    $rawText = '测试配置: token=sk-proj1234567890abcdef1234567890, 手机号: 13812345678, 密码: password=MySecret123';
+    $argsMask = [object[]]@($rawText, 0);
+    $maskedText = $mSanitize.Invoke($null, $argsMask);
+    $count = $argsMask[1];
+
+    $okMask = ($count -ge 3) -and $maskedText.Contains('sk-proj1234****') -and $maskedText.Contains('138****5678') -and $maskedText.Contains('password=');
+    Write-Output ($okMask.ToString() + '|' + $count);
+  `;
+  const privacyRes = runPs(privacyScript);
+  const isPrivacyOk = privacyRes.includes("True");
+  logStep("Step 7.93: 知识库隐私脱敏与凭据安全清道夫 (PrivacySanitizer) 断言", isPrivacyOk, `隐私脱敏断言: ${privacyRes.trim()}`);
+
+  // Step 7.94: Test PrivacySanitizer ContainsSensitiveInfo Probe
+  const probeScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $ps = $asm.GetType('XiaoLv.Desktop.Core.PrivacySanitizer');
+    $mContains = $ps.GetMethod('ContainsSensitiveInfo', [System.Reflection.BindingFlags]'Public,Static');
+
+    $hit1 = $mContains.Invoke($null, @('Authorization: Bearer sk-ant-api03-1234567890abcdef1234567890'));
+    $hit2 = $mContains.Invoke($null, @('日常纯净笔记内容'));
+
+    $okProbe = ($hit1 -eq $true) -and ($hit2 -eq $false);
+    Write-Output ($okProbe.ToString());
+  `;
+  const probeRes = runPs(probeScript);
+  const isProbeOk = probeRes.includes("True");
+  logStep("Step 7.94: 隐私敏感信息智能探针 (ContainsSensitiveInfo) 毫秒嗅探断言", isProbeOk, `敏感嗅探断言: ${probeRes.trim()}`);
+
+  // Step 7.95: Test HabitHeatmapGenerator (52-Week Year-Long Contribution SVG Generation)
+  const heatmapScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $hhg = $asm.GetType('XiaoLv.Desktop.Core.HabitHeatmapGenerator');
+    $mHeat = $hhg.GetMethod('GenerateHeatmapAsync', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+    $task = $mHeat.Invoke($null, $null);
+    $rep = $task.GetAwaiter().GetResult();
+
+    $okHeat = ($null -ne $rep) -and ($rep.TotalBlocksThisYear -ge 1) -and ($rep.SvgContent.Contains('<svg')) -and ($rep.SvgContent.Contains('周一')) -and ($rep.SvgContent.Contains('rect'));
+    Write-Output ($okHeat.ToString() + '|' + $rep.TotalBlocksThisYear + '|' + $rep.ActiveDaysThisYear);
+  `;
+  const heatmapRes = runPs(heatmapScript);
+  const isHeatmapOk = heatmapRes.includes("True");
+  logStep("Step 7.95: 全库笔记时序热力图生成器 (HabitHeatmapGenerator) 52周SVG断言", isHeatmapOk, `热力图生成断言: ${heatmapRes.trim()}`);
+
+  // Step 7.96: Test GraphVisualizer (Radial Network Star Graph Vector SVG Generation)
+  const graphScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $gv = $asm.GetType('XiaoLv.Desktop.Core.GraphVisualizer');
+    $mGraph = $gv.GetMethod('RenderRadialGraphSvg', [System.Reflection.BindingFlags]'Public,Static');
+
+    $linkType = $asm.GetType('XiaoLv.Desktop.Core.LinkItem');
+    $inbounds = [System.Collections.Generic.List[object]]::new();
+    $itIn = [Activator]::CreateInstance($linkType);
+    $itIn.BlockId = '20261108-test-in';
+    $itIn.DocTitle = '上游调研';
+    $inbounds.Add($itIn);
+
+    $outbounds = [System.Collections.Generic.List[object]]::new();
+    $itOut = [Activator]::CreateInstance($linkType);
+    $itOut.BlockId = '20261108-test-out';
+    $itOut.DocTitle = '下游设计';
+    $outbounds.Add($itOut);
+
+    $svg = $mGraph.Invoke($null, @('20261108-center', 'Transformer架构', $inbounds, $outbounds));
+    $okGraph = $svg.Contains('<svg') -and $svg.Contains('id="arrowIn"') -and $svg.Contains('id="arrowOut"') -and $svg.Contains('Transformer架构') -and $svg.Contains('上游调研');
+    Write-Output ($okGraph.ToString());
+  `;
+  const graphRes = runPs(graphScript);
+  const isGraphOk = graphRes.includes("True");
+  logStep("Step 7.96: 双向知识网络矢量星轨图谱渲染器 (GraphVisualizer) 断言", isGraphOk, `星轨图谱断言: ${graphRes.trim()}`);
+
+  // Step 7.97: Test BiDirectionalGraphRadar & GraphVisualizer Combined Integration
+  const radarGraphScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $radar = $asm.GetType('XiaoLv.Desktop.Core.BiDirectionalGraphRadar');
+    $gv = $asm.GetType('XiaoLv.Desktop.Core.GraphVisualizer');
+
+    $mLinks = $radar.GetMethod('GetLinksForBlockAsync', [System.Reflection.BindingFlags]'Public,Static');
+    $mGraph = $gv.GetMethod('RenderRadialGraphSvg', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+    $task = $mLinks.Invoke($null, @('${cardRow?.id || row1?.id}', '测试块双链'));
+    $links = $task.GetAwaiter().GetResult();
+
+    $svg = $mGraph.Invoke($null, @($links.TargetBlockId, $links.TargetTitle, $links.InboundBacklinks, $links.OutboundReferences));
+    $okCombined = ($null -ne $svg) -and $svg.Contains('<svg') -and $svg.Contains('测试块双链');
+    Write-Output ($okCombined.ToString());
+  `;
+  const radarGraphRes = runPs(radarGraphScript);
+  const isRadarGraphOk = radarGraphRes.includes("True");
+  logStep("Step 7.97: 双向双链雷达与星轨图谱动态集成联动断言", isRadarGraphOk, `雷达图谱联动断言: ${radarGraphRes.trim()}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

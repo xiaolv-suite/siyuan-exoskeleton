@@ -682,17 +682,18 @@ namespace XiaoLv.Desktop.UI
 			                    string bTitle = JsonHelper.GetString(msg, "title");
 			                    ThreadPool.QueueUserWorkItem(async s =>
 			                    {
-			                        try
-			                        {
-			                            var links = await BiDirectionalGraphRadar.GetLinksForBlockAsync(bId, bTitle);
-			                            Dispatcher.Invoke(() =>
-			                            {
-			                                if (_webView != null && _webView.CoreWebView2 != null)
-			                                {
-			                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onBlockLinksLoaded) window.onBlockLinksLoaded(" + JsonHelper.ToJson(new { code = 0, data = links }) + ");");
-			                                }
-			                            });
-			                        }
+				                        try
+				                        {
+				                            var links = await BiDirectionalGraphRadar.GetLinksForBlockAsync(bId, bTitle);
+				                            string graphSvg = GraphVisualizer.RenderRadialGraphSvg(bId, bTitle, links.InboundBacklinks, links.OutboundReferences);
+				                            Dispatcher.Invoke(() =>
+				                            {
+				                                if (_webView != null && _webView.CoreWebView2 != null)
+				                                {
+				                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onBlockLinksLoaded) window.onBlockLinksLoaded(" + JsonHelper.ToJson(new { code = 0, data = links, graphSvg = graphSvg }) + ");");
+				                                }
+				                            });
+				                        }
 			                        catch { }
 			                    });
 			                    return;
@@ -1013,13 +1014,51 @@ namespace XiaoLv.Desktop.UI
 							                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onVaultNotesLoaded) window.onVaultNotesLoaded(" + JsonHelper.ToJson(new { code = 0, path = vaultDir, data = notes }) + ");");
 							                                }
 							                            });
-							                        }
-							                        catch { }
-							                    });
-							                    return;
-							                }
+								                        }
+								                        catch { }
+								                    });
+								                    return;
+								                }
 
-			                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
+								                // 3.67 全库笔记时序热力图 (heat: / habit:)
+								                if (op.Equals("getHabitHeatmap", StringComparison.OrdinalIgnoreCase))
+								                {
+								                    ThreadPool.QueueUserWorkItem(async s =>
+								                    {
+								                        try
+								                        {
+								                            var rep = await HabitHeatmapGenerator.GenerateHeatmapAsync();
+								                            Dispatcher.Invoke(() =>
+								                            {
+								                                if (_webView != null && _webView.CoreWebView2 != null)
+								                                {
+								                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onHeatmapLoaded) window.onHeatmapLoaded(" + JsonHelper.ToJson(new { code = 0, data = rep }) + ");");
+								                                }
+								                            });
+								                        }
+								                        catch { }
+								                    });
+								                    return;
+								                }
+
+								                // 3.68 剪贴板隐私敏感信息脱敏 (c:mask)
+								                if (op.Equals("sanitizePrivacyText", StringComparison.OrdinalIgnoreCase))
+								                {
+								                    string text = JsonHelper.GetString(msg, "text");
+								                    int maskedCount = 0;
+								                    string sanitized = PrivacySanitizer.SanitizeText(text, out maskedCount);
+								                    if (_webView != null && _webView.CoreWebView2 != null)
+								                    {
+								                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onPrivacySanitized) window.onPrivacySanitized(" + JsonHelper.ToJson(new { code = 0, text = sanitized, count = maskedCount }) + ");");
+								                    }
+								                    if (maskedCount > 0 && OnNotificationRequested != null)
+								                    {
+								                        OnNotificationRequested("隐私脱敏盾牌", string.Format("✓ 已成功脱敏 {0} 处敏感凭据/信息！", maskedCount));
+								                    }
+								                    return;
+								                }
+
+				                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
                 if (op.Equals("searchDocs", StringComparison.OrdinalIgnoreCase))
                 {
                     string kw = JsonHelper.GetString(msg, "keyword");

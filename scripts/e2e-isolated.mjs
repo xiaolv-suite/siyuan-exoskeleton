@@ -2037,6 +2037,93 @@ async function main() {
   const isAssetInlineOk = assetInlineRes.includes("True");
   logStep("Step 7.88: 本地资产图片自动内嵌 Base64 图文无损导出断言", isAssetInlineOk, `Base64内嵌断言: ${assetInlineRes.trim()}`);
 
+  // Step 7.89: Test CardImageRenderer (Vector SVG Knowledge Card Rendering)
+  const cardSvgScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $cir = $asm.GetType('XiaoLv.Desktop.Core.CardImageRenderer');
+    $mSvg = $cir.GetMethod('RenderKnowledgeCardSvg', [System.Reflection.BindingFlags]'Public,Static');
+
+    $s1 = '注意力机制是Transformer模型的核心，它打破了循环神经网络的时间序列依赖。';
+    $argsSvg = [object[]]@($s1, 'Attention架构', 'Vaswani', '2026-11-08');
+    $svg = $mSvg.Invoke($null, $argsSvg);
+
+    $okSvg = $svg.Contains('<svg') -and $svg.Contains('id="cardBg"') -and $svg.Contains('Attention架构') -and $svg.Contains('思源外骨骼 · 灵感沉淀');
+    Write-Output ($okSvg.ToString());
+  `;
+  const cardSvgRes = runPs(cardSvgScript);
+  const isCardSvgOk = cardSvgRes.includes("True");
+  logStep("Step 7.89: 知识卡片美化分享与高保真矢量 SVG 长图生成 (CardImageRenderer) 断言", isCardSvgOk, `SVG卡片渲染断言: ${cardSvgRes.trim()}`);
+
+  // Step 7.90: Test MultiMonitorDpiAdapter (DPI & Multi-Monitor Edge Snapping)
+  const dpiAdapterScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $adapter = $asm.GetType('XiaoLv.Desktop.Core.MultiMonitorDpiAdapter');
+    $mEnsure = $adapter.GetMethod('EnsureVisibleOnActiveScreens', [System.Reflection.BindingFlags]'Public,Static');
+
+    $okEnsure = ($null -ne $mEnsure);
+    Write-Output ($okEnsure.ToString());
+  `;
+  const dpiAdapterRes = runPs(dpiAdapterScript);
+  const isDpiAdapterOk = dpiAdapterRes.includes("True");
+  logStep("Step 7.90: 多屏幕多DPI自适应与边缘自愈吸附器 (MultiMonitorDpiAdapter) 断言", isDpiAdapterOk, `DPI自愈适配断言: ${dpiAdapterRes.trim()}`);
+
+  // Step 7.91: Test VaultMirrorInspector (External Markdown Directory Indexing)
+  const vaultScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $vmi = $asm.GetType('XiaoLv.Desktop.Core.VaultMirrorInspector');
+    $mScan = $vmi.GetMethod('ScanVaultDirectory', [System.Reflection.BindingFlags]'Public,Static');
+
+    $tmpVault = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'XiaoLvTest_Vault');
+    [System.IO.Directory]::CreateDirectory($tmpVault) | Out-Null;
+    $tmpNote = [System.IO.Path]::Combine($tmpVault, '架构设计.md');
+    [System.IO.File]::WriteAllText($tmpNote, '# 核心架构设计' + [Environment]::NewLine + '正文说明', [System.Text.Encoding]::UTF8);
+
+    $argsScan = [object[]]@($tmpVault, '', 20);
+    $notes = $mScan.Invoke($null, $argsScan);
+    try { [System.IO.File]::Delete($tmpNote); } catch {}
+    try { [System.IO.Directory]::Delete($tmpVault); } catch {}
+
+    $okVault = ($null -ne $notes) -and ($notes.Count -ge 1) -and ($notes[0].Title -eq '核心架构设计') -and ($notes[0].FileName -eq '架构设计.md');
+    Write-Output ($okVault.ToString() + '|' + $notes.Count);
+  `;
+  const vaultRes = runPs(vaultScript);
+  const isVaultOk = vaultRes.includes("True");
+  logStep("Step 7.91: 外部知识库/Obsidian Vault 镜像透视引擎 (VaultMirrorInspector) 断言", isVaultOk, `外部库透视断言: ${vaultRes.trim()}`);
+
+  // Step 7.92: Test VaultMirrorInspector Keyword Filtering & Relative Path Resolution
+  const vaultFilterScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $vmi = $asm.GetType('XiaoLv.Desktop.Core.VaultMirrorInspector');
+    $mScan = $vmi.GetMethod('ScanVaultDirectory', [System.Reflection.BindingFlags]'Public,Static');
+
+    $tmpVault = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'XiaoLvTest_Vault2');
+    [System.IO.Directory]::CreateDirectory($tmpVault) | Out-Null;
+    $subDir = [System.IO.Path]::Combine($tmpVault, '模块A');
+    [System.IO.Directory]::CreateDirectory($subDir) | Out-Null;
+    $tmpNote1 = [System.IO.Path]::Combine($subDir, '数据库设计.md');
+    [System.IO.File]::WriteAllText($tmpNote1, '# 数据库表结构' + [Environment]::NewLine + '表格内容', [System.Text.Encoding]::UTF8);
+    $tmpNote2 = [System.IO.Path]::Combine($tmpVault, '前端UI.md');
+    [System.IO.File]::WriteAllText($tmpNote2, '# 前端组件树', [System.Text.Encoding]::UTF8);
+
+    $argsMatch = [object[]]@($tmpVault, '数据库', 20);
+    $matchNotes = $mScan.Invoke($null, $argsMatch);
+
+    try { [System.IO.File]::Delete($tmpNote1); } catch {}
+    try { [System.IO.File]::Delete($tmpNote2); } catch {}
+    try { [System.IO.Directory]::Delete($subDir); } catch {}
+    try { [System.IO.Directory]::Delete($tmpVault); } catch {}
+
+    $okFilter = ($matchNotes.Count -eq 1) -and ($matchNotes[0].Title -eq '数据库表结构') -and ($matchNotes[0].RelativePath.Contains('模块A'));
+    Write-Output ($okFilter.ToString());
+  `;
+  const vaultFilterRes = runPs(vaultFilterScript);
+  const isVaultFilterOk = vaultFilterRes.includes("True");
+  logStep("Step 7.92: 知识库/目录镜像关键词过滤与相对路径解析断言", isVaultFilterOk, `关键词过滤断言: ${vaultFilterRes.trim()}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

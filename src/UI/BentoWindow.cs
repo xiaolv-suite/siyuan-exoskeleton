@@ -974,6 +974,51 @@ namespace XiaoLv.Desktop.UI
 							                    return;
 							                }
 
+							                // 3.65 知识卡片高保真矢量 SVG 长图生成并在系统查看器秒开
+							                if (op.Equals("exportCardSvg", StringComparison.OrdinalIgnoreCase))
+							                {
+							                    string text = JsonHelper.GetString(msg, "text");
+							                    string title = JsonHelper.GetString(msg, "title");
+							                    string author = JsonHelper.GetString(msg, "author");
+							                    ThreadPool.QueueUserWorkItem(s =>
+							                    {
+							                        string outPath = CardImageRenderer.ExportCardSvgAndOpen(text, title, author);
+							                        if (!string.IsNullOrEmpty(outPath) && OnNotificationRequested != null)
+							                        {
+							                            OnNotificationRequested("知识卡片分享", "✓ 知识卡片长图已生成并在外部图片查看器秒开！");
+							                        }
+							                    });
+							                    return;
+							                }
+
+							                // 3.66 外部 Markdown 库 / Obsidian 目录穿透秒查 (vault: / dir:)
+							                if (op.Equals("searchVaultNotes", StringComparison.OrdinalIgnoreCase))
+							                {
+							                    string kw = JsonHelper.GetString(msg, "keyword");
+							                    string vaultDir = JsonHelper.GetString(msg, "path");
+							                    if (string.IsNullOrEmpty(vaultDir) || !Directory.Exists(vaultDir))
+							                    {
+							                        vaultDir = @"D:\思源插件";
+							                    }
+
+							                    ThreadPool.QueueUserWorkItem(s =>
+							                    {
+							                        try
+							                        {
+							                            var notes = VaultMirrorInspector.ScanVaultDirectory(vaultDir, kw);
+							                            Dispatcher.Invoke(() =>
+							                            {
+							                                if (_webView != null && _webView.CoreWebView2 != null)
+							                                {
+							                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onVaultNotesLoaded) window.onVaultNotesLoaded(" + JsonHelper.ToJson(new { code = 0, path = vaultDir, data = notes }) + ");");
+							                                }
+							                            });
+							                        }
+							                        catch { }
+							                    });
+							                    return;
+							                }
+
 			                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
                 if (op.Equals("searchDocs", StringComparison.OrdinalIgnoreCase))
                 {

@@ -2561,7 +2561,8 @@
       <span class="intent-chip" onclick="insertPrefix('xmind:')" title="输入 xmind: 检索本地思维导图并流式透视层级树生成思源大纲"><b>🧠</b> XMind</span>
       <span class="intent-chip" onclick="insertPrefix('listary:')" title="直通本地 Listary 极速全盘文件检索"><b>🔍</b> Listary</span>
 	      <span class="intent-chip" onclick="insertPrefix('zotero:')" title="唤起本地 Zotero 学术文献管理库"><b>📖</b> Zotero</span>
-	      <span class="intent-chip" onclick="insertPrefix('bm:')" title="输入 bm: 穿透检索 Edge/Chrome 本地浏览器书签与收藏夹"><b>🔖</b> 浏览器书签</span>
+		      <span class="intent-chip" onclick="insertPrefix('bm:')" title="输入 bm: 穿透检索 Edge/Chrome 本地浏览器书签与收藏夹"><b>🔖</b> 浏览器书签</span>
+		      <span class="intent-chip" onclick="insertPrefix('vault:')" title="输入 vault: 穿透检索外部 Markdown 知识库与本地目录"><b>🗄️</b> 外部库</span>
 	      <span class="intent-chip" onclick="insertPrefix('tab:')" title="输入 tab: 检索全库数据表格，支持排版美化与1键导出Excel"><b>📊</b> 表格透视</span>
 	      <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
@@ -4177,6 +4178,18 @@
         return;
       }
 
+      // vault: 或 dir: 模式：外部 Markdown 知识库与目录穿透秒查
+      if (q.startsWith("vault:") || q.startsWith("vault：") || q.startsWith("dir:") || q.startsWith("dir：")) {
+        const subKw = q.replace(/^(vault:|vault：|dir:|dir：)/, "").trim();
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'searchVaultNotes', keyword: subKw }));
+        } else {
+          filteredItems = [];
+          renderItems();
+        }
+        return;
+      }
+
       // pom: 或 timer: 模式：桌面轻量敏捷心流计时器
       if (q.startsWith("pom:") || q.startsWith("pom：") || q.startsWith("timer:") || q.startsWith("timer：")) {
         const sub = q.replace(/^(pom:|pom：|timer:|timer：)/, "").trim();
@@ -4848,6 +4861,9 @@
         } else if (item.isBookmarkItem && item.bmData) {
           pasteAtCursor(`[${item.bmData.Title}](${item.bmData.CleanUrl || item.bmData.Url})`);
           return;
+        } else if (item.isVaultItem && item.vaultData) {
+          pasteAtCursor(`[${item.vaultData.Title}](siyuan-exoskeleton://open-file?path=${encodeURIComponent(item.vaultData.FilePath)})`);
+          return;
         } else if (item.pluginLaunch) {
           launchPluginDirect(item);
           return;
@@ -5177,8 +5193,9 @@
           q.startsWith("c:") || q.startsWith("c：") || q.startsWith("clip:") || q.startsWith("clip：") ||
           q.startsWith("v:") || q.startsWith("v：") || q.startsWith("prompt:") || q.startsWith("val:") ||
           q.startsWith("att:") || q.startsWith("att：") || q.startsWith("asset:") || q.startsWith("asset：") ||
-          q.startsWith("trash:") || q.startsWith("trash：") || q.startsWith("recycle:") || q.startsWith("recycle：") ||
-          q.startsWith("rescue:") || q.startsWith("rescue：") || q.startsWith("hist:") || q.startsWith("hist：") ||
+	          q.startsWith("trash:") || q.startsWith("trash：") || q.startsWith("recycle:") || q.startsWith("recycle：") ||
+	          q.startsWith("rescue:") || q.startsWith("rescue：") || q.startsWith("hist:") || q.startsWith("hist：") ||
+	          q.startsWith("vault:") || q.startsWith("vault：") || q.startsWith("dir:") || q.startsWith("dir：") ||
           q.startsWith("ws:") || q.startsWith("ws：") || q.startsWith("session:") || q.startsWith("workspace:") ||
           q.startsWith("voice:") || q.startsWith("voice：") ||
           q.startsWith("g:") || q.startsWith("g：") || q === "g") {
@@ -5211,6 +5228,10 @@
       }
       if (item.isBookmarkItem && item.bmData) {
         inspectBookmarkItem(item.bmData);
+        return;
+      }
+      if (item.isVaultItem && item.vaultData) {
+        inspectVaultNote(item.vaultData);
         return;
       }
       if (item.isRescueItem) {
@@ -5910,8 +5931,9 @@
             <button class="inspector-dock-btn" onclick="copyMarkdownLink('${targetId}', '${escapeQuote(targetContent)}')" title="复制 Markdown 链接">📝 复制MD</button>
             <button class="inspector-dock-btn" onclick="pinAsStickyNote('${escapeQuote(docTitle)}', '${escapeQuote(markdownText)}', '${targetId}')" title="钉在桌面作为半透明浮动参考便签，按 Ctrl+S 实时双向回写">📌 钉在桌面</button>
 		            <button class="inspector-dock-btn" onclick="exportCurrentToDocx('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);" title="零依赖逆向导出标准 Word (.docx) 大纲并在本地秒开">📤 导出Word</button>
-		            <button class="inspector-dock-btn" onclick="exportCurrentToHtml('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="零依赖逆向导出带大纲导航的单文件独立 HTML 网页并在浏览器秒开">🌐 导出HTML</button>
-		            <button class="inspector-dock-btn" onclick="copyAsExternalRichText('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);" title="一键复制为图文富文本 (可直接粘贴微信/飞书/Word/邮件)">📋 复制富文本</button>
+			            <button class="inspector-dock-btn" onclick="exportCurrentToHtml('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="零依赖逆向导出带大纲导航的单文件独立 HTML 网页并在浏览器秒开">🌐 导出HTML</button>
+			            <button class="inspector-dock-btn" onclick="copyAsExternalRichText('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);" title="一键复制为图文富文本 (可直接粘贴微信/飞书/Word/邮件)">📋 复制富文本</button>
+			            <button class="inspector-dock-btn" onclick="exportCardSvgImage('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--amber-agent); border-color: rgba(245,158,11,0.4);" title="将此灵感或笔记一键渲染为高颜值矢量 SVG 知识卡片长图并在外部秒开">📸 生成卡片长图</button>
             ${markdownText.includes('|') ? `
               <button class="inspector-dock-btn" onclick="exportCurrentToXlsx('${escapeQuote(markdownText)}', '${escapeQuote(docTitle)}')" style="color: var(--tech-amber); border-color: rgba(245,158,11,0.4);" title="零依赖逆向导出标准 Excel (.xlsx) 表格并在本地秒开">📤 导出Excel</button>
             ` : ''}
@@ -8136,6 +8158,78 @@
         el.innerText = res.data.FormattedBadge || "📖 统计完毕";
       }
     };
+
+    function exportCardSvgImage(text, title) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'exportCardSvg', text: text, title: title, author: '' }));
+      }
+    }
+
+    window.onVaultNotesLoaded = function(res) {
+      if (!res || !Array.isArray(res.data)) return;
+      const notes = res.data;
+      filteredItems = notes.map(n => ({
+        id: `vault_${Math.random().toString(36).slice(2)}`,
+        group: "search",
+        title: `🗄️ ${escapeHtml(n.Title)}`,
+        desc: `相对路径: ${escapeHtml(n.RelativePath)} · ${n.FileSizeFormatted}`,
+        hotkey: "Enter",
+        iconType: "folder",
+        iconColor: "var(--amber-agent)",
+        badge: "外部库",
+        badgeCls: "badge-native",
+        isVaultItem: true,
+        vaultData: n,
+        action: () => {
+          inspectVaultNote(n);
+        }
+      }));
+      selectedIndex = 0;
+      renderItems();
+      if (filteredItems.length > 0) {
+        inspectVaultNote(filteredItems[0].vaultData);
+      }
+    };
+
+    function inspectVaultNote(n) {
+      if (!n) return;
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">🗄️ 外部知识库</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${escapeHtml(n.RelativePath)}</span>
+          </div>
+          <div class="inspector-doc-title">📑 ${escapeHtml(n.Title)}</div>
+        </div>
+        <div class="inspector-body" style="padding: 14px; max-height: 420px; overflow-y: auto;">
+          <div style="font-size: 11px; padding: 8px 12px; background: rgba(245,158,11,0.08); border-radius: 6px; border: 1px dashed rgba(245,158,11,0.3); margin-bottom: 12px; line-height: 1.6;">
+            <div>📍 <b>物理路径</b>: <code style="word-break: break-all;">${escapeHtml(n.FilePath)}</code></div>
+            <div style="margin-top: 4px;">📦 <b>文件体积</b>: ${n.FileSizeFormatted} · <b>修改时间</b>: ${new Date(n.LastModified).toLocaleString()}</div>
+          </div>
+          <div style="padding: 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-hairline); border-radius: 6px;">
+            <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.6;">此文档位于外部目录，支持 1 键结构化导入今日日记、外部原位打开或导出为独立 HTML 网页。</div>
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="importVaultNoteToDaily('${escapeQuote(n.FilePath)}')" title="将该外部 Markdown 文件结构化解析并导入今日日记">📥 导入今日日记</button>
+            <button class="inspector-dock-btn" onclick="openAssetLocalFile('${escapeQuote(n.FilePath)}')" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="使用系统关联默认应用秒开此文件">⚡ 原位秒开</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(n.FilePath)}', '文件路径已复制！')">📋 复制路径</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function importVaultNoteToDaily(filePath) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'executeCommand', cmd: 'sendfile:' + filePath, text: '' }));
+        showToast("✓ 外部文档已结构化导入思源笔记！");
+      }
+    }
 
     function renderRescueInspector(item) {
       const inspector = document.getElementById("search-inspector-pane");

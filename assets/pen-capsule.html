@@ -641,9 +641,9 @@
 
       if (window.chrome && window.chrome.webview) {
         if (currentText) {
-          window.chrome.webview.postMessage(JSON.stringify({ op: 'setVar', data: { name: '输入文本', value: currentText } }));
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'setVar', text: currentText, data: { name: '输入文本', value: currentText } }));
         }
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'setVar', data: { name: '操作指令', value: op } }));
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'setVar', cmd: op, text: currentText, data: { name: '操作指令', value: op } }));
         setTimeout(() => window.chrome.webview.postMessage(JSON.stringify({ op: 'close' })), 120);
       } else {
         alert("执行指令: " + op + " | 内容: " + currentText);

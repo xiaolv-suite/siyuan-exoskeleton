@@ -8637,6 +8637,7 @@
     window.onOfficeInspectionLoaded = function(summary) {
       if (!summary) return;
       currentOfficeDocSummary = summary;
+      window.currentOfficeDocSummary = summary;
       currentOfficeTab = (summary.FileType === "xlsx") ? "sheets" : ((summary.FileType === "pptx") ? "slides" : "outline");
       renderOfficeDeepInspector();
     };
@@ -8885,6 +8886,7 @@
     window.onPdfInspectionLoaded = function(summary) {
       if (!summary) return;
       currentPdfSummary = summary;
+      window.currentPdfSummary = summary;
       renderPdfDeepInspector();
     };
 
@@ -9009,6 +9011,7 @@
     window.onEpubInspectionLoaded = function(summary) {
       if (!summary) return;
       currentEpubSummary = summary;
+      window.currentEpubSummary = summary;
       renderEpubDeepInspector();
     };
 
@@ -9111,6 +9114,7 @@
     window.onXMindInspectionLoaded = function(summary) {
       if (!summary) return;
       currentXMindSummary = summary;
+      window.currentXMindSummary = summary;
       currentXMindTab = "mindmap";
       renderXMindDeepInspector();
     };
@@ -12196,11 +12200,19 @@
     }
 
     window.onAiRefineResult = function(res) {
-      if (res && res.Success && res.Content) {
-        showAiResultModal(res.Content, res.LatencyMs);
+      const ok = res && (res.Success || res.success);
+      const content = res ? (res.Content || res.content) : "";
+      if (ok && content) {
+        showAiResultModal(content, res.LatencyMs || res.latencyMs);
       } else {
-        showToast("⚠️ AI 提炼响应异常: " + (res?.ErrorMessage || "连接超时"));
+        showToast("⚠️ AI 提炼响应异常: " + (res?.ErrorMessage || res?.error || "连接超时"));
       }
+    };
+    window.onAiRefined = window.onAiRefineResult;
+
+    window.onCitationFormatted = function(res) {
+      if (!res || !res.markdown) return;
+      copyToClipboard(res.gbt || res.markdown, "✓ 学术文献标准引文已生成并复制！");
     };
 
     function showAiResultModal(content, latencyMs) {
@@ -13747,6 +13759,24 @@
         }
       });
     }
+
+    window.onDoctorOrphansQuarantined = function(res) {
+      const cnt = (res && typeof res.count === "number") ? res.count : 0;
+      showToast(`📦 已成功将 ${cnt} 篇孤儿附件安全移入 .quarantine 隔离区！`);
+      triggerSystemDoctorAudit();
+    };
+
+    window.onDoctorOrphansRestored = function(res) {
+      const cnt = (res && typeof res.count === "number") ? res.count : 0;
+      showToast(`♻️ 已从隔离区原位打捞复原 ${cnt} 篇附件！`);
+      triggerSystemDoctorAudit();
+    };
+
+    window.onDoctorEmptyBlocksCleaned = function(res) {
+      const cnt = (res && typeof res.count === "number") ? res.count : 0;
+      showToast(`🧹 已成功物理释放 ${cnt} 处无意义空白块！`);
+      triggerSystemDoctorAudit();
+    };
 
     function dumpDoctorReportToDaily() {
       const d = window._latestDoctorResult;

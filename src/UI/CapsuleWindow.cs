@@ -198,19 +198,26 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
-                // 提取操作指令 (1~6 或 q)
+                // 提取操作指令 (1~8 或 q，同时兼容顶层 cmd/text 与 setVar 嵌套 data.name / data.value)
+                var dataObj = JsonHelper.GetDict(msg, "data") ?? msg;
                 string cmd = JsonHelper.GetString(msg, "cmd");
                 if (string.IsNullOrEmpty(cmd))
                 {
-                    string name = JsonHelper.GetString(msg, "name");
-                    if (name == "操作指令") cmd = JsonHelper.GetString(msg, "value");
+                    string name = JsonHelper.GetString(dataObj, "name");
+                    if (name == "输入文本")
+                    {
+                        string vText = JsonHelper.GetString(dataObj, "value");
+                        if (!string.IsNullOrEmpty(vText)) _pendingText = vText;
+                        return;
+                    }
+                    if (name == "操作指令") cmd = JsonHelper.GetString(dataObj, "value");
                 }
 
                 string inputTxt = JsonHelper.GetString(msg, "text");
                 if (string.IsNullOrEmpty(inputTxt))
                 {
-                    string name = JsonHelper.GetString(msg, "name");
-                    if (name == "输入文本") inputTxt = JsonHelper.GetString(msg, "value");
+                    string name = JsonHelper.GetString(dataObj, "name");
+                    if (name == "输入文本") inputTxt = JsonHelper.GetString(dataObj, "value");
                 }
                 if (string.IsNullOrEmpty(inputTxt)) inputTxt = _pendingText;
 

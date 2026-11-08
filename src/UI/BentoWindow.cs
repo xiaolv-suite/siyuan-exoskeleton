@@ -1225,8 +1225,9 @@ namespace XiaoLv.Desktop.UI
 							                    return;
 							                }
 
-							                // 3.63 外部富文本图文无损复制 (微信/飞书/Word/邮件 CF_HTML)
-							                if (op.Equals("copyExternalRichText", StringComparison.OrdinalIgnoreCase))
+                // 3.63 外部富文本图文无损复制 (微信/飞书/Word/邮件 CF_HTML)
+                if (op.Equals("copyExternalRichText", StringComparison.OrdinalIgnoreCase) ||
+                    op.Equals("copyAsRichText", StringComparison.OrdinalIgnoreCase))
 							                {
 							                    string md = JsonHelper.GetString(msg, "markdown");
 							                    string title = JsonHelper.GetString(msg, "title");
@@ -2245,8 +2246,10 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
-                // 6.5 专用于总控抽屉的无阻断追加日记 (支持 keepOpen: true 免切屏)
-                if (op.Equals("appendToDailyNote", StringComparison.OrdinalIgnoreCase))
+                // 6.5 专用于总控抽屉与 12 大工作台的无阻断追加日记 (支持 appendToDailyNote / recordMiniInput / quickNote 免切屏)
+                if (op.Equals("appendToDailyNote", StringComparison.OrdinalIgnoreCase) ||
+                    op.Equals("recordMiniInput", StringComparison.OrdinalIgnoreCase) ||
+                    op.Equals("quickNote", StringComparison.OrdinalIgnoreCase))
                 {
                     string text = JsonHelper.GetString(msg, "text").Trim();
                     bool keepOpen = JsonHelper.GetBool(msg, "keepOpen", true);
@@ -2851,9 +2854,22 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
-                // 20. 兼容旧版 name/value 格式（如指令码、后续动作）
-                string name = JsonHelper.GetString(msg, "name");
-                string val = JsonHelper.GetString(msg, "value").Trim();
+                // 20. 兼容旧版 name/value 与 setVar 嵌套 data 格式（如指令码、后续动作）
+                var dataDict = JsonHelper.GetDict(msg, "data") ?? msg;
+                string name = JsonHelper.GetString(dataDict, "name");
+                string val = JsonHelper.GetString(dataDict, "value").Trim();
+                if (op.Equals("setVar", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (val.StartsWith("openurl:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string targetUrl = val.Substring("openurl:".Length).Trim();
+                        if (!string.IsNullOrEmpty(targetUrl))
+                        {
+                            try { Process.Start(new ProcessStartInfo(targetUrl) { UseShellExecute = true }); } catch { }
+                        }
+                    }
+                    return;
+                }
                 // 19. 全库附件与文献资产秒查坞 (att: / asset: 语法)
                 if (op.Equals("searchAssets", StringComparison.OrdinalIgnoreCase))
                 {

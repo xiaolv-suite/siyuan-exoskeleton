@@ -3964,6 +3964,39 @@ async function main() {
                              capsuleHtmlContent.includes('text-overflow: ellipsis;');
   logStep("Step 7.222: 随身划笔微胶囊长标题雷达命中单行省略防撑破底栏断言", hasCapsuleEllipsis, `微胶囊单行省略保护: ${hasCapsuleEllipsis}`);
 
+  // Step 7.223: Test 100% Bi-Directional IPC Op Contract Reconciliation (Zero Unhandled Ops in BentoWindow.cs)
+  const frontendOpsSet = new Set();
+  for (const m of panelContent.matchAll(/\bop\s*:\s*["']([a-zA-Z0-9_]+)["']/g)) {
+    frontendOpsSet.add(m[1]);
+  }
+  const backendOpsSet = new Set();
+  for (const m of bentoCsContent.matchAll(/op\.Equals\(\s*"([a-zA-Z0-9_]+)"/g)) {
+    backendOpsSet.add(m[1].toLowerCase());
+  }
+  const unhandledIpcOps = [...frontendOpsSet].filter(op => !backendOpsSet.has(op.toLowerCase()));
+  logStep("Step 7.223: 前后端 WebView2 IPC 指令集 100% 闭环对账 (recordMiniInput/quickNote/copyAsRichText/setVar 零遗漏) 断言", unhandledIpcOps.length === 0, `全量IPC指令数: ${frontendOpsSet.size} · 未处理数: ${unhandledIpcOps.length}`);
+
+  // Step 7.224: Test 100% Backend ExecuteScriptAsync Callback & Office/PDF Live Watcher Window Binding
+  const backendCbsSet = new Set();
+  for (const m of bentoCsContent.matchAll(/window\.([a-zA-Z0-9_]+)/g)) {
+    const cb = m[1];
+    if (!["__DESKTOP_SETTINGS__", "__STORAGE_INFO__", "__OFFLINE_QUEUE_COUNT__", "__OMNI_RUNTIME__"].includes(cb)) {
+      backendCbsSet.add(cb);
+    }
+  }
+  const missingFrontendCbs = [...backendCbsSet].filter(cb => !panelContent.includes("window." + cb) && !panelContent.includes("function " + cb));
+  const hasLiveWatcherBindings = panelContent.includes("window.currentOfficeDocSummary = summary;") &&
+                                 panelContent.includes("window.currentPdfSummary = summary;") &&
+                                 panelContent.includes("window.onDoctorOrphansQuarantined = function") &&
+                                 missingFrontendCbs.length === 0;
+  logStep("Step 7.224: 后端 ExecuteScriptAsync 回调与本地文件热重载 window 状态 100% 挂载断言", hasLiveWatcherBindings, `全量回调数: ${backendCbsSet.size} · 缺失数: ${missingFrontendCbs.length}`);
+
+  // Step 7.225: Test CapsuleWindow Nested setVar Data Dictionary & Atomic Command Dispatch
+  const capsuleCsContent = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'CapsuleWindow.cs'), 'utf8');
+  const hasCapsuleNestedData = capsuleCsContent.includes('JsonHelper.GetDict(msg, "data")') &&
+                               capsuleHtmlContent.includes("cmd: op, text: currentText");
+  logStep("Step 7.225: 随身划笔微胶囊 1~8 盲打动作嵌套 data 字典与顶层原子指令双通道解析断言", hasCapsuleNestedData, `微胶囊双通道指令解析: ${hasCapsuleNestedData}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

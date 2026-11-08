@@ -136,9 +136,9 @@ namespace XiaoLv.Desktop.Core
                 var trackingKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
                     "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "utm_id",
-                    "spm_id_from", "from_source", "vd_source", "broadcast_type", "is_story_h5",
+                    "spm_id_from", "spm_id", "from_source", "vd_source", "broadcast_type", "is_story_h5",
                     "xsec_token", "xsec_source", "app_id", "app_platform",
-                    "fbclid", "gclid", "dclid", "msclkid",
+                    "fbclid", "gclid", "dclid", "msclkid", "track_id", "trace_id",
                     "isappinstalled", "scene", "clicktime", "enterid", "session_id",
                     "sharer_id", "mid", "from", "ref", "feature", "si", "scm", "spm"
                 };
@@ -150,7 +150,7 @@ namespace XiaoLv.Desktop.Core
                     string key = eqIdx > 0 ? p.Substring(0, eqIdx).Trim() : p.Trim();
 
                     // 剥离营销追踪参数，保留核心业务参数 (如 id, v, page, p, q, tab 等)
-                    if (trackingKeys.Contains(key) || key.StartsWith("utm_", StringComparison.OrdinalIgnoreCase))
+                    if (trackingKeys.Contains(key) || key.StartsWith("utm_", StringComparison.OrdinalIgnoreCase) || key.StartsWith("spm", StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }

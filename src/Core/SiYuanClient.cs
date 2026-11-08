@@ -349,6 +349,44 @@ namespace XiaoLv.Desktop.Core
             return await PostAsync(info.Url, info.Token, endpoint, payload);
         }
 
+        /// <summary>
+        /// 异步获取当前打开的笔记本列表
+        /// </summary>
+        public static async Task<List<NotebookInfo>> GetNotebooksAsync()
+        {
+            var list = new List<NotebookInfo>();
+            try
+            {
+                var res = await PostAsync("/api/notebook/lsNotebooks", new { });
+                if (res != null && res.Success && res.Data != null)
+                {
+                    var dict = res.Data as Dictionary<string, object>;
+                    if (dict != null)
+                    {
+                        var nbs = JsonHelper.GetList(dict, "notebooks");
+                        if (nbs != null)
+                        {
+                            foreach (var it in nbs)
+                            {
+                                var nObj = it as Dictionary<string, object>;
+                                if (nObj != null)
+                                {
+                                    list.Add(new NotebookInfo
+                                    {
+                                        Id = JsonHelper.GetString(nObj, "id"),
+                                        Name = JsonHelper.GetString(nObj, "name"),
+                                        Closed = JsonHelper.GetBool(nObj, "closed")
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            return list;
+        }
+
         public static async Task<SiYuanResponse> PostAsync(string url, string token, string endpoint, object payload)
         {
             if (string.IsNullOrEmpty(url))

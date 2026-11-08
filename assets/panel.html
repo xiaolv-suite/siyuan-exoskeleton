@@ -2561,8 +2561,10 @@
       <span class="intent-chip" onclick="insertPrefix('xmind:')" title="输入 xmind: 检索本地思维导图并流式透视层级树生成思源大纲"><b>🧠</b> XMind</span>
       <span class="intent-chip" onclick="insertPrefix('listary:')" title="直通本地 Listary 极速全盘文件检索"><b>🔍</b> Listary</span>
 	      <span class="intent-chip" onclick="insertPrefix('zotero:')" title="唤起本地 Zotero 学术文献管理库"><b>📖</b> Zotero</span>
-		      <span class="intent-chip" onclick="insertPrefix('bm:')" title="输入 bm: 穿透检索 Edge/Chrome 本地浏览器书签与收藏夹"><b>🔖</b> 浏览器书签</span>
-		      <span class="intent-chip" onclick="insertPrefix('vault:')" title="输入 vault: 穿透检索外部 Markdown 知识库与本地目录"><b>🗄️</b> 外部库</span>
+			      <span class="intent-chip" onclick="insertPrefix('bm:')" title="输入 bm: 穿透检索 Edge/Chrome 本地浏览器书签与收藏夹"><b>🔖</b> 浏览器书签</span>
+			      <span class="intent-chip" onclick="insertPrefix('fav:')" title="输入 fav: 打开全景网站收藏中枢，跨浏览器统一秒搜、一键收录并沉淀至思源专属文档"><b>🌐</b> 网站收藏</span>
+			      <span class="intent-chip" onclick="insertPrefix('fold:')" title="输入 fold: 打开本地文件夹导航中枢，支持 #32770 对话框原位穿透与思源工程锚定"><b>📂</b> 文件夹导航</span>
+			      <span class="intent-chip" onclick="insertPrefix('vault:')" title="输入 vault: 穿透检索外部 Markdown 知识库与本地目录"><b>🗄️</b> 外部库</span>
 	      <span class="intent-chip" onclick="insertPrefix('tab:')" title="输入 tab: 检索全库数据表格，支持排版美化与1键导出Excel"><b>📊</b> 表格透视</span>
 	      <span class="intent-chip" onclick="insertPrefix('av:')" title="输入 av: 检索思源属性视图数据库并单行直投"><b>av:</b> 数据库</span>
       <span class="intent-chip" onclick="insertPrefix('p:')" title="输入 p: 穿透检索全部已装社区插件"><b>p:</b> 插件</span>
@@ -4032,6 +4034,12 @@
       } else if (q.startsWith("c:") || q.startsWith("c：") || q.startsWith("clip:") || q.startsWith("clip：")) {
         banner.style.display = "flex";
         banner.innerHTML = `<div><span class="intent-tag">📋 剪贴板历史</span>检索最近复制并结构化清洗的 15 条剪贴板快照</div><span style="font-size: 10px; opacity: 0.8;">↵ 入日记 · Shift+↵ 贴光标</span>`;
+      } else if (q.startsWith("fav:") || q.startsWith("fav：") || q.startsWith("url:") || q.startsWith("url：")) {
+        banner.style.display = "flex";
+        banner.innerHTML = `<div><span class="intent-tag">🌐 网站收藏中枢</span>跨浏览器统一收藏，回车直达或一键收录当前前台网址，沉淀至思源</div><span style="font-size: 10px; opacity: 0.8;">↵ 打开 · Shift+↵ 贴超链</span>`;
+      } else if (q.startsWith("fold:") || q.startsWith("fold：") || q.startsWith("folder:") || q.startsWith("folder：")) {
+        banner.style.display = "flex";
+        banner.innerHTML = `<div><span class="intent-tag">📂 文件夹导航中枢</span>系统级目录收藏与 #32770 对话框穿透，回车原位秒跳或资源管理器秒开</div><span style="font-size: 10px; opacity: 0.8;">↵ 穿透秒跳 · Shift+↵ 贴路径</span>`;
       } else {
         banner.style.display = "none";
       }
@@ -4172,6 +4180,30 @@
         const subKw = q.replace(/^(bm:|bm：|book:|book：)/, "").trim();
         if (window.chrome && window.chrome.webview) {
           window.chrome.webview.postMessage(JSON.stringify({ op: 'searchBrowserBookmarks', keyword: subKw }));
+        } else {
+          filteredItems = [];
+          renderItems();
+        }
+        return;
+      }
+
+      // fav: 或 url: 模式：全景网站收藏夹中枢
+      if (q.startsWith("fav:") || q.startsWith("fav：") || q.startsWith("url:") || q.startsWith("url：")) {
+        const subKw = q.replace(/^(fav:|fav：|url:|url：)/, "").trim();
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'searchWebBookmarks', keyword: subKw }));
+        } else {
+          filteredItems = [];
+          renderItems();
+        }
+        return;
+      }
+
+      // fold: 或 folder: 模式：本地文件夹导航与对话框穿透中枢
+      if (q.startsWith("fold:") || q.startsWith("fold：") || q.startsWith("folder:") || q.startsWith("folder：")) {
+        const subKw = q.replace(/^(fold:|fold：|folder:|folder：)/, "").trim();
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'searchFolderBookmarks', keyword: subKw }));
         } else {
           filteredItems = [];
           renderItems();
@@ -8057,6 +8089,287 @@
         showToast("✓ 书签已剪藏存入今日日记！");
       }
     }
+
+    // ==========================================================
+    // 网站收藏中枢 (WebBookmarkHub) 交互管线
+    // ==========================================================
+    window.onWebBookmarksLoaded = function(res) {
+      if (!res || !Array.isArray(res.data)) return;
+      const bms = res.data;
+      const items = [];
+
+      items.push({
+        id: "action_capture_browser_url",
+        group: "search",
+        title: "⚡ [一键收藏] 嗅探前台浏览器网址并入库",
+        desc: "自动嗅探 Edge/Chrome 当前活动标签页标题与网址，智能脱敏净化并持久化至思源专属文档",
+        hotkey: "Ctrl+N",
+        iconType: "globe",
+        iconColor: "var(--indigo-light)",
+        badge: "一键收录",
+        badgeCls: "badge-native",
+        action: () => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({ op: 'captureActiveBrowserUrl' }));
+          }
+        }
+      });
+
+      for (const b of bms) {
+        items.push({
+          id: `fav_${b.Id}`,
+          group: "search",
+          title: `🌐 ${escapeHtml(b.Title || b.CleanUrl)}`,
+          desc: `🏷️ ${escapeHtml(b.Category || '常用')}${b.Tags ? ' · #' + escapeHtml(b.Tags) : ''} · 🔗 ${escapeHtml(b.CleanUrl || b.Url)} · 频次: ${b.VisitCount || 1}`,
+          hotkey: "Enter",
+          iconType: "compass",
+          iconColor: "var(--cyber-sky)",
+          badge: b.Category || "常用",
+          badgeCls: "badge-bridge",
+          favData: b,
+          action: () => {
+            inspectWebBookmarkItem(b);
+          }
+        });
+      }
+
+      filteredItems = items;
+      selectedIndex = 0;
+      renderItems();
+      if (filteredItems.length > 1) {
+        inspectWebBookmarkItem(filteredItems[1].favData);
+      }
+    };
+
+    function inspectWebBookmarkItem(b) {
+      if (!b) return;
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+
+      const mdLink = `[${b.Title}](${b.CleanUrl || b.Url})`;
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">🌐 全景网站收藏中枢</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${escapeHtml(b.Category || '常用')}</span>
+            ${b.Tags ? `<span class="breadcrumb-sep">/</span><span class="breadcrumb-crumb">#${escapeHtml(b.Tags)}</span>` : ''}
+          </div>
+          <div class="inspector-doc-title">🌐 ${escapeHtml(b.Title)}</div>
+        </div>
+        <div class="inspector-body" style="padding: 14px; max-height: 420px; overflow-y: auto;">
+          <div style="font-size: 11px; padding: 10px 14px; background: rgba(56,189,248,0.08); border-radius: 8px; border: 1px dashed var(--border-hairline); margin-bottom: 12px; line-height: 1.7;">
+            <div>🔗 <b>标准净化网址</b>: <code style="word-break: break-all; color: var(--cyber-sky);">${escapeHtml(b.CleanUrl || b.Url)}</code></div>
+            <div>📂 <b>所属分类</b>: <span class="badge-native">${escapeHtml(b.Category || '常用')}</span> ${b.Shortcut ? `· 简码: <code>${escapeHtml(b.Shortcut)}</code>` : ''} · 访问频次: <b>${b.VisitCount || 1} 次</b></div>
+            ${b.Notes ? `<div style="margin-top: 4px;">📝 <b>备忘备注</b>: ${escapeHtml(b.Notes)}</div>` : ''}
+            <div style="margin-top: 4px; color: var(--text-muted);">💾 <b>存储终态</b>: 思源原生文档 <code>/收藏夹/网站导航</code></div>
+          </div>
+          <div style="padding: 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-hairline); border-radius: 6px;">
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Markdown 双链超链接语法:</div>
+            <code style="display: block; font-size: 12px; color: var(--emerald-mint); word-break: break-all;">${escapeHtml(mdLink)}</code>
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="openWebBookmarkUrl('${escapeQuote(b.CleanUrl || b.Url)}')" title="调起默认浏览器秒开访问此网址">🚀 浏览器秒开</button>
+            <button class="inspector-dock-btn" onclick="pasteAtCursor('${escapeQuote(mdLink)}')" title="在外部活动光标处原位粘贴标准 Markdown 超链接 (Shift+Enter)">⚡ Shift+↵ 贴超链</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(b.CleanUrl || b.Url)}', '网址已复制！')">📋 复制网址</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(mdLink)}', '超链接已复制！')">📝 复制MD超链</button>
+            <button class="inspector-dock-btn" onclick="appendBookmarkToDaily('${escapeQuote(b.Title)}', '${escapeQuote(b.CleanUrl || b.Url)}')" title="直接剪藏存入今日日记">📥 存入日记</button>
+            <button class="inspector-dock-btn danger" onclick="deleteWebBookmarkById('${escapeQuote(b.Id)}')" style="color: var(--rose-agent); border-color: rgba(244,63,94,0.3);" title="从思源收藏文档及本地缓存中物理移除">🗑️ 移除收藏</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function openWebBookmarkUrl(url) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'openWebBookmark', url: url }));
+      } else {
+        window.open(url, "_blank");
+      }
+    }
+
+    function deleteWebBookmarkById(id) {
+      if (!confirm("确定从思源网站收藏中移除此项吗？")) return;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'deleteWebBookmark', id: id }));
+      }
+    }
+
+    window.onWebBookmarkDeleted = function(res) {
+      if (res && res.success) {
+        showToast("✓ 网站收藏已成功移除！");
+        insertPrefix('fav:');
+      }
+    };
+
+    window.onActiveBrowserUrlCaptured = function(res) {
+      if (!res || !res.url) {
+        showToast("⚠️ 未能探测到前台浏览器的有效网址，请确保浏览器处于活动状态。");
+        return;
+      }
+      const title = prompt("请输入收藏标题:", res.title || res.url);
+      if (!title) return;
+      const cat = prompt("请输入分类 (常用/开发/学术/设计/工具/生活):", "常用") || "常用";
+      const tags = prompt("请输入标签 (逗号分隔，可选):", "") || "";
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'saveWebBookmark',
+          title: title,
+          url: res.url,
+          category: cat,
+          tags: tags,
+          notes: `由 ${res.app || '浏览器'} 一键收录`
+        }));
+      }
+    };
+
+    window.onWebBookmarkSaved = function(res) {
+      if (res && res.success) {
+        showToast("🎉 网站已成功沉淀至思源专属文档与本地缓存！");
+        insertPrefix('fav:');
+      }
+    };
+
+    // ==========================================================
+    // 本地文件夹导航与穿透中枢 (FolderBookmarkHub) 交互管线
+    // ==========================================================
+    window.onFolderBookmarksLoaded = function(res) {
+      if (!res || !Array.isArray(res.data)) return;
+      const folders = res.data;
+      const items = [];
+
+      items.push({
+        id: "action_capture_explorer_folder",
+        group: "search",
+        title: "⚡ [一键收藏] 嗅探前台资源管理器目录并入库",
+        desc: "自动嗅探当前前台打开的文件资源管理器或对话框路径，快速登记别名并沉淀至思源导航中枢",
+        hotkey: "Ctrl+F",
+        iconType: "folder",
+        iconColor: "var(--emerald-mint)",
+        badge: "一键收录",
+        badgeCls: "badge-native",
+        action: () => {
+          if (window.chrome && window.chrome.webview) {
+            window.chrome.webview.postMessage(JSON.stringify({ op: 'captureActiveExplorerFolder' }));
+          }
+        }
+      });
+
+      for (const f of folders) {
+        items.push({
+          id: `fold_${f.Id}`,
+          group: "search",
+          title: `📂 ${escapeHtml(f.Alias || f.Path)}`,
+          desc: `${f.IsValid ? '🟢 有效' : '🔴 路径不存在'} · 📁 ${escapeHtml(f.Path)}${f.SiyuanDocTitle ? ' · 🔗 关联: ' + escapeHtml(f.SiyuanDocTitle) : ''} · 频次: ${f.AccessCount || 1}`,
+          hotkey: "Enter",
+          iconType: "folder",
+          iconColor: f.IsValid ? "var(--emerald-mint)" : "var(--rose-agent)",
+          badge: f.IsValid ? "有效路径" : "已失效",
+          badgeCls: f.IsValid ? "badge-native" : "badge-stale",
+          folderData: f,
+          action: () => {
+            inspectFolderBookmarkItem(f);
+          }
+        });
+      }
+
+      filteredItems = items;
+      selectedIndex = 0;
+      renderItems();
+      if (filteredItems.length > 1) {
+        inspectFolderBookmarkItem(filteredItems[1].folderData);
+      }
+    };
+
+    function inspectFolderBookmarkItem(f) {
+      if (!f) return;
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">📂 本地文件夹导航中枢</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">${escapeHtml(f.Alias)}</span>
+          </div>
+          <div class="inspector-doc-title">📂 ${escapeHtml(f.Alias)}</div>
+        </div>
+        <div class="inspector-body" style="padding: 14px; max-height: 420px; overflow-y: auto;">
+          <div style="font-size: 11px; padding: 10px 14px; background: rgba(16,185,129,0.08); border-radius: 8px; border: 1px dashed var(--border-hairline); margin-bottom: 12px; line-height: 1.7;">
+            <div>📁 <b>物理路径</b>: <code style="word-break: break-all; color: var(--emerald-mint);">${escapeHtml(f.Path)}</code></div>
+            <div>🩺 <b>健康状态</b>: <span class="${f.IsValid ? 'badge-native' : 'badge-stale'}">${f.IsValid ? '✓ 物理路径存在' : '⚠️ 路径不存在或磁盘未挂载'}</span> ${f.Shortcut ? `· 简码: <code>${escapeHtml(f.Shortcut)}</code>` : ''} · 访问频次: <b>${f.AccessCount || 1} 次</b></div>
+            ${f.SiyuanDocTitle ? `<div style="margin-top: 4px;">🔗 <b>关联思源工程</b>: <a href="javascript:void(0)" onclick="openBlockById('${f.SiyuanDocId}')" style="color: var(--cyber-sky); text-decoration: underline;">《${escapeHtml(f.SiyuanDocTitle)}》</a></div>` : ''}
+            <div style="margin-top: 4px; color: var(--text-muted);">💾 <b>存储终态</b>: 思源原生文档 <code>/资源/文件夹导航</code></div>
+          </div>
+          <div style="padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 11.5px; color: var(--text-secondary); line-height: 1.5;">
+            💡 <b>Listary 穿透黑科技</b>: 若当前外部前台是 Windows 打开/保存文件窗口 (#32770)，点击下方【穿透秒跳】将直接在对话框中秒开此目录！
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="navigateFolderBookmarkPath('${escapeQuote(f.Path)}')" title="前台若是文件对话框则原位穿透秒跳，否则调起资源管理器">🚀 对话框原位穿透 / 秒开</button>
+            <button class="inspector-dock-btn" onclick="pasteAtCursor('${escapeQuote(f.Path)}')" title="在外部活动光标处原位粘贴物理路径 (Shift+Enter)">⚡ Shift+↵ 贴路径</button>
+            <button class="inspector-dock-btn" onclick="copyToClipboard('${escapeQuote(f.Path)}', '文件夹路径已复制！')">📋 复制路径</button>
+            ${f.SiyuanDocId ? `<button class="inspector-dock-btn" onclick="openBlockById('${escapeQuote(f.SiyuanDocId)}')" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="一键直达关联的思源项目文档">🔗 打开思源文档</button>` : ''}
+            <button class="inspector-dock-btn danger" onclick="deleteFolderBookmarkById('${escapeQuote(f.Id)}')" style="color: var(--rose-agent); border-color: rgba(244,63,94,0.3);" title="从导航中枢及思源文档中删除">🗑️ 移除导航</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function navigateFolderBookmarkPath(path) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'navigateFolderBookmark', path: path }));
+      }
+    }
+
+    function deleteFolderBookmarkById(id) {
+      if (!confirm("确定移除此文件夹收藏吗？")) return;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'deleteFolderBookmark', id: id }));
+      }
+    }
+
+    window.onFolderBookmarkDeleted = function(res) {
+      if (res && res.success) {
+        showToast("✓ 文件夹导航已成功移除！");
+        insertPrefix('fold:');
+      }
+    };
+
+    window.onActiveExplorerFolderCaptured = function(res) {
+      if (!res || !res.path) {
+        const manualPath = prompt("未检测到前台打开的资源管理器窗口，请输入物理文件夹路径:", "D:\\");
+        if (!manualPath) return;
+        res = { path: manualPath, alias: manualPath.split(/[\\\\/]/).pop() || manualPath };
+      }
+      const alias = prompt("请输入文件夹别名/工程名:", res.alias || res.path);
+      if (!alias) return;
+      const shortcut = prompt("请输入快捷简码 (可选，例如 prj/work):", "") || "";
+      const docTitle = prompt("关联思源工程文档名称 (可选):", "") || "";
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'saveFolderBookmark',
+          path: res.path,
+          alias: alias,
+          shortcut: shortcut,
+          siyuanDocTitle: docTitle
+        }));
+      }
+    };
+
+    window.onFolderBookmarkSaved = function(res) {
+      if (res && res.success) {
+        showToast("🎉 文件夹导航已成功沉淀至思源专属文档与本地缓存！");
+        insertPrefix('fold:');
+      }
+    };
 
     window.onClipboardMerged = function(res) {
       if (!res || !res.markdown) return;

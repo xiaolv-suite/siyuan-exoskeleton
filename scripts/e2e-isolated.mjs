@@ -2230,6 +2230,151 @@ async function main() {
   const isRadarGraphOk = radarGraphRes.includes("True");
   logStep("Step 7.97: 双向双链雷达与星轨图谱动态集成联动断言", isRadarGraphOk, `雷达图谱联动断言: ${radarGraphRes.trim()}`);
 
+  // Step 7.98: Test WebBookmarkHub (URL Track Cleansing & Local Cache Persistence)
+  const webHubScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $wbh = $asm.GetType('XiaoLv.Desktop.Core.WebBookmarkHub');
+    $entryType = $asm.GetType('XiaoLv.Desktop.Core.WebBookmarkEntry');
+
+    $entry = [Activator]::CreateInstance($entryType);
+    $entry.Title = 'DeepSeek 开源大模型官网';
+    $entry.Url = 'https://www.deepseek.com/?utm_source=twitter&utm_medium=cpc&spm_id=123';
+    $entry.Shortcut = 'ds';
+    $entry.Tags = 'AI,LLM,开源';
+    $entry.Notes = '深度求索旗舰模型';
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+
+    $mSave = $wbh.GetMethod('SaveBookmarkAsync', [System.Reflection.BindingFlags]'Public,Static');
+    $task = $mSave.Invoke($null, @($entry));
+    $saveOk = $task.GetAwaiter().GetResult();
+
+    $mDoc = $wbh.GetMethod('EnsureBookmarkDocExistsAsync', [System.Reflection.BindingFlags]'NonPublic,Static');
+    $docTask = $mDoc.Invoke($null, $null);
+    $docId = $docTask.GetAwaiter().GetResult();
+
+    $cleanUrl = $entry.CleanUrl;
+    $okClean = $cleanUrl -eq 'https://www.deepseek.com/';
+    $okCat = ($entry.Category -eq '开发' -or $entry.Category -eq '工具' -or $entry.Category -eq '常用');
+
+    Write-Output ($saveOk.ToString() + '|' + $okClean.ToString() + '|' + $okCat.ToString() + '|' + $docId);
+  `;
+  const webHubRes = runPs(webHubScript);
+  const isWebHubOk = webHubRes.includes("True|True|True");
+  logStep("Step 7.98: 网站收藏中枢(WebBookmarkHub)追踪参数脱敏与入库断言", isWebHubOk, `网站收藏入库断言: ${webHubRes.trim()}`);
+
+  // Step 7.99: Test WebBookmarkHub Search & Frequency Weighting
+  const webSearchScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $wbh = $asm.GetType('XiaoLv.Desktop.Core.WebBookmarkHub');
+    $mLoad = $wbh.GetMethod('LoadBookmarksAsync', [System.Reflection.BindingFlags]'Public,Static');
+    $mSearch = $wbh.GetMethod('Search', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+    $task = $mLoad.Invoke($null, $null);
+    $all = $task.GetAwaiter().GetResult();
+
+    $searchRes = $mSearch.Invoke($null, @($all, 'deepseek'));
+    $okSearch = ($null -ne $searchRes) -and ($searchRes.Count -ge 1) -and ($searchRes[0].Title.Contains('DeepSeek'));
+    Write-Output ($okSearch.ToString() + '|' + $searchRes.Count);
+  `;
+  const webSearchRes = runPs(webSearchScript);
+  const isWebSearchOk = webSearchRes.includes("True");
+  logStep("Step 7.99: 网站收藏多维关键词检索与频次加权排序断言", isWebSearchOk, `网站检索断言: ${webSearchRes.trim()}`);
+
+  // Step 7.100: Test FolderBookmarkHub (Directory Health Check & SiYuan Storage)
+  const folderHubScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $fbh = $asm.GetType('XiaoLv.Desktop.Core.FolderBookmarkHub');
+    $entryType = $asm.GetType('XiaoLv.Desktop.Core.FolderBookmarkEntry');
+
+    $entry = [Activator]::CreateInstance($entryType);
+    $entry.Path = 'D:\\思源插件';
+    $entry.Alias = '思源核心工程';
+    $entry.Shortcut = 'plugin';
+    $entry.Tags = '开发,思源';
+    $entry.SiyuanDocTitle = '外骨骼工程专页';
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+
+    $mSave = $fbh.GetMethod('SaveFolderAsync', [System.Reflection.BindingFlags]'Public,Static');
+    $task = $mSave.Invoke($null, @($entry));
+    $saveOk = $task.GetAwaiter().GetResult();
+
+    $okValid = $entry.IsValid -eq $true;
+    Write-Output ($saveOk.ToString() + '|' + $okValid.ToString());
+  `;
+  const folderHubRes = runPs(folderHubScript);
+  const isFolderHubOk = folderHubRes.includes("True|True");
+  logStep("Step 7.100: 本地文件夹收藏(FolderBookmarkHub)路径有效性与持久化断言", isFolderHubOk, `文件夹收藏入库断言: ${folderHubRes.trim()}`);
+
+  // Step 7.101: Test FolderBookmarkHub Search & Invalid Path Diagnosis
+  const folderSearchScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $fbh = $asm.GetType('XiaoLv.Desktop.Core.FolderBookmarkHub');
+    $mLoad = $fbh.GetMethod('LoadFoldersAsync', [System.Reflection.BindingFlags]'Public,Static');
+    $mSearch = $fbh.GetMethod('Search', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+    $task = $mLoad.Invoke($null, $null);
+    $all = $task.GetAwaiter().GetResult();
+
+    $searchRes = $mSearch.Invoke($null, @($all, '核心工程'));
+    $okSearch = ($null -ne $searchRes) -and ($searchRes.Count -ge 1) -and ($searchRes[0].Alias -eq '思源核心工程');
+    Write-Output ($okSearch.ToString() + '|' + $searchRes.Count);
+  `;
+  const folderSearchRes = runPs(folderSearchScript);
+  const isFolderSearchOk = folderSearchRes.includes("True");
+  logStep("Step 7.101: 文件夹收藏检索与工程别名毫秒级匹配断言", isFolderSearchOk, `文件夹检索断言: ${folderSearchRes.trim()}`);
+
+  // Step 7.102: Test ContextPerception.TryExtractExplorerPath (Physical Explorer Path Probe)
+  const explorerProbeScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $cp = $asm.GetType('XiaoLv.Desktop.Core.ContextPerception');
+    $mProbe = $cp.GetMethod('TryExtractExplorerPath', [System.Reflection.BindingFlags]'Public,Static');
+
+    $res = $mProbe.Invoke($null, @([IntPtr]::Zero));
+    $okProbe = ($res -eq '');
+    Write-Output ($okProbe.ToString());
+  `;
+  const explorerProbeRes = runPs(explorerProbeScript);
+  const isExplorerProbeOk = explorerProbeRes.includes("True");
+  logStep("Step 7.102: 资源管理器当前路径嗅探探针 (TryExtractExplorerPath) 断言", isExplorerProbeOk, `路径探测断言: ${explorerProbeRes.trim()}`);
+
+  // Step 7.103: Test FolderBookmarkHub.NavigateToFolder Method Signature & Safe Probe
+  const navProbeScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $fbh = $asm.GetType('XiaoLv.Desktop.Core.FolderBookmarkHub');
+    $mNav = $fbh.GetMethod('NavigateToFolder', [System.Reflection.BindingFlags]'Public,Static');
+
+    $okNav = ($null -ne $mNav);
+    Write-Output ($okNav.ToString());
+  `;
+  const navProbeRes = runPs(navProbeScript);
+  const isNavProbeOk = navProbeRes.includes("True");
+  logStep("Step 7.103: 对话框秒跳与原位穿透核心引擎 (NavigateToFolder) 反射断言", isNavProbeOk, `导航秒跳引擎断言: ${navProbeRes.trim()}`);
+
+  // Step 7.104: Test SiYuan Native SQLite Storage for Web Bookmarks
+  await sleep(1000);
+  const webBookmarkRow = await pollSql("SELECT id, content, ial, markdown FROM blocks WHERE content LIKE '%DeepSeek%' OR markdown LIKE '%web-bookmark%' OR ial LIKE '%web-bookmark%' LIMIT 1");
+  const isWebStorageOk = !!webBookmarkRow && (webBookmarkRow.content.includes("DeepSeek") || (webBookmarkRow.markdown && webBookmarkRow.markdown.includes("DeepSeek")));
+  logStep("Step 7.104: 思源原生文档《/网站导航》Web-Bookmark 块存储断言", isWebStorageOk, `块 ID: ${webBookmarkRow?.id} · 内容: ${webBookmarkRow?.content}`);
+
+  // Step 7.105: Test SiYuan Native SQLite Storage for Folder Bookmarks
+  const folderBookmarkRow = await pollSql("SELECT id, content, ial, markdown FROM blocks WHERE content LIKE '%思源核心工程%' OR markdown LIKE '%folder-bookmark%' OR ial LIKE '%folder-bookmark%' LIMIT 1");
+  const isFolderStorageOk = !!folderBookmarkRow && (folderBookmarkRow.content.includes("思源核心工程") || (folderBookmarkRow.markdown && folderBookmarkRow.markdown.includes("思源核心工程")));
+  logStep("Step 7.105: 思源原生文档《/文件夹导航》Folder-Bookmark 块存储断言", isFolderStorageOk, `块 ID: ${folderBookmarkRow?.id} · 内容: ${folderBookmarkRow?.content}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

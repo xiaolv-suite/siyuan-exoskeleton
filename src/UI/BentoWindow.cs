@@ -1047,16 +1047,236 @@ namespace XiaoLv.Desktop.UI
 								                    string text = JsonHelper.GetString(msg, "text");
 								                    int maskedCount = 0;
 								                    string sanitized = PrivacySanitizer.SanitizeText(text, out maskedCount);
-								                    if (_webView != null && _webView.CoreWebView2 != null)
-								                    {
-								                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onPrivacySanitized) window.onPrivacySanitized(" + JsonHelper.ToJson(new { code = 0, text = sanitized, count = maskedCount }) + ");");
-								                    }
-								                    if (maskedCount > 0 && OnNotificationRequested != null)
-								                    {
-								                        OnNotificationRequested("隐私脱敏盾牌", string.Format("✓ 已成功脱敏 {0} 处敏感凭据/信息！", maskedCount));
-								                    }
-								                    return;
-								                }
+									                    if (_webView != null && _webView.CoreWebView2 != null)
+									                    {
+									                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onPrivacySanitized) window.onPrivacySanitized(" + JsonHelper.ToJson(new { code = 0, text = sanitized, count = maskedCount }) + ");");
+									                    }
+									                    if (maskedCount > 0 && OnNotificationRequested != null)
+									                    {
+									                        OnNotificationRequested("隐私脱敏盾牌", string.Format("✓ 已成功脱敏 {0} 处敏感凭据/信息！", maskedCount));
+									                    }
+									                    return;
+									                }
+
+									                // 3.69 网站收藏中枢检索与管理 (fav: / url:)
+									                if (op.Equals("searchWebBookmarks", StringComparison.OrdinalIgnoreCase))
+									                {
+									                    string kw = JsonHelper.GetString(msg, "keyword");
+									                    ThreadPool.QueueUserWorkItem(async s =>
+									                    {
+									                        try
+									                        {
+									                            var all = await WebBookmarkHub.LoadBookmarksAsync();
+									                            var filtered = WebBookmarkHub.Search(all, kw);
+									                            Dispatcher.Invoke(() =>
+									                            {
+									                                if (_webView != null && _webView.CoreWebView2 != null)
+									                                {
+									                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onWebBookmarksLoaded) window.onWebBookmarksLoaded(" + JsonHelper.ToJson(new { code = 0, data = filtered }) + ");");
+									                                }
+									                            });
+									                        }
+									                        catch { }
+									                    });
+									                    return;
+									                }
+
+									                if (op.Equals("saveWebBookmark", StringComparison.OrdinalIgnoreCase))
+									                {
+									                    var entry = new WebBookmarkEntry
+									                    {
+									                        Title = JsonHelper.GetString(msg, "title"),
+									                        Url = JsonHelper.GetString(msg, "url"),
+									                        Category = JsonHelper.GetString(msg, "category", "常用"),
+									                        Tags = JsonHelper.GetString(msg, "tags"),
+									                        Shortcut = JsonHelper.GetString(msg, "shortcut"),
+									                        Notes = JsonHelper.GetString(msg, "notes")
+									                    };
+									                    ThreadPool.QueueUserWorkItem(async s =>
+									                    {
+									                        try
+									                        {
+									                            bool ok = await WebBookmarkHub.SaveBookmarkAsync(entry);
+									                            Dispatcher.Invoke(() =>
+									                            {
+									                                if (_webView != null && _webView.CoreWebView2 != null)
+									                                {
+									                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onWebBookmarkSaved) window.onWebBookmarkSaved(" + JsonHelper.ToJson(new { code = 0, success = ok }) + ");");
+									                                }
+									                            });
+									                            if (ok && OnNotificationRequested != null)
+									                            {
+									                                OnNotificationRequested("网站收藏中枢", "✓ 网址【" + entry.Title + "】已沉淀至思源专属文档与本地缓存！");
+									                            }
+									                        }
+									                        catch { }
+									                    });
+									                    return;
+									                }
+
+									                if (op.Equals("deleteWebBookmark", StringComparison.OrdinalIgnoreCase))
+									                {
+									                    string bId = JsonHelper.GetString(msg, "id");
+									                    ThreadPool.QueueUserWorkItem(async s =>
+									                    {
+									                        try
+									                        {
+									                            bool ok = await WebBookmarkHub.DeleteBookmarkAsync(bId);
+									                            Dispatcher.Invoke(() =>
+									                            {
+									                                if (_webView != null && _webView.CoreWebView2 != null)
+									                                {
+									                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onWebBookmarkDeleted) window.onWebBookmarkDeleted(" + JsonHelper.ToJson(new { code = 0, success = ok, id = bId }) + ");");
+									                                }
+									                            });
+									                        }
+									                        catch { }
+									                    });
+									                    return;
+									                }
+
+									                if (op.Equals("captureActiveBrowserUrl", StringComparison.OrdinalIgnoreCase))
+									                {
+									                    ThreadPool.QueueUserWorkItem(s =>
+									                    {
+									                        try
+									                        {
+									                            var snap = ContextPerception.CaptureForegroundContext(LastExternalForegroundHwnd);
+									                            Dispatcher.Invoke(() =>
+									                            {
+									                                if (_webView != null && _webView.CoreWebView2 != null)
+									                                {
+									                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onActiveBrowserUrlCaptured) window.onActiveBrowserUrlCaptured(" + JsonHelper.ToJson(new { code = 0, title = snap.CleanTitle, url = snap.Url, app = snap.AppDisplayName }) + ");");
+									                                }
+									                            });
+									                        }
+									                        catch { }
+									                    });
+									                    return;
+									                }
+
+									                if (op.Equals("openWebBookmark", StringComparison.OrdinalIgnoreCase))
+									                {
+									                    string targetUrl = JsonHelper.GetString(msg, "url");
+									                    if (!string.IsNullOrEmpty(targetUrl))
+									                    {
+									                        try
+									                        {
+									                            Process.Start(new ProcessStartInfo(targetUrl) { UseShellExecute = true });
+									                            Hide();
+									                        }
+									                        catch { }
+									                    }
+									                    return;
+									                }
+
+									                // 3.70 本地文件夹收藏与对话框穿透秒跳 (fold: / dir: / f:)
+									                if (op.Equals("searchFolderBookmarks", StringComparison.OrdinalIgnoreCase))
+									                {
+									                    string kw = JsonHelper.GetString(msg, "keyword");
+									                    ThreadPool.QueueUserWorkItem(async s =>
+									                    {
+									                        try
+									                        {
+									                            var all = await FolderBookmarkHub.LoadFoldersAsync();
+									                            var filtered = FolderBookmarkHub.Search(all, kw);
+									                            Dispatcher.Invoke(() =>
+									                            {
+									                                if (_webView != null && _webView.CoreWebView2 != null)
+									                                {
+									                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onFolderBookmarksLoaded) window.onFolderBookmarksLoaded(" + JsonHelper.ToJson(new { code = 0, data = filtered }) + ");");
+									                                }
+									                            });
+									                        }
+									                        catch { }
+									                    });
+									                    return;
+									                }
+
+									                if (op.Equals("saveFolderBookmark", StringComparison.OrdinalIgnoreCase))
+									                {
+									                    var entry = new FolderBookmarkEntry
+									                    {
+									                        Path = JsonHelper.GetString(msg, "path"),
+									                        Alias = JsonHelper.GetString(msg, "alias"),
+									                        Shortcut = JsonHelper.GetString(msg, "shortcut"),
+									                        Tags = JsonHelper.GetString(msg, "tags"),
+									                        SiyuanDocId = JsonHelper.GetString(msg, "siyuanDocId"),
+									                        SiyuanDocTitle = JsonHelper.GetString(msg, "siyuanDocTitle")
+									                    };
+									                    ThreadPool.QueueUserWorkItem(async s =>
+									                    {
+									                        try
+									                        {
+									                            bool ok = await FolderBookmarkHub.SaveFolderAsync(entry);
+									                            Dispatcher.Invoke(() =>
+									                            {
+									                                if (_webView != null && _webView.CoreWebView2 != null)
+									                                {
+									                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onFolderBookmarkSaved) window.onFolderBookmarkSaved(" + JsonHelper.ToJson(new { code = 0, success = ok }) + ");");
+									                                }
+									                            });
+									                            if (ok && OnNotificationRequested != null)
+									                            {
+									                                OnNotificationRequested("文件夹导航中枢", "✓ 目录【" + entry.Alias + "】已沉淀至思源导航文档与本地缓存！");
+									                            }
+									                        }
+									                        catch { }
+									                    });
+									                    return;
+									                }
+
+									                if (op.Equals("deleteFolderBookmark", StringComparison.OrdinalIgnoreCase))
+									                {
+									                    string fId = JsonHelper.GetString(msg, "id");
+									                    ThreadPool.QueueUserWorkItem(async s =>
+									                    {
+									                        try
+									                        {
+									                            bool ok = await FolderBookmarkHub.DeleteFolderAsync(fId);
+									                            Dispatcher.Invoke(() =>
+									                            {
+									                                if (_webView != null && _webView.CoreWebView2 != null)
+									                                {
+									                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onFolderBookmarkDeleted) window.onFolderBookmarkDeleted(" + JsonHelper.ToJson(new { code = 0, success = ok, id = fId }) + ");");
+									                                }
+									                            });
+									                        }
+									                        catch { }
+									                    });
+									                    return;
+									                }
+
+									                if (op.Equals("captureActiveExplorerFolder", StringComparison.OrdinalIgnoreCase))
+									                {
+									                    ThreadPool.QueueUserWorkItem(s =>
+									                    {
+									                        try
+									                        {
+									                            string folder = ContextPerception.TryExtractExplorerPath(LastExternalForegroundHwnd);
+									                            Dispatcher.Invoke(() =>
+									                            {
+									                                if (_webView != null && _webView.CoreWebView2 != null)
+									                                {
+									                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onActiveExplorerFolderCaptured) window.onActiveExplorerFolderCaptured(" + JsonHelper.ToJson(new { code = 0, path = folder, alias = Path.GetFileName(folder) }) + ");");
+									                                }
+									                            });
+									                        }
+									                        catch { }
+									                    });
+									                    return;
+									                }
+
+									                if (op.Equals("navigateFolderBookmark", StringComparison.OrdinalIgnoreCase))
+									                {
+									                    string targetPath = JsonHelper.GetString(msg, "path");
+									                    if (!string.IsNullOrEmpty(targetPath))
+									                    {
+									                        Hide();
+									                        FolderBookmarkHub.NavigateToFolder(targetPath, LastExternalForegroundHwnd);
+									                    }
+									                    return;
+									                }
 
 				                // 3.5 全库文档毫秒级全局检索 (d: / doc: 语法，突破内存前20篇限制)
                 if (op.Equals("searchDocs", StringComparison.OrdinalIgnoreCase))

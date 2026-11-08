@@ -480,5 +480,58 @@ namespace XiaoLv.Desktop.Core
 
             return url;
         }
+
+        /// <summary>
+        /// 嗅探指定窗口 (特别是资源管理器窗口) 的当前物理文件夹路径
+        /// </summary>
+        public static string TryExtractExplorerPath(IntPtr hwnd)
+        {
+            if (hwnd == IntPtr.Zero) return "";
+
+            // 1. 尝试直接从窗口标题探测物理路径
+            try
+            {
+                var sb = new StringBuilder(512);
+                GetWindowText(hwnd, sb, 512);
+                string title = sb.ToString().Trim();
+                if (!string.IsNullOrEmpty(title) && Directory.Exists(title))
+                {
+                    return title;
+                }
+            }
+            catch { }
+
+            // 2. 尝试利用 Windows Shell.Application COM 晚绑定枚举资源管理器窗口匹配 HWND
+            try
+            {
+                Type shellType = Type.GetTypeFromProgID("Shell.Application");
+                if (shellType != null)
+                {
+                    dynamic shell = Activator.CreateInstance(shellType);
+                    dynamic windows = shell.Windows();
+                    int count = windows.Count;
+                    for (int i = 0; i < count; i++)
+                    {
+                        try
+                        {
+                            dynamic w = windows.Item(i);
+                            if (w != null && ((long)w.HWND == (long)hwnd))
+                            {
+                                string url = (string)w.LocationURL;
+                                if (!string.IsNullOrEmpty(url) && url.StartsWith("file:///", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    string localPath = new Uri(url).LocalPath;
+                                    if (Directory.Exists(localPath)) return localPath;
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch { }
+
+            return "";
+        }
     }
 }

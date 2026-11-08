@@ -203,7 +203,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 24px;
+      padding: 10px 18px;
+      gap: 12px;
       border-bottom: 1px solid var(--border-hairline);
       background: var(--bg-surface);
       backdrop-filter: blur(16px);
@@ -211,7 +212,9 @@
     .brand-wrap {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
     .brand-logo {
       width: 34px;
@@ -252,12 +255,14 @@
       height: 28px;
     }
     .brand-title {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .brand-pill {
       font-size: 10px;
@@ -268,29 +273,44 @@
       border: 1px solid rgba(99, 102, 241, 0.35);
       font-family: monospace;
       font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .telemetry-right {
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: flex-end;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
     }
     .telemetry-pills {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 5px;
       font-size: 11px;
       font-family: monospace;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      scrollbar-width: none;
+      min-width: 0;
+    }
+    .telemetry-pills::-webkit-scrollbar {
+      display: none;
     }
     .t-pill {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       color: var(--text-secondary);
       background: var(--key-badge-bg);
-      padding: 4px 10px;
+      padding: 3.5px 8px;
       border-radius: 6px;
       border: 1px solid var(--border-hairline);
+      white-space: nowrap;
+      flex-shrink: 0;
+      line-height: 1.25;
     }
     .dot-live {
       width: 7px;
@@ -312,15 +332,27 @@
       background: var(--key-badge-bg);
       border: 1px solid var(--border-hairline);
       color: var(--text-primary);
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       border-radius: 8px;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 13.5px;
       transition: all 0.2s;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    @media (max-width: 1080px) {
+      .brand-title > span:first-child {
+        max-width: 112px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #telemetry-sync {
+        display: none !important;
+      }
     }
     .theme-toggle-btn:hover {
       border-color: var(--indigo-primary);
@@ -1175,11 +1207,16 @@
       border: 1px solid var(--border-hairline);
       color: var(--text-primary);
       border-radius: var(--radius-sm);
-      padding: 6px 12px;
-      font-size: 12px;
+      padding: 5px 10px;
+      font-size: 11.5px;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
     .pref-btn:hover {
       background: var(--bg-card-hover);
@@ -2462,12 +2499,19 @@
       animation: modalEnter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .timeline-header {
-      padding: 14px 18px;
+      padding: 12px 18px;
       border-bottom: 1px solid var(--border-hairline);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 10px;
       background: var(--key-badge-bg);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .timeline-header > div {
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .timeline-body {
       padding: 16px 18px;
@@ -3338,9 +3382,10 @@
       <span class="intent-chip" onclick="toggleTodayTimeline()" title="无需切入思源，0ms 滑出今日日记记录的全部灵感、待办与笔记"><b>📅</b> 今日时间轴</span>
       <span class="intent-chip" onclick="toggleHeatmapGalleryModal()" title="查看全库 52 周知识心流沉淀大画廊与年轮徽章"><b>🔥</b> 沉淀热力图</span>
       <span class="intent-chip more-chips-toggle" id="toggle-more-chips-btn" onclick="toggleMoreIntentChips()" title="展开/收起全部 36 项扩展语法与专业工作台胶囊"><b>✨</b> 更多指令 (36) ▾</span>
+    </div>
 
-      <!-- 二级折叠指令抽屉 (保持全部 36 项专业胶囊可点击且首屏不拥挤) -->
-      <div class="more-intent-chips-drawer" id="more-intent-chips-drawer">
+    <!-- 二级折叠指令抽屉 (作为独立兄弟块挂载在 quick-intent-chips 下方，保持全部 36 项专业胶囊横向平铺换行且不撑破首屏行容器) -->
+    <div class="more-intent-chips-drawer" id="more-intent-chips-drawer">
         <span class="intent-chip" onclick="insertPrefix('¥')" title="输入 ¥ 快速记录一笔生活账目花销"><b>💰</b> 记账</span>
         <span class="intent-chip" onclick="insertPrefix('~25m')" title="输入 ~ 快速记录一段专注时间流"><b>⏱️</b> 专注</span>
         <span class="intent-chip" onclick="insertPrefix('+water 500ml')" title="快速记录一条习惯打卡"><b>🏃</b> 打卡</span>
@@ -3382,7 +3427,6 @@
         <span class="chip-divider"></span>
         <span class="intent-chip" style="opacity: 0.75; cursor: pointer;" onclick="toggleCheatsheet()" title="查看完整快捷键心流"><b>Alt+1~8</b> 官方直达</span>
       </div>
-    </div>
 
     <div id="intent-banner" class="intent-banner" style="display: none;"></div>
     <div id="pinned-dock" class="pinned-dock" style="display: none;"></div>
@@ -4276,16 +4320,16 @@
       <div class="timeline-header">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 16px;">🗄️</span>
-          <span style="font-weight: 700; font-size: 14px;">外部知识库与 Markdown 目录镜像透视工作台</span>
+          <span style="font-weight: 700; font-size: 14px;">外部知识库与 Markdown 镜像工作台</span>
           <span class="brand-pill" id="vault-modal-count">0 篇文档</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <button class="pref-btn" id="vm-save-disk-btn" onclick="saveCurrentVaultNoteToDisk()" style="font-size: 11px; padding: 3px 10px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.45); font-weight: 700;" title="将右侧画布中编辑后的 Markdown 内容原位写回外部磁盘文件 (Ctrl+S)">💾 保存回外部文件</button>
-          <button class="pref-btn" onclick="promptChangeVaultDirectory()" style="font-size: 11px; padding: 3px 10px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.4);" title="自由更换外部知识库或本地 Markdown 扫描物理目录">📁 更换镜像目录</button>
-          <button class="pref-btn" onclick="refreshVaultMirrorData()" style="font-size: 11px; padding: 3px 10px;" title="重新扫描当前镜像目录">🔄 刷新</button>
-          <button class="pref-btn" onclick="pasteVaultNoteToCaret()" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.4);" title="将当前选中外部文档内容贴入外部活动光标处 (Shift+Enter)">⚡ 穿透直贴</button>
-          <button class="pref-btn" onclick="dumpVaultNoteToDaily()" style="font-size: 11px; padding: 3px 10px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="结构化解析并将当前文档引用存入今日日记">📥 存入日记</button>
-          <button class="pref-btn" onclick="copyVaultNoteMarkdown()" style="font-size: 11px; padding: 3px 10px;" title="复制当前文档 Markdown 源码">📋 复制 MD</button>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button class="pref-btn" id="vm-save-disk-btn" onclick="saveCurrentVaultNoteToDisk()" style="font-size: 11px; padding: 3px 9px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.45); font-weight: 700;" title="将右侧画布中编辑后的 Markdown 内容原位写回外部磁盘文件 (Ctrl+S)">💾 保存回文件</button>
+          <button class="pref-btn" onclick="promptChangeVaultDirectory()" style="font-size: 11px; padding: 3px 9px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.4);" title="自由更换外部知识库或本地 Markdown 扫描物理目录">📁 更换目录</button>
+          <button class="pref-btn" onclick="refreshVaultMirrorData()" style="font-size: 11px; padding: 3px 9px;" title="重新扫描当前镜像目录">🔄 刷新</button>
+          <button class="pref-btn" onclick="pasteVaultNoteToCaret()" style="font-size: 11px; padding: 3px 9px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.4);" title="将当前选中外部文档内容贴入外部活动光标处 (Shift+Enter)">⚡ 穿透直贴</button>
+          <button class="pref-btn" onclick="dumpVaultNoteToDaily()" style="font-size: 11px; padding: 3px 9px; color: var(--emerald-mint); border-color: rgba(16, 185, 129, 0.4);" title="结构化解析并将当前文档引用存入今日日记">📥 存入日记</button>
+          <button class="pref-btn" onclick="copyVaultNoteMarkdown()" style="font-size: 11px; padding: 3px 9px;" title="复制当前文档 Markdown 源码">📋 复制 MD</button>
           <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleVaultMirrorModal()">✕</button>
         </div>
       </div>

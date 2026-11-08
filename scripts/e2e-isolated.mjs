@@ -3951,6 +3951,19 @@ async function main() {
                               capsuleHtmlContent.includes('.header-tag, .smart-badge');
   logStep("Step 7.220: Win32 ReleaseCapture 丝滑拖拽、顶栏 📌 常驻图钉锁与随身划笔徽章防吞点击断言", hasSmoothDragAndPin, `原生丝滑拖拽与常驻锁: ${hasSmoothDragAndPin}`);
 
+  // Step 7.221: Test More-Intent-Chips Drawer Sibling Mounting & Topbar/Modal Header Non-Wrapping Geometry Rules
+  const chipsContainerBlock = panelContent.substring(panelContent.indexOf('id="quick-intent-chips"'), panelContent.indexOf('id="more-intent-chips-drawer"'));
+  const isDrawerOutsideQuickRow = chipsContainerBlock.includes('id="toggle-more-chips-btn"') && chipsContainerBlock.includes('</div>');
+  const hasNoWrapHeaderRules = panelContent.includes('flex-shrink: 0;') &&
+                               panelContent.includes('.timeline-header > div') &&
+                               panelContent.includes('.telemetry-pills::-webkit-scrollbar');
+  logStep("Step 7.221: 扩展指令抽屉独立兄弟挂载 (消除 nowrap 竖条挤压) 与顶栏/模态框零折行防压扁几何断言", isDrawerOutsideQuickRow && hasNoWrapHeaderRules, `独立兄弟挂载: ${isDrawerOutsideQuickRow} · 防挤压规则: ${hasNoWrapHeaderRules}`);
+
+  // Step 7.222: Test Pen Capsule Long Radar Title Single-Line Ellipsis Protection
+  const hasCapsuleEllipsis = capsuleHtmlContent.includes('max-width: 195px;') &&
+                             capsuleHtmlContent.includes('text-overflow: ellipsis;');
+  logStep("Step 7.222: 随身划笔微胶囊长标题雷达命中单行省略防撑破底栏断言", hasCapsuleEllipsis, `微胶囊单行省略保护: ${hasCapsuleEllipsis}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

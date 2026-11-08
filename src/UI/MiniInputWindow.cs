@@ -1163,6 +1163,8 @@ namespace XiaoLv.Desktop.UI
             win.Title = "思源外骨骼 · 桌面图钉便签: " + (string.IsNullOrEmpty(title) ? "参考便签" : title);
             win.Width = 480;
             win.Height = 280;
+            win.Opacity = 0.96;
+            win._rootBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0f172ae6"));
             win.ExpandToScratchpadMode();
             win._intentLabelText.Text = "图钉便签";
             win._intentIconText.Text = "📌";
@@ -1171,6 +1173,69 @@ namespace XiaoLv.Desktop.UI
             win._inputBox.Text = (!string.IsNullOrEmpty(title) ? ("### 📌 " + title + "\n\n") : "") + (content ?? "");
             win._statusBadgeText.Text = "📌 置顶 (Ctrl+S同步 · Esc退出)";
             win._statusBadge.ToolTip = "点击或按 Ctrl+S 实时同步更新至思源笔记";
+
+            // 智能剪贴板管道监听：Ctrl+V 粘贴时自动清洗排版与公式保护
+            win._inputBox.PreviewKeyDown += (s, e) =>
+            {
+                if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && e.Key == Key.V)
+                {
+                    try
+                    {
+                        if (System.Windows.Forms.Clipboard.ContainsText())
+                        {
+                            string clip = System.Windows.Forms.Clipboard.GetText();
+                            if (!string.IsNullOrEmpty(clip))
+                            {
+                                string cleaned = TextCleaner.HarmonizeMarkdownSyntax(TextCleaner.FormatPanguSpacing(clip));
+                                int c = win._inputBox.CaretIndex;
+                                win._inputBox.Text = win._inputBox.Text.Insert(c, cleaned);
+                                win._inputBox.CaretIndex = c + cleaned.Length;
+                                win._statusBadgeText.Text = "✨ 智能粘贴清洗完成";
+                                e.Handled = true;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            };
+
+            var toDailyBtn = win.CreateHeaderActionButton("📥 投日记", "将便签当前内容作为小节沉淀入今日日记", () =>
+            {
+                string txt = win._inputBox.Text.Trim();
+                if (!string.IsNullOrEmpty(txt))
+                {
+                    var ctx = new DesktopStepContext("SYS", txt);
+                    ctx.SetVarValue("来源应用", "思源外骨骼 · 图钉便签");
+                    SmartCaptureMain.Exec(ctx);
+                    win._statusBadgeText.Text = "✓ 已存入今日日记！";
+                    SoundPlayerHelper.PlayFeedback();
+                }
+            });
+
+            var toSnippetsBtn = win.CreateHeaderActionButton("⭐ 存常用", "将便签内容保存为小驴常用语/快捷模板", () =>
+            {
+                string txt = win._inputBox.Text.Trim();
+                if (!string.IsNullOrEmpty(txt))
+                {
+                    string safeTitle = !string.IsNullOrEmpty(title) ? title : "便签模板";
+                    SnippetExpansionEngine.AddCustomSnippet(":" + Math.Abs(safeTitle.GetHashCode() % 1000), safeTitle, txt);
+                    win._statusBadgeText.Text = "✓ 已加入常用模板！";
+                    SoundPlayerHelper.PlayFeedback();
+                }
+            });
+
+            var headerPanel = win._rootBorder.Child as Panel;
+            if (headerPanel != null && headerPanel.Children.Count > 0 && headerPanel.Children[0] is Grid)
+            {
+                var topGrid = (Grid)headerPanel.Children[0];
+                if (topGrid.Children.Count > 2 && topGrid.Children[2] is StackPanel)
+                {
+                    var actStack = (StackPanel)topGrid.Children[2];
+                    actStack.Children.Insert(0, toDailyBtn);
+                    actStack.Children.Insert(1, toSnippetsBtn);
+                }
+            }
+
             win.Topmost = true;
             win.Show();
             win.Activate();

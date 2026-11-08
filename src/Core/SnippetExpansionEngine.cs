@@ -57,14 +57,39 @@ namespace XiaoLv.Desktop.Core
                                 it.Source = "自定义";
                                 _customSnippets[it.Shortcode] = it;
                             }
-                        }
-                    }
-                }
-                catch { }
-            }
-        }
+	                        }
+	                    }
+	                }
+	                catch { }
+	            }
+	        }
 
-        private static void RegisterBuiltin(string code, string label, string template)
+	        public static void AddCustomSnippet(string shortcode, string label, string template)
+	        {
+	            if (string.IsNullOrEmpty(shortcode)) return;
+	            if (!shortcode.StartsWith(":")) shortcode = ":" + shortcode;
+
+	            lock (_customSnippets)
+	            {
+	                _customSnippets[shortcode] = new SnippetDefinition
+	                {
+	                    Shortcode = shortcode,
+	                    Label = label,
+	                    Template = template,
+	                    Source = "自定义"
+	                };
+
+	                try
+	                {
+	                    var list = new List<SnippetDefinition>(_customSnippets.Values);
+	                    AppSettings.Instance.CustomSnippetsJson = JsonHelper.ToJson(list);
+	                    AppSettings.Instance.Save();
+	                }
+	                catch { }
+	            }
+	        }
+
+	        private static void RegisterBuiltin(string code, string label, string template)
         {
             _builtinSnippets[code] = new SnippetDefinition
             {

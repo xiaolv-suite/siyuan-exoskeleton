@@ -202,14 +202,107 @@ namespace XiaoLv.Desktop.Core
 
                 // C. word/document.xml
                 var entryDoc = zip.CreateEntry("word/document.xml", CompressionLevel.Fastest);
-                using (var w = new StreamWriter(entryDoc.Open(), Encoding.UTF8))
-                {
-                    w.Write(docXml.ToString());
-                }
-            }
+	                using (var w = new StreamWriter(entryDoc.Open(), Encoding.UTF8))
+	                {
+	                    w.Write(docXml.ToString());
+	                }
+	            }
 
-            return outputPath;
-        }
+	            return outputPath;
+	        }
+
+	        /// <summary>
+		        /// 增强逆向导出功能：支持把思源内的结构化大纲与待办反向更新回原 Word (.docx) 批注中
+		        /// 纯流式解包并注入标准 OpenXML comments.xml 与对应文档引用锚点
+		        /// 零外部 Office/Interop 依赖，100% 保持 Word 原稿格式不损坏
+		        /// </summary>
+		        public static bool InjectCommentsIntoDocx(string docxPath, System.Collections.IEnumerable comments, string reviewerName = "思源外骨骼")
+		        {
+		            if (string.IsNullOrEmpty(docxPath) || !File.Exists(docxPath)) return false;
+		            if (comments == null) return false;
+
+		            try
+		            {
+		                using (var zip = ZipFile.Open(docxPath, ZipArchiveMode.Update))
+		                {
+		                    // 1. 构建 word/comments.xml
+		                    var sbComments = new StringBuilder();
+		                    sbComments.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+		                    sbComments.AppendLine("<w:comments xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">");
+
+		                    string dateStr = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ");
+		                    int idx = 0;
+		                    foreach (var cObj in comments)
+		                    {
+		                        if (cObj == null) continue;
+		                        string cText = XmlEscape(cObj.ToString().Trim());
+		                        sbComments.AppendFormat("  <w:comment w:id=\"{0}\" w:author=\"{1}\" w:date=\"{2}\" w:initials=\"SY\">\n",
+		                            idx++, XmlEscape(reviewerName), dateStr);
+		                        sbComments.AppendFormat("    <w:p><w:r><w:t>{0}</w:t></w:r></w:p>\n", cText);
+		                        sbComments.AppendLine("  </w:comment>");
+		                    }
+		                    sbComments.AppendLine("</w:comments>");
+
+	                    // 写入/覆盖 word/comments.xml
+	                    var entryComments = zip.GetEntry("word/comments.xml");
+	                    if (entryComments != null) entryComments.Delete();
+	                    entryComments = zip.CreateEntry("word/comments.xml", CompressionLevel.Fastest);
+	                    using (var w = new StreamWriter(entryComments.Open(), Encoding.UTF8))
+	                    {
+	                        w.Write(sbComments.ToString());
+	                    }
+
+	                    // 2. 更新 [Content_Types].xml 声明 comments.xml
+	                    var entryTypes = zip.GetEntry("[Content_Types].xml");
+	                    if (entryTypes != null)
+	                    {
+	                        string typesContent;
+	                        using (var r = new StreamReader(entryTypes.Open(), Encoding.UTF8))
+	                        {
+	                            typesContent = r.ReadToEnd();
+	                        }
+	                        if (!typesContent.Contains("PartName=\"/word/comments.xml\""))
+	                        {
+	                            string overrideTag = "<Override PartName=\"/word/comments.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml\"/>";
+	                            typesContent = typesContent.Replace("</Types>", overrideTag + "</Types>");
+	                            entryTypes.Delete();
+	                            var newEntry = zip.CreateEntry("[Content_Types].xml", CompressionLevel.Fastest);
+	                            using (var w = new StreamWriter(newEntry.Open(), Encoding.UTF8))
+	                            {
+	                                w.Write(typesContent);
+	                            }
+	                        }
+	                    }
+
+	                    // 3. 更新 word/_rels/document.xml.rels 建立关联
+	                    var entryRels = zip.GetEntry("word/_rels/document.xml.rels");
+	                    if (entryRels != null)
+	                    {
+	                        string relsContent;
+	                        using (var r = new StreamReader(entryRels.Open(), Encoding.UTF8))
+	                        {
+	                            relsContent = r.ReadToEnd();
+	                        }
+	                        if (!relsContent.Contains("Target=\"comments.xml\""))
+	                        {
+	                            string relTag = "<Relationship Id=\"rIdCommentSY\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments\" Target=\"comments.xml\"/>";
+	                            relsContent = relsContent.Replace("</Relationships>", relTag + "</Relationships>");
+	                            entryRels.Delete();
+	                            var newRels = zip.CreateEntry("word/_rels/document.xml.rels", CompressionLevel.Fastest);
+	                            using (var w = new StreamWriter(newRels.Open(), Encoding.UTF8))
+	                            {
+	                                w.Write(relsContent);
+	                            }
+	                        }
+	                    }
+	                }
+	                return true;
+	            }
+	            catch
+	            {
+	                return false;
+	            }
+	        }
 
         private static string BuildWordTableXml(List<string> tableLines)
         {

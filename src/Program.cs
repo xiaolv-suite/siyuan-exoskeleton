@@ -29,6 +29,7 @@ namespace XiaoLv.Desktop
         private static BentoWindow _bentoWindow;
         private static CapsuleWindow _capsuleWindow;
         private static DialogWindow _dialogWindow;
+        private static DropZoneWindow _dropZoneWindow;
         private static System.Windows.Application _wpfApp;
 
         [STAThread]
@@ -132,9 +133,15 @@ namespace XiaoLv.Desktop
 	            }
 
 	            // 初始化窗口并在消息循环启动后立即离屏预热 WebView2
-            _bentoWindow = new BentoWindow();
-            _capsuleWindow = new CapsuleWindow();
-            _dialogWindow = new DialogWindow();
+	            _bentoWindow = new BentoWindow();
+	            _capsuleWindow = new CapsuleWindow();
+	            _dialogWindow = new DialogWindow();
+	            _dropZoneWindow = new DropZoneWindow();
+	            _dropZoneWindow.OnNotificationRequested += (t, m) => SafeNotify(t, m);
+	            if (AppSettings.Instance.DropZoneEnabled)
+	            {
+	                _dropZoneWindow.Show();
+	            }
 
             _wpfApp.Dispatcher.BeginInvoke(new Action(() =>
             {
@@ -189,24 +196,27 @@ namespace XiaoLv.Desktop
 	                    s.WebhookEnabled = JsonHelper.GetBool(dict, "webhookEnabled", s.WebhookEnabled);
 	                    s.WebhookPort = JsonHelper.GetInt(dict, "webhookPort", s.WebhookPort);
 	                    if (s.WebhookPort <= 0) s.WebhookPort = 43989;
-	                    s.WebhookToken = JsonHelper.GetString(dict, "webhookToken", s.WebhookToken);
+		                    s.WebhookToken = JsonHelper.GetString(dict, "webhookToken", s.WebhookToken);
+		                    s.DropZoneEnabled = JsonHelper.GetBool(dict, "dropZoneEnabled", s.DropZoneEnabled);
 
-	                    s.Save();
-	                    SelectionHelper.AutoFloatEnabled = s.AutoFloatEnabled;
-	                    SystemTray.SetAutoStart(s.AutoStart);
-	                    if (s.ShellContextMenuEnabled) ShellContextMenuManager.Register();
-	                    else ShellContextMenuManager.Unregister();
-	                    _hotkeys.RegisterConfiguredHotKeys(s.MasterHotKey, s.PenHotKey, s.OcrHotKey, s.QuickHotKey, s.FsrsHotKey, s.ClipHotKey);
-	                    if (s.WebhookEnabled)
-	                    {
-	                        ExternalApiBridge.Stop();
-	                        ExternalApiBridge.Start(s.WebhookPort);
-	                    }
-	                    else
-	                    {
-	                        ExternalApiBridge.Stop();
-	                    }
-	                    SafeNotify("思源外骨骼", "✓ 桌面助手偏好设置已更新并立即生效！");
+		                    s.Save();
+		                    SelectionHelper.AutoFloatEnabled = s.AutoFloatEnabled;
+		                    SystemTray.SetAutoStart(s.AutoStart);
+		                    if (s.ShellContextMenuEnabled) ShellContextMenuManager.Register();
+		                    else ShellContextMenuManager.Unregister();
+		                    _hotkeys.RegisterConfiguredHotKeys(s.MasterHotKey, s.PenHotKey, s.OcrHotKey, s.QuickHotKey, s.FsrsHotKey, s.ClipHotKey);
+		                    if (s.WebhookEnabled)
+		                    {
+		                        ExternalApiBridge.Stop();
+		                        ExternalApiBridge.Start(s.WebhookPort);
+		                    }
+		                    else
+		                    {
+		                        ExternalApiBridge.Stop();
+		                    }
+		                    if (s.DropZoneEnabled) _dropZoneWindow.Show();
+		                    else _dropZoneWindow.Hide();
+		                    SafeNotify("思源外骨骼", "✓ 桌面助手偏好设置已更新并立即生效！");
                 }
                 catch { }
             };
@@ -314,8 +324,9 @@ namespace XiaoLv.Desktop
                 _capsuleWindow.ShowNearCursor(selected);
             });
             _tray.OnSnippingOcrClicked += () => StartSnippingAndOcr();
-            _tray.OnQuickCaptureClicked += () => PromptQuickCapture();
-            _tray.OnFsrsReviewClicked += () => StartFsrsReview();
+	            _tray.OnQuickCaptureClicked += () => PromptQuickCapture();
+	            _tray.OnStickyPadClicked += () => _wpfApp.Dispatcher.Invoke(() => MiniInputWindow.ShowStickyNote("桌面活便签", ""));
+	            _tray.OnFsrsReviewClicked += () => StartFsrsReview();
 	            _tray.OnWebClipClicked += () => StartWebClip();
 	            _tray.OnFlashbackClicked += () => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel("rand:"));
             _tray.OnManualSyncClicked += () =>
@@ -488,10 +499,24 @@ namespace XiaoLv.Desktop
 	                        var res = await SiYuanClient.PostAsync("/api/sync/performSync", new { });
 	                        bool ok = res != null && res.Success;
 	                        if (ok) SoundPlayerHelper.PlayFeedback();
-	                        SafeNotify("思源外骨骼 · 云同步", ok ? "✓ 思源云端增量数据同步已完成！" : "⚠️ 同步响应超时或离线");
-	                    });
-	                    return;
-	                }
+		                        SafeNotify("思源外骨骼 · 云同步", ok ? "✓ 思源云端增量数据同步已完成！" : "⚠️ 同步响应超时或离线");
+		                    });
+		                    return;
+		                }
+		                if (clean.Equals("sticky", StringComparison.OrdinalIgnoreCase) || clean.Equals("live_sticky", StringComparison.OrdinalIgnoreCase))
+		                {
+		                    MiniInputWindow.ShowStickyNote("桌面活便签", "");
+		                    return;
+		                }
+		                if (clean.Equals("toggle_dropzone", StringComparison.OrdinalIgnoreCase))
+		                {
+		                    if (_dropZoneWindow != null)
+		                    {
+		                        if (_dropZoneWindow.IsVisible) _dropZoneWindow.Hide();
+		                        else _dropZoneWindow.Show();
+		                    }
+		                    return;
+		                }
 
 	                // 支持 siyuan-exoskeleton:// 与 xiaolv:// 外部协议或直接传递指令码
                 var cmd = clean;
@@ -907,10 +932,18 @@ namespace XiaoLv.Desktop
 	            {
 	                return "sync_siyuan";
 	            }
-	            if (arg.Equals("-status", StringComparison.OrdinalIgnoreCase) || arg.Equals("--status", StringComparison.OrdinalIgnoreCase))
-	            {
-	                return "status";
-	            }
+		            if (arg.Equals("-status", StringComparison.OrdinalIgnoreCase) || arg.Equals("--status", StringComparison.OrdinalIgnoreCase))
+		            {
+		                return "status";
+		            }
+		            if (arg.Equals("-sticky", StringComparison.OrdinalIgnoreCase) || arg.Equals("--sticky", StringComparison.OrdinalIgnoreCase))
+		            {
+		                return "sticky";
+		            }
+		            if (arg.Equals("-dropzone", StringComparison.OrdinalIgnoreCase) || arg.Equals("--dropzone", StringComparison.OrdinalIgnoreCase))
+		            {
+		                return "toggle_dropzone";
+		            }
 
 	            // 快捷 CLI 带参数指令映射 (-note / -todo / -card)
 	            if ((arg.Equals("-note", StringComparison.OrdinalIgnoreCase) || arg.Equals("--note", StringComparison.OrdinalIgnoreCase) ||

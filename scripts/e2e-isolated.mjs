@@ -1824,6 +1824,118 @@ async function main() {
   const isHtmlExportOk = htmlExportRes.includes("True");
   logStep("Step 7.78: 零依赖独立单文件 HTML 网页导出引擎 (DocStandaloneHtmlExporter) 断言", isHtmlExportOk, `HTML单文件导出断言: ${htmlExportRes.trim()}`);
 
+  // Step 7.79: Test OfficeExporter Word Review Comments Injection (InjectCommentsIntoDocx)
+  const commentInjectScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $exp = $asm.GetType('XiaoLv.Desktop.Core.OfficeExporter');
+    $mDocx = $exp.GetMethod('ExportMarkdownToDocx', [System.Reflection.BindingFlags]'Public,Static', $null, @([string], [string], [string]), $null);
+    $mInject = $exp.GetMethod('InjectCommentsIntoDocx', [System.Reflection.BindingFlags]'Public,Static');
+
+    $tmpDocx = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'test_review_' + [System.Guid]::NewGuid().ToString('N') + '.docx');
+    $mdBody = '# 待审阅合同' + [Environment]::NewLine + '甲方承诺于首期支付全部款项。';
+    $argsDocx = [object[]]@($mdBody, '审阅文档', $tmpDocx);
+    $resDocx = $mDocx.Invoke($null, $argsDocx);
+
+    $comments = [string[]]@('核心法务条款：首期付款比例需修正为 50%', '补充不可抗力仲裁条款');
+    $argsInject = [object[]]@($tmpDocx, $comments, '思源外骨骼审阅员');
+    $okInject = $mInject.Invoke($null, $argsInject);
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem;
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($tmpDocx);
+    $entry = $zip.GetEntry('word/comments.xml');
+    $hasCommentXml = ($null -ne $entry);
+    $commentContent = '';
+    if ($hasCommentXml) {
+      $sr = New-Object System.IO.StreamReader($entry.Open(), [System.Text.Encoding]::UTF8);
+      $commentContent = $sr.ReadToEnd();
+      $sr.Close();
+    }
+    $zip.Dispose();
+    try { [System.IO.File]::Delete($tmpDocx); } catch {}
+
+    $okVerified = $okInject -and $hasCommentXml -and $commentContent.Contains('首期付款比例需修正') -and $commentContent.Contains('思源外骨骼审阅员');
+    Write-Output ($okVerified.ToString());
+  `;
+  const commentInjectRes = runPs(commentInjectScript);
+  const isCommentInjectOk = commentInjectRes.includes("True");
+  logStep("Step 7.79: Word 审阅批注逆向注入与 OpenXML 原位回写 (InjectCommentsIntoDocx) 断言", isCommentInjectOk, `批注回写断言: ${commentInjectRes.trim()}`);
+
+  // Step 7.80: Test PowerPoint Slide & Notes COM Late-Binding Reflection
+  const pptComScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $bridge = $asm.GetType('XiaoLv.Desktop.Core.OfficeComBridge');
+    $mPpt = $bridge.GetMethod('TryGetActiveOfficeSelection', [System.Reflection.BindingFlags]'Public,Static');
+
+    $res = $mPpt.Invoke($null, @('powerpnt'));
+    $okPptType = ($null -ne $res) -and ($res.AppType -eq 'ppt');
+    Write-Output ($okPptType.ToString());
+  `;
+  const pptComRes = runPs(pptComScript);
+  const isPptComOk = pptComRes.includes("True");
+  logStep("Step 7.80: PowerPoint 与 WPS 演示幻灯片备注晚绑定反射断言", isPptComOk, `PPT反射断言: ${pptComRes.trim()}`);
+
+  // Step 7.81: Test Desktop DropZoneRouter Intelligent Dispatch (Glean vs Home vs Dispatcher)
+  const dropRouterScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $router = $asm.GetType('XiaoLv.Desktop.Core.DropZoneRouter');
+    $mRouteText = $router.GetMethod('RouteTextOrUrl', [System.Reflection.BindingFlags]'Public,Static');
+
+    $resUrl = $mRouteText.Invoke($null, @('https://arxiv.org/abs/1706.03762', $null));
+    $resExp = $mRouteText.Invoke($null, @('¥128.50 团队差旅餐饮发票', $null));
+    $resTxt = $mRouteText.Invoke($null, @('常规备忘文本记录', $null));
+
+    $okUrl = ($resUrl.Category -eq 'article') -and ($resUrl.TargetModule -eq 'siyuan-glean');
+    $okExp = ($resExp.Category -eq 'expense') -and ($resExp.TargetModule -eq 'siyuan-home');
+    $okTxt = ($resTxt.Category -eq 'text') -and ($resTxt.TargetModule -eq 'SmartCapture');
+
+    Write-Output ($okUrl.ToString() + '|' + $okExp.ToString() + '|' + $okTxt.ToString());
+  `;
+  const dropRouterRes = runPs(dropRouterScript);
+  const isDropRouterOk = dropRouterRes.includes("True|True|True");
+  logStep("Step 7.81: 系统级桌面托放中枢智能路由 (DropZoneRouter: 文章->拾遗/票据->管家) 断言", isDropRouterOk, `托放路由断言: ${dropRouterRes.trim()}`);
+
+  // Step 7.82: Test LiveStickyPad Smart Paste & Markdown Pangu Cleansing Pipeline
+  const stickyScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $tc = $asm.GetType('XiaoLv.Desktop.Core.TextCleaner');
+    $mHarmonize = $tc.GetMethod('HarmonizeMarkdownSyntax', [System.Reflection.BindingFlags]'Public,Static');
+    $mPangu = $tc.GetMethod('FormatPanguSpacing', [System.Reflection.BindingFlags]'Public,Static');
+
+    $rawPaste = '> [!NOTE]' + [Environment]::NewLine + '> 深度学习DeepLearning与Transformer架构。';
+    $step1 = $mPangu.Invoke($null, @($rawPaste));
+    $step2 = $mHarmonize.Invoke($null, @($step1));
+
+    $okStickyClean = $step2.Contains('> 📌 **NOTE**') -and $step2.Contains('深度学习 DeepLearning 与 Transformer 架构');
+    Write-Output ($okStickyClean.ToString());
+  `;
+  const stickyRes = runPs(stickyScript);
+  const isStickyOk = stickyRes.includes("True");
+  logStep("Step 7.82: 桌面悬浮极速便签与智能粘贴管道 (LiveStickyPad & Smart Paste) 断言", isStickyOk, `便签管道断言: ${stickyRes.trim()}`);
+
+  // Step 7.83: Test CLI Dispatcher Sticky Pad & DropZone Routing (-sticky / -dropzone)
+  const cliExtScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $prog = $asm.GetType('XiaoLv.Desktop.Program');
+    $mParse = $prog.GetMethod('ParseCommandLineOrProtocol', [System.Reflection.BindingFlags]'NonPublic,Static');
+
+    $arrSticky = [string[]]@('-sticky');
+    $resSticky = $mParse.Invoke($null, (,$arrSticky));
+
+    $arrDrop = [string[]]@('-dropzone');
+    $resDrop = $mParse.Invoke($null, (,$arrDrop));
+
+    $okCliExt = ($resSticky -eq 'sticky') -and ($resDrop -eq 'toggle_dropzone');
+    Write-Output ($okCliExt.ToString());
+  `;
+  const cliExtRes = runPs(cliExtScript);
+  const isCliExtOk = cliExtRes.includes("True");
+  logStep("Step 7.83: 桌面托放中枢与活便签 CLI 调度器 (-sticky / -dropzone) 路由断言", isCliExtOk, `CLI扩展调度断言: ${cliExtRes.trim()}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

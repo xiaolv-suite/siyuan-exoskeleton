@@ -18,6 +18,7 @@ namespace XiaoLv.Desktop.Core
         public event Action OnOpenPenClicked;
         public event Action OnSnippingOcrClicked;
         public event Action OnQuickCaptureClicked;
+        public event Action OnStickyPadClicked;
         public event Action OnFsrsReviewClicked;
         public event Action OnWebClipClicked;
         public event Action OnManualSyncClicked;
@@ -48,8 +49,11 @@ namespace XiaoLv.Desktop.Core
             var itemOcr = new ToolStripMenuItem("📸 截屏离线 OCR (Windows 原生引擎)");
             itemOcr.Click += (s, e) => { if (OnSnippingOcrClicked != null) OnSnippingOcrClicked(); };
 
-            var itemQuick = new ToolStripMenuItem("⚡ 极速灵感速记窗 (Alt+Shift+S)");
-            itemQuick.Click += (s, e) => { if (OnQuickCaptureClicked != null) OnQuickCaptureClicked(); };
+	            var itemQuick = new ToolStripMenuItem("⚡ 极速灵感速记窗 (Alt+Shift+S)");
+	            itemQuick.Click += (s, e) => { if (OnQuickCaptureClicked != null) OnQuickCaptureClicked(); };
+
+	            var itemSticky = new ToolStripMenuItem("📌 桌面悬浮极速便签 (LiveStickyPad)");
+	            itemSticky.Click += (s, e) => { if (OnStickyPadClicked != null) OnStickyPadClicked(); };
 
             var itemVoice = new ToolStripMenuItem("🎙️ 桌面语音速记微舱 (Ctrl+M / 微信输入法)");
             itemVoice.Click += (s, e) =>

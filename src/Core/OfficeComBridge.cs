@@ -257,15 +257,47 @@ namespace XiaoLv.Desktop.Core
                             object view = tWin.InvokeMember("View", BindingFlags.GetProperty, null, actWin, null);
                             if (view != null)
                             {
-                                object slide = view.GetType().InvokeMember("Slide", BindingFlags.GetProperty, null, view, null);
-                                if (slide != null)
-                                {
-                                    object idx = slide.GetType().InvokeMember("SlideIndex", BindingFlags.GetProperty, null, slide, null);
-                                    if (idx != null)
-                                    {
-                                        res.SubLocation = "Slide" + idx.ToString();
-                                    }
-                                }
+	                                object slide = view.GetType().InvokeMember("Slide", BindingFlags.GetProperty, null, view, null);
+	                                if (slide != null)
+	                                {
+	                                    object idx = slide.GetType().InvokeMember("SlideIndex", BindingFlags.GetProperty, null, slide, null);
+	                                    if (idx != null)
+	                                    {
+	                                        res.SubLocation = "Slide" + idx.ToString();
+	                                    }
+
+	                                    // 强化：若未手动选中文本，自动读取幻灯片标题与演讲者备注 (Speaker Notes)
+	                                    try
+	                                    {
+	                                        object notesPage = slide.GetType().InvokeMember("NotesPage", BindingFlags.GetProperty, null, slide, null);
+	                                        if (notesPage != null)
+	                                        {
+	                                            object shapes = notesPage.GetType().InvokeMember("Shapes", BindingFlags.GetProperty, null, notesPage, null);
+	                                            if (shapes != null)
+	                                            {
+	                                                object shape2 = shapes.GetType().InvokeMember("Item", BindingFlags.InvokeMethod, null, shapes, new object[] { 2 });
+	                                                if (shape2 != null)
+	                                                {
+	                                                    object tf = shape2.GetType().InvokeMember("TextFrame", BindingFlags.GetProperty, null, shape2, null);
+	                                                    if (tf != null)
+	                                                    {
+	                                                        object trNote = tf.GetType().InvokeMember("TextRange", BindingFlags.GetProperty, null, tf, null);
+	                                                        if (trNote != null)
+	                                                        {
+	                                                            string noteTxt = (string)trNote.GetType().InvokeMember("Text", BindingFlags.GetProperty, null, trNote, null);
+	                                                            if (!string.IsNullOrEmpty(noteTxt) && noteTxt.Trim().Length > 0)
+	                                                            {
+	                                                                res.Text = noteTxt.Trim('\r', '\n', ' ', '\t');
+	                                                                res.Success = true;
+	                                                            }
+	                                                        }
+	                                                    }
+	                                                }
+	                                            }
+	                                        }
+	                                    }
+	                                    catch { }
+	                                }
                             }
                         }
                         catch { }

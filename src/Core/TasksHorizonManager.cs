@@ -67,10 +67,29 @@ namespace XiaoLv.Desktop.Core
 
             try
             {
-                string safeKw = (keyword ?? "").Replace("'", "''");
-                string sql = string.IsNullOrEmpty(safeKw)
-                    ? "SELECT b.id, b.root_id, b.content, b.hpath, b.updated, doc.content AS doc_title FROM blocks b LEFT JOIN blocks doc ON doc.id = b.root_id WHERE b.subtype = 't' AND (b.markdown NOT LIKE '%[x]%' AND b.markdown NOT LIKE '%[X]%') ORDER BY b.updated DESC LIMIT 50"
-                    : "SELECT b.id, b.root_id, b.content, b.hpath, b.updated, doc.content AS doc_title FROM blocks b LEFT JOIN blocks doc ON doc.id = b.root_id WHERE b.subtype = 't' AND (b.markdown NOT LIKE '%[x]%' AND b.markdown NOT LIKE '%[X]%') AND (b.content LIKE '%" + safeKw + "%' OR b.markdown LIKE '%" + safeKw + "%') ORDER BY b.updated DESC LIMIT 50";
+                string safeKw = (keyword ?? "").Trim().Replace("'", "''");
+                string whereClause = "b.subtype = 't' AND (b.markdown NOT LIKE '%[x]%' AND b.markdown NOT LIKE '%[X]%')";
+                if (!string.IsNullOrEmpty(safeKw))
+                {
+                    if (safeKw.Equals("p1", StringComparison.OrdinalIgnoreCase) || safeKw.Equals("p1:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        whereClause += " AND (b.content LIKE '%P1%' OR b.content LIKE '%紧急重要%' OR b.ial LIKE '%custom-task-priority=\"p1\"%')";
+                    }
+                    else if (safeKw.Equals("p2", StringComparison.OrdinalIgnoreCase) || safeKw.Equals("p2:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        whereClause += " AND (b.content LIKE '%P2%' OR b.content LIKE '%重要不急%' OR b.ial LIKE '%custom-task-priority=\"p2\"%')";
+                    }
+                    else if (safeKw.Equals("today", StringComparison.OrdinalIgnoreCase) || safeKw.Equals("今日", StringComparison.OrdinalIgnoreCase))
+                    {
+                        whereClause += " AND (b.hpath LIKE '%" + DateTime.Now.ToString("yyyy-MM-dd") + "%' OR b.content LIKE '%" + DateTime.Now.ToString("yyyy-MM-dd") + "%')";
+                    }
+                    else
+                    {
+                        whereClause += " AND (b.content LIKE '%" + safeKw + "%' OR b.markdown LIKE '%" + safeKw + "%' OR b.hpath LIKE '%" + safeKw + "%')";
+                    }
+                }
+
+                string sql = "SELECT b.id, b.root_id, b.content, b.hpath, b.updated, doc.content AS doc_title FROM blocks b LEFT JOIN blocks doc ON doc.id = b.root_id WHERE " + whereClause + " ORDER BY b.updated DESC LIMIT 50";
 
                 var rows = await SiYuanClient.SqlAsync(sql);
                 if (rows == null || rows.Count == 0) return report;

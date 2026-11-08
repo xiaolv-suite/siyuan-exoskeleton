@@ -2598,9 +2598,9 @@
   <!-- Controls Bar: Category Tabs & Layout Switcher -->
   <div class="controls-bar">
     <nav class="category-tabs" id="category-tabs">
-      <button class="cat-btn active" id="cat-btn-all" onclick="setCategoryFilter('all')">全部 (25)</button>
+      <button class="cat-btn active" id="cat-btn-all" onclick="setCategoryFilter('all')">全部 (29)</button>
       <button class="cat-btn" id="cat-btn-capture" onclick="setCategoryFilter('capture')">📝 极速捕获 (6)</button>
-      <button class="cat-btn" id="cat-btn-search" onclick="setCategoryFilter('search')">🔍 搜索资产 (6)</button>
+      <button class="cat-btn" id="cat-btn-search" onclick="setCategoryFilter('search')">🔍 搜索资产 (10)</button>
       <button class="cat-btn" id="cat-btn-learning" onclick="setCategoryFilter('learning')">🧩 生态直达 (8 · Alt+1~8)</button>
       <button class="cat-btn" id="cat-btn-commands" onclick="setCategoryFilter('commands')">🌐 格式心流 (3)</button>
       <button class="cat-btn" id="cat-btn-maintenance" onclick="setCategoryFilter('maintenance')">⚙️ 系统运维 (2)</button>
@@ -3261,8 +3261,12 @@
       { id: "syoff", actionId: "8d3842ea-55d0-44ca-bb64-e80e31a9aa15", group: "capture", title: "表格数据清洗", desc: "自动识别 Excel、WPS 选区或复制数据，转为标准 Markdown 结构化表格写入思源", hotkey: "syoff", iconType: "table", iconColor: "var(--emerald-mint)", badge: "表格转换", badgeCls: "badge-native", pinyin: "office wps jghcd syoff bg", synonyms: ["office", "wps", "word", "excel", "表格", "table"] },
       { id: "syvoice", actionId: "syvoice", group: "capture", title: "语音速记微舱", desc: "融合微信输入法/讯飞/Win+H桌面语音生态，口语语气助词自愈去噪，1秒语音直化今日日记", hotkey: "voice:", iconType: "microphone", iconColor: "var(--cyber-sky)", badge: "口语去噪", badgeCls: "badge-native", pinyin: "yysjwc syvoice yy sj voice speech", synonyms: ["语音", "录音", "听写", "微信输入法", "讯飞", "winh", "speech", "voice"] },
 
-      // 🔍 搜索、导航与资产 (6)
+      // 🔍 搜索、导航与资产 (10)
       { id: "syf", actionId: "125c7d58-89e6-4d48-8983-6fbbd5c72d0f", group: "search", title: "全库快查与双链", desc: "全库文档与块级双链秒搜：支持 d:文档、b:块内容，回车直通思源高亮，Shift+Enter 穿透回贴双链 ((id))", hotkey: "Alt+Shift+F", iconType: "search", iconColor: "var(--cyber-sky)", badge: "双链回贴", badgeCls: "badge-bridge", pinyin: "ss syf qjkc ss ch sql", synonyms: ["搜索", "查找", "全局快查", "sql", "双链", "定位", "search"] },
+      { id: "syfav", actionId: "syfav", group: "search", title: "全景网站收藏", desc: "跨浏览器统一书签，自动剥离 utm/spm 追踪参数，按频次加权推荐秒开，终态沉淀思源原生文档《/网站导航》", hotkey: "fav:", iconType: "globe", iconColor: "var(--cyber-sky)", badge: "书签破岛", badgeCls: "badge-native", pinyin: "qjwzsc syfav fav wz sc", synonyms: ["网站收藏", "收藏夹", "书签", "导航", "bookmark", "url", "fav"] },
+      { id: "syfold", actionId: "syfold", group: "search", title: "文件夹导航与穿透", desc: "系统级本地目录管理，前台若为 Windows 文件选择对话框(#32770)原位秒跳穿透，自动检测物理路径有效性与思源工程锚定", hotkey: "fold:", iconType: "folder", iconColor: "var(--emerald-mint)", badge: "对话框秒跳", badgeCls: "badge-native", pinyin: "wjjdhct syfold fold wjj ml dir", synonyms: ["文件夹", "目录", "对话框秒跳", "listary", "folder", "dir", "fold"] },
+      { id: "sytask", actionId: "sytask", group: "search", title: "全景待办视界", desc: "穿透检索全库未完成任务清单，启发式解析 P1/P2/今日优先级，一键生成交接 Checklist 或启航番茄专注", hotkey: "t:", iconType: "check", iconColor: "var(--tech-amber)", badge: "待办大盘", badgeCls: "badge-native", pinyin: "qjdbsj sytask task db rw", synonyms: ["任务", "待办", "checklist", "清单", "todo", "task"] },
+      { id: "sypom", actionId: "sypom", group: "search", title: "心流番茄与行动闭环", desc: "桌面轻量敏捷心流计时器，与待办任务深度绑定，到期自动打勾完成 (- [x]) 并将带双链的时序成果归流今日日记", hotkey: "pom:", iconType: "clock", iconColor: "var(--rose-agent)", badge: "行动闭环", badgeCls: "badge-native", pinyin: "xlfq sypom pom tomato fq", synonyms: ["番茄钟", "专注", "倒计时", "心流", "timer", "pomodoro", "focus"] },
       { id: "syatt", actionId: "syatt", group: "search", title: "附件与文献秒查", desc: "穿透检索全库 PDF 文献、表格、图片与压缩包，双栏大抽屉预览，支持本地秒开与 Everything / Listary 联动定位", hotkey: "att:", iconType: "folder", iconColor: "var(--tech-amber)", badge: "资产穿透", badgeCls: "badge-native", pinyin: "qkfjwx att asset fj", synonyms: ["附件", "文献", "pdf", "资产", "文件", "everything", "listary", "att", "asset"] },
       { id: "sytag", actionId: "sytag", group: "search", title: "全库标签穿透坞", desc: "输入 tag: 或 #标签 穿透聚合全库匹配标签的全部笔记块，专属抽屉直览聚合流并支持一键导出大纲", hotkey: "tag:", iconType: "tag", iconColor: "var(--indigo-light)", badge: "标签聚合", badgeCls: "badge-native", pinyin: "qkbqcytw sytag bq tag", synonyms: ["标签", "tag", "标签聚合", "标签检索", "标签治理"] },
       { id: "syd", actionId: "syd", group: "search", title: "今日日记", desc: "通过原生 SQL 定位当天日记，若尚未创建则自动按模板创建并激活前置", hotkey: "Enter", iconType: "calendar", iconColor: "var(--cyber-sky)", badge: "秒级直达", badgeCls: "badge-native", pinyin: "dkjrrj syd mr jrrj rj", synonyms: ["日记", "今天", "今日", "daily", "journal", "today", "打开日记"] },
@@ -5011,6 +5015,30 @@
       // 呼出附件文献穿透视图
       if (item.id === "syatt") {
         insertPrefix("att:");
+        return;
+      }
+
+      // 呼出全景网站收藏穿透中枢
+      if (item.id === "syfav") {
+        insertPrefix("fav:");
+        return;
+      }
+
+      // 呼出本地文件夹导航与穿透中枢
+      if (item.id === "syfold") {
+        insertPrefix("fold:");
+        return;
+      }
+
+      // 呼出全景待办视界
+      if (item.id === "sytask") {
+        insertPrefix("t:");
+        return;
+      }
+
+      // 呼出心流番茄与行动闭环
+      if (item.id === "sypom") {
+        insertPrefix("pom:25 ");
         return;
       }
 

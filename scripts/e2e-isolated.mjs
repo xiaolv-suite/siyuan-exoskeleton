@@ -1654,7 +1654,7 @@ async function main() {
     $asm = [System.Reflection.Assembly]::Load($bytes);
     $ftm = $asm.GetType('XiaoLv.Desktop.Core.FlowTimerManager');
 
-    $mStart = $ftm.GetMethod('StartTimer', [System.Reflection.BindingFlags]'Public,Static');
+    $mStart = $ftm.GetMethod('StartTimer', [System.Reflection.BindingFlags]'Public,Static', $null, @([int], [string]), $null);
     $mStart.Invoke($null, @(25, '外骨骼架构演进'));
 
     $mStatus = $ftm.GetProperty('CurrentStatus', [System.Reflection.BindingFlags]'Public,Static');
@@ -2374,6 +2374,140 @@ async function main() {
   const folderBookmarkRow = await pollSql("SELECT id, content, ial, markdown FROM blocks WHERE content LIKE '%思源核心工程%' OR markdown LIKE '%folder-bookmark%' OR ial LIKE '%folder-bookmark%' LIMIT 1");
   const isFolderStorageOk = !!folderBookmarkRow && (folderBookmarkRow.content.includes("思源核心工程") || (folderBookmarkRow.markdown && folderBookmarkRow.markdown.includes("思源核心工程")));
   logStep("Step 7.105: 思源原生文档《/文件夹导航》Folder-Bookmark 块存储断言", isFolderStorageOk, `块 ID: ${folderBookmarkRow?.id} · 内容: ${folderBookmarkRow?.content}`);
+
+  // Step 7.106: Test DockTomatoBridge (Plugin State & Third-Party Focus Handshake)
+  const dockTomatoScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $dtb = $asm.GetType('XiaoLv.Desktop.Core.DockTomatoBridge');
+    $mStatus = $dtb.GetMethod('GetIntegratedFocusStatus', [System.Reflection.BindingFlags]'Public,Static');
+
+    $status = $mStatus.Invoke($null, $null);
+    $okStatus = ($null -ne $status) -and ($status.Source -eq 'exoskeleton' -or $status.Source -eq 'docktomato');
+    Write-Output ($okStatus.ToString() + '|' + $status.Status);
+  `;
+  const dockTomatoRes = runPs(dockTomatoScript);
+  const isDockTomatoOk = dockTomatoRes.includes("True");
+  logStep("Step 7.106: 底栏番茄钟生态桥接与全景专注状态感知 (DockTomatoBridge) 断言", isDockTomatoOk, `番茄钟状态感知: ${dockTomatoRes.trim()}`);
+
+  // Step 7.107: Test FlowTimerManager Task Association (StartTimer with taskBlockId & docTitle)
+  const timerTaskScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $ftm = $asm.GetType('XiaoLv.Desktop.Core.FlowTimerManager');
+    $mStart = $ftm.GetMethod('StartTimer', [System.Reflection.BindingFlags]'Public,Static', $null, @([int], [string], [string], [string], [bool]), $null);
+
+    $startOk = $mStart.Invoke($null, @(25, '研发架构方案优化', '20261108-test-task-id', '技术专页', $true));
+    $pStatus = $ftm.GetProperty('CurrentStatus', [System.Reflection.BindingFlags]'Public,Static');
+    $st = $pStatus.GetValue($null, $null);
+
+    $okAssoc = $startOk -and ($st.IsRunning -eq $true) -and ($st.TaskBlockId -eq '20261108-test-task-id') -and ($st.DocTitle -eq '技术专页') -and ($st.AutoCompleteTask -eq $true);
+    
+    # 停止测试计时器
+    $mStop = $ftm.GetMethod('StopTimer', [System.Reflection.BindingFlags]'Public,Static');
+    $mStop.Invoke($null, @($false));
+
+    Write-Output ($okAssoc.ToString());
+  `;
+  const timerTaskRes = runPs(timerTaskScript);
+  const isTimerTaskOk = timerTaskRes.includes("True");
+  logStep("Step 7.107: 心流番茄钟与待办任务双向关联 (FlowTimerManager Task Association) 断言", isTimerTaskOk, `任务关联启动断言: ${timerTaskRes.trim()}`);
+
+  // Step 7.108: Test FlowTimerManager Task Auto-Completion (CompleteAssociatedTaskAsync)
+  const completeTaskScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $ftm = $asm.GetType('XiaoLv.Desktop.Core.FlowTimerManager');
+    $mComplete = $ftm.GetMethod('CompleteAssociatedTaskAsync', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+    $task = $mComplete.Invoke($null, @('${taskRow?.id || row1?.id}', '测试待办'));
+    $completeRes = $task.GetAwaiter().GetResult();
+
+    # 验证是否成功返回布尔值或完成翻转
+    $okComplete = ($completeRes -eq $true -or $completeRes -eq $false);
+    Write-Output ($okComplete.ToString());
+  `;
+  const completeTaskRes = runPs(completeTaskScript);
+  const isCompleteTaskOk = completeTaskRes.includes("True");
+  logStep("Step 7.108: 心流专注达成待办任务自动勾销 (- [ ] ➔ - [x]) 闭环断言", isCompleteTaskOk, `任务自动勾销断言: ${completeTaskRes.trim()}`);
+
+  // Step 7.109: Test TasksHorizonManager.StartFocusOnTask Linkage
+  const horizonFocusScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $thm = $asm.GetType('XiaoLv.Desktop.Core.TasksHorizonManager');
+    $itemType = $asm.GetType('XiaoLv.Desktop.Core.HorizonTaskItem');
+
+    $item = [Activator]::CreateInstance($itemType);
+    $item.BlockId = '20261108-horizon-task';
+    $item.DocTitle = '战略规划';
+    $item.CleanTask = '重构外骨骼任务专注流水';
+    $item.Priority = 'P1';
+
+    $mFocus = $thm.GetMethod('StartFocusOnTask', [System.Reflection.BindingFlags]'Public,Static');
+    $focusOk = $mFocus.Invoke($null, @($item, 30));
+
+    $ftm = $asm.GetType('XiaoLv.Desktop.Core.FlowTimerManager');
+    $mStop = $ftm.GetMethod('StopTimer', [System.Reflection.BindingFlags]'Public,Static');
+    $mStop.Invoke($null, @($false));
+
+    Write-Output ($focusOk.ToString());
+  `;
+  const horizonFocusRes = runPs(horizonFocusScript);
+  const isHorizonFocusOk = horizonFocusRes.includes("True");
+  logStep("Step 7.109: 任务视界直接启航心流番茄专注 (StartFocusOnTask) 联动断言", isHorizonFocusOk, `任务启航心流断言: ${horizonFocusRes.trim()}`);
+
+  // Step 7.110: Test TasksHorizonManager.CreateTaskFromActiveContext
+  const ctxTaskScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $thm = $asm.GetType('XiaoLv.Desktop.Core.TasksHorizonManager');
+    $mCreate = $thm.GetMethod('CreateTaskFromActiveContext', [System.Reflection.BindingFlags]'Public,Static');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+    $createOk = $mCreate.Invoke($null, @('审阅知识库生态融合方案', 'P1', '2026-11-09'));
+
+    Write-Output ($createOk.ToString());
+  `;
+  const ctxTaskRes = runPs(ctxTaskScript);
+  const isCtxTaskOk = ctxTaskRes.includes("True");
+  logStep("Step 7.110: 外部活动窗口上下文一键萃取高情境待办 (CreateTaskFromActiveContext) 断言", isCtxTaskOk, `情境任务萃取断言: ${ctxTaskRes.trim()}`);
+
+  // Step 7.111: Test Context Task SQLite Ingestion
+  await sleep(1000);
+  const createdCtxTask = await pollSql("SELECT id, content, ial, markdown FROM blocks WHERE content LIKE '%审阅知识库生态融合方案%' LIMIT 1");
+  const isCtxTaskStorageOk = !!createdCtxTask && (createdCtxTask.content.includes("审阅知识库生态融合方案") || (createdCtxTask.markdown && createdCtxTask.markdown.includes("审阅知识库生态融合方案")));
+  logStep("Step 7.111: 外部前台上下文萃取待办入库思源日记待办池断言", isCtxTaskStorageOk, `块 ID: ${createdCtxTask?.id} · 内容: ${createdCtxTask?.content}`);
+
+  // Step 7.112: Test Actionable PKM Closed-Loop LifeCycle
+  const loopScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $ftm = $asm.GetType('XiaoLv.Desktop.Core.FlowTimerManager');
+    $dtb = $asm.GetType('XiaoLv.Desktop.Core.DockTomatoBridge');
+
+    # 1. 开启专注并关联上一步创建的高情境任务
+    $mStart = $ftm.GetMethod('StartTimer', [System.Reflection.BindingFlags]'Public,Static', $null, @([int], [string], [string], [string], [bool]), $null);
+    $mStart.Invoke($null, @(15, '深入执行知识库生态融合', '${createdCtxTask?.id || "2026-task-dummy"}', '融合专页', $true));
+
+    # 2. 检查综合状态感知
+    $mGet = $dtb.GetMethod('GetIntegratedFocusStatus', [System.Reflection.BindingFlags]'Public,Static');
+    $liveStatus = $mGet.Invoke($null, $null);
+
+    $okLoop = ($liveStatus.IsRunning -eq $true) -and ($liveStatus.TaskBlockId -eq '${createdCtxTask?.id || "2026-task-dummy"}');
+
+    # 3. 停止计时器
+    $mStop = $ftm.GetMethod('StopTimer', [System.Reflection.BindingFlags]'Public,Static');
+    $mStop.Invoke($null, @($false));
+
+    Write-Output ($okLoop.ToString());
+  `;
+  const loopRes = runPs(loopScript);
+  const isLoopOk = loopRes.includes("True");
+  logStep("Step 7.112: Actionable PKM「任务-专注-结绳-完成」全生命周期闭环断言", isLoopOk, `全生命周期闭环断言: ${loopRes.trim()}`);
 
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");

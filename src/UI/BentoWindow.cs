@@ -827,30 +827,58 @@ namespace XiaoLv.Desktop.UI
 					                }
 
 					                // 3.58 桌面轻量敏捷心流计时器 (pom: / timer:)
-					                if (op.Equals("startFlowTimer", StringComparison.OrdinalIgnoreCase))
-					                {
-					                    int minutes = JsonHelper.GetInt(msg, "minutes", 25);
-					                    string task = JsonHelper.GetString(msg, "task", "心流专注");
-					                    FlowTimerManager.StartTimer(minutes, task);
-					                    return;
-					                }
+						                if (op.Equals("startFlowTimer", StringComparison.OrdinalIgnoreCase))
+						                {
+						                    int minutes = JsonHelper.GetInt(msg, "minutes", 25);
+						                    string task = JsonHelper.GetString(msg, "task", "心流专注");
+						                    string bId = JsonHelper.GetString(msg, "taskBlockId", "");
+						                    string doc = JsonHelper.GetString(msg, "docTitle", "");
+						                    bool autoCheck = JsonHelper.GetBool(msg, "autoCompleteTask", true);
+						                    FlowTimerManager.StartTimer(minutes, task, bId, doc, autoCheck);
+						                    return;
+						                }
 
-					                if (op.Equals("stopFlowTimer", StringComparison.OrdinalIgnoreCase))
-					                {
-					                    bool recordPartial = JsonHelper.GetBool(msg, "recordPartial", false);
-					                    FlowTimerManager.StopTimer(recordPartial);
-					                    return;
-					                }
+						                if (op.Equals("stopFlowTimer", StringComparison.OrdinalIgnoreCase))
+						                {
+						                    bool recordPartial = JsonHelper.GetBool(msg, "recordPartial", false);
+						                    FlowTimerManager.StopTimer(recordPartial);
+						                    return;
+						                }
 
-					                if (op.Equals("getFlowTimerStatus", StringComparison.OrdinalIgnoreCase))
-					                {
-					                    var status = FlowTimerManager.CurrentStatus;
-					                    if (_webView != null && _webView.CoreWebView2 != null)
-					                    {
-					                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onFlowTimerStatus) window.onFlowTimerStatus(" + JsonHelper.ToJson(status) + ");");
-					                    }
-					                    return;
-					                }
+						                if (op.Equals("getFlowTimerStatus", StringComparison.OrdinalIgnoreCase))
+						                {
+						                    var status = FlowTimerManager.CurrentStatus;
+						                    if (_webView != null && _webView.CoreWebView2 != null)
+						                    {
+						                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onFlowTimerStatus) window.onFlowTimerStatus(" + JsonHelper.ToJson(status) + ");");
+						                    }
+						                    return;
+						                }
+
+						                // 3.585 底栏番茄钟 (Dock Tomato) 生态综合专注状态感知
+						                if (op.Equals("getIntegratedFocusStatus", StringComparison.OrdinalIgnoreCase))
+						                {
+						                    var status = DockTomatoBridge.GetIntegratedFocusStatus();
+						                    if (_webView != null && _webView.CoreWebView2 != null)
+						                    {
+						                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onIntegratedFocusStatus) window.onIntegratedFocusStatus(" + JsonHelper.ToJson(status) + ");");
+						                    }
+						                    return;
+						                }
+
+						                // 3.586 从外部活动窗口前台上下文 1 键萃取高情境待办
+						                if (op.Equals("createTaskFromContext", StringComparison.OrdinalIgnoreCase))
+						                {
+						                    string title = JsonHelper.GetString(msg, "title", "");
+						                    string priority = JsonHelper.GetString(msg, "priority", "P2");
+						                    string dueDate = JsonHelper.GetString(msg, "dueDate", "");
+						                    bool ok = TasksHorizonManager.CreateTaskFromActiveContext(title, priority, dueDate);
+						                    if (ok && OnNotificationRequested != null)
+						                    {
+						                        OnNotificationRequested("任务视界 · 待办萃取", "✓ 外部前台上下文待办已成功注入今日日记待办池！");
+						                    }
+						                    return;
+						                }
 
 					                // 3.59 剪贴板历史批量合并排版工作台 (c:merge)
 					                if (op.Equals("mergeClipboardHistory", StringComparison.OrdinalIgnoreCase))

@@ -2489,6 +2489,10 @@
           <span style="color: var(--tech-amber); font-weight: 700;">📋</span>
           <span id="telemetry-tasks-text">待办 --</span>
         </div>
+        <div class="t-pill" id="telemetry-focus" style="cursor: pointer;" onclick="insertPrefix('pom:25 ')" title="心流专注与番茄钟 (点击快速开启 25 分钟专注)">
+          <span style="color: var(--rose-agent); font-weight: 700;">🍅</span>
+          <span id="telemetry-focus-text">专注 25m</span>
+        </div>
         <div class="t-pill" id="telemetry-mem" style="cursor: pointer;" onclick="triggerTrimMemory()" title="物理工作集内存 (点击立即深度压缩与垃圾清理)">
           <span class="dot-live" id="mem-dot" style="background: var(--titanium-cyan);"></span>
           <span id="telemetry-mem-text">内存 --</span>
@@ -7970,11 +7974,104 @@
         banner.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <span>🔥 今日必办: <b>${rep.TodayTasks ? rep.TodayTasks.length : 0}</b> · ⚡ 重点: <b>${rep.PriorityTasks ? rep.PriorityTasks.length : 0}</b> · 📋 全库待办: <b>${rep.TotalTasks || 0}</b> 项</span>
-            <button class="card-launch-btn" style="padding: 2px 8px; font-size: 11px;" onclick="copyToClipboard('${escapeQuote(rep.FormattedChecklist)}', '今日Checklist已复制！')">📋 复制Checklist</button>
+            <div style="display: flex; gap: 6px;">
+              <button class="card-launch-btn" style="padding: 2px 8px; font-size: 11px;" onclick="copyToClipboard('${escapeQuote(rep.FormattedChecklist)}', '今日Checklist已复制！')">📋 复制Checklist</button>
+            </div>
           </div>
         `;
       }
+
+      const allTasks = [];
+      if (Array.isArray(rep.TodayTasks)) allTasks.push(...rep.TodayTasks);
+      if (Array.isArray(rep.PriorityTasks)) allTasks.push(...rep.PriorityTasks);
+      if (Array.isArray(rep.NormalTasks)) allTasks.push(...rep.NormalTasks);
+
+      const q = document.getElementById("search-input") ? document.getElementById("search-input").value.trim().toLowerCase() : "";
+      if (q.startsWith("t:") || q.startsWith("t：") || q.startsWith("todo:") || q.startsWith("todo：")) {
+        filteredItems = allTasks.map(t => ({
+          id: `task_${t.BlockId}`,
+          group: "search",
+          title: `[${t.Priority || 'P3'}] ${escapeHtml(t.CleanTask)}`,
+          desc: `《${escapeHtml(t.DocTitle || '笔记')}》${t.DueDate ? ' · 📅 ' + escapeHtml(t.DueDate) : ''}${t.IsOverdue ? ' (⚠️ 已逾期)' : ''}`,
+          hotkey: "Enter",
+          iconType: "check",
+          iconColor: t.Priority === 'P1' ? 'var(--rose-agent)' : (t.Priority === 'P2' ? 'var(--tech-amber)' : 'var(--indigo-light)'),
+          badge: t.Priority,
+          badgeCls: t.Priority === 'P1' ? 'badge-stale' : 'badge-bridge',
+          taskData: t,
+          action: () => {
+            inspectTaskItem(t);
+          }
+        }));
+        selectedIndex = 0;
+        renderItems();
+        if (filteredItems.length > 0) {
+          inspectTaskItem(filteredItems[0].taskData);
+        }
+      }
     };
+
+    function inspectTaskItem(t) {
+      if (!t) return;
+      const inspector = document.getElementById("search-inspector-pane");
+      if (!inspector) return;
+
+      inspector.innerHTML = `
+        <div class="inspector-header">
+          <div class="inspector-breadcrumbs">
+            <span class="breadcrumb-crumb">📋 任务视界</span>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-crumb">《${escapeHtml(t.DocTitle)}》</span>
+          </div>
+          <div class="inspector-doc-title">☑️ ${escapeHtml(t.CleanTask)}</div>
+        </div>
+        <div class="inspector-body" style="padding: 14px; max-height: 420px; overflow-y: auto;">
+          <div style="font-size: 11px; padding: 10px 14px; background: rgba(99,102,241,0.08); border-radius: 8px; border: 1px dashed var(--border-hairline); margin-bottom: 12px; line-height: 1.7;">
+            <div>⚡ <b>优先级</b>: <span class="${t.Priority === 'P1' ? 'badge-stale' : 'badge-bridge'}">${t.Priority}</span> · 📅 <b>截止日</b>: ${t.DueDate || '无截止日'}${t.IsOverdue ? ' <span style=\"color:var(--rose-agent);font-weight:700;\">(已逾期)</span>' : ''}</div>
+            <div>📄 <b>归属文档</b>: <a href="javascript:void(0)" onclick="openBlockById('${t.RootId}')" style="color: var(--cyber-sky); text-decoration: underline;">《${escapeHtml(t.DocTitle)}》</a></div>
+            <div style="margin-top: 4px; color: var(--text-muted);">🆔 <b>块 ID</b>: <code>${t.BlockId}</code></div>
+          </div>
+          <div style="padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 11.5px; color: var(--text-secondary); line-height: 1.6;">
+            💡 <b>Actionable PKM 闭环</b>: 点击下方【开启 25m 专注】，番茄钟倒计时结束时，外骨骼将<b>自动将该任务标记为已完成 (- [x])</b>，并将成果时序写入今日日记！
+          </div>
+        </div>
+        <div class="inspector-dock">
+          <div class="inspector-dock-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="inspector-dock-btn primary" onclick="startTaskFocusSession('${escapeQuote(t.BlockId)}', '${escapeQuote(t.CleanTask)}', '${escapeQuote(t.DocTitle)}', 25)" title="为该任务开启 25 分钟番茄专注，到期自动打勾完成">🍅 开启 25m 专注 (自动结绳)</button>
+            <button class="inspector-dock-btn" onclick="startTaskFocusSession('${escapeQuote(t.BlockId)}', '${escapeQuote(t.CleanTask)}', '${escapeQuote(t.DocTitle)}', 45)" title="开启 45 分钟深度专注">🔥 开启 45m 攻坚</button>
+            <button class="inspector-dock-btn" onclick="toggleTaskCompleteNow('${escapeQuote(t.BlockId)}')" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.4);" title="无需切入思源，直接将该任务标记为完成">✓ 勾选完成</button>
+            <button class="inspector-dock-btn" onclick="openBlockById('${escapeQuote(t.BlockId)}')" style="color: var(--cyber-sky); border-color: rgba(56,189,248,0.4);" title="在思源中原位定位并打开此任务块">🎯 定位目标块</button>
+            <button class="inspector-dock-btn" onclick="copyBlockRefToClipboard('${escapeQuote(t.BlockId)}', '${escapeQuote(t.CleanTask)}')">📋 复制双链</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function startTaskFocusSession(blockId, taskTitle, docTitle, minutes) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'startFlowTimer',
+          minutes: minutes || 25,
+          task: taskTitle,
+          taskBlockId: blockId,
+          docTitle: docTitle,
+          autoCompleteTask: true
+        }));
+        showToast(`🍅 已开启 ${minutes}m 专注【${taskTitle}】！到期将自动打勾完成并归流日记。`);
+      }
+    }
+
+    function toggleTaskCompleteNow(blockId) {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'updateBlockContent',
+          id: blockId,
+          markdown: '- [x] '
+        }));
+        showToast("✓ 任务已成功标记完成！");
+        insertPrefix('t:');
+      }
+    }
 
     window.onOfflineQueueLoaded = function(res) {
       if (!res || !Array.isArray(res.data)) return;
@@ -9695,11 +9792,27 @@
       }
     };
 
+    window.onIntegratedFocusStatus = function(status) {
+      if (!status) return;
+      const pill = document.getElementById("telemetry-focus-text");
+      if (pill) {
+        if (status.IsRunning) {
+          pill.innerHTML = `🍅 ${status.FormattedTime} ${escapeHtml(status.TaskBlockName || '专注中')}`;
+        } else if (status.IsPaused) {
+          pill.innerHTML = `⏸️ 暂停中 ${status.FormattedTime}`;
+        } else {
+          pill.innerHTML = `🍅 专注 25m`;
+        }
+      }
+    };
+    window.onFlowTimerStatus = window.onIntegratedFocusStatus;
+
     window.onPanelActivated = function() {
       initLiveTelemetry();
       syncDesktopPreferencesUI();
       if (window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({ op: 'getMemoryStatus' }));
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'getIntegratedFocusStatus' }));
       }
       const input = document.getElementById("search-input");
       if (input) {

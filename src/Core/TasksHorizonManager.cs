@@ -201,5 +201,54 @@ namespace XiaoLv.Desktop.Core
 
             return sb.ToString();
         }
+
+        /// <summary>
+        /// 针对指定待办任务一键启航心流番茄钟，到期自动结绳完成任务
+        /// </summary>
+        public static bool StartFocusOnTask(HorizonTaskItem task, int minutes = 25)
+        {
+            if (task == null || string.IsNullOrEmpty(task.BlockId)) return false;
+            return FlowTimerManager.StartTimer(minutes, task.CleanTask, task.BlockId, task.DocTitle, true);
+        }
+
+        /// <summary>
+        /// 从当前外部前台活动上下文（浏览器论文、IDE工程、Word文档）一键萃取并创建高情境待办任务
+        /// </summary>
+        public static bool CreateTaskFromActiveContext(string taskTitle = "", string priority = "P2", string dueDate = "")
+        {
+            try
+            {
+                var snap = ContextPerception.CaptureForegroundContext(IntPtr.Zero);
+                string cleanTitle = !string.IsNullOrEmpty(taskTitle) ? taskTitle.Trim() : (!string.IsNullOrEmpty(snap.CleanTitle) ? snap.CleanTitle : "待办任务");
+                string duePart = !string.IsNullOrEmpty(dueDate) ? (" 📅 " + dueDate.Trim()) : "";
+                string prioTag = !string.IsNullOrEmpty(priority) ? ("[" + priority.ToUpper() + "] ") : "[P2] ";
+
+                string contextRef = "";
+                if (!string.IsNullOrEmpty(snap.PdfPath) && snap.PdfPage > 0)
+                {
+                    string pdfName = Path.GetFileName(snap.PdfPath);
+                    contextRef = string.Format(" · [📄 {0} P.{1}](siyuan-exoskeleton://open-pdf?path={2}&page={1})",
+                        pdfName, snap.PdfPage, Uri.EscapeDataString(snap.PdfPath));
+                }
+                else if (snap.HasUrl)
+                {
+                    contextRef = string.Format(" · [{0}]({1})", !string.IsNullOrEmpty(snap.CleanTitle) ? snap.CleanTitle : "网页来源", snap.Url);
+                }
+                else if (snap.IsDevWorkspace)
+                {
+                    contextRef = string.Format(" · 💻 {0} ({1})", snap.ProjectName, snap.ActiveFileName);
+                }
+
+                string rawTask = string.Format("! {0}{1}{2}{3}", prioTag, cleanTitle, contextRef, duePart);
+                var ctx = new DesktopStepContext("SYS", rawTask);
+                ctx.SetVarValue("来源应用", "思源外骨骼 · 任务视界");
+                SmartCaptureMain.Exec(ctx);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

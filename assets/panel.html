@@ -7937,6 +7937,7 @@
             <span class="intent-tag">💡 对「${shortRaw}」执行：</span>
             <span class="scope-switch-pill" style="background: rgba(16,185,129,0.18); border-color: var(--emerald-mint); color: var(--emerald-mint);" onclick="quickSubmitInputToDaily()">📥 记入今日日记</span>
             <span class="scope-switch-pill" style="background: rgba(245,158,11,0.18); border-color: var(--tech-amber); color: var(--tech-amber);" onclick="quickSubmitInputAsTask()">📋 存为待办任务</span>
+            <span class="scope-switch-pill" style="background: rgba(99,102,241,0.16); border-color: var(--indigo-light); color: var(--indigo-light);" onclick="askAiFromSearchInput()" title="把输入内容交给 AI 直接回答或解读，结果弹窗展示可一键复制">🤖 问 AI</span>
             <span class="scope-switch-pill" onclick="insertPrefix('b:')">🧱 搜正文块 (b:)</span>
             <span class="scope-switch-pill" onclick="insertPrefix('d:')">📄 搜文档 (d:)</span>
             <span class="scope-switch-pill" onclick="insertPrefix('att:')">📎 搜PDF/附件 (att:)</span>
@@ -7950,6 +7951,16 @@
 
       selectedIndex = 0;
       renderItems();
+    }
+
+    function askAiFromSearchInput() {
+      const si = document.getElementById("search-input");
+      const raw = si ? si.value.trim() : "";
+      if (!raw) {
+        showToast("⚠️ 请先在搜索框输入想问的问题或要解读的内容");
+        return;
+      }
+      triggerAiRefine("ask", raw);
     }
 
     function quickSubmitInputAsTask() {
@@ -10460,8 +10471,12 @@
     function getSplitModeEmptyStateHtml(rawQuery) {
       const q = (rawQuery || "").trim().toLowerCase();
       let title = "当前模式下暂无匹配记录";
-      let desc = "可在上方搜索框更换关键词，或点击下方按钮执行快捷操作";
-      let actions = `<button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回 31 项功能主页</button>`;
+      let desc = "什么都不用记：输入的文字可直接落库或交给 AI，点击下方按钮即达";
+      let actions = `
+        <button type="button" class="fg-try-btn" onclick="quickSubmitInputToDaily()">📥 把输入记入今日日记</button>
+        <button type="button" class="fg-try-btn" onclick="quickSubmitInputAsTask()">📋 存为待办任务</button>
+        <button type="button" class="fg-try-btn" onclick="askAiFromSearchInput()">🤖 问 AI 解读</button>
+        <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回 31 项功能主页</button>`;
 
       if (q.startsWith("t:") || q.startsWith("t：") || q.startsWith("todo:")) {
         title = "🎉 当前没有未完成的待办任务";
@@ -16107,6 +16122,9 @@
       } else if (actionType === "translate") {
         prompt = "请将以下学术文献或技术内容翻译为流畅、准确的中文学术语言，保持专业术语准确性，直接输出翻译结果：";
         label = "学术翻译";
+      } else if (actionType === "ask") {
+        prompt = "请直接回答用户的问题，或对用户提供的内容做清晰解读。要求：使用中文、直击要点、输出精炼的 Markdown（可用小标题与列表）；若问题信息不足，请先给出补全建议再作答。用户输入如下：";
+        label = "智能问答";
       }
 
       showToast(`🤖 AI ${label}中，正在调动模型...`);

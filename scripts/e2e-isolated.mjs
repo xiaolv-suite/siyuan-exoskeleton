@@ -4228,6 +4228,16 @@ async function main() {
                                         panelContent.includes('function quickSubmitInputAsTask');
   logStep("Step 7.236: 五大用户体验显示优化 (卡片内嵌一触即达子功能胶囊、首屏默认22项精简视图、首屏最近文档动态直达与可折叠导览、双栏行内显式操作按钮与防误触、先打字后选动作流) 断言", hasUserCentricDisplayUpgrades, `用户体验显示优化闭环: ${hasUserCentricDisplayUpgrades}`);
 
+  // Step 7.237: Test Fallback Command Guarantee (CmdPal-style: any input always has useful actions)
+  const hasFallbackGuarantee = panelContent.includes('actionType === "ask"') &&
+                               panelContent.includes('function askAiFromSearchInput') &&
+                               panelContent.includes('🤖 问 AI</span>') &&
+                               panelContent.includes('请直接回答用户的问题') &&
+                               panelContent.includes('onclick="askAiFromSearchInput()"') &&
+                               panelContent.includes('📥 把输入记入今日日记') &&
+                               panelContent.includes('📋 存为待办任务</button>');
+  logStep("Step 7.237: 搜索兜底命令保证 (意图条问AI、泛空状态记日记/存待办/问AI、任何输入必有用) 断言", hasFallbackGuarantee, `兜底命令闭环: ${hasFallbackGuarantee}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

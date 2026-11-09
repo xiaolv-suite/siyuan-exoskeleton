@@ -100,16 +100,30 @@ namespace XiaoLv.Desktop.UI
                     var files = (string[])e.Data.GetData(DataFormats.FileDrop);
                     if (files != null && files.Length > 0)
                     {
-                        Hide();
                         string targetDoc = _currentInspectedDocId;
                         string targetDocTitle = _currentInspectedDocTitle;
                         ThreadPool.QueueUserWorkItem(st =>
                         {
                             foreach (var f in files)
                             {
-                                FileDispatcher.DispatchFileToDocument(f, targetDoc, targetDocTitle, (title, msg) =>
+                                string droppedFile = f;
+                                FileDispatcher.DispatchFileToDocument(droppedFile, targetDoc, targetDocTitle, (title, msg) =>
                                 {
                                     if (OnNotificationRequested != null) OnNotificationRequested(title, msg);
+                                    Dispatcher.BeginInvoke(new Action(() =>
+                                    {
+                                        if (_webView != null && _webView.CoreWebView2 != null)
+                                        {
+                                            var dropPayload = new Dictionary<string, object>();
+                                            dropPayload["success"] = true;
+                                            dropPayload["filePath"] = droppedFile ?? "";
+                                            dropPayload["fileName"] = Path.GetFileName(droppedFile ?? "");
+                                            dropPayload["docId"] = targetDoc ?? "";
+                                            dropPayload["docTitle"] = !string.IsNullOrEmpty(targetDocTitle) ? targetDocTitle : "今日日记";
+                                            dropPayload["message"] = msg ?? "";
+                                            _webView.CoreWebView2.ExecuteScriptAsync("if(window.onFileDroppedToSiYuan) window.onFileDroppedToSiYuan(" + JsonHelper.ToJson(dropPayload) + ");");
+                                        }
+                                    }));
                                 });
                             }
                         });
@@ -925,26 +939,35 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
-				                if (op.Equals("flushOfflineQueue", StringComparison.OrdinalIgnoreCase))
-				                {
-				                    ThreadPool.QueueUserWorkItem(s =>
-				                    {
-				                        try
-				                        {
-				                            var conn = SiYuanClient.GetConnectionInfo(false);
-				                            bool ok = OfflineQueueManager.FlushQueue(conn.Url, conn.Token, (t, m) =>
-				                            {
-				                                if (OnNotificationRequested != null) OnNotificationRequested(t, m);
-				                            });
-				                            if (ok && OnNotificationRequested != null)
-				                            {
-				                                OnNotificationRequested("离线缓冲队列", "✓ 离线速记已全部合流补录至今日日记！");
-				                            }
-				                        }
-				                        catch { }
-				                    });
-				                    return;
-				                }
+                if (op.Equals("flushOfflineQueue", StringComparison.OrdinalIgnoreCase))
+                {
+                    ThreadPool.QueueUserWorkItem(s =>
+                    {
+                        try
+                        {
+                            var conn = SiYuanClient.GetConnectionInfo(false);
+                            bool ok = OfflineQueueManager.FlushQueue(conn.Url, conn.Token, (t, m) =>
+                            {
+                                if (OnNotificationRequested != null) OnNotificationRequested(t, m);
+                            });
+                            if (ok && OnNotificationRequested != null)
+                            {
+                                OnNotificationRequested("离线缓冲队列", "✓ 离线速记已全部合流补录至今日日记！");
+                            }
+                            var remainingItems = OfflineQueueManager.GetQueueItems();
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    _webView.CoreWebView2.ExecuteScriptAsync(string.Format("if(window.updateOfflineQueueBadge) window.updateOfflineQueueBadge({{ count: {0} }});", remainingItems.Count));
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOfflineQueueLoaded) window.onOfflineQueueLoaded(" + JsonHelper.ToJson(new { code = 0, count = remainingItems.Count, data = remainingItems, items = remainingItems, flushed = ok }) + ");");
+                                }
+                            });
+                        }
+                        catch { }
+                    });
+                    return;
+                }
 
 				                // 3.56 本地浏览器书签穿透检索 (bm: / book: 语法)
 				                if (op.Equals("searchBrowserBookmarks", StringComparison.OrdinalIgnoreCase))
@@ -2712,51 +2735,6 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
-                // 12.5 离岸队列详情检视与手动回写
-                if (op.Equals("getOfflineQueue", StringComparison.OrdinalIgnoreCase))
-                {
-                    ThreadPool.QueueUserWorkItem(s =>
-                    {
-                        var items = OfflineQueueManager.GetQueueItems();
-                        var payload = new
-                        {
-                            count = items.Count,
-                            items = items
-                        };
-                        Dispatcher.Invoke(() =>
-                        {
-                            if (_webView != null && _webView.CoreWebView2 != null)
-                            {
-                                _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOfflineQueueLoaded) window.onOfflineQueueLoaded(" + JsonHelper.ToJson(payload) + ");");
-                            }
-                        });
-                    });
-                    return;
-                }
-
-                if (op.Equals("flushOfflineQueue", StringComparison.OrdinalIgnoreCase))
-                {
-                    ThreadPool.QueueUserWorkItem(s =>
-                    {
-                        string syUrl = "";
-                        string token = "";
-                        SyKernelRequest.AutoDiscoverEnv(ref syUrl, ref token, false);
-                        bool ok = OfflineQueueManager.FlushQueue(syUrl, token, (title, text) =>
-                        {
-                            if (OnNotificationRequested != null) OnNotificationRequested(title, text);
-                        });
-                        int remaining = OfflineQueueManager.GetQueueCount();
-                        Dispatcher.Invoke(() =>
-                        {
-                            if (_webView != null && _webView.CoreWebView2 != null)
-                            {
-                                _webView.CoreWebView2.ExecuteScriptAsync(string.Format("if(window.updateOfflineQueueBadge) window.updateOfflineQueueBadge({{ count: {0} }});", remaining));
-                            }
-                        });
-                    });
-                    return;
-                }
-
                 if (op.Equals("clearOfflineQueue", StringComparison.OrdinalIgnoreCase))
                 {
                     OfflineQueueManager.ClearQueue();
@@ -2875,10 +2853,25 @@ namespace XiaoLv.Desktop.UI
                         {
                             try
                             {
+                                if (string.IsNullOrWhiteSpace(taskContent))
+                                {
+                                    var rows = await SiYuanClient.SqlAsync("SELECT content, markdown FROM blocks WHERE id='" + taskId.Replace("'", "''") + "' LIMIT 1");
+                                    if (rows != null && rows.Count > 0)
+                                    {
+                                        taskContent = JsonHelper.GetString(rows[0], "markdown");
+                                        if (string.IsNullOrWhiteSpace(taskContent))
+                                        {
+                                            taskContent = JsonHelper.GetString(rows[0], "content");
+                                        }
+                                    }
+                                }
+
+                                string rawText = (taskContent ?? "").Trim();
                                 string doneText;
-                                if (taskContent.Contains("- [ ]")) doneText = taskContent.Replace("- [ ]", "- [x]");
-                                else if (taskContent.Contains("[ ]")) doneText = taskContent.Replace("[ ]", "[x]");
-                                else doneText = "- [x] " + taskContent.TrimStart('-', '*', ' ');
+                                if (rawText.Contains("- [ ]")) doneText = rawText.Replace("- [ ]", "- [x]");
+                                else if (rawText.Contains("* [ ]")) doneText = rawText.Replace("* [ ]", "* [x]");
+                                else if (rawText.Contains("[ ]")) doneText = rawText.Replace("[ ]", "[x]");
+                                else doneText = "- [x] " + rawText.TrimStart('-', '*', ' ');
 
                                 var res = await SiYuanClient.PostAsync("/api/block/updateBlock", new
                                 {
@@ -2887,7 +2880,8 @@ namespace XiaoLv.Desktop.UI
                                     data = doneText
                                 });
 
-                                if (res.Success)
+                                bool ok = res != null && res.Success;
+                                if (ok)
                                 {
                                     SoundPlayerHelper.PlayFeedback();
                                     if (OnNotificationRequested != null)
@@ -2895,6 +2889,13 @@ namespace XiaoLv.Desktop.UI
                                         OnNotificationRequested("思源外骨骼 · 待办管理", "✓ 已在思源笔记中勾选完成该待办！");
                                     }
                                 }
+                                Dispatcher.Invoke(() =>
+                                {
+                                    if (_webView != null && _webView.CoreWebView2 != null)
+                                    {
+                                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onTaskToggledDone) window.onTaskToggledDone(" + JsonHelper.ToJson(new { success = ok, id = taskId, content = doneText }) + ");");
+                                    }
+                                });
                             }
                             catch { }
                         });

@@ -4102,6 +4102,26 @@ async function main() {
                                       smartCaptureCs.includes('AppendToDailyNoteWithId');
   logStep("Step 7.234: 动作执行后结果回执与下一步精加工引擎 (#action-followup-banner)、网页剪藏/划笔/OCR窗内工作台与微胶囊续接栏断言", hasPostActionFollowUpEngine, `执行后进一步选择闭环: ${hasPostActionFollowUpEngine}`);
 
+  // Step 7.235: Test Bug Fixes (toggleTaskCompleteNow Data Preservation, Deduplicated OfflineQueue Handlers, FileDrop Follow-Up) & 6 Feature Consolidations
+  const offlineQueueGetCount = (bentoCsContent.match(/op\.Equals\("getOfflineQueue"/g) || []).length;
+  const offlineQueueFlushCount = (bentoCsContent.match(/op\.Equals\("flushOfflineQueue"/g) || []).length;
+  const hasBugFixesAndConsolidations = !panelContent.includes("markdown: '- [x] '") &&
+                                       panelContent.includes("window.onTaskToggledDone = function") &&
+                                       panelContent.includes("window.onFileDroppedToSiYuan = function") &&
+                                       offlineQueueGetCount === 1 &&
+                                       offlineQueueFlushCount === 1 &&
+                                       panelContent.includes('id="cat-btn-consolidated"') &&
+                                       panelContent.includes('const CONSOLIDATED_CARD_IDS =') &&
+                                       panelContent.includes('const CONSOLIDATED_CARD_OVERRIDES =') &&
+                                       panelContent.includes('function switchFormatWorkbenchTab') &&
+                                       panelContent.includes('function renderKnowledgeScopeBar') &&
+                                       panelContent.includes('function renderNavHubScopeBar') &&
+                                       panelContent.includes('id="lp-tab-browser"') &&
+                                       panelContent.includes('id="kanban-pomodoro-bar"') &&
+                                       panelContent.includes('function fillQuickNoteTemplate') &&
+                                       panelContent.includes('function triggerQuickNoteVoiceDictation');
+  logStep("Step 7.235: 待办勾销防丢字与离线队列去重 Bug 修复 + 六大功能合并 (22项精简合并视图/格式与高亮双标签/四合一导航/看板内嵌番茄/三合一速记/五域检索栏) 断言", hasBugFixesAndConsolidations, `Bug修复与六大功能合并闭环: ${hasBugFixesAndConsolidations}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

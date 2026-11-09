@@ -8293,6 +8293,8 @@
     ];
     const PLAZA_WEBHOOK_ACTIONS = [
       { badge: "POST", name: "/api/capture", desc: "免切窗速记入库（Quicker/AHK 最佳通道）" },
+      { badge: "POST", name: "/api/write", desc: "参数化写入：target=daily|doc · heading=小节 · doc=文档 · action=task|flash · data=内容" },
+      { badge: "URI", name: "siyuan-exoskeleton://write", desc: "同款参数化写入深链（浏览器/Quicker/脚本零 HTTP 客户端调用）" },
       { badge: "POST", name: "/api/action", desc: "核心指令分流：cmd+text 执行任意动作" },
       { badge: "GET", name: "/api/today", desc: "今日时间轴速览 JSON" },
       { badge: "GET", name: "/api/tasks", desc: "全库未完成待办提取" },
@@ -8317,6 +8319,10 @@
       if (modal) modal.classList.remove("open");
     }
     function copyPlazaWebhookUrl(path) {
+      if (path.indexOf("siyuan-exoskeleton") === 0) {
+        copyToClipboard(path + "?target=daily&heading=小节名&data=URL编码内容", "✓ 已复制参数化写入深链模板（data 需 URL 编码）");
+        return;
+      }
       const port = (window.__DESKTOP_SETTINGS__ && window.__DESKTOP_SETTINGS__.webhookPort) || 43989;
       copyToClipboard("http://127.0.0.1:" + port + path, "✓ 已复制 Webhook 地址（请求需带 X-Token，见偏好设置）");
     }

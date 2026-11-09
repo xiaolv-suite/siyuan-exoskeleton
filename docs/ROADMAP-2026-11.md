@@ -134,7 +134,7 @@
 
 ### P1 · 能力补位（社区有 issue 背书、集市空白的 4+1 个空白）
 
-1. **参数化写入深链**：`siyuan-exoskeleton://write?target=daily&heading=…&data=…`（对标 Advanced URI；REST 双入口；回吐 siyuan://blocks/{id} 跳转）。补 #14841。
+1. ✅ **参数化写入深链**（ParameterizedWriteBridge）：`siyuan-exoskeleton://write` + REST `/api/write` 双入口，复用 SYS 分流管线（>>小节/>@直投/task/flash），动作广场可复制模板
 2. **系统级提醒守护**：常驻轮询待办 deadline + 闪卡到期 → Windows 原生 toast（思源关闭也能收）→ 点击深链跳块 → toast 上「完成/延后」回写。补 #15002。
 3. **OCR 写回闭环**：截图 OCR 文本写块 `custom-` 属性 → `/api/query/sql` 可检索；OCR 结果可编辑。补 #13714。
 4. **剪藏模板路由**：域名规则 → 笔记本/模板/字段；三模式（整页 Reader / 只剪片段 / 只剪高亮）；图片资产本地化 upload；轻量「3 天前剪藏未读」回顾提醒（学简悦）。

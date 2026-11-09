@@ -710,6 +710,25 @@ namespace XiaoLv.Desktop
                         }
                     }
 
+                    // 5. 参数化写入深链 (P1-1 对标 Advanced URI): siyuan-exoskeleton://write?target=daily|doc&heading=小节&doc=文档&action=task|flash&data=URL编码内容
+                    if (clean.Contains("://write"))
+                    {
+                        string wData = ExtractQueryParam(clean, "data");
+                        if (!string.IsNullOrEmpty(wData))
+                        {
+                            string wTarget = ExtractQueryParam(clean, "target");
+                            string wHeading = ExtractQueryParam(clean, "heading");
+                            string wDoc = ExtractQueryParam(clean, "doc");
+                            string wAction = ExtractQueryParam(clean, "action");
+                            ThreadPool.QueueUserWorkItem(s =>
+                            {
+                                string result = XiaoLv.Desktop.Core.ParameterizedWriteBridge.ExecuteFromParams(wTarget, wHeading, wDoc, wAction, wData, SafeNotify);
+                                if (result != "OK") SafeNotify("思源外骨骼 · 参数化写入", "⚠️ " + result);
+                            });
+                            return;
+                        }
+                    }
+
                     var m = Regex.Match(clean, @"[?&]cmd=([^&]+)");
                     if (m.Success) cmd = Uri.UnescapeDataString(m.Groups[1].Value);
                     else if (clean.Contains("://quicknote")) cmd = "quick_note";

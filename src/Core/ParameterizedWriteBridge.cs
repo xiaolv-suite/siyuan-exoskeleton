@@ -1,0 +1,55 @@
+using System;
+
+namespace XiaoLv.Desktop.Core
+{
+    /// <summary>
+    /// 参数化写入桥 (P1-1 对标 Obsidian Advanced URI)：
+    /// siyuan-exoskeleton://write?... 深链与 REST POST /api/write 双入口共用。
+    /// 参数：target=daily|doc · heading=日记小节 · doc=目标文档名 · action=task|flash · data=内容(URL编码)
+    /// 统一复用 SYS 智能分流管线 (SmartCaptureMain)——与速记框/executeCommand 完全同源，
+    /// 天然支持 &gt;&gt;小节路由、&gt;@跨文档直投、- [ ] 待办、? 闪卡与 ¥/~/+ Lifelog 分流。
+    /// </summary>
+    public static class ParameterizedWriteBridge
+    {
+        /// <summary>
+        /// 执行参数化写入，返回 "OK" 或错误说明。
+        /// </summary>
+        public static string ExecuteFromParams(string target, string heading, string doc, string action, string data, Action<string, string> notify)
+        {
+            if (string.IsNullOrWhiteSpace(data)) return "缺少 data 参数";
+
+            string payload = data.Trim();
+            string a = (action ?? "").Trim().ToLowerInvariant();
+            if (a == "task" || a == "todo")
+            {
+                payload = "- [ ] " + payload;
+            }
+            else if (a == "flash" || a == "card")
+            {
+                payload = "?" + payload;
+            }
+
+            if (!string.IsNullOrWhiteSpace(doc))
+            {
+                payload = ">@" + doc.Trim() + " " + payload;
+            }
+            else if (!string.IsNullOrWhiteSpace(heading))
+            {
+                payload = ">>" + heading.Trim() + " " + payload;
+            }
+
+            try
+            {
+                var ctx = new DesktopStepContext("SYS", payload);
+                if (notify != null) ctx.OnNotificationRequested += (t, m) => { try { notify(t, m); } catch { } };
+                SmartCaptureMain.Exec(ctx);
+                return "OK";
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("ParameterizedWriteBridge execute failed", ex);
+                return "执行异常: " + ex.Message;
+            }
+        }
+    }
+}

@@ -4306,6 +4306,38 @@ async function main() {
                                programCsSel.includes('ShowPanel(null, string.IsNullOrWhiteSpace(selected) ? null : selected)');
   logStep("Step 7.241: 选区上下文唤起 (热键/双击Ctrl带入选区→意图条类型匹配动作→URL一键收藏) 与 b:/d: 专属空状态 断言", hasSelectionContext && hasSelSummonContract, `选区上下文闭环: ${hasSelectionContext} · 唤起契约: ${hasSelSummonContract}`);
 
+  // Step 7.242: Test Parameterized Write Deep Link + REST Twin (P1-1, Advanced-URI style)
+  const writeRes1 = await webhookFetch(WEBHOOK_BASE + "/api/write", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ target: "daily", heading: "E2E写入小节", data: "参数化深链写入验证内容XYZ731" })
+  });
+  const writeJson1 = await writeRes1.json();
+  await sleep(1600);
+  try { await api("/api/sqlite/flushTransaction"); } catch {}
+  const writeRow = await pollSql("SELECT id, content FROM blocks WHERE content LIKE '%参数化深链写入验证内容XYZ731%' LIMIT 1", 15);
+  const writeRes2 = await webhookFetch(WEBHOOK_BASE + "/api/write", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "task", data: "参数化深链待办验证T742" })
+  });
+  const writeJson2 = await writeRes2.json();
+  await sleep(1600);
+  try { await api("/api/sqlite/flushTransaction"); } catch {}
+  const writeTaskRow = await pollSql("SELECT id, content FROM blocks WHERE content LIKE '%参数化深链待办验证T742%' LIMIT 1", 15);
+  const programCsWrite = fs.readFileSync(path.join(ROOT, 'src', 'Program.cs'), 'utf8');
+  const bridgeCsWrite = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'ParameterizedWriteBridge.cs'), 'utf8');
+  const bridgeApiWrite = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'ExternalApiBridge.cs'), 'utf8');
+  const hasParamWrite = writeJson1.code === 0 && !!writeRow && writeJson2.code === 0 && !!writeTaskRow;
+  const hasParamWriteContract = programCsWrite.includes('://write') &&
+                                programCsWrite.includes('ParameterizedWriteBridge.ExecuteFromParams') &&
+                                bridgeCsWrite.includes('public static string ExecuteFromParams') &&
+                                bridgeCsWrite.includes('SmartCaptureMain.Exec(ctx)') &&
+                                bridgeApiWrite.includes('"/api/write"') &&
+                                panelContent.includes('siyuan-exoskeleton://write') &&
+                                panelContent.includes('已复制参数化写入深链模板');
+  logStep("Step 7.242: 参数化写入双入口 (深链 ://write + REST /api/write → SYS 分流管线真实落库：小节路由与待办动作) 断言", hasParamWrite && hasParamWriteContract, `REST写入: ${writeJson1.code}/${!!writeRow} · 待办: ${writeJson2.code}/${!!writeTaskRow} · 契约: ${hasParamWriteContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

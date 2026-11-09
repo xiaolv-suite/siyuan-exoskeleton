@@ -199,6 +199,13 @@ namespace XiaoLv.Desktop.Core
                     return;
                 }
 
+                // C2. 参数化写入: /write 或 /api/write (P1-1 深链 siyuan-exoskeleton://write 的 REST 双入口)
+                if (rawPath.Equals("/write", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/api/write", StringComparison.OrdinalIgnoreCase))
+                {
+                    HandleWriteRequest(req, resp);
+                    return;
+                }
+
                 // D. 窗口唤出与搜索直达: /show 或 /api/show 或 /api/window/show
                 if (rawPath.Equals("/show", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/api/show", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/api/window/show", StringComparison.OrdinalIgnoreCase))
                 {
@@ -574,6 +581,73 @@ namespace XiaoLv.Desktop.Core
                 msg = ok ? "指令已分发执行" : "未识别的动作指令",
                 cmd = cmd
             });
+        }
+
+        // 参数化写入处理器 (P1-1)：QueryString 与 JSON/表单体同名参数补齐，统一交给 SYS 智能分流管线
+        private static void HandleWriteRequest(HttpListenerRequest req, HttpListenerResponse resp)
+        {
+            try
+            {
+                string target = req.QueryString["target"] ?? "";
+                string heading = req.QueryString["heading"] ?? "";
+                string doc = req.QueryString["doc"] ?? "";
+                string action = req.QueryString["action"] ?? "";
+                string data = req.QueryString["data"] ?? "";
+
+                if (req.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+                {
+                    string body = ReadRequestBody(req);
+                    if (!string.IsNullOrEmpty(body))
+                    {
+                        string trimmed = body.Trim().Trim('\uFEFF');
+                        if (trimmed.StartsWith("{"))
+                        {
+                            var dict = JsonHelper.ParseDict(trimmed);
+                            string v;
+                            v = JsonHelper.GetString(dict, "target", ""); if (!string.IsNullOrEmpty(v)) target = v;
+                            v = JsonHelper.GetString(dict, "heading", ""); if (!string.IsNullOrEmpty(v)) heading = v;
+                            v = JsonHelper.GetString(dict, "doc", ""); if (!string.IsNullOrEmpty(v)) doc = v;
+                            v = JsonHelper.GetString(dict, "action", ""); if (!string.IsNullOrEmpty(v)) action = v;
+                            v = JsonHelper.GetString(dict, "data", ""); if (string.IsNullOrEmpty(data) && !string.IsNullOrEmpty(v)) data = v;
+                            v = JsonHelper.GetString(dict, "text", ""); if (string.IsNullOrEmpty(data) && !string.IsNullOrEmpty(v)) data = v;
+                            v = JsonHelper.GetString(dict, "content", ""); if (string.IsNullOrEmpty(data) && !string.IsNullOrEmpty(v)) data = v;
+                        }
+                        else
+                        {
+                            var form = ParseFormUrlEncoded(trimmed);
+                            string v;
+                            form.TryGetValue("target", out v); if (!string.IsNullOrEmpty(v)) target = v;
+                            form.TryGetValue("heading", out v); if (!string.IsNullOrEmpty(v)) heading = v;
+                            form.TryGetValue("doc", out v); if (!string.IsNullOrEmpty(v)) doc = v;
+                            form.TryGetValue("action", out v); if (!string.IsNullOrEmpty(v)) action = v;
+                            form.TryGetValue("data", out v); if (string.IsNullOrEmpty(data) && !string.IsNullOrEmpty(v)) data = v;
+                            form.TryGetValue("text", out v); if (string.IsNullOrEmpty(data) && !string.IsNullOrEmpty(v)) data = v;
+                            form.TryGetValue("content", out v); if (string.IsNullOrEmpty(data) && !string.IsNullOrEmpty(v)) data = v;
+                        }
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(data))
+                {
+                    WriteJsonResponse(resp, 400, new { code = 400, msg = "缺少 data 参数 (要写入的内容)" });
+                    return;
+                }
+
+                string composedPreview = data.Trim();
+                string result = ParameterizedWriteBridge.ExecuteFromParams(target, heading, doc, action, data, (t, m) => Program.SafeNotify(t, m));
+
+                WriteJsonResponse(resp, 200, new
+                {
+                    code = result == "OK" ? 0 : 1,
+                    msg = result == "OK" ? "参数化写入已分流执行" : result,
+                    target = string.IsNullOrEmpty(doc) ? "daily" : "doc",
+                    action = string.IsNullOrEmpty(action) ? "note" : action
+                });
+            }
+            catch (Exception ex)
+            {
+                WriteJsonResponse(resp, 500, new { code = 500, msg = "参数化写入异常: " + ex.Message });
+            }
         }
 
         private static void HandleShowRequest(HttpListenerRequest req, HttpListenerResponse resp)

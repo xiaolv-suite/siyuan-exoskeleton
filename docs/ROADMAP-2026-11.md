@@ -1,0 +1,169 @@
+# 思源外骨骼 · 软件现状全景与后续开发路线图（2026-11）
+
+> 调研方法：仓库自上而下只读盘点 + 三路外部调研（同类竞品 20+ 款 / 思源源码与插件生态 / Obsidian 插件生态 16 款头部插件）。
+> 结论先行：**官方思源正全力冲 AI/MCP/数据库/移动端，把「进程边界之外」的世界（全局热键、托盘、系统通知、截图 OCR、剪贴板、启动器联动、入站 webhook）完整留给了外骨骼**。下一阶段的主战场不是再加功能，而是①补齐社区有 issue 背书却无人占位的 4 个空白能力，②把「功能多但不会用」转化为「发现性设计」。
+
+---
+
+## 一、软件现状全景（自上而下，2026-11-10 实测）
+
+### 1.1 规模数字
+
+| 维度 | 数值 |
+|---|---|
+| 版本 | v3.0.0（README / package.json / IpcAndProtocol.cs 三处一致） |
+| 产物 | bin\Release\思源外骨骼.exe = 3,968,512 B（≈3.79 MB），2026-11-09 23:34 |
+| C# 源码 | 98 文件 / 45,034 行（Core 78 文件 22,475 行；Engine 13 文件 14,118 行；UI 7 文件 7,245 行） |
+| 最大模块 | OmniDomainActions.cs 8,316 行 · BentoWindow.cs 4,412 行 · ExternalApiBridge.cs 1,698 行 |
+| 前端资产 | panel.html 20,161 行 + pen-capsule.html 781 行 + quick-dialog.html 1,072 行，共 22,014 行 |
+| IPC 面 | BentoWindow 142 个唯一 op 分支；前端 panel.html 发送 92 种 op（121 处调用点） |
+| Webhook | 127.0.0.1:43989，70 条路径 = 34 个逻辑端点，Token 固定时间比较鉴权 + 回环 CORS |
+| 功能卡 | 31 张（5 组：捕获 6 / 搜索导航 10 / 插件直达 8 / 格式扩展 4 / 运维 3） |
+| 工作室 | 九宫格 12 个入口；实际注册 19 个 modal（另有 onboarding/时间轴/偏好/速查/AI 结果/离线队列/功能指南 7 个） |
+| E2E | scripts/e2e-isolated.mjs 4,317 行，260 条 logStep 断言（隔离靶场 :43988） |
+
+### 1.2 架构分层（自上而下）
+
+```
+┌─ 入口层 ─ 全局热键(Alt+Shift+S/W/G/C/O/R/X…) · 托盘菜单 · siyuan-exoskeleton:// + xiaolv:// 协议
+│           命名管道单实例唤出 · Quicker/uTools 外部事件
+├─ 窗体层 ─ 7 窗体 + 1 托盘（见 1.3）
+├─ 前端层 ─ panel.html：搜索意图条 → 分类 tabs → 31 卡网格/列表 → 12 工作室 modal
+│           Inspector 三 tab 坞 · action-followup 跟进 banner · 三支柱 Home Hub · 明暗双主题(127 处 CSS 变量)
+├─ 分发层 ─ BentoWindow op.Equals 链(142 op) · ActionDispatcher.Dispatch(Engine 命令面)
+├─ 领域层 ─ OmniDomainActions(8,316 行) 等领域模块：速记/剪藏/OCR/检索/闪卡/表格/代码/大纲/体检…
+├─ 数据层 ─ SiYuanClient(kernel HTTP API, Token) · SiYuanGuardian · OfflineQueueManager · DPAPI 保险箱
+├─ 服务层 ─ ExternalApiBridge(:43989 webhook 34 端点) · 剪贴板/选择/Office 文件监听 · SnippetExpansionEngine
+└─ 守护层 ─ MemoryOptimizer · HotkeyConflictManager · FirstRunEnvironmentDoctor · SiYuanProfileHub
+```
+
+### 1.3 窗体矩阵（全部核实）
+
+| 类 | 宿主 | 职责 |
+|---|---|---|
+| BentoWindow | WPF + **WebView2**（4,412 行） | 主工作台，31 卡 + 12 工作室，op 分发中枢 |
+| CapsuleWindow | WPF + WebView2 | 划词微胶囊（Alt+Shift+W），1~8 数字键盲打分流 |
+| DialogWindow | WPF + WebView2 | 通用 HTML 弹窗宿主（quick-dialog.html + SafeContext 状态 URL） |
+| MiniInputWindow | WPF **原生**（1,289 行） | 多态速记框：!/?/¥/~/+ 前缀意图分流、30s 防碎块粘滞合并 |
+| FSRSCapsuleWindow | WPF 原生（无边框透明） | 3 秒微刷卡舱：空格翻面、1~4 评分，直连 /api/riff/reviewRiffCard |
+| SnippingOverlayWindow | WPF 原生全屏覆盖层 | 截屏框选 + LocalOcrEngine 离线识字 |
+| DropZoneWindow | WPF 原生右缘停靠 | 屏幕右缘 10px 托放中枢，DropZoneRouter 路由（文章/票据/文件） |
+| SystemTray | WinForms NotifyIcon | 托盘常驻、菜单、溢出区探测 |
+
+跨组件底座：静态事件 8+（ExternalApiBridge.OnApiActionReceived、ClipboardWatcher.OnClipboardEnriched、SelectionHelper.OnAutoSelectionDetected 等）；通信模式统一为「前端 postMessage(JSON{op}) → op.Equals 链 → ExecuteScriptAsync 回推 window.onXxx（20+ 接收器）」。
+
+### 1.4 Webhook 34 端点（摘要）
+
+存活探针(/ /ping /status)、capture、action(核心分流)、show、today、tasks、search、书签(web/folder)、navigate、focus、task/complete、profile(读/萃取/切换)、notify(+journal)、launchpad、clip/merge、graph/radial、doctor/diagnose、vault(列表/读/写)、outline(tree/rename)、table(list/data/update/export)、code(snippets/open/update)、system/onboarding。
+
+### 1.5 UX 层现状
+
+搜索框 type-first 意图条（搜笔记/记日记/存待办三按钮 + 前缀语法零白脸路由）→ 8 分类 tabs（默认「精简推荐」22 卡合并视图）→ 卡片内联子操作 pills → split 检索视图（显式行按钮 + 防误触 hover 抑制）→ Inspector 三 tab → action-followup 引擎（每动作后 4~8 个下一步）→ 31 卡 3 步交互指南 + 首启 4 维环境自检向导 → 底栏活体遥测。
+
+### 1.6 构建与质量门
+
+- build-desktop.mjs：`Framework64/v4.0.30319/csc.exe` + `/target:winexe /platform:x64 /optimize+`，嵌入 WebView2 DLL 与 assets.zip，bin 侧保留松散资源目录供热更新；零 XAML、零 NuGet。
+- e2e-isolated.mjs：隔离内核 3.8.9 冷启动 → 253→260 断言扩容中 → 沙箱销毁/生产实例自动还原。
+
+### 1.7 并行开发现状（已收口，2026-11-10）
+
+并行会话遗留的 26 文件改动（+2,236/-887：离线队列可靠性回执、SiYuanProfileHub 配置预设中枢 +626、panel UX 迭代 +522、Program.cs +205、E2E 253→258+ 扩容、托盘/截屏/构建脚本打磨）已由本会话验证并提交；其中 Step 7.67 暴露的「离线补录 Flush 后未强制提交内核事务」缺陷已双向修复（OfflineQueueManager.FlushQueueInternal 补 `/api/sqlite/flushTransaction` + E2E 轮询前 flush、窗口 1.5s→4.5s），E2E 全量 258/258 通过。第 0.2 步 rowID→itemID 审计结论：无需迁移（见 0.2 行）。
+
+---
+
+## 二、同类产品横向对比（20+ 款调研摘要）
+
+| 类别 | 代表产品 | 对外骨骼最有价值的点 |
+|---|---|---|
+| 启动器 | uTools / Quicker / PowerToys CmdPal / Raycast(2025-11 Windows 公测) / Flow.Launcher / Listary 6 / Fluent Search | uTools **MCP 无 UI 能力注册**；Quicker **动作广场「网页复制→面板右键粘贴即装」**；CmdPal **fallback 兜底 + Home 钉选 + 快捷架 shelf**；Listary **双击 Ctrl**；Raycast **AI Quicklinks 路由** |
+| 便签/剪藏 | Sticky Notes / 简悦 / Cubox / Anybox / myMind / Omnivore(已死教训) | Cubox **收藏压缩成一个快捷键**；简悦「剪藏→合辑→回顾」闭环；myMind **取消分类决策**；Omnivore 关停 → **剪藏直接落本地笔记才是稳态架构**（外骨骼差异化依据） |
+| 剪贴板 | Ditto / PasteBar / Win+V | Ditto **粘贴为纯文本/多格式/合并**是标准答案；Win+V 25 条重启即清是及格线 |
+| AI 桌面助手 | Raycast AI / uTools AI / BoltAI / ChatBox / 豆包 / 千问 / Kimi | 国内三家已训练出「**划词→小窗**」肌肉记忆；四种 AI 集成模式中「**外部 Agent 反向调用(MCP)**」是 2025 生态级趋势 |
+| 笔记自带快捕 | Obsidian Web Clipper / Logseq(无原生) / Heptabase(2025-06 才排期) / Notion | **原生笔记软件普遍不做全局捕捉**——正是伴侣应用的存在空间 |
+
+**上手路径模式对比**：Quicker=广场装动作（生态即引导）· Raycast=Walkthrough 任务清单 · CmdPal=Home 钉选+最近+空状态 · uTools=教程视频兜底 · myMind/Cubox=取消选择成本。外骨骼组合拳 = **Quicker 式动作广场 + Raycast 式任务清单 + CmdPal 式兜底与最近使用**。
+
+---
+
+## 三、思源生态洞察
+
+- **版本基线**：最新稳定 v3.8.9（2026-10-29），rc v3.8.10-rc.3（2026-11-09）；47.1k stars，发版活跃。外骨骼无需升级基线，但需做 3.8.10 兼容回归。
+- **siyuan:// 深链**：仅 `siyuan://blocks/{id}?focus=1` 一种动作；无 create/append/write 参数化（issue #14841）。v3.8.4 前存在 XSS→RCE（GHSA-6gx2-8gcr-x83f）——**外骨骼的深链/webhook 入参必须白名单化**。
+- **插件做 vs 外骨骼做**：插件无 OS 全局热键、无后台常驻/托盘、无跨进程 exe 调用、无剪贴板主动写、无 OCR API、无 OS toast、仅 petal 私有存储。两者调的是**同一个 kernel API**——差异全在进程边界与系统层，这正是官方架构留出的位置。
+- **kernel API 宝藏**：17 个未文档化 `/api/riff/*`（外骨骼 FSRS 已在用）；`/api/clipboard/*` 富文本/资产粘贴；`/api/template/render`（3.8.10 起模板支持 HTTP 请求）；`/api/network/forwardProxy`。
+- **⚠ 硬兼容警报**：属性视图 `setAttributeViewBlockAttr` 的 **rowID 参数 2026-12-01 后移除，改 itemID**——外骨骼直写 AV 的代码必须在此之前迁移。
+- **集市生态位**：645 个插件；任务管理类最拥挤（Task Note Management ⭐227 等 6+ 款各自为战）、AI 类拥挤；**「外部伴侣/quick capture/全局热键/截图 OCR 伴侣」类目完全空白**；jsrunner(⭐5) 证明外部程序桥接需求真实存在但方案原始。
+- **官方缺口（有 issue 背书）**：桌面端全局热键速记 **#20319**（开放中）· 系统级任务提醒 **#15002**（「官方只有微信提醒」）· OCR 文本不可写回 **#13714** · 深链粒度不足 **#14841** · 全局命令中心 **#21332** · 大库搜索性能 **#6655**。
+- **官方主攻方向（不撞车区）**：AI Agent/MCP/长期记忆/向量语义搜索（v3.8.0~3.8.10）、数据库视图增强、内核插件系统、移动端闪念速记（v3.7.0 已做）。
+
+## 四、Obsidian 生态十大设计模式 → 外骨骼落地
+
+| # | 模式 | 来源 | 外骨骼落地 |
+|---|---|---|---|
+| 1 | 深链动作参数化（create/append/overwrite + 锚点 + daily） | Advanced URI | webhook 封装 appendBlock/appendDailyNoteBlock/createDocByParent，暴露「向日记某标题下追加」语义动作，回吐 siyuan:// 跳转 |
+| 2 | 外部接入安全模型（Bearer key + 最小端点 + OpenAPI） | Local REST API | 34 webhook 已有 token 鉴权，补 OpenAPI 描述文档与参数白名单 |
+| 3 | Capture 宏管道（菜单→表单→宏串行→回执） | QuickAdd | 热键→胶囊五路由→模板→kernel API→toast 回执；可串「截图→OCR→upload→建块→addRiffCards」 |
+| 4 | 占位符模板引擎（按目标路由选模板） | Templater | {{date}}/{{clipboard}}/{{selection}}/{{ocr_text}}/{{url}}，Sprig 走 renderSprig |
+| 5 | 入口再分配（命令挂到任意系统入口） | Commander | 热键/托盘/胶囊/右键发送到/Quicker/uTools/浏览器扩展 → 全部收敛到同一命令集 |
+| 6 | 跨库聚合查询 | Dataview/Tasks | /api/query/sql（记得 flushTransaction）聚合待办+到期卡+日记索引做「今日面板」 |
+| 7 | 模板化剪藏（Reader 提取 + 变量 + 资产本地化） | 官方 Web Clipper | 剪藏按域名规则路由笔记本/模板；划词高亮存为带回链引用块 |
+| 8 | OCR 索引管线 | Text Extractor | 截图→OCR→图片 upload→OCR 文本写 custom- 属性 → SQL 可检索（呼应 #13714） |
+| 9 | 系统级提醒触达 | Reminder | 常驻轮询待办 deadline + getRiffDueCards → Windows toast → 点击深链跳块 → 完成/延后回写 |
+| 10 | AI RAG 本地化的边界 | Copilot/Smart Connections | **不重复造向量库**：官方已上 embeddings/MCP/Agent；外骨骼做「采集入口 + 上下文喂送」 |
+
+---
+
+## 五、后续开发计划（2026 Q4 → 2027 Q1）
+
+### 第 0 步 · 立即卫生项（硬截止约束）
+
+| # | 事项 | 理由 |
+|---|---|---|
+| 0.1 | 收口并行会话未提交改动 → 跑 e2e → 落 commit | 工作区 +2,236/-887 行悬空，E2E 253→260 待验证 |
+| 0.2 | **AV rowID→itemID 迁移审查** ✅ 已审计（2026-11-10） | 全源码零命中 `setAttributeViewBlockAttr`/`rowID`/`itemID`；AV 写入仅走 `/api/av/addAttributeViewBlocks`（avID/blockID/srcs[].id 当前 schema）——**无需迁移**；今后新增 AV 单元格写值功能时须直接用 itemID |
+| 0.3 | 3.8.10-rc 兼容性回归（token/模板 HTTP/riff） | rc.3 已出，正式版发布前完成回归 |
+
+### P0 · 发现性战役（对齐「功能多但不会用」主线）
+
+1. **首启 30 秒演示动作回路**：Bento 首次打开空状态展示 3 张预填示例卡（日记/待办/闪卡），「▶ 试试看」一键真实写入 + toast 回执，完成后自动换成真数据。（学 Raycast Walkthrough + CmdPal Home）
+2. **Fallback 兜底命令**：搜索无匹配时底部固定 3 条兜底——发送『输入』到便签 / 全文搜索『输入』 / 问 AI『输入』。任何输入必然有用。（学 CmdPal，兜底可管理排序）
+3. **动作广场**：把 142 op + 34 webhook 包装成可浏览、可搜索、一键试装的动作库；每个动作配演示 GIF + `siyuan-exoskeleton://add-action?id=...` 一键导入。（学 Quicker 广场把学习成本降到近零）
+4. **5 任务新手指引**：托盘第一项「新手上路」：唤面板→存便签→剪网页→全文搜索→AI 路由，逐项打勾，全通解锁主题彩蛋；B 站/图文只作页脚兜底。
+5. **逐模块空状态**：每模块空态 = 一句「这能干嘛」+ 真实可点示例 + 热键徽章；检索空结果推荐「试试：全文搜索『外骨骼』」。
+6. **三段式唤起矩阵**：组合热键（现有）+ **双击 Ctrl** 备选热键（学 Listary，全屏自动禁用）+ **选中内容上下文模式**（选中文本/文件后唤起 → 自动带入选区，面板只显示类型匹配动作）。
+
+### P1 · 能力补位（社区有 issue 背书、集市空白的 4+1 个空白）
+
+1. **参数化写入深链**：`siyuan-exoskeleton://write?target=daily&heading=…&data=…`（对标 Advanced URI；REST 双入口；回吐 siyuan://blocks/{id} 跳转）。补 #14841。
+2. **系统级提醒守护**：常驻轮询待办 deadline + 闪卡到期 → Windows 原生 toast（思源关闭也能收）→ 点击深链跳块 → toast 上「完成/延后」回写。补 #15002。
+3. **OCR 写回闭环**：截图 OCR 文本写块 `custom-` 属性 → `/api/query/sql` 可检索；OCR 结果可编辑。补 #13714。
+4. **剪藏模板路由**：域名规则 → 笔记本/模板/字段；三模式（整页 Reader / 只剪片段 / 只剪高亮）；图片资产本地化 upload；轻量「3 天前剪藏未读」回顾提醒（学简悦）。
+5. **剪贴板胶囊多格式**：粘贴为纯文本 / 转 Markdown、历史搜索、Pin 置顶、多条合并成便签（Ditto 标准，显著超越 Win+V 基线）。
+
+### P2 · 生态与 AI 接入
+
+1. **MCP server 封装**：34 webhook 上加一层 MCP + OpenAPI 文档，让 ChatBox/Claude Code/豆包 Agent 自动调用「新增日记/查闪卡/全文检索」。（学 uTools registerTool 2025 模式）
+2. **AI 路由器**：不自建对话 UI，Quicklinks 式 URL 传参路由到**豆包/千问/Kimi/ChatBox**（对齐国内客户端优先原则），划词→小窗范式与三家对齐。
+3. **Quicker 动作广场上架**：把高频动作做成 Quicker 可导入动作（复制粘贴即装）。
+4. **（可选）轻量浏览器扩展**：划词/高亮 → webhook，先于完整剪藏扩展补「片段模式」。
+
+### 决策红线（明确不做）
+
+- ❌ AI 聊天客户端 / 本地向量库（官方 embeddings+MCP+Agent 已覆盖，撞车）
+- ❌ 数据库视图（思源 av 本身是强项）
+- ❌ 移动端（官方 v3.7.0 已做闪念速记）
+- ❌ 云同步/账号体系（本地优先是差异化根基）
+- ❌ 破坏单文件零依赖标准（新能力一律 kernel API + Win32 原生实现）
+
+### 工程护栏（持续）
+
+单文件零依赖（csc 直编）· E2E 隔离靶场扩容至 300+ 断言 · 安全四件套（127.0.0.1 绑定 + token 固定时间比较 + 参数白名单 + 深链 payload 净化，记取 GHSA-6gx2-8gcr-x83f 教训）· 每发版跑 3.8.x 兼容回归 · 待机内存 ≤ 22 MB、0.0% 空闲 CPU 不回退。
+
+---
+
+## 关键来源
+
+- 仓库盘点：D:\思源插件\思源小驴桌面助手（只读，2026-11-10）
+- 思源：github.com/siyuan-note/siyuan（47.1k★）· docs/API.md · kernel/api/router.go · petal/siyuan.d.ts · releases v3.7.0/v3.8.0/v3.8.9/v3.8.10-rc.3 · GHSA-6gx2-8gcr-x83f · bazaar（645 插件）· issues #20319 #15002 #14414 #1266 #13714 #14841 #9214 #6655 #17080 #21332
+- 竞品：u-tools.cn（MCP 专题）· getquicker.net（动作广场）· learn.microsoft.com（PowerToys CmdPal）· raycast.com（Windows 公测/AI）· listary.com · fluentsearch.net · sabrogden.github.io/Ditto · pastebar.app · cubox.pro · simpread.pro · mymind.com · obsidian.md/clipper · 豆包/千问/Kimi 桌面端
+- Obsidian 插件：quickadd.obsidian.guide · silentvoid13.github.io/Templater · Advanced URI 文档 · community.obsidian.md/plugins/cmdr · coddingtonbear/obsidian-local-rest-api · uphy/obsidian-reminder · scambier/obsidian-omnisearch · scambier/obsidian-text-extractor · obsidianmd/obsidian-clipper · logancyang/obsidian-copilot · brianpetro/obsidian-smart-connections · obsidian.md/help/bases

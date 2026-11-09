@@ -8177,12 +8177,14 @@
         }
         banner.style.display = "flex";
         const shortRaw = escapeHtml(raw.length > 18 ? raw.substring(0, 18) + "..." : raw);
+        const isSelUrl = /^https?:\/\//i.test(raw);
         banner.innerHTML = `
           <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
             <span class="intent-tag">💡 对「${shortRaw}」执行：</span>
             <span class="scope-switch-pill" style="background: rgba(16,185,129,0.18); border-color: var(--emerald-mint); color: var(--emerald-mint);" onclick="quickSubmitInputToDaily()">📥 记入今日日记</span>
             <span class="scope-switch-pill" style="background: rgba(245,158,11,0.18); border-color: var(--tech-amber); color: var(--tech-amber);" onclick="quickSubmitInputAsTask()">📋 存为待办任务</span>
             <span class="scope-switch-pill" style="background: rgba(99,102,241,0.16); border-color: var(--indigo-light); color: var(--indigo-light);" onclick="askAiFromSearchInput()" title="把输入内容交给 AI 直接回答或解读，结果弹窗展示可一键复制">🤖 问 AI</span>
+            ${isSelUrl ? '<span class="scope-switch-pill" style="background: rgba(56,189,248,0.16); border-color: var(--cyber-sky); color: var(--cyber-sky);" onclick="saveSelectionUrlBookmark()" title="把该网址一键存入网站收藏夹，fav: 可秒搜直达">⭐ 收藏此网址</span>' : ''}
             <span class="scope-switch-pill" onclick="insertPrefix('b:')">🧱 搜正文块 (b:)</span>
             <span class="scope-switch-pill" onclick="insertPrefix('d:')">📄 搜文档 (d:)</span>
             <span class="scope-switch-pill" onclick="insertPrefix('att:')">📎 搜PDF/附件 (att:)</span>
@@ -8380,6 +8382,43 @@
       const si = document.getElementById("search-input");
       if (si) si.focus();
       showToast("💬 输入想问的内容，然后点右侧「🤖 问 AI」");
+    }
+
+    // ==================== P0-6b 选区上下文唤起：Alt+Shift+Q / 双击 Ctrl 时自动带入前台选区 ====================
+    function enterSelectionContextMode(text) {
+      const sel = (text || "").trim();
+      if (!sel) return;
+      const flat = sel.replace(/\s+/g, " ").substring(0, 200);
+      const si = document.getElementById("search-input");
+      if (si) {
+        si.value = flat;
+        updateSearchClearBtn();
+        handleSearch(flat);
+        si.focus();
+      }
+      const isUrl = /^https?:\/\//i.test(flat);
+      showToast(isUrl ? "✨ 已带入选区网址，可「⭐ 收藏此网址」或存待办" : "✨ 已带入选区（" + flat.length + " 字），点上方动作直接处理");
+    }
+    function saveSelectionUrlBookmark() {
+      const si = document.getElementById("search-input");
+      const raw = si ? si.value.trim() : "";
+      if (!/^https?:\/\//i.test(raw)) {
+        showToast("⚠️ 当前输入不是网址");
+        return;
+      }
+      let host = raw;
+      try { host = new URL(raw).hostname.replace(/^www\./, ""); } catch (e) {}
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'saveWebBookmark',
+          title: host,
+          url: raw,
+          category: "常用",
+          tags: "",
+          notes: "选区上下文快捷收藏"
+        }));
+      }
+      showToast("⭐ 已收藏：" + host + "，输入 fav: 即可秒搜直达");
     }
     function openOnboardingTasksModal() {
       const modal = document.getElementById("onboarding-tasks-modal");
@@ -10949,7 +10988,24 @@
         <button type="button" class="fg-try-btn" onclick="askAiFromSearchInput()">🤖 问 AI 解读</button>
         <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回 31 项功能主页</button>`;
 
-      if (q.startsWith("t:") || q.startsWith("t：") || q.startsWith("todo:")) {
+      if (q.startsWith("b:") || q.startsWith("b：") || q.startsWith("block:")) {
+        title = "🧱 未找到匹配的笔记块";
+        desc = "块级秒搜命中 1~2 个字的关键词最高；也可以换相邻搜索域试试";
+        actions = `
+          <button type="button" class="fg-try-btn" onclick="insertPrefix('d:')">📄 改搜文档标题 (d:)</button>
+          <button type="button" class="fg-try-btn" onclick="insertPrefix('att:')">📎 改搜附件 (att:)</button>
+          <button type="button" class="fg-try-btn" onclick="insertPrefix('tag:')"># 改搜标签 (tag:)</button>
+          <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回主页</button>
+        `;
+      } else if (q.startsWith("d:") || q.startsWith("d：") || q.startsWith("doc:")) {
+        title = "📄 未找到匹配的文档标题";
+        desc = "文档标题搜不到时，线索往往在正文里；改搜正文块命中率更高";
+        actions = `
+          <button type="button" class="fg-try-btn" onclick="insertPrefix('b:')">🧱 改搜正文块 (b:)</button>
+          <button type="button" class="fg-try-btn" onclick="insertPrefix('tag:')"># 改搜标签 (tag:)</button>
+          <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回主页</button>
+        `;
+      } else if (q.startsWith("t:") || q.startsWith("t：") || q.startsWith("todo:")) {
         title = "🎉 当前没有未完成的待办任务";
         desc = "你可以在思源中使用 - [ ] 创建任务，或直接点击下方按钮新建一条待办事项";
         actions = `

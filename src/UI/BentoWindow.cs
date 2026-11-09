@@ -4171,7 +4171,7 @@ namespace XiaoLv.Desktop.UI
             });
         }
 
-        public void ShowPanel(string initialQuery = null)
+        public void ShowPanel(string initialQuery = null, string selectionContext = null)
         {
             // 1. 0ms 瞬间上屏与聚焦（秒开核心：从挂起态迅速唤醒 WebView2）
             Opacity = 1.0;
@@ -4224,6 +4224,13 @@ namespace XiaoLv.Desktop.UI
                     {
                         _webView.CoreWebView2.ExecuteScriptAsync("if(window.insertPrefix) window.insertPrefix(" + queryJson + ");");
                     }
+                }
+                else if (!string.IsNullOrEmpty(selectionContext))
+                {
+                    // 选区上下文唤起：把前台选区带入面板，意图条自动给出类型匹配动作（学 uTools 超级面板）
+                    string selText = selectionContext.Length > 600 ? selectionContext.Substring(0, 600) : selectionContext;
+                    string selJson = JsonHelper.ToJson(selText);
+                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.enterSelectionContextMode) { window.enterSelectionContextMode(" + selJson + "); } else if(window.insertPrefix) { window.insertPrefix(\"b:\"); }");
                 }
                 else
                 {

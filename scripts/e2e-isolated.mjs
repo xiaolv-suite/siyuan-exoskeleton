@@ -4287,6 +4287,25 @@ async function main() {
                                  programCsOnboard.includes('ShowPanel("@onboard")');
   logStep("Step 7.240: 新手上路 5 步清单 (五动作自动打勾/进度条/迷你条) 与托盘首项契约 (Insert0→@onboard→清单弹窗) 断言", hasOnboardChecklist && hasTrayOnboardContract, `清单闭环: ${hasOnboardChecklist} · 托盘契约: ${hasTrayOnboardContract}`);
 
+  // Step 7.241: Test Selection-Context Summon (uTools superpanel style) + b:/d: Tailored Empty States
+  const bentoCsSel = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'BentoWindow.cs'), 'utf8');
+  const programCsSel = fs.readFileSync(path.join(ROOT, 'src', 'Program.cs'), 'utf8');
+  const hasSelectionContext = panelContent.includes('function enterSelectionContextMode') &&
+                              panelContent.includes('function saveSelectionUrlBookmark') &&
+                              panelContent.includes('⭐ 收藏此网址') &&
+                              panelContent.includes('const isSelUrl = /^https?:\\/\\//i.test(raw);') &&
+                              panelContent.includes("op: 'saveWebBookmark',") &&
+                              panelContent.includes('🧱 未找到匹配的笔记块') &&
+                              panelContent.includes('📄 未找到匹配的文档标题') &&
+                              panelContent.includes('改搜文档标题 (d:)') &&
+                              panelContent.includes('改搜正文块 (b:)');
+  const hasSelSummonContract = bentoCsSel.includes('string selectionContext = null') &&
+                               bentoCsSel.includes('window.enterSelectionContextMode') &&
+                               bentoCsSel.includes('selectionContext.Length > 600') &&
+                               (programCsSel.match(/CaptureSelectedText\(150\)/g) || []).length >= 2 &&
+                               programCsSel.includes('ShowPanel(null, string.IsNullOrWhiteSpace(selected) ? null : selected)');
+  logStep("Step 7.241: 选区上下文唤起 (热键/双击Ctrl带入选区→意图条类型匹配动作→URL一键收藏) 与 b:/d: 专属空状态 断言", hasSelectionContext && hasSelSummonContract, `选区上下文闭环: ${hasSelectionContext} · 唤起契约: ${hasSelSummonContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

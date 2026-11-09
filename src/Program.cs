@@ -343,7 +343,8 @@ namespace XiaoLv.Desktop
             {
                 _wpfApp.Dispatcher.Invoke(() =>
                 {
-                    _bentoWindow.ShowPanel();
+                    string selected = SelectionHelper.CaptureSelectedText(150);
+                    _bentoWindow.ShowPanel(null, string.IsNullOrWhiteSpace(selected) ? null : selected);
                 });
             };
 
@@ -382,7 +383,11 @@ namespace XiaoLv.Desktop
 	                {
 	                    if (_wpfApp != null && _wpfApp.Dispatcher != null && _bentoWindow != null)
 	                    {
-	                        _wpfApp.Dispatcher.BeginInvoke(new Action(() => _bentoWindow.ShowPanel()));
+	                        _wpfApp.Dispatcher.BeginInvoke(new Action(() =>
+	                        {
+	                            string selected = SelectionHelper.CaptureSelectedText(150);
+	                            _bentoWindow.ShowPanel(null, string.IsNullOrWhiteSpace(selected) ? null : selected);
+	                        }));
 	                    }
 	                };
 	                DoubleTapHotkeyActivator.Start();

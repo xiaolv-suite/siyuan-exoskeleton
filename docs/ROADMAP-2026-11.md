@@ -138,7 +138,7 @@
 2. ✅ **系统级提醒守护**（ReminderGuardian）：10 分钟轮询到期闪卡(getRiffDueCards) + 📅/due: 截止日任务 → 托盘系统气泡（思源不在前台也能收）→ 点击智能跳转（fsrs→三秒微刷卡 / tasks→t: 待办视界）；数量指纹防轰炸、每日每状态一次、隔离靶场禁启
 3. ✅ **OCR 写回闭环**：胶囊图文入日记时把识别文字挂为块 IAL 属性 `custom-ocr-text`（正文本身即可编辑，补 #13714 编辑诉求）；新增 `ocr: 关键词` 秒搜域（BentoWindow searchOcr op 经 attributes.block_id JOIN 结构化检索，E2E 真机验证）；动作广场收录 ocr: 前缀
 4. ✅ **剪藏模板路由**：域名路由已落地（AppSettings.ClipDomainRules 每行「域名 => /目标目录/」，SmartCaptureMain.ResolveClipDomainFolder 精确+子域匹配覆盖研读专页目录，偏好 UI 可编辑，反射真机验证）；模板引擎此前已有（callout/yaml/minimal/custom 四预设 + {{smartTag}} 变量）；片段/批注模式已有（g:）；图片防盗链本地化已有（CacheAndUploadRemoteImage）；新增「3 天未读回顾」托盘气泡（ReminderGuardian 第三检查 → d:读库）
-5. **剪贴板胶囊多格式**：粘贴为纯文本 / 转 Markdown、历史搜索、Pin 置顶、多条合并成便签（Ditto 标准，显著超越 Win+V 基线）。
+5. ✅ **剪贴板胶囊多格式**：Pin 置顶已落地（ClipboardItem.IsPinned/ClipKey、TrimRecentToCapacity 置顶清除保护、DPAPI 加密 pinned_clips.json 重启还原、重复复制继承置顶态、c: 列表行内一键 📌）+ 🧹 纯文本直贴（clipToPlainText 剥离 MD/HTML）；历史搜索（c: + 6 类筛选）与多条合并（拼版工作台）此前已有
 
 ### P2 · 生态与 AI 接入
 

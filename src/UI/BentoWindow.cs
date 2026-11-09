@@ -3015,6 +3015,18 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
+                // 19.2 P1-5 剪贴板条目置顶切换 (Ditto 标准: Pin 后不被逐出、重启保留)
+                if (op.Equals("toggleClipPin", StringComparison.OrdinalIgnoreCase))
+                {
+                    string clipKey = JsonHelper.GetString(msg, "clipKey");
+                    bool pinOk = ClipboardWatcher.TogglePin(clipKey);
+                    if (_webView != null && _webView.CoreWebView2 != null)
+                    {
+                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onClipPinToggled) window.onClipPinToggled(" + JsonHelper.ToJson(new { code = pinOk ? 0 : 1, clipKey = clipKey }) + ");");
+                    }
+                    return;
+                }
+
                 // 20. 兼容旧版 name/value 与 setVar 嵌套 data 格式（如指令码、后续动作）
                 var dataDict = JsonHelper.GetDict(msg, "data") ?? msg;
                 string name = JsonHelper.GetString(dataDict, "name");
@@ -3031,7 +3043,7 @@ namespace XiaoLv.Desktop.UI
                     }
                     return;
                 }
-                // 19. 全库附件与文献资产秒查坞 (att: / asset: 语法)
+                // 18.5 P1-3 OCR 秒搜: 按截图识别文字结构化检索 (ocr: / searchOcr)
                 if (op.Equals("searchOcr", StringComparison.OrdinalIgnoreCase))
                 {
                     // P1-3 OCR 秒搜：按 custom-ocr-text 属性结构化检索全部截图图文笔记 (补 #13714)

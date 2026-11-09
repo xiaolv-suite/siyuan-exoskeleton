@@ -18,6 +18,8 @@ namespace XiaoLv.Desktop.Core
         public string Summary { get; set; }
         public string ImagePath { get; set; }
         public DateTime Timestamp { get; set; }
+        public bool IsPinned { get; set; }      // P1-5: 置顶项不被逐出且排序最前 (Ditto 标准)
+        public string ClipKey { get; set; }     // P1-5: 前后端识别键 (置顶切换用)
 
         public ClipboardItem()
         {
@@ -28,6 +30,8 @@ namespace XiaoLv.Desktop.Core
             Summary = "";
             ImagePath = "";
             Timestamp = DateTime.Now;
+            IsPinned = false;
+            ClipKey = "";
         }
     }
 
@@ -79,7 +83,33 @@ namespace XiaoLv.Desktop.Core
         {
             lock (_historyLock)
             {
-                return new System.Collections.Generic.List<ClipboardItem>(RecentItems);
+                // P1-5: 置顶项稳定排序在最前，其余按时间倒序
+                var pinned = new System.Collections.Generic.List<ClipboardItem>();
+                var rest = new System.Collections.Generic.List<ClipboardItem>();
+                foreach (var it in RecentItems)
+                {
+                    if (it.IsPinned) pinned.Add(it);
+                    else rest.Add(it);
+                }
+                pinned.AddRange(rest);
+                return pinned;
+            }
+        }
+
+        /// <summary>
+        /// P1-5: 容量裁剪——从尾部移除未置顶项，置顶项永不清除 (Ditto 标准)
+        /// </summary>
+        public static void TrimRecentToCapacity()
+        {
+            while (RecentItems.Count > MaxRecentCount)
+            {
+                int removeIdx = -1;
+                for (int i = RecentItems.Count - 1; i >= 0; i--)
+                {
+                    if (!RecentItems[i].IsPinned) { removeIdx = i; break; }
+                }
+                if (removeIdx < 0) break;
+                RecentItems.RemoveAt(removeIdx);
             }
         }
 
@@ -99,6 +129,7 @@ namespace XiaoLv.Desktop.Core
                 AddClipboardFormatListener(handle);
             }
             catch { }
+            RestorePinnedClips();
         }
 
         public static void Stop()
@@ -147,13 +178,15 @@ namespace XiaoLv.Desktop.Core
                                 Title = string.Format("剪贴板图片 ({0}×{1})", img.Width, img.Height),
                                 Summary = string.Format("图片 ({0}×{1})", img.Width, img.Height),
                                 EnrichedMarkdown = "![" + Path.GetFileName(imgPath) + "](" + imgPath + ")",
-                                Timestamp = DateTime.Now
+                                Timestamp = DateTime.Now,
+                                IsPinned = false,
+                                ClipKey = "i" + DateTime.Now.Ticks.ToString()
                             };
                             LatestItem = imgItem;
                             lock (_historyLock)
                             {
                                 RecentItems.Insert(0, imgItem);
-                                while (RecentItems.Count > MaxRecentCount) RecentItems.RemoveAt(RecentItems.Count - 1);
+                                TrimRecentToCapacity();
                             }
                             if (OnClipboardEnriched != null) OnClipboardEnriched(imgItem);
                             return;
@@ -185,9 +218,18 @@ namespace XiaoLv.Desktop.Core
                     LatestItem = item;
                     lock (_historyLock)
                     {
+                        // P1-5: 同文本重复复制时继承原置顶状态与识别键，Pin 不因重复复制而丢失
+                        bool wasPinned = false;
+                        string inheritedKey = "";
+                        foreach (var old in RecentItems)
+                        {
+                            if (old.RawText == item.RawText) { wasPinned = old.IsPinned; inheritedKey = old.ClipKey; break; }
+                        }
                         RecentItems.RemoveAll(x => x.RawText == item.RawText);
+                        item.IsPinned = wasPinned;
+                        item.ClipKey = string.IsNullOrEmpty(inheritedKey) ? ("t" + DateTime.Now.Ticks.ToString()) : inheritedKey;
                         RecentItems.Insert(0, item);
-                        while (RecentItems.Count > MaxRecentCount) RecentItems.RemoveAt(RecentItems.Count - 1);
+                        TrimRecentToCapacity();
                     }
                     if (OnClipboardEnriched != null)
                     {
@@ -196,6 +238,104 @@ namespace XiaoLv.Desktop.Core
                 }
                 catch { }
             });
+        }
+
+        /// <summary>
+        /// P1-5: 切换指定剪贴板条目的置顶状态，并同步 DPAPI 加密落盘 (重启不丢)
+        /// </summary>
+        public static bool TogglePin(string clipKey)
+        {
+            if (string.IsNullOrEmpty(clipKey)) return false;
+            ClipboardItem target = null;
+            lock (_historyLock)
+            {
+                foreach (var it in RecentItems)
+                {
+                    if (it.ClipKey == clipKey) { target = it; break; }
+                }
+                if (target != null) target.IsPinned = !target.IsPinned;
+            }
+            if (target != null) PersistPinnedClips();
+            return target != null;
+        }
+
+        private static string PinnedClipsFilePath
+        {
+            get { return Path.Combine(EmbeddedResourceManager.AppDataDir, "pinned_clips.json"); }
+        }
+
+        /// <summary>P1-5: 置顶项 DPAPI 加密持久化 (剪贴板内容可能含密码，绝不明文落盘)</summary>
+        public static void PersistPinnedClips()
+        {
+            try
+            {
+                var pinned = new System.Collections.Generic.List<ClipboardItem>();
+                lock (_historyLock)
+                {
+                    foreach (var it in RecentItems)
+                    {
+                        if (it.IsPinned) pinned.Add(it);
+                        if (pinned.Count >= 12) break;
+                    }
+                }
+                string dir = EmbeddedResourceManager.AppDataDir;
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                string json = JsonHelper.ToJson(pinned);
+                string cipher = SiYuanProfileHub.ProtectSecretDpapi(json);
+                File.WriteAllText(PinnedClipsFilePath, string.IsNullOrEmpty(cipher) ? json : cipher);
+            }
+            catch { }
+        }
+
+        /// <summary>P1-5: 启动时还原置顶项 (解密 → 去重并入历史头部)</summary>
+        public static void RestorePinnedClips()
+        {
+            try
+            {
+                string file = PinnedClipsFilePath;
+                if (!File.Exists(file)) return;
+                string content = File.ReadAllText(file);
+                if (string.IsNullOrEmpty(content)) return;
+                if (content.StartsWith("DPAPI:", StringComparison.Ordinal))
+                {
+                    content = SiYuanProfileHub.UnprotectSecretDpapi(content);
+                }
+                if (string.IsNullOrEmpty(content) || !(content.TrimStart().StartsWith("["))) return;
+                var rows = JsonHelper.ParseList(content);
+                if (rows == null) return;
+                lock (_historyLock)
+                {
+                    var restored = new System.Collections.Generic.List<ClipboardItem>();
+                    foreach (var rowObj in rows)
+                    {
+                        var d = rowObj as System.Collections.Generic.IDictionary<string, object>;
+                        if (d == null) continue;
+                        string raw = JsonHelper.GetString(d, "RawText", JsonHelper.GetString(d, "rawText", ""));
+                        if (string.IsNullOrEmpty(raw)) continue;
+                        string key = JsonHelper.GetString(d, "ClipKey", JsonHelper.GetString(d, "clipKey", ""));
+                        bool dup = false;
+                        foreach (var ex in RecentItems) { if (ex.ClipKey == key || ex.RawText == raw) { dup = true; break; } }
+                        if (dup) continue;
+                        restored.Add(new ClipboardItem
+                        {
+                            RawText = raw,
+                            EnrichedMarkdown = JsonHelper.GetString(d, "EnrichedMarkdown", JsonHelper.GetString(d, "enrichedMarkdown", "")),
+                            SniffedType = JsonHelper.GetString(d, "SniffedType", JsonHelper.GetString(d, "sniffedType", "text")),
+                            Title = JsonHelper.GetString(d, "Title", JsonHelper.GetString(d, "title", "")),
+                            Summary = JsonHelper.GetString(d, "Summary", JsonHelper.GetString(d, "summary", "")),
+                            ImagePath = JsonHelper.GetString(d, "ImagePath", JsonHelper.GetString(d, "imagePath", "")),
+                            Timestamp = DateTime.Now,
+                            IsPinned = true,
+                            ClipKey = string.IsNullOrEmpty(key) ? ("r" + DateTime.Now.Ticks.ToString()) : key
+                        });
+                    }
+                    for (int i = restored.Count - 1; i >= 0; i--)
+                    {
+                        RecentItems.Insert(0, restored[i]);
+                    }
+                }
+            }
+            catch { }
         }
 
         public static ClipboardItem AnalyzeClipboardContent(string txt, string html)

@@ -4426,6 +4426,47 @@ async function main() {
                                programP14.includes('ShowPanel("d:读库")');
   logStep("Step 7.245: 剪藏域名路由 (域名=>目录规则反射真机命中/子域匹配/未命中空) 与 3 天未读回顾提醒 (托盘气泡→d:读库) 断言", hasClipRouteRuntime && hasClipRouteContract, `路由运行时: ${hasClipRouteRuntime} · 契约: ${hasClipRouteContract}`);
 
+  // Step 7.246: Test Clipboard Pin & Plain-Text Paste (P1-5, Ditto standard)
+  const pinTmpDir = path.join(process.env.TEMP || "C:\\Windows\\Temp", "xiaolv-pintest-" + Date.now());
+  fs.mkdirSync(pinTmpDir, { recursive: true });
+  const pinTestScript = `
+    $env:XIAOLV_DATA_DIR = '${pinTmpDir}';
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $wt = $asm.GetType('XiaoLv.Desktop.Core.ClipboardWatcher');
+    $itT = $asm.GetType('XiaoLv.Desktop.Core.ClipboardItem');
+    $items = $wt.GetField('RecentItems').GetValue($null);
+    foreach ($n in 1..3) { $i = [Activator]::CreateInstance($itT); $i.RawText = 'pin-test-clip-' + $n; $i.ClipKey = 'pk' + $n; $items.Add($i); }
+    $mPin = $wt.GetMethod('TogglePin');
+    $r1 = $mPin.Invoke($null, @('pk2'));
+    $found2 = $null; foreach ($x in $items) { if ($x.ClipKey -eq 'pk2') { $found2 = $x; break; } }
+    $pinnedOk = ($r1 -eq $true) -and ($found2 -ne $null) -and ($found2.IsPinned -eq $true);
+    $fileOk = [System.IO.File]::Exists('${pinTmpDir}' + '\\pinned_clips.json');
+    $r2 = $mPin.Invoke($null, @('pk2'));
+    $unpinOk = ($r2 -eq $true) -and ($found2.IsPinned -eq $false);
+    Write-Output ($pinnedOk.ToString() + '|' + $fileOk.ToString() + '|' + $unpinOk.ToString());
+  `;
+  const pinTestRes = runPs(pinTestScript);
+  const hasPinRuntime = /^True\|True\|True/.test(pinTestRes.trim());
+  const clipWatcherCs = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'ClipboardWatcher.cs'), 'utf8');
+  const bentoPinCs = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'BentoWindow.cs'), 'utf8');
+  const hasPinContract = clipWatcherCs.includes('public bool IsPinned') &&
+                         clipWatcherCs.includes('public string ClipKey') &&
+                         clipWatcherCs.includes('public static void TrimRecentToCapacity') &&
+                         clipWatcherCs.includes('PersistPinnedClips') &&
+                         clipWatcherCs.includes('RestorePinnedClips') &&
+                         clipWatcherCs.includes('ProtectSecretDpapi') &&
+                         clipWatcherCs.includes('pinned_clips.json') &&
+                         bentoPinCs.includes('op.Equals("toggleClipPin"') &&
+                         panelContent.includes('function toggleClipPinFromRow') &&
+                         panelContent.includes('function clipToPlainText') &&
+                         panelContent.includes('function pasteClipAsPlainText') &&
+                         panelContent.includes('window.onClipPinToggled') &&
+                         panelContent.includes('🧹 纯文本') &&
+                         panelContent.includes('📌 置顶');
+  logStep("Step 7.246: 剪贴板胶囊多格式 (Pin 置顶 DPAPI 加密落盘/重启还原/容量清除保护 + 🧹 纯文本直贴，Ditto 标准) 断言", hasPinRuntime && hasPinContract, `Pin运行时: ${pinTestRes.trim()} · 契约: ${hasPinContract}`);
+  try { fs.rmSync(pinTmpDir, { recursive: true, force: true }); } catch {}
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

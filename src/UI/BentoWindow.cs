@@ -3015,6 +3015,27 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
+                // 19.4 P2-2 AI 路由: 系统默认浏览器/协议处理器打开 AI 客户端目标 (仅 http/https 白名单)
+                if (op.Equals("aiRouteLaunch", StringComparison.OrdinalIgnoreCase))
+                {
+                    string targetUrl = JsonHelper.GetString(msg, "url", "").Trim();
+                    bool routeOk = false;
+                    if (targetUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || targetUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(targetUrl) { UseShellExecute = true });
+                            routeOk = true;
+                        }
+                        catch { }
+                    }
+                    if (_webView != null && _webView.CoreWebView2 != null)
+                    {
+                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onAiRouteLaunched) window.onAiRouteLaunched(" + JsonHelper.ToJson(new { code = routeOk ? 0 : 1 }) + ");");
+                    }
+                    return;
+                }
+
                 // 19.2 P1-5 剪贴板条目置顶切换 (Ditto 标准: Pin 后不被逐出、重启保留)
                 if (op.Equals("toggleClipPin", StringComparison.OrdinalIgnoreCase))
                 {

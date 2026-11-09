@@ -143,7 +143,7 @@
 ### P2 · 生态与 AI 接入
 
 1. ✅ **MCP server 封装**：`思源外骨骼.exe --mcp` 无头 stdio NDJSON JSON-RPC（零 UI 零互斥），7 工具（siyuan_write/search_blocks/search_docs/today_entries/unfinished_tasks/due_cards_count/status）复用参数化写入桥与 kernel API；E2E 真机 spawn 验证握手+工具表+写入落库；坑：winexe 下 Console.InputEncoding 不可靠（GBK 乱码），必须 OpenStandardInput+UTF8 裸流。新增 GET /api/openapi OpenAPI 3.0 自描述端点（9 路径）+ docs/MCP-README.md 接入指南（Claude Desktop/ChatBox/Cursor 配置）
-2. **AI 路由器**：不自建对话 UI，Quicklinks 式 URL 传参路由到**豆包/千问/Kimi/ChatBox**（对齐国内客户端优先原则），划词→小窗范式与三家对齐。
+2. ✅ **AI 路由器**：`ai: 问题` 前缀 + 搜索框 Tab 一键路由 + 意图条「📤 AI 路由」；剪贴板交接范式（先复制提问再打开目标，粘贴即问——URL 预填不确定也不误事）；默认 4 目标（豆包/千问/Kimi/秘塔）偏好可编辑（{query} 占位模板）；后端 aiRouteLaunch op 仅 http(s) 白名单；E2E 回调对账抓漏 onAiRouteLaunched 已补
 3. **Quicker 动作广场上架**：把高频动作做成 Quicker 可导入动作（复制粘贴即装）。
 4. **（可选）轻量浏览器扩展**：划词/高亮 → webhook，先于完整剪藏扩展补「片段模式」。
 

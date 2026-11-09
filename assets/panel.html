@@ -4660,6 +4660,10 @@
               <span style="font-size: 11.5px; color: var(--text-secondary);">🎯 剪藏域名路由（每行一条 <code style="color: var(--cyber-sky);">域名 =&gt; /目标目录/</code>，命中时研读专页按域名归档）：</span>
               <textarea id="pref-desktop-clipdomainrules" class="search-input" style="height: 52px; font-size: 11px; font-family: Consolas, monospace; line-height: 1.4; padding: 6px 8px; border-radius: 6px; resize: vertical;" placeholder="github.com => /读库/开发/    zhihu.com => /读库/观点/    (每行一条)"></textarea>
             </div>
+            <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-secondary);">🚀 AI 路由目标（JSON 数组，URL 模板用 <code style="color: var(--cyber-sky);">{query}</code> 占位；打开目标前会自动复制提问到剪贴板）：</span>
+              <textarea id="pref-desktop-airoutes" class="search-input" style="height: 52px; font-size: 11px; font-family: Consolas, monospace; line-height: 1.4; padding: 6px 8px; border-radius: 6px; resize: vertical;" placeholder='[{"name":"豆包","url":"https://www.doubao.com/chat?q={query}"}]'></textarea>
+            </div>
             <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                 <span style="font-size: 11.5px; color: var(--text-secondary);">📝 研读专页 Markdown 模板：</span>
@@ -6002,6 +6006,13 @@
           handleSearch(val);
         });
       });
+      // P2-2: 搜索框内 Tab = 一键 AI 路由 (有输入时截获，空输入保留原生焦点移动)
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Tab" && !e.shiftKey && !e.ctrlKey && !e.altKey && searchInput.value.trim()) {
+          e.preventDefault();
+          launchPrimaryAiRoute();
+        }
+      });
 
       window.addEventListener("keydown", (e) => {
         if (e.defaultPrevented || e.isComposing) return;
@@ -7246,6 +7257,24 @@
         return;
       }
 
+      // ai: 模式：P2-2 AI 路由器 — 把输入分发给国内 AI 客户端 (复制提问 + 打开目标)
+      if (q.startsWith("ai:") || q.startsWith("ai：")) {
+        const routeQuery = q.replace(/^(ai:|ai：)/, "").trim();
+        filteredItems = getAiRouteTargets().map(t => ({
+          id: `airoute_${t.name}`,
+          title: `🚀 在 ${t.name} 中询问`,
+          desc: `${routeQuery ? "提问: " + routeQuery.substring(0, 60) : "输入 ai: + 问题；或直接打字后按 Tab 走默认目标"} · ${t.url}`,
+          badge: "AI路由",
+          badgeCls: "badge-bridge",
+          iconType: "link",
+          iconColor: "var(--cyber-sky)",
+          aiRouteData: { name: t.name, url: t.url, query: routeQuery }
+        }));
+        selectedIndex = 0;
+        renderItems();
+        return;
+      }
+
       // att: 模式：实时向 C# 后台请求检索全库附件与文献资产秒查坞 (灵感 Ⅰ)
       if (q.startsWith("att:") || q.startsWith("att：") || q.startsWith("asset:") || q.startsWith("asset：")) {
         const subKw = q.replace(/^(att:|att：|asset:|asset：)/, "").trim();
@@ -8207,6 +8236,7 @@
             <span class="scope-switch-pill" style="background: rgba(16,185,129,0.18); border-color: var(--emerald-mint); color: var(--emerald-mint);" onclick="quickSubmitInputToDaily()">📥 记入今日日记</span>
             <span class="scope-switch-pill" style="background: rgba(245,158,11,0.18); border-color: var(--tech-amber); color: var(--tech-amber);" onclick="quickSubmitInputAsTask()">📋 存为待办任务</span>
             <span class="scope-switch-pill" style="background: rgba(99,102,241,0.16); border-color: var(--indigo-light); color: var(--indigo-light);" onclick="askAiFromSearchInput()" title="把输入内容交给 AI 直接回答或解读，结果弹窗展示可一键复制">🤖 问 AI</span>
+            <span class="scope-switch-pill" style="background: rgba(56,189,248,0.16); border-color: var(--cyber-sky); color: var(--cyber-sky);" onclick="launchPrimaryAiRoute()" title="复制提问并打开默认 AI 客户端 (豆包/千问/Kimi 等，Tab 键同效)">📤 AI 路由</span>
             ${isSelUrl ? '<span class="scope-switch-pill" style="background: rgba(56,189,248,0.16); border-color: var(--cyber-sky); color: var(--cyber-sky);" onclick="saveSelectionUrlBookmark()" title="把该网址一键存入网站收藏夹，fav: 可秒搜直达">⭐ 收藏此网址</span>' : ''}
             <span class="scope-switch-pill" onclick="insertPrefix('b:')">🧱 搜正文块 (b:)</span>
             <span class="scope-switch-pill" onclick="insertPrefix('d:')">📄 搜文档 (d:)</span>
@@ -8290,6 +8320,7 @@
 
     // ==================== P0-3 动作广场：全部动作可搜索、可一键执行 ====================
     const PLAZA_PREFIX_ACTIONS = [
+      { badge: "ai: 问题", name: "AI 客户端路由", desc: "复制提问并打开豆包/千问/Kimi 等，Tab 键同效", run: "insertPrefix('ai:')" },
       { badge: "! 事项", name: "待办速记", desc: "回车即把 - [ ] 任务写入今日日记", run: "insertPrefix('!')" },
       { badge: "? 问//答", name: "秒建闪卡", desc: "问句自动生成 FSRS 问答卡进复习库", run: "insertPrefix('?')" },
       { badge: "¥ 金额", name: "Lifelog 记账", desc: "自动分流进日记专属账目小节", run: "insertPrefix('¥')" },
@@ -9558,7 +9589,7 @@
         it.isVoiceItem || it.isWebClipItem || it.favData || it.folderData || it.isBookmarkItem ||
         it.profileData || it.notifData || it.isCodeSnippet || it.isTableBlock || it.isTagItem ||
         it.taskData || it.isFlowTimerItem || it.isCleanMdItem || it.isColorStyleItem || it.isClipItem ||
-        it.isPenWorkbenchItem || it.isOcrWorkbenchItem
+        it.isPenWorkbenchItem || it.isOcrWorkbenchItem || it.aiRouteData
       )) {
         return true;
       }
@@ -11170,6 +11201,15 @@
           <div class="search-row-actions" onclick="event.stopPropagation()">
             <button type="button" class="search-row-btn primary" onclick="event.stopPropagation(); executeItem(filteredItems[${idx}])" title="若当前有打开/保存文件对话框则原位秒跳该目录，否则在资源管理器打开">📂 跳目录</button>
             <button type="button" class="search-row-btn" onclick="event.stopPropagation(); selectedIndex = ${idx}; executeSelected(true)" title="将文件夹完整路径粘贴到光标处">📋 贴路径</button>
+          </div>
+        `;
+      }
+      if (it.aiRouteData) {
+        const r = it.aiRouteData;
+        return `
+          <div class="search-row-actions" onclick="event.stopPropagation()">
+            <button type="button" class="search-row-btn primary" onclick="event.stopPropagation(); launchAiRouteTarget('${escapeQuote(r.name)}', '${escapeQuote(r.url)}', '${escapeQuote(r.query)}')" title="复制提问并打开该 AI 客户端，粘贴即问">🚀 打开并复制</button>
+            <button type="button" class="search-row-btn" onclick="event.stopPropagation(); copyToClipboard('${escapeQuote(r.query)}', '✓ 仅复制提问到剪贴板')" title="仅把提问复制到剪贴板，不打开窗口">📋 仅复制</button>
           </div>
         `;
       }
@@ -16143,6 +16183,11 @@
       if (inClipMode) handleSearch(si.value);
       showToast("📌 置顶状态已更新并加密保存");
     };
+    window.onAiRouteLaunched = function(res) {
+      if (res && res.code !== 0) {
+        showToast("⚠️ AI 路由打开失败：请检查目标 URL 或系统默认浏览器");
+      }
+    };
     function clipToPlainText(md) {
       let t = md || "";
       t = t.replace(/!\[[^\]]*\]\([^)]*\)/g, "");
@@ -16169,6 +16214,42 @@
       pasteAtCursor(clipToPlainText(md));
       showToast("🧹 已剥离格式，以纯文本粘贴到光标处");
     };
+
+    // ==================== P2-2 AI 路由器：把输入交给国内 AI 客户端 (不自建聊天 UI，剪贴板交接零猜测) ====================
+    function getAiRouteTargets() {
+      let raw = "[]";
+      if (window.__DESKTOP_SETTINGS__ && window.__DESKTOP_SETTINGS__.aiRouteTargetsJson) raw = window.__DESKTOP_SETTINGS__.aiRouteTargetsJson;
+      try {
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr.filter(t => t && t.name && t.url) : [];
+      } catch (e) { return []; }
+    }
+    function buildAiRouteUrl(template, query) {
+      if (!template) return "";
+      if (template.indexOf("{query}") >= 0) {
+        try { return template.replace("{query}", encodeURIComponent(query || "")); } catch (e) { return template; }
+      }
+      return template;
+    }
+    function launchAiRouteTarget(name, urlTemplate, query) {
+      const q = (query || "").trim();
+      if (!q) { showToast("⚠️ 先在搜索框输入要问的内容"); return; }
+      const finalUrl = buildAiRouteUrl(urlTemplate, q);
+      copyToClipboard(q, "");
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'aiRouteLaunch', url: finalUrl }));
+      } else {
+        try { window.open(finalUrl, "_blank"); } catch (e) {}
+      }
+      showToast("🚀 已打开 " + name + " 并复制提问，粘贴 (Ctrl+V) 即问");
+    }
+    function launchPrimaryAiRoute() {
+      const targets = getAiRouteTargets();
+      if (targets.length === 0) { showToast("⚠️ 未配置 AI 路由目标，可在偏好设置添加"); return; }
+      const si = document.getElementById("search-input");
+      const q = si ? si.value.trim() : "";
+      launchAiRouteTarget(targets[0].name, targets[0].url, q);
+    }
 
     let pinnedDocs = [];
 
@@ -16401,6 +16482,8 @@
         if (cfEl) cfEl.value = s.webClipTargetFolder || "/读库/";
         const cdrEl = document.getElementById("pref-desktop-clipdomainrules");
         if (cdrEl) cdrEl.value = s.clipDomainRules || "";
+        const arEl = document.getElementById("pref-desktop-airoutes");
+        if (arEl) arEl.value = s.aiRouteTargetsJson || "";
         const aiEnEl = document.getElementById("pref-desktop-ai-enabled");
         if (aiEnEl) aiEnEl.checked = !!s.aiEnabled;
         const aiUrlEl = document.getElementById("pref-desktop-ai-url");
@@ -16574,6 +16657,7 @@
       const cmVal = (document.getElementById("pref-desktop-clipmode")?.value || "card").trim();
       const cfVal = (document.getElementById("pref-desktop-clipfolder")?.value || "/读库/").trim();
       const cdrVal = (document.getElementById("pref-desktop-clipdomainrules")?.value || "").trim();
+      const arVal = (document.getElementById("pref-desktop-airoutes")?.value || "").trim();
       const ctplVal = (document.getElementById("pref-desktop-cliptemplate")?.value || "").trim();
       const fVal = !!document.getElementById("pref-desktop-autofloat")?.checked;
       const aVal = !!document.getElementById("pref-desktop-autostart")?.checked;
@@ -16617,6 +16701,7 @@
             webClipDefaultMode: cmVal,
             webClipTargetFolder: cfVal,
             clipDomainRules: cdrVal,
+            aiRouteTargetsJson: arVal,
             webClipCustomTemplate: ctplVal,
             autoFloatEnabled: fVal,
             autoStart: aVal,

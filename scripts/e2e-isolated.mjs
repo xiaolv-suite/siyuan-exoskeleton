@@ -4541,6 +4541,39 @@ async function main() {
                              bridgeOpenapi.includes('"3.0.3"');
   logStep("Step 7.248: OpenAPI 3.0 自描述端点 (GET /api/openapi 可机器读：核心端点+鉴权方案+MCP 指引) 断言", hasOpenapiSpec && hasOpenapiContract, `规范: ${hasOpenapiSpec} · 契约: ${hasOpenapiContract} · 端点数: ${openapiJson?.paths ? Object.keys(openapiJson.paths).length : 0}`);
 
+  // Step 7.249: Test AI Router (P2-2: ai: prefix + Tab trigger + clipboard handoff, domestic clients)
+  const aiRouteScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $st = $asm.GetType('XiaoLv.Desktop.Core.AppSettings').GetProperty('Instance', [System.Reflection.BindingFlags]'Public,Static').GetValue($null, $null);
+    $json = $st.AiRouteTargetsJson;
+    $parsed = $json | ConvertFrom-Json;
+    $names = @($parsed | ForEach-Object { $_.name }) -join ',';
+    $hasDoubao = ($json -match 'doubao\\.com') -and ($json -match '{query}');
+    $ok = ($parsed.Count -ge 3) -and $hasDoubao;
+    Write-Output ($ok.ToString() + '|' + $names);
+  `;
+  const aiRouteRes = runPs(aiRouteScript);
+  const hasAiRouteRuntime = aiRouteRes.includes("True");
+  const appSettingsAi = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'AppSettings.cs'), 'utf8');
+  const bentoAi = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'BentoWindow.cs'), 'utf8');
+  const hasAiRouteContract = appSettingsAi.includes('AiRouteTargetsJson') &&
+                             appSettingsAi.includes('"aiRouteTargetsJson"') &&
+                             bentoAi.includes('op.Equals("aiRouteLaunch"') &&
+                             bentoAi.includes('StartsWith("https://", StringComparison.OrdinalIgnoreCase)') &&
+                             panelContent.includes('function getAiRouteTargets') &&
+                             panelContent.includes('function launchAiRouteTarget') &&
+                             panelContent.includes('function launchPrimaryAiRoute') &&
+                             panelContent.includes("startsWith(\"ai:\") || q.startsWith(\"ai：\")") &&
+                             panelContent.includes('it.aiRouteData') &&
+                             panelContent.includes('📤 AI 路由') &&
+                             panelContent.includes('launchPrimaryAiRoute();') &&
+                             panelContent.includes('id="pref-desktop-airoutes"') &&
+                             panelContent.includes('aiRouteTargetsJson: arVal') &&
+                             panelContent.includes("insertPrefix('ai:')") &&
+                             panelContent.includes('{query}');
+  logStep("Step 7.249: AI 路由器 (ai: 前缀目标列表 / Tab 一键路由 / 剪贴板交接复制提问 / http(s) 白名单 / 偏好可编辑默认豆包千问Kimi秘塔) 断言", hasAiRouteRuntime && hasAiRouteContract, `默认目标运行时: ${aiRouteRes.trim()} · 契约: ${hasAiRouteContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

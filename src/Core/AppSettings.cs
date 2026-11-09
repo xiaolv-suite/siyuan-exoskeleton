@@ -53,6 +53,9 @@ namespace XiaoLv.Desktop.Core
 
         /// <summary>P1-4 剪藏域名路由规则，每行一条: 域名 => /目标文件夹/</summary>
         public string ClipDomainRules { get; set; }
+
+        /// <summary>P2-2 AI 路由目标 (JSON 数组: [{name,url}]，URL 模板用 {query} 占位)</summary>
+        public string AiRouteTargetsJson { get; set; }
         public string WebClipCustomTemplate { get; set; }
         public bool AiEnabled { get; set; }
         public string AiBaseUrl { get; set; }
@@ -91,6 +94,7 @@ namespace XiaoLv.Desktop.Core
             WebClipDefaultMode = "card";
             WebClipTargetFolder = "/读库/";
             ClipDomainRules = "";
+            AiRouteTargetsJson = "[{\"name\":\"豆包\",\"url\":\"https://www.doubao.com/chat?q={query}\"},{\"name\":\"千问\",\"url\":\"https://chat.qwen.ai/?q={query}\"},{\"name\":\"Kimi\",\"url\":\"https://www.kimi.com/\"},{\"name\":\"秘塔AI搜索\",\"url\":\"https://metaso.cn/?q={query}\"}]";
             WebClipCustomTemplate = "";
             AiEnabled = false;
             AiBaseUrl = "http://localhost:11434/v1";
@@ -147,6 +151,7 @@ namespace XiaoLv.Desktop.Core
                     s.WebClipTargetFolder = JsonHelper.GetString(dict, "webClipTargetFolder", s.WebClipTargetFolder);
                     s.WebClipCustomTemplate = JsonHelper.GetString(dict, "webClipCustomTemplate", s.WebClipCustomTemplate);
                     s.ClipDomainRules = JsonHelper.GetString(dict, "clipDomainRules", s.ClipDomainRules);
+                    s.AiRouteTargetsJson = JsonHelper.GetString(dict, "aiRouteTargetsJson", s.AiRouteTargetsJson);
                     s.AiEnabled = JsonHelper.GetBool(dict, "aiEnabled", s.AiEnabled);
                     s.AiBaseUrl = JsonHelper.GetString(dict, "aiBaseUrl", s.AiBaseUrl);
                     s.AiModel = JsonHelper.GetString(dict, "aiModel", s.AiModel);

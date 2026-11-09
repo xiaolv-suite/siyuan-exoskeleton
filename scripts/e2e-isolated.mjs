@@ -4368,6 +4368,30 @@ async function main() {
   const hasGuardianRuntime = guardianReflectRes.includes("True");
   logStep("Step 7.243: 系统级提醒守护 (到期闪卡+📅截止日轮询→托盘气泡→点击智能跳转 fsrs/tasks，隔离靶场禁启) 断言", hasGuardianSource && hasGuardianWiring && hasGuardianRuntime, `源码: ${hasGuardianSource} · 接线: ${hasGuardianWiring} · 反射: ${hasGuardianRuntime}`);
 
+  // Step 7.244: Test OCR Write-Back Closed Loop (P1-3: custom-ocr-text attribute → SQL searchable, fixes #13714)
+  const ocrSeedRes = await api("/api/block/appendBlock", {
+    parentID: row1.root_id,
+    dataType: "markdown",
+    data: '- 📸 截图识字样本：季度营收同比增长23%研发投入1.2亿\n{: custom-ocr-text="截图识字样本：季度营收同比增长23% 研发投入1.2亿" }'
+  });
+  await sleep(1500);
+  try { await api("/api/sqlite/flushTransaction"); } catch {}
+  const ocrJoinRow = await pollSql("SELECT b.id AS bid, a.value AS ocrtext FROM blocks b JOIN attributes a ON a.block_id = b.id AND a.name = 'custom-ocr-text' WHERE a.value LIKE '%季度营收同比增长23%' LIMIT 1", 15);
+  const ocrKw = encodeURIComponent("季度营收");
+  const hasOcrWriteBack = !!ocrJoinRow;
+  const contextPenCs = fs.readFileSync(path.join(ROOT, 'src', 'Engine', 'ContextPenMain.cs'), 'utf8');
+  const hasOcrContract = contextPenCs.includes('custom-ocr-text') &&
+                         contextPenCs.includes('OCR 写回闭环') &&
+                         bentoCsOnboard.includes('op.Equals("searchOcr"') &&
+                         bentoCsOnboard.includes("a.name = 'custom-ocr-text'") &&
+                         panelContent.includes("op: 'searchOcr'") &&
+                         panelContent.includes('window.onOcrSearchResults') &&
+                         panelContent.includes('🔤 OCR 文字秒搜') &&
+                         panelContent.includes('📸 去截图识字') &&
+                         panelContent.includes('"ocr:", "ocr："') &&
+                         panelContent.includes("insertPrefix('ocr:')");
+  logStep("Step 7.244: OCR 写回闭环 (截图识字落库→custom-ocr-text 属性→JOIN 属性表结构化秒搜 ocr: 前缀，补 #13714) 断言", hasOcrWriteBack && hasOcrContract, `属性检索: ${!!ocrJoinRow} · 契约: ${hasOcrContract} · 关键词样例: ${ocrKw}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

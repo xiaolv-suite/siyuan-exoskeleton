@@ -200,6 +200,23 @@ public static class ContextPenMain
             // 附带小驴拾遗 (siyuan-glean) 兼容 IAL 属性
             string ial = XiaoLv.Desktop.Core.TextCleaner.BuildGleanIalAttributes(sourceUrl, windowTitle);
 
+            // P1-3 OCR 写回闭环：识别文字同时挂为 custom-ocr-text 属性 (SQL 结构化可检索，补 #13714「OCR 文本不可检索/编辑」)
+            if (!string.IsNullOrEmpty(imagePath) && !string.IsNullOrEmpty(text))
+            {
+                string ocrIalValue = text.Replace("\"", "\\\"").Replace("\r", " ").Replace("\n", " ").Trim();
+                if (ocrIalValue.Length > 800) ocrIalValue = ocrIalValue.Substring(0, 800);
+                string ocrIal = "custom-ocr-text=\"" + ocrIalValue + "\" ";
+                string ialTrimmed = ial.TrimEnd();
+                if (ialTrimmed.EndsWith("}") && ialTrimmed.StartsWith("{:"))
+                {
+                    ial = ialTrimmed.Insert(ialTrimmed.LastIndexOf('}'), ocrIal);
+                }
+                else
+                {
+                    ial = "{: " + ocrIal + "}";
+                }
+            }
+
             var ok = AppendBlock(syUrl, token, targetDocId, nestedMd + "\n" + ial);
             if (ok) XiaoLv.Desktop.Core.SoundPlayerHelper.PlayFeedback();
             SafeContext.Set(context, "是否成功", ok);

@@ -3032,6 +3032,49 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
                 // 19. 全库附件与文献资产秒查坞 (att: / asset: 语法)
+                if (op.Equals("searchOcr", StringComparison.OrdinalIgnoreCase))
+                {
+                    // P1-3 OCR 秒搜：按 custom-ocr-text 属性结构化检索全部截图图文笔记 (补 #13714)
+                    string kw = JsonHelper.GetString(msg, "keyword");
+                    ThreadPool.QueueUserWorkItem(async s =>
+                    {
+                        try
+                        {
+                            string safeLike = (kw ?? "").Replace("'", "''");
+                            string sql = "SELECT b.id AS bid, b.content AS bcontent, b.root_id AS rootid, b.updated AS bupd, doc.content AS doctitle, a.value AS ocrtext FROM blocks b " +
+                                  "JOIN attributes a ON a.block_id = b.id AND a.name = 'custom-ocr-text' " +
+                                  "LEFT JOIN blocks doc ON doc.id = b.root_id " +
+                                  (!string.IsNullOrEmpty(safeLike) ? "WHERE (a.value LIKE '%" + safeLike + "%' OR b.content LIKE '%" + safeLike + "%') " : "") +
+                                  "ORDER BY b.updated DESC LIMIT 60";
+                            var rows = await SiYuanClient.SqlAsync(sql);
+                            var ocrList = new List<Dictionary<string, object>>();
+                            if (rows != null)
+                            {
+                                foreach (var r in rows)
+                                {
+                                    var it = new Dictionary<string, object>();
+                                    it["id"] = JsonHelper.GetString(r, "bid");
+                                    it["rootId"] = JsonHelper.GetString(r, "rootid");
+                                    it["docTitle"] = JsonHelper.GetString(r, "doctitle");
+                                    it["content"] = JsonHelper.GetString(r, "bcontent");
+                                    it["ocrText"] = JsonHelper.GetString(r, "ocrtext");
+                                    it["updated"] = JsonHelper.GetString(r, "bupd");
+                                    ocrList.Add(it);
+                                }
+                            }
+                            Dispatcher.Invoke(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOcrSearchResults) window.onOcrSearchResults(" + JsonHelper.ToJson(new { code = 0, data = ocrList }) + ");");
+                                }
+                            });
+                        }
+                        catch { }
+                    });
+                    return;
+                }
+
                 if (op.Equals("searchAssets", StringComparison.OrdinalIgnoreCase))
                 {
                     string kw = JsonHelper.GetString(msg, "keyword");

@@ -6986,6 +6986,13 @@
            <span class="scope-switch-pill" onclick="insertPrefix('b:')">🧱 切回搜笔记(b:)</span>`,
           "↵ 本地打开 · ⇧↵ 贴链接"
         );
+      } else if (q.startsWith("ocr:") || q.startsWith("ocr：")) {
+        banner.style.display = "flex";
+        banner.innerHTML = renderModeBanner(
+          "🔤 OCR 文字秒搜",
+          "检索全部截图的<b>识别文字</b>（图中文字也能搜到）· <b>Enter</b> 打开所在块 · <b>Shift+Enter</b> 贴双链 · 截图识字用 Alt+Shift+C",
+          "↵ 打开 · ⇧↵ 贴双链"
+        );
       } else if (q.startsWith("av:") || q.startsWith("av：")) {
         activeIntentAction = "syav";
         banner.style.display = "flex";
@@ -7219,6 +7226,18 @@
 
         if (window.chrome && window.chrome.webview) {
           window.chrome.webview.postMessage({ op: 'searchTemplates', keyword: subKw });
+        }
+        return;
+      }
+
+      // ocr: 模式：按截图识别文字秒搜全部图文笔记 (P1-3 OCR 写回闭环)
+      if (q.startsWith("ocr:") || q.startsWith("ocr：")) {
+        const subKw = q.replace(/^(ocr:|ocr：)/, "").trim();
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(JSON.stringify({ op: 'searchOcr', keyword: subKw }));
+        } else {
+          filteredItems = [];
+          renderItems();
         }
         return;
       }
@@ -8289,6 +8308,7 @@
       { badge: "pom: 分钟", name: "番茄专注", desc: "pom:25 启动 25 分钟心流番茄钟", run: "insertPrefix('pom:25 ')" },
       { badge: "trash: 关键词", name: "回收站打捞", desc: "误删历史快照检索与 1 键复原", run: "insertPrefix('trash:')" },
       { badge: "ws:", name: "工作现场快照", desc: "虚拟桌面工作现场保存与一键恢复", run: "insertPrefix('ws:')" },
+      { badge: "ocr: 关键词", name: "OCR 文字秒搜", desc: "按截图识别文字检索全部图文笔记（图中文字可搜）", run: "insertPrefix('ocr:')" },
       { badge: "cfg: 关键词", name: "配置预设", desc: "S3/AI 模型等配置凭据一键热切换", run: "insertPrefix('cfg:')" }
     ];
     const PLAZA_WEBHOOK_ACTIONS = [
@@ -8480,6 +8500,7 @@
         "b:", "b：", "block:", "block：",
         "d:", "d：", "doc:", "doc：",
         "att:", "att：", "asset:", "asset：",
+        "ocr:", "ocr：",
         "office:", "office：", "word:", "word：", "excel:", "excel：", "ppt:", "ppt：", "pdf:", "pdf：", "epub:", "epub：", "xmind:", "xmind：",
         "zotero:", "zotero：",
         "tag:", "tag：",
@@ -11011,6 +11032,14 @@
           <button type="button" class="fg-try-btn" onclick="insertPrefix('tag:')"># 改搜标签 (tag:)</button>
           <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回主页</button>
         `;
+      } else if (q.startsWith("ocr:") || q.startsWith("ocr：")) {
+        title = "🔤 暂无匹配的 OCR 图文笔记";
+        desc = "按 Alt+Shift+C 截图识字后按 1 图文入日记，识别文字即自动可搜；也可改搜附件本体";
+        actions = `
+          <button type="button" class="fg-try-btn" onclick="executeItem(PANEL_ITEMS.find(x => x.id === 'syimg'))">📸 去截图识字</button>
+          <button type="button" class="fg-try-btn" onclick="insertPrefix('att:')">📎 改搜附件 (att:)</button>
+          <button type="button" class="fg-try-btn" onclick="clearSearchInput()">⬅️ 返回主页</button>
+        `;
       } else if (q.startsWith("t:") || q.startsWith("t：") || q.startsWith("todo:")) {
         title = "🎉 当前没有未完成的待办任务";
         desc = "你可以在思源中使用 - [ ] 创建任务，或直接点击下方按钮新建一条待办事项";
@@ -12762,6 +12791,26 @@
           assetData: it
         };
       });
+      selectedIndex = 0;
+      renderItems();
+    };
+
+    // P1-3 OCR 秒搜结果渲染：识别文字命中项（打开/贴双链由 blockId 通用行按钮承担）
+    window.onOcrSearchResults = function(resp) {
+      if (!resp || !Array.isArray(resp.data)) return;
+      filteredItems = resp.data.map(it => ({
+        id: `ocr_${it.id}`,
+        title: ((it.ocrText || "").replace(/\s+/g, " ").trim().substring(0, 42)) || "OCR 图文笔记",
+        desc: `🔤 识别文字: ${(it.ocrText || "").replace(/\s+/g, " ").trim().substring(0, 90)}\n所在文档: 《${it.docTitle || "未知"}》`,
+        badge: "OCR图文",
+        badgeCls: "badge-bridge",
+        iconType: "camera",
+        iconColor: "var(--cyber-purple)",
+        kind: "ocr",
+        blockId: it.id,
+        rootId: it.rootId,
+        ocrData: it
+      }));
       selectedIndex = 0;
       renderItems();
     };

@@ -43,7 +43,10 @@ namespace XiaoLv.Desktop.Core
                 var ctx = new DesktopStepContext("SYS", payload);
                 if (notify != null) ctx.OnNotificationRequested += (t, m) => { try { notify(t, m); } catch { } };
                 SmartCaptureMain.Exec(ctx);
-                return "OK";
+                bool ok = SafeContext.GetBool(ctx, "是否成功", true);
+                string feedback = SafeContext.GetString(ctx, "通知反馈", "");
+                if (ok) return "OK";
+                return string.IsNullOrEmpty(feedback) ? "分流管线未成功 (未写库)" : "失败: " + feedback;
             }
             catch (Exception ex)
             {

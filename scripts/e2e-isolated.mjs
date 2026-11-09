@@ -4467,6 +4467,80 @@ async function main() {
   logStep("Step 7.246: 剪贴板胶囊多格式 (Pin 置顶 DPAPI 加密落盘/重启还原/容量清除保护 + 🧹 纯文本直贴，Ditto 标准) 断言", hasPinRuntime && hasPinContract, `Pin运行时: ${pinTestRes.trim()} · 契约: ${hasPinContract}`);
   try { fs.rmSync(pinTmpDir, { recursive: true, force: true }); } catch {}
 
+  // Step 7.247: Test MCP Server Headless Mode (P2-1: --mcp stdio NDJSON JSON-RPC, real spawn)
+  const mcpResult = await new Promise((resolve) => {
+    const mcp = spawn(EXE, ["--mcp"], {
+      windowsHide: true,
+      env: { ...process.env, SIYUAN_URL: BASE_URL, SIYUAN_TOKEN: TOKEN, XIAOLV_DATA_DIR: DATA_DIR }
+    });
+    let buf = "";
+    const pending = new Map();
+    mcp.stdout.on("data", (d) => {
+      buf += d.toString("utf8");
+      let idx;
+      while ((idx = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, idx).trim();
+        buf = buf.slice(idx + 1);
+        if (!line) continue;
+        try {
+          const msg = JSON.parse(line);
+          if (msg.id != null && pending.has(msg.id)) { pending.get(msg.id)(msg); pending.delete(msg.id); }
+        } catch {}
+      }
+    });
+    mcp.stderr.on("data", () => {});
+    mcp.on("error", () => resolve({ spawnError: true }));
+    const send = (msg) => new Promise((res) => {
+      const id = msg.id;
+      const timer = setTimeout(() => { if (pending.has(id)) { pending.delete(id); res({ timeout: true }); } }, 25000);
+      pending.set(id, (m) => { clearTimeout(timer); res(m); });
+      try { mcp.stdin.write(JSON.stringify(msg) + "\n"); } catch (e) { clearTimeout(timer); pending.delete(id); res({ stdinError: String(e) }); }
+    });
+    (async () => {
+      const out = {};
+      out.init = await send({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} });
+      await send({ jsonrpc: "2.0", method: "notifications/initialized" });
+      out.list = await send({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} });
+      out.call = await send({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "siyuan_write", arguments: { data: "MCP 无头写入验证MCP747", action: "task" } } });
+      resolve(out);
+      try { mcp.kill(); } catch {}
+    })();
+  });
+  const mcpInitOk = !!mcpResult?.init?.result && mcpResult.init.result.serverInfo?.name === "siyuan-exoskeleton";
+  const mcpToolsOk = Array.isArray(mcpResult?.list?.result?.tools) && mcpResult.list.result.tools.some(t => t && t.name === "siyuan_write");
+  const mcpCallText = (mcpResult?.call?.result?.content?.[0]?.text) || "";
+  const mcpCallOk = mcpCallText.includes("OK");
+  await sleep(1600);
+  try { await api("/api/sqlite/flushTransaction"); } catch {}
+  const mcpRow = await pollSql("SELECT id, content FROM blocks WHERE content LIKE '%MCP747%' LIMIT 1", 15);
+  const mcpHostCs = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'McpServerHost.cs'), 'utf8');
+  const programMcp = fs.readFileSync(path.join(ROOT, 'src', 'Program.cs'), 'utf8');
+  const mcpReadmeOk = fs.existsSync(path.join(ROOT, 'docs', 'MCP-README.md'));
+  const hasMcpContract = mcpHostCs.includes('public static class McpServerHost') &&
+                         mcpHostCs.includes('"2024-11-05"') &&
+                         mcpHostCs.includes('"siyuan-exoskeleton"') &&
+                         mcpHostCs.includes('"tools/call"') &&
+                         mcpHostCs.includes('ParameterizedWriteBridge.ExecuteFromParams') &&
+                         programMcp.includes('"--mcp"') &&
+                         programMcp.includes('McpServerHost.Run()') &&
+                         mcpReadmeOk;
+  logStep("Step 7.247: MCP 无头服务 (--mcp 子进程真机: initialize 握手 / tools.list 含 siyuan_write / tools.call 真实落库待办) 断言", mcpInitOk && mcpToolsOk && mcpCallOk && !!mcpRow && hasMcpContract, `握手: ${mcpInitOk} · 工具表: ${mcpToolsOk} · 调用: ${mcpCallOk} · 落库: ${!!mcpRow} · 契约: ${hasMcpContract} · 回执: ${mcpCallText.substring(0, 60)}`);
+
+  // Step 7.248: Test OpenAPI Self-Description Endpoint (P2-1)
+  const openapiRes = await webhookFetch(WEBHOOK_BASE + "/api/openapi", { method: "GET" });
+  const openapiJson = await openapiRes.json();
+  const hasOpenapiSpec = openapiJson && openapiJson.openapi === "3.0.3" &&
+                         !!openapiJson.paths &&
+                         !!openapiJson.paths["/write"] &&
+                         !!openapiJson.paths["/capture"] &&
+                         !!openapiJson.paths["/status"] &&
+                         !!openapiJson.components?.securitySchemes?.LocalToken;
+  const bridgeOpenapi = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'ExternalApiBridge.cs'), 'utf8');
+  const hasOpenapiContract = bridgeOpenapi.includes('"/api/openapi"') &&
+                             bridgeOpenapi.includes('HandleOpenApiRequest') &&
+                             bridgeOpenapi.includes('"3.0.3"');
+  logStep("Step 7.248: OpenAPI 3.0 自描述端点 (GET /api/openapi 可机器读：核心端点+鉴权方案+MCP 指引) 断言", hasOpenapiSpec && hasOpenapiContract, `规范: ${hasOpenapiSpec} · 契约: ${hasOpenapiContract} · 端点数: ${openapiJson?.paths ? Object.keys(openapiJson.paths).length : 0}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

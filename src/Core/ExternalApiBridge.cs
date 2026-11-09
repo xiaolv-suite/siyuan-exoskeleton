@@ -206,6 +206,13 @@ namespace XiaoLv.Desktop.Core
                     return;
                 }
 
+                // C3. OpenAPI 自描述规范 (P2-1): 第三方据此生成类型安全客户端
+                if (rawPath.Equals("/openapi", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/api/openapi", StringComparison.OrdinalIgnoreCase))
+                {
+                    HandleOpenApiRequest(resp);
+                    return;
+                }
+
                 // D. 窗口唤出与搜索直达: /show 或 /api/show 或 /api/window/show
                 if (rawPath.Equals("/show", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/api/show", StringComparison.OrdinalIgnoreCase) || rawPath.Equals("/api/window/show", StringComparison.OrdinalIgnoreCase))
                 {
@@ -581,6 +588,115 @@ namespace XiaoLv.Desktop.Core
                 msg = ok ? "指令已分发执行" : "未识别的动作指令",
                 cmd = cmd
             });
+        }
+
+        // OpenAPI 3.0 自描述规范 (P2-1)：核心端点机器可读定义，第三方 (Quicker/uTools/脚本/Agent) 据此生成客户端
+        private static void HandleOpenApiRequest(HttpListenerResponse resp)
+        {
+            try
+            {
+                string portStr = _activePort.ToString();
+
+                var paths = new Dictionary<string, object>();
+                paths["/status"] = OpenApiWrapPath("get", OpenApiOperation("存活探针：版本/思源连接/pid", "status", true));
+                paths["/capture"] = OpenApiWrapPath("post", OpenApiOperation("免切窗速记入库", "capture", false, OpenApiBodySchema(
+                    new Dictionary<string, object> { { "text", OpenApiSProp("速记内容") } }, new[] { "text" })));
+                paths["/write"] = OpenApiWrapPath("post", OpenApiOperation("参数化写入：target=daily|doc · heading=小节 · doc=文档 · action=task|flash · data=内容", "write", false, OpenApiBodySchema(
+                    new Dictionary<string, object>
+                    {
+                        { "data", OpenApiSProp("要写入的内容") },
+                        { "target", OpenApiEnumProp("写入目标", "daily", "doc") },
+                        { "heading", OpenApiSProp("今日日记小节名") },
+                        { "doc", OpenApiSProp("目标思源文档名") },
+                        { "action", OpenApiEnumProp("动作", "task", "flash") }
+                    }, new[] { "data" })));
+                paths["/action"] = OpenApiWrapPath("post", OpenApiOperation("核心指令分流 (cmd+text)", "action", false, OpenApiBodySchema(
+                    new Dictionary<string, object> { { "cmd", OpenApiSProp("指令名") }, { "text", OpenApiSProp("指令内容") } }, new[] { "cmd" })));
+                paths["/search"] = OpenApiWrapPath("post", OpenApiOperation("全库块检索", "search", false, OpenApiBodySchema(
+                    new Dictionary<string, object> { { "keyword", OpenApiSProp("检索关键词") } }, new[] { "keyword" })));
+                paths["/today"] = OpenApiWrapPath("get", OpenApiOperation("今日时间轴速览", "today", true));
+                paths["/tasks"] = OpenApiWrapPath("get", OpenApiOperation("全库未完成待办提取", "tasks", true));
+                paths["/focus"] = OpenApiWrapPath("get", OpenApiOperation("全景专注状态探针", "focusStatus", true));
+                paths["/notify"] = OpenApiWrapPath("post", OpenApiOperation("推送通知进通知中心", "notify", false, OpenApiBodySchema(
+                    new Dictionary<string, object> { { "message", OpenApiSProp("通知内容") } }, new[] { "message" })));
+
+                var spec = new Dictionary<string, object>
+                {
+                    { "openapi", "3.0.3" },
+                    { "info", new Dictionary<string, object> { { "title", "SiYuan Exoskeleton Local Bridge" }, { "version", "3.0.0" }, { "description", "思源外骨骼本地极速调用桥。鉴权: 请求头 X-Token 或 Authorization: Bearer <token>，仅绑定 127.0.0.1。MCP 无头模式: 思源外骨骼.exe --mcp (stdio NDJSON JSON-RPC)，见 docs/MCP-README.md。" } } },
+                    { "servers", new List<object> { new Dictionary<string, object> { { "url", "http://127.0.0.1:" + portStr } } } },
+                    { "components", new Dictionary<string, object> { { "securitySchemes", new Dictionary<string, object> { { "LocalToken", new Dictionary<string, object> { { "type", "apiKey" }, { "in", "header" }, { "name", "X-Token" } } } } } } },
+                    { "security", new List<object> { new Dictionary<string, object> { { "LocalToken", new List<object>() } } } },
+                    { "paths", paths }
+                };
+
+                WriteJsonResponse(resp, 200, spec);
+            }
+            catch (Exception ex)
+            {
+                WriteJsonResponse(resp, 500, new { code = 500, msg = "OpenAPI 生成异常: " + ex.Message });
+            }
+        }
+
+        private static Dictionary<string, object> OpenApiWrapPath(string method, object operation)
+        {
+            return new Dictionary<string, object> { { method, operation } };
+        }
+
+        private static Dictionary<string, object> OpenApiOperation(string summary, string opId, bool isGet, Dictionary<string, object> bodySchema = null)
+        {
+            var o = new Dictionary<string, object>
+            {
+                { "summary", summary },
+                { "operationId", opId },
+                { "responses", new Dictionary<string, object>
+                    {
+                        { "200", new Dictionary<string, object> { { "description", "OK" } } },
+                        { "401", new Dictionary<string, object> { { "description", "未提供有效本地安全鉴权令牌" } } }
+                    }
+                }
+            };
+            if (isGet)
+            {
+                o["parameters"] = new List<object>();
+            }
+            else
+            {
+                o["requestBody"] = new Dictionary<string, object>
+                {
+                    { "content", new Dictionary<string, object>
+                        {
+                            { "application/json", new Dictionary<string, object> { { "schema", bodySchema ?? new Dictionary<string, object> { { "type", "object" } } } } }
+                        }
+                    }
+                };
+            }
+            return o;
+        }
+
+        private static Dictionary<string, object> OpenApiSProp(string desc)
+        {
+            return new Dictionary<string, object> { { "type", "string" }, { "description", desc } };
+        }
+
+        private static Dictionary<string, object> OpenApiEnumProp(string desc, params string[] values)
+        {
+            var vals = new List<object>();
+            foreach (var v in values) vals.Add(v);
+            return new Dictionary<string, object> { { "type", "string" }, { "description", desc }, { "enum", vals } };
+        }
+
+        private static Dictionary<string, object> OpenApiBodySchema(Dictionary<string, object> props, string[] required)
+        {
+            var schema = new Dictionary<string, object> { { "type", "object" } };
+            if (props != null) schema["properties"] = props;
+            if (required != null && required.Length > 0)
+            {
+                var req = new List<object>();
+                foreach (var r in required) req.Add(r);
+                schema["required"] = req;
+            }
+            return schema;
         }
 
         // 参数化写入处理器 (P1-1)：QueryString 与 JSON/表单体同名参数补齐，统一交给 SYS 智能分流管线

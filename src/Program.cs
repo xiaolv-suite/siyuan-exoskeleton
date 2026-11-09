@@ -76,6 +76,14 @@ namespace XiaoLv.Desktop
                 EmbeddedResourceManager.InitializeAssemblyResolver();
                 EmbeddedResourceManager.EnsureRuntimeAssets();
 
+                // 0.5 P2-1 MCP 无头服务模式: 思源外骨骼.exe --mcp → stdio NDJSON JSON-RPC
+                // (供 Claude Desktop / ChatBox / Cursor / 豆包 Agent 以 MCP 协议自动调用思源能力；零 UI 零互斥，stdin EOF 退出)
+                if (args != null && Array.Exists(args, a => string.Equals(a, "--mcp", StringComparison.OrdinalIgnoreCase)))
+                {
+                    McpServerHost.Run();
+                    return;
+                }
+
                 // 1. 协议解析或参数规范化
                 string incomingCommand = ParseCommandLineOrProtocol(args);
 

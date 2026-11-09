@@ -10,18 +10,17 @@ namespace XiaoLv.Desktop.Core
 {
     public static class FileDispatcher
     {
-        public static void DispatchFileToDocument(string filePath, string targetDocId, string targetDocTitle, Action<string, string> notify)
+        public static bool DispatchFileToDocument(string filePath, string targetDocId, string targetDocTitle, Action<string, string> notify)
         {
             if (string.IsNullOrEmpty(targetDocId))
             {
-                DispatchFileToSiYuan(filePath, notify);
-                return;
+                return DispatchFileToSiYuan(filePath, notify);
             }
 
             if (string.IsNullOrEmpty(filePath) || (!File.Exists(filePath) && !Directory.Exists(filePath)))
             {
                 if (notify != null) notify("思源外骨骼 · 资产直投", "⚠️ 目标文件不存在");
-                return;
+                return false;
             }
 
             string syUrl = "";
@@ -29,9 +28,11 @@ namespace XiaoLv.Desktop.Core
             SyKernelRequest.AutoDiscoverEnv(ref syUrl, ref token, false);
             if (string.IsNullOrEmpty(syUrl))
             {
-                OfflineQueueManager.EnqueueFile(filePath);
-                if (notify != null) notify("思源外骨骼 · 离岸队列", "✓ 思源未启动，已将文件存入离岸队列");
-                return;
+                bool queued = OfflineQueueManager.EnqueueFile(filePath, targetDocId, targetDocTitle);
+                if (notify != null) notify("思源外骨骼 · 离岸队列", queued
+                    ? "✓ 思源未启动，文件已加入直投《" + (targetDocTitle ?? "指定文档") + "》的加密队列。"
+                    : "❌ 直投文件无法加入离岸队列，请检查磁盘空间和权限。");
+                return queued;
             }
 
             if (File.Exists(filePath))
@@ -62,7 +63,7 @@ namespace XiaoLv.Desktop.Core
                     if (string.IsNullOrEmpty(assetPath))
                     {
                         if (notify != null) notify("思源外骨骼", "❌ 资产上传失败: " + err);
-                        return;
+                        return false;
                     }
                     bool isImg = (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" || ext == ".svg" || ext == ".bmp");
                     string md = isImg ? ("![" + safeName + "](" + assetPath + ")") : ("📎 [" + safeName + " (" + FormatFileSize(fi.Length) + ")](" + assetPath + ")");
@@ -80,12 +81,16 @@ namespace XiaoLv.Desktop.Core
                 {
                     SoundPlayerHelper.PlayFeedback();
                     if (notify != null) notify("思源外骨骼 · 资产直投", "✓ 已将【" + fi.Name + "】嵌入至《" + (targetDocTitle ?? "指定文档") + "》！");
+                    return true;
                 }
                 else
                 {
-                    if (notify != null) notify("思源外骨骼", "⚠️ 资产已入库但追加文档失败: " + r.Error);
+                    if (notify != null) notify("思源外骨骼", "⚠️ 资产已上传但追加目标文档失败，队列会保留；重试可能重复上传资产: " + r.Error);
+                    return false;
                 }
             }
+            if (notify != null) notify("思源外骨骼 · 资产直投", "❌ 目前仅支持将单个文件直投至指定文档。");
+            return false;
         }
 
         public static bool OpenWithPreferredApp(string filePath, int targetPage = 0)
@@ -142,12 +147,29 @@ namespace XiaoLv.Desktop.Core
             return false;
         }
 
-        public static void DispatchFileToSiYuan(string filePath, Action<string, string> notify)
+        public static bool DispatchFileToSiYuan(string filePath, Action<string, string> notify)
         {
             if (string.IsNullOrEmpty(filePath) || (!File.Exists(filePath) && !Directory.Exists(filePath)))
             {
                 if (notify != null) notify("思源外骨骼 · 文件速递", "⚠️ 目标文件或文件夹不存在");
-                return;
+                return false;
+            }
+
+            if (Directory.Exists(filePath))
+            {
+                try
+                {
+                    if (Directory.GetFiles(filePath, "*.*", SearchOption.TopDirectoryOnly).Length == 0)
+                    {
+                        if (notify != null) notify("思源外骨骼 · 文件速递", "ℹ️ 所选目录为空，无需加入离岸队列。");
+                        return true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (notify != null) notify("思源外骨骼 · 文件速递", "❌ 无法读取所选目录：" + ex.Message);
+                    return false;
+                }
             }
 
             string syUrl = "";
@@ -156,22 +178,29 @@ namespace XiaoLv.Desktop.Core
 
             if (string.IsNullOrEmpty(syUrl))
             {
-                OfflineQueueManager.EnqueueFile(filePath);
-                if (notify != null) notify("思源外骨骼 · 离岸文件速递", "✓ 思源未启动，已将【" + Path.GetFileName(filePath) + "】安全加入离岸队列，思源启动后自动补录入库！");
-                return;
+                bool queued = OfflineQueueManager.EnqueueFile(filePath);
+                if (notify != null)
+                {
+                    notify("思源外骨骼 · 离岸文件速递", queued
+                        ? "✓ 思源未启动，已将【" + Path.GetFileName(filePath) + "】加入离岸队列。"
+                        : "❌ 无法将【" + Path.GetFileName(filePath) + "】写入离岸队列，请检查磁盘空间或权限。");
+                }
+                return queued;
             }
 
-            if (File.Exists(filePath))
+            try
             {
-                ProcessSingleFile(syUrl, token, filePath, notify);
+                if (File.Exists(filePath)) return ProcessSingleFile(syUrl, token, filePath, notify);
+                if (Directory.Exists(filePath)) return ProcessDirectory(syUrl, token, filePath, notify);
             }
-            else if (Directory.Exists(filePath))
+            catch (Exception ex)
             {
-                ProcessDirectory(syUrl, token, filePath, notify);
+                if (notify != null) notify("思源外骨骼 · 文件速递", "❌ 文件处理失败，记录仍保留：" + ex.Message);
             }
+            return false;
         }
 
-        private static void ProcessSingleFile(string syUrl, string token, string filePath, Action<string, string> notify)
+        private static bool ProcessSingleFile(string syUrl, string token, string filePath, Action<string, string> notify)
         {
             var fi = new FileInfo(filePath);
             string fileName = fi.Name;
@@ -187,7 +216,12 @@ namespace XiaoLv.Desktop.Core
             // 2. 尝试上传至思源资产库作为备份
             string assetPath = null;
             string err = null;
-            UploadAsset(syUrl, token, filePath, out assetPath, out err);
+            bool assetUploaded = UploadAsset(syUrl, token, filePath, out assetPath, out err);
+            if ((!assetUploaded || string.IsNullOrEmpty(assetPath)) && (!isStructured || string.IsNullOrEmpty(structuredMd)))
+            {
+                if (notify != null) notify("思源外骨骼 · 文件速递", "❌ 文件上传至思源资产库失败: " + err);
+                return false;
+            }
 
             // 3. 构建写入 Markdown
             string appendData;
@@ -195,7 +229,7 @@ namespace XiaoLv.Desktop.Core
 
             if (isStructured && !string.IsNullOrEmpty(structuredMd))
             {
-                if (!string.IsNullOrEmpty(assetPath))
+                if (assetUploaded && !string.IsNullOrEmpty(assetPath))
                 {
                     structuredMd += string.Format("\n> 📦 **思源资产库备份**: [{0}]({1}) (更新于 {2})\n", safeName, assetPath, timeStr);
                 }
@@ -203,12 +237,6 @@ namespace XiaoLv.Desktop.Core
             }
             else
             {
-                if (string.IsNullOrEmpty(assetPath))
-                {
-                    if (notify != null) notify("思源外骨骼 · 文件速递", "❌ 文件上传至思源资产库失败: " + err);
-                    return;
-                }
-
                 bool isImg = (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" || ext == ".svg" || ext == ".bmp");
                 bool isMedia = (ext == ".mp3" || ext == ".wav" || ext == ".mp4" || ext == ".mkv" || ext == ".mov");
 
@@ -246,24 +274,27 @@ namespace XiaoLv.Desktop.Core
                         notify("思源外骨骼 · 文件速递", "✓ 已将【" + fileName + "】成功归档入今日日记！");
                     }
                 }
+                return true;
             }
             else
             {
-                if (notify != null) notify("思源外骨骼 · 文件速递", "⚠️ 资源已入库但追加日记失败: " + r.Error);
+                if (notify != null) notify("思源外骨骼 · 文件速递", "⚠️ 资源已上传但追加日记失败，队列记录会保留；重试可能再次上传资源: " + r.Error);
+                return false;
             }
         }
 
-        private static void ProcessDirectory(string syUrl, string token, string dirPath, Action<string, string> notify)
+        private static bool ProcessDirectory(string syUrl, string token, string dirPath, Action<string, string> notify)
         {
             var di = new DirectoryInfo(dirPath);
             var files = di.GetFiles("*.*", SearchOption.TopDirectoryOnly);
             if (files.Length == 0)
             {
                 if (notify != null) notify("思源外骨骼 · 文件速递", "ℹ️ 所选目录为空，无待归档文件");
-                return;
+                return true;
             }
 
             int succ = 0;
+            int failed = 0;
             string diaryNb = SafeContext.GetDiaryNotebookId(null, syUrl, token);
             var sb = new StringBuilder();
             sb.AppendLine("📁 **目录归档: " + di.Name + "** (" + files.Length + " 个文件)");
@@ -277,17 +308,33 @@ namespace XiaoLv.Desktop.Core
                     succ++;
                     sb.AppendLine("  - 📄 [" + f.Name + " (" + FormatFileSize(f.Length) + ")](" + assetPath + ")");
                 }
+                else
+                {
+                    failed++;
+                }
             }
 
             if (succ > 0)
             {
                 string postJson = "{\"notebook\":\"" + diaryNb + "\",\"dataType\":\"markdown\",\"data\":\"" + SafeContext.EscapeJson(sb.ToString().TrimEnd()) + "\"}";
-                SyKernelRequest.DoRequest(syUrl, token, "/api/block/appendDailyNoteBlock", postJson);
+                var appendResult = SyKernelRequest.DoRequest(syUrl, token, "/api/block/appendDailyNoteBlock", postJson);
+                if (!appendResult.Success)
+                {
+                    if (notify != null) notify("思源外骨骼 · 文件速递", "⚠️ 已上传 " + succ + " 个文件，但日记写入失败；队列会保留，重试可能重复上传资源。");
+                    return false;
+                }
+                if (failed > 0)
+                {
+                    if (notify != null) notify("思源外骨骼 · 文件速递", "⚠️ 已归档 " + succ + " 个文件，另有 " + failed + " 个失败；目录记录会保留，重试可能重复上传已成功文件。");
+                    return false;
+                }
                 if (notify != null) notify("思源外骨骼 · 文件速递", "✓ 已成功批量归档 " + succ + " 个文件入今日日记！");
+                return true;
             }
             else
             {
                 if (notify != null) notify("思源外骨骼 · 文件速递", "❌ 文件夹批量上传失败");
+                return false;
             }
         }
 

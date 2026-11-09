@@ -64,13 +64,15 @@ namespace XiaoLv.Desktop.Core
 	            }
 	        }
 
-	        public static void AddCustomSnippet(string shortcode, string label, string template)
+	        public static bool AddCustomSnippet(string shortcode, string label, string template)
 	        {
-	            if (string.IsNullOrEmpty(shortcode)) return;
+	            if (string.IsNullOrEmpty(shortcode)) return false;
 	            if (!shortcode.StartsWith(":")) shortcode = ":" + shortcode;
 
 	            lock (_customSnippets)
 	            {
+	                SnippetDefinition previous;
+	                _customSnippets.TryGetValue(shortcode, out previous);
 	                _customSnippets[shortcode] = new SnippetDefinition
 	                {
 	                    Shortcode = shortcode,
@@ -79,13 +81,15 @@ namespace XiaoLv.Desktop.Core
 	                    Source = "自定义"
 	                };
 
-	                try
-	                {
-	                    var list = new List<SnippetDefinition>(_customSnippets.Values);
-	                    AppSettings.Instance.CustomSnippetsJson = JsonHelper.ToJson(list);
-	                    AppSettings.Instance.Save();
-	                }
-	                catch { }
+	                var settings = AppSettings.Instance;
+	                string previousJson = settings.CustomSnippetsJson;
+	                settings.CustomSnippetsJson = JsonHelper.ToJson(new List<SnippetDefinition>(_customSnippets.Values));
+	                if (settings.Save()) return true;
+
+	                if (previous == null) _customSnippets.Remove(shortcode);
+	                else _customSnippets[shortcode] = previous;
+	                settings.CustomSnippetsJson = previousJson;
+	                return false;
 	            }
 	        }
 

@@ -2,21 +2,46 @@ import assert from "node:assert/strict";
 import { execSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
+import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = "D:/思源插件/思源小驴桌面助手";
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const EXE = path.join(ROOT, "bin/Release/思源外骨骼.exe");
 const KERNEL_EXE = "D:/RJ/SiYuan/resources/kernel/SiYuan-Kernel.exe";
 const APP_DIR = "D:/RJ/SiYuan/resources";
-const ISOLATED_WS = "D:/思源插件/.isolated-workspaces/xiaolv-desktop-isolated";
-const PORT = 43988;
+const ISOLATED_WS = fs.mkdtempSync(path.join(os.tmpdir(), "xiaolv-desktop-e2e-"));
+const DATA_DIR = path.join(ISOLATED_WS, "appdata");
+const TEST_TEMP_DIR = path.join(ISOLATED_WS, "temp");
 const TOKEN = "xiaolv-e2e-token-2026";
+const WEBHOOK_TOKEN = `e2e-${process.pid}-${Date.now()}`;
+const PORT = await reservePort();
+const WEBHOOK_PORT = await reservePort();
 const BASE_URL = `http://127.0.0.1:${PORT}`;
+const WEBHOOK_BASE = `http://127.0.0.1:${WEBHOOK_PORT}`;
+
+process.env.SIYUAN_URL = BASE_URL;
+process.env.SIYUAN_TOKEN = TOKEN;
+process.env.XIAOLV_DATA_DIR = DATA_DIR;
+process.env.XIAOLV_WORKSPACE_DIR = ISOLATED_WS;
+process.env.XIAOLV_WEBHOOK_PORT = String(WEBHOOK_PORT);
+process.env.XIAOLV_WEBHOOK_TOKEN = WEBHOOK_TOKEN;
+// Reflection helpers and source-export tests must use this run's temporary files too.
+process.env.TEMP = TEST_TEMP_DIR;
+process.env.TMP = TEST_TEMP_DIR;
 
 const KEEP = process.argv.includes("--keep");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const results = [];
+let kernelProc = null;
+let desktopProc = null;
+
+function webhookFetch(url, options = {}) {
+  const headers = new Headers(options.headers || {});
+  headers.set("X-Token", WEBHOOK_TOKEN);
+  return fetch(url, { ...options, headers, signal: options.signal || AbortSignal.timeout(10000) });
+}
 function logStep(step, ok, detail = "") {
   results.push({ step, ok, detail });
   console.log(`${ok ? "✅ PASS" : "❌ FAIL"} | ${step}${detail ? ` — ${detail}` : ""}`);
@@ -46,95 +71,86 @@ async function pollSql(stmt, maxTries = 10, intervalMs = 300) {
   return null;
 }
 
-function stopProcess(name) {
-  try {
-    const killCmd = `Get-Process | Where-Object { $_.Path -and ($_.Path.Contains('bin\\Release') -or $_.Path.Contains('XiaoLvDesktop')) } | Stop-Process -Force -ErrorAction SilentlyContinue`;
-    execSync(`powershell.exe -NoProfile -Command "${killCmd}"`, { stdio: "ignore" });
-    for (let i = 0; i < 25; i++) {
-      const count = execSync(`powershell.exe -NoProfile -Command "@(Get-Process | Where-Object { $_.Path -and ($_.Path.Contains('bin\\Release') -or $_.Path.Contains('XiaoLvDesktop')) }).Count"`).toString().trim();
-      if (!count || count === "0") break;
-      execSync(`powershell.exe -NoProfile -Command "Start-Sleep -Milliseconds 150"`, { stdio: "ignore" });
-    }
-    const sweepScript = `
-      Add-Type -TypeDefinition @'
-      using System; using System.Runtime.InteropServices;
-      public class TC {
-        [DllImport(\"user32.dll\")] public static extern IntPtr FindWindow(string c, string w);
-        [DllImport(\"user32.dll\")] public static extern IntPtr FindWindowEx(IntPtr p, IntPtr a, string c, string w);
-        [DllImport(\"user32.dll\")] public static extern bool GetClientRect(IntPtr h, out RECT r);
-        [DllImport(\"user32.dll\")] public static extern IntPtr SendMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
-        [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
-        public static void S() {
-          IntPtr t = FindWindow(\"Shell_TrayWnd\", null);
-          if (t != IntPtr.Zero) {
-            IntPtr n = FindWindowEx(t, IntPtr.Zero, \"TrayNotifyWnd\", null);
-            if (n != IntPtr.Zero) {
-              IntPtr p = FindWindowEx(n, IntPtr.Zero, \"SysPager\", null);
-              IntPtr b = FindWindowEx(p != IntPtr.Zero ? p : n, IntPtr.Zero, \"ToolbarWindow32\", null);
-              if (b != IntPtr.Zero) W(b);
-            }
-          }
-          IntPtr o = FindWindow(\"NotifyIconOverflowWindow\", null);
-          if (o != IntPtr.Zero) {
-            IntPtr b = FindWindowEx(o, IntPtr.Zero, \"ToolbarWindow32\", null);
-            if (b != IntPtr.Zero) W(b);
-          }
-        }
-        private static void W(IntPtr b) {
-          RECT r; if (GetClientRect(b, out r)) {
-            for (int x = 2; x < r.R; x += 6) {
-              for (int y = 2; y < r.B; y += 6) {
-                SendMessage(b, 0x0200, IntPtr.Zero, (IntPtr)((y << 16) | (x & 0xFFFF)));
-              }
-            }
-          }
-        }
-      }
-'@ -ErrorAction SilentlyContinue; [TC]::S();
-    `;
-    execSync(`powershell.exe -NoProfile -Command "${sweepScript.replace(/\r?\n/g, ' ')}"`, { stdio: "ignore" });
-  } catch {}
+async function reservePort() {
+  const server = net.createServer();
+  await new Promise((resolve, reject) => server.once("error", reject).listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  await new Promise((resolve) => server.close(resolve));
+  return port;
 }
 
-function killOrphanTestRunners() {
-  try {
-    const myPid = process.pid;
-    const ps = `Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Where-Object { $_.CommandLine -match 'e2e-isolated' -and $_.ProcessId -ne ${myPid} } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`;
-    execSync(`powershell.exe -NoProfile -Command "${ps}"`, { stdio: "ignore" });
-  } catch {}
+async function stopChild(child) {
+  if (!child || child.exitCode !== null) return;
+  if (!child.killed) {
+    try { child.kill(); } catch {}
+  }
+  if (child.exitCode === null) {
+    await Promise.race([
+      new Promise((resolve) => child.once("exit", resolve)),
+      sleep(5000)
+    ]);
+  }
 }
 
-function stopPreviousIsolatedKernel() {
-  killOrphanTestRunners();
-  try {
-    const ps = `Get-CimInstance Win32_Process -Filter "Name='SiYuan-Kernel.exe'" | Where-Object { $_.CommandLine -match '--port\\s+${PORT}' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`;
-    execSync(`powershell.exe -NoProfile -Command "${ps}"`, { stdio: "ignore" });
-    for (let i = 0; i < 20; i++) {
-      const count = execSync(`powershell.exe -NoProfile -Command "@(Get-CimInstance Win32_Process -Filter \\"Name='SiYuan-Kernel.exe'\\" | Where-Object { $_.CommandLine -match '--port\\s+${PORT}' }).Count"`).toString().trim();
-      if (!count || count === "0") break;
-      execSync(`powershell.exe -NoProfile -Command "Start-Sleep -Milliseconds 150"`, { stdio: "ignore" });
+async function removeIsolatedWorkspace() {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    try {
+      fs.rmSync(ISOLATED_WS, { recursive: true, force: true });
+      return true;
+    } catch {
+      await sleep(250);
     }
-  } catch {}
+  }
+  return false;
 }
 
 function prepareWorkspace() {
-  for (let i = 0; i < 15; i++) {
-    if (!fs.existsSync(ISOLATED_WS)) break;
-    try {
-      fs.rmSync(ISOLATED_WS, { recursive: true, force: true });
-      break;
-    } catch {
-      execSync(`powershell.exe -NoProfile -Command "Start-Sleep -Milliseconds 200"`, { stdio: "ignore" });
-    }
-  }
   fs.mkdirSync(path.join(ISOLATED_WS, "conf"), { recursive: true });
   fs.mkdirSync(path.join(ISOLATED_WS, "data"), { recursive: true });
+  fs.mkdirSync(path.join(ISOLATED_WS, "data", "assets"), { recursive: true });
+  fs.mkdirSync(TEST_TEMP_DIR, { recursive: true });
 
   const conf = {
     api: { token: TOKEN },
-    system: { container: "desktop" }
+    system: { container: "desktop" },
+    sync: {
+      enabled: false,
+      s3: {
+        endpoint: "https://s3.fixture.invalid/",
+        accessKey: "E2E_FAKE_ACCESS_KEY",
+        secretKey: "E2E_FAKE_SECRET_KEY",
+        bucket: "e2e-fixture-only",
+        region: "fixture-region"
+      }
+    },
+    ai: {
+      providers: [{
+        id: "e2e-fixture-provider",
+        displayName: "E2E Fixture Provider",
+        baseURL: "https://ai.fixture.invalid/v1",
+        modelName: "e2e-fixture-model",
+        apiKey: "E2E_FAKE_API_KEY"
+      }]
+    }
   };
   fs.writeFileSync(path.join(ISOLATED_WS, "conf", "conf.json"), JSON.stringify(conf, null, 2), "utf8");
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(path.join(DATA_DIR, "settings.json"), JSON.stringify({
+    quickNoteContinuationSec: 30,
+    fsrsHotKey: 'Alt+Shift+R',
+    panelWidth: 1180,
+    panelHeight: 740,
+    defaultTheme: 'dark',
+    soundFeedbackEnabled: false,
+    smartClipboardEnabled: false,
+    autoFloatEnabled: false,
+    shellContextMenuEnabled: false,
+    doubleCtrlActivationEnabled: false,
+    dropZoneEnabled: false,
+    webhookEnabled: true,
+    webhookToken: WEBHOOK_TOKEN,
+    webhookPort: WEBHOOK_PORT
+  }, null, 2), "utf8");
 }
 
 function spawnIsolatedKernel() {
@@ -188,27 +204,16 @@ async function sendViaPipe(cmd, text, extra = null, retries = 6) {
 }
 
 async function main() {
+  const bridgeSource = fs.readFileSync(path.join(ROOT, "src", "Core", "ExternalApiBridge.cs"), "utf8");
   console.log("================================================================================");
-  console.log("🚀 思源外骨骼 · 隔离环境端到端自动化真机验收 (pnpm e2e:isolated)");
+  console.log("思源外骨骼 · 隔离环境自动化检查 (pnpm e2e:isolated)");
   console.log(`   靶场工作区: ${ISOLATED_WS}`);
   console.log(`   隔离专用端口: ${PORT} · 专用令牌: ${TOKEN}`);
   console.log("================================================================================\n");
 
-  // 清除可能遗留的孤儿测试进程
-  const myPid = process.pid;
-  try {
-    const ps = `Get-CimInstance Win32_Process -Filter "CommandLine like '%e2e-isolated%'" | Where-Object { $_.ProcessId -ne ${myPid} } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`;
-    execSync(`powershell.exe -NoProfile -Command "${ps}"`, { stdio: "ignore" });
-  } catch {}
-
-  stopProcess("思源外骨骼");
-  stopProcess("思源小驴");
-  stopPreviousIsolatedKernel();
-  await sleep(600);
-
   // Step 1: Boot isolated kernel
   prepareWorkspace();
-  const kernelProc = spawnIsolatedKernel();
+  kernelProc = spawnIsolatedKernel();
   await waitBoot();
   const ver = await api("/api/system/version");
   logStep("Step 1: 隔离思源内核冷启动就绪", ver.code === 0 && ver.data === "3.8.9", `版本: ${ver.data}`);
@@ -220,13 +225,17 @@ async function main() {
 
   // Step 3: Spawn XiaoLv Desktop configured for isolated sandbox
   console.log("启动与隔离沙箱绑定的思源外骨骼桌面助手进程...");
-  const desktopProc = spawn(EXE, [], {
+  desktopProc = spawn(EXE, [], {
     windowsHide: true,
     stdio: ["ignore", "pipe", "pipe"],
     env: {
       ...process.env,
       SIYUAN_URL: BASE_URL,
-      SIYUAN_TOKEN: TOKEN
+      SIYUAN_TOKEN: TOKEN,
+      XIAOLV_DATA_DIR: DATA_DIR,
+      XIAOLV_WORKSPACE_DIR: ISOLATED_WS,
+      XIAOLV_WEBHOOK_PORT: String(WEBHOOK_PORT),
+      XIAOLV_WEBHOOK_TOKEN: WEBHOOK_TOKEN
     }
   });
   desktopProc.stdout.on("data", (d) => console.log(`[DESKTOP_PROC_STDOUT] ${d.toString().trim()}`));
@@ -351,7 +360,7 @@ async function main() {
   logStep("Step 7.5: 今日记事时间轴 (Today's Timeline) 全量记事块时序聚合与分流断言", hasCapturedBlocks, `今日记录总块数: ${todayBlocks.length} 块 (涵盖灵感/待办/闪卡/双链)`);
 
   // Step 7.6: Test Local Image Auto-Upload to Assets (/api/asset/upload)
-  const testImgDir = path.join(process.env.TEMP, "XiaoLvDesktop");
+  const testImgDir = path.join(ISOLATED_WS, "test-assets");
   if (!fs.existsSync(testImgDir)) fs.mkdirSync(testImgDir, { recursive: true });
   const testImgPath = path.join(testImgDir, `test_upload_${Date.now()}.png`);
   fs.writeFileSync(testImgPath, Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64"));
@@ -363,7 +372,7 @@ async function main() {
   logStep("Step 7.6: 剪贴板本地图片自动上传思源资产库并嵌入日记图文块 (/api/asset/upload)", imgOk, `块 ID: ${imgBlockRow?.id} · 内容: ${imgBlockRow?.content} · Markdown: ${imgBlockRow?.markdown}`);
 
   // Step 7.7: Test Settings Persistence & FSRS Hotkey Sync
-  const settingsJsonPath = path.join(process.env.LOCALAPPDATA, "XiaoLvDesktop", "settings.json");
+  const settingsJsonPath = path.join(DATA_DIR, "settings.json");
   let savedSettings = {};
   if (fs.existsSync(settingsJsonPath)) {
     try {
@@ -435,7 +444,7 @@ async function main() {
   logStep("Step 7.13: 文档置顶常驻坞 (Pinned Docs) 与剪贴板历史管道验证", hasRecentDocs, `活跃全景文档数: ${recentDocsRes.data?.length} 篇`);
 
   // Step 7.14: Test Large Bento Window Viewport & Dark Theme Default (1180x740 & Dark Obsidian)
-  const settingsPath = path.join(process.env.LOCALAPPDATA, "XiaoLvDesktop", "settings.json");
+  const settingsPath = path.join(DATA_DIR, "settings.json");
   let cfgObj = {};
   if (fs.existsSync(settingsPath)) {
     try { cfgObj = JSON.parse(fs.readFileSync(settingsPath, "utf8")); } catch {}
@@ -451,10 +460,12 @@ async function main() {
       [Console]::OutputEncoding = [System.Text.Encoding]::UTF8;
       ${code}
     `;
-    const tmpScript = path.join(process.env.TEMP, `e2e_ps_${Date.now()}_${Math.random().toString(36).slice(2)}.ps1`);
+    const tmpScript = path.join(ISOLATED_WS, `e2e_ps_${Date.now()}_${Math.random().toString(36).slice(2)}.ps1`);
     fs.writeFileSync(tmpScript, "\ufeff" + wrapped, "utf8");
     try {
-      return execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${tmpScript}"`, { encoding: 'utf8' }).trim();
+      return execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${tmpScript}"`, {
+        encoding: 'utf8', windowsHide: true, timeout: 60000
+      }).trim();
     } finally {
       try { fs.unlinkSync(tmpScript); } catch {}
     }
@@ -599,10 +610,19 @@ async function main() {
     $sc = $asm.GetType('XiaoLv.Desktop.Core.SiYuanClient');
     $pWs = $sc.GetProperty('WorkspaceAssetsDir', [System.Reflection.BindingFlags]'Public,Static');
     $val = $pWs.GetValue($null, $null);
+    $workspaceOverride = $env:XIAOLV_WORKSPACE_DIR;
+    $missingWorkspaceRejected = $false;
+    try {
+      $env:XIAOLV_WORKSPACE_DIR = '';
+      try { $pWs.GetValue($null, $null) | Out-Null; } catch { $missingWorkspaceRejected = $true; }
+    } finally {
+      $env:XIAOLV_WORKSPACE_DIR = $workspaceOverride;
+    }
+    if (!$missingWorkspaceRejected) { throw 'Explicit endpoint without workspace did not fail closed.'; }
     Write-Output $val;
   `;
   const wsDirRes = runPs(wsDirScript);
-  const wsDirOk = wsDirRes.includes("assets");
+  const wsDirOk = path.resolve(wsDirRes.trim()) === path.join(ISOLATED_WS, "data", "assets");
   logStep("Step 7.27: 工作空间动态资产目录智能解析 (SiYuanClient.WorkspaceAssetsDir) 断言", wsDirOk, `动态资产目录: ${wsDirRes}`);
 
   // Step 7.28: Test Recycle Bin & History Rescue Engine (HistoryRescueManager / trash:)
@@ -670,37 +690,30 @@ async function main() {
   const snipOk = snipRes.includes("2026-") && snipRes.includes("Best regards") && snipRes.includes("2026");
   logStep("Step 7.31: 简码扩词与动态占位符求值引擎 (SnippetExpansionEngine / :简码) 断言", snipOk, `简码展开结果: [${snipRes.trim()}]`);
 
-  // Step 7.32: Test Dual Protocol Registration (siyuan-exoskeleton:// & xiaolv://)
+  // Step 7.32: Inspect protocol signatures without modifying HKCU handlers.
   const protoScript = `
     $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
     $asm = [System.Reflection.Assembly]::Load($bytes);
     $pr = $asm.GetType('XiaoLv.Desktop.Core.ProtocolRegistrar');
     $mReg = $pr.GetMethod('RegisterProtocol', [System.Reflection.BindingFlags]'Public,Static');
-    $mReg.Invoke($null, $null);
-    $k1 = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\\Classes\\siyuan-exoskeleton');
-    $k2 = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\\Classes\\xiaolv');
-    Write-Output (($null -ne $k1) -and ($null -ne $k2));
+    $mQuery = $pr.GetMethod('IsProtocolRegistered', [System.Reflection.BindingFlags]'Public,Static');
+    Write-Output (($null -ne $mReg) -and ($null -ne $mQuery));
   `;
   const protoRes = runPs(protoScript);
   const protoOk = protoRes.includes("True");
-  logStep("Step 7.32: 双协议注册与外部调用验证 (siyuan-exoskeleton:// & xiaolv://) 断言", protoOk, `双协议注册状态: ${protoRes.trim()}`);
+  logStep("Step 7.32: 双协议注册/查询方法静态契约（不写注册表）", protoOk, `静态反射契约: ${protoRes.trim()}`);
 
-  // Step 7.33: Test Hotkey Conflict Doctor & Smart Suggestion Engine (HotkeyConflictManager)
+  // Step 7.33: Inspect hotkey probe contracts without temporarily registering global keys.
   const hkScript = `
     $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
     $asm = [System.Reflection.Assembly]::Load($bytes);
     $hkm = $asm.GetType('XiaoLv.Desktop.Core.HotkeyConflictManager');
     $mDiag = $hkm.GetMethod('DiagnoseAllHotkeys', [System.Reflection.BindingFlags]'Public,Static');
-    $reports = $mDiag.Invoke($null, $null);
-    if ($reports) {
-      Write-Output $reports.Count;
-    } else {
-      Write-Output 0;
-    }
+    $mProbe = $hkm.GetMethod('TestProbeRegister', [System.Reflection.BindingFlags]'Public,Static');
+    Write-Output (($null -ne $mDiag) -and ($null -ne $mProbe));
   `;
   const hkRes = runPs(hkScript);
-  const hkCount = parseInt(hkRes || "0", 10);
-  logStep("Step 7.33: 全局快捷键冲突深度诊断与智能自愈引擎 (HotkeyConflictManager) 断言", hkCount === 6, `体检完成 · 覆盖核心动作: ${hkCount} 项`);
+  logStep("Step 7.33: 快捷键体检/探针静态契约（不注册全局热键）", hkRes.includes("True"), `静态反射契约: ${hkRes.trim()}`);
 
   // Step 7.34: Test Academic DOI/arXiv, LaTeX Math, and Table Conversion (ClipboardWatcher)
   const academicScript = `
@@ -903,14 +916,12 @@ async function main() {
     $asm = [System.Reflection.Assembly]::Load($bytes);
     $bridge = $asm.GetType('XiaoLv.Desktop.Core.OfficeComBridge');
     $mPpt = $bridge.GetMethod('TryGetActiveOfficeSelection', [System.Reflection.BindingFlags]'Public,Static');
-    $resPowerPnt = $mPpt.Invoke($null, @('powerpnt'));
-    $resWpp = $mPpt.Invoke($null, @('wpp'));
-    $safeRes = ($null -ne $resPowerPnt) -and ($null -ne $resWpp) -and ($resPowerPnt.AppType -eq 'ppt' -or $resPowerPnt.AppType -eq '');
+    $safeRes = ($null -ne $mPpt) -and ($mPpt.ReturnType.Name -eq 'OfficeSelectionResult');
     Write-Output ($safeRes.ToString());
   `;
   const pptRes = runPs(pptScript);
   const isPptOk = pptRes.includes("True");
-  logStep("Step 7.40: PowerPoint 与 WPS 演示 COM 晚绑定透视与选区安全反射断言", isPptOk, `PPT晚绑定反射断言: ${pptRes.trim()}`);
+  logStep("Step 7.40: Office COM 选区接口静态契约（不读取用户当前文档）", isPptOk, `静态反射契约: ${pptRes.trim()}`);
 
   // Step 7.41: Test Shell Context Menu & -inspect Command Line Parsing
   const shellScript = `
@@ -919,8 +930,7 @@ async function main() {
     $mgr = $asm.GetType('XiaoLv.Desktop.Core.ShellContextMenuManager');
     $mReg = $mgr.GetMethod('Register', [System.Reflection.BindingFlags]'Public,Static');
     $mIsReg = $mgr.GetMethod('IsRegistered', [System.Reflection.BindingFlags]'Public,Static');
-    $regOk = $mReg.Invoke($null, $null);
-    $isReg = $mIsReg.Invoke($null, $null);
+    $contractOk = ($null -ne $mReg) -and ($null -ne $mIsReg);
 
     $prog = $asm.GetType('XiaoLv.Desktop.Program');
     $mParse = $prog.GetMethod('ParseCommandLineOrProtocol', [System.Reflection.BindingFlags]'NonPublic,Static');
@@ -928,11 +938,11 @@ async function main() {
     $parsed = $mParse.Invoke($null, $argsArr);
     $cmdOk = ($parsed -eq 'inspect:D:\\test.docx');
 
-    Write-Output ($isReg.ToString() + '|' + $cmdOk.ToString());
+    Write-Output ($contractOk.ToString() + '|' + $cmdOk.ToString());
   `;
   const shellRes = runPs(shellScript);
   const isShellOk = shellRes.includes("True|True");
-  logStep("Step 7.41: 资源管理器思源外骨骼双右键菜单与 -inspect 命令行解析穿透断言", isShellOk, `右键与命令行断言: ${shellRes.trim()}`);
+  logStep("Step 7.41: 右键菜单静态契约与 -inspect 解析（不注册菜单）", isShellOk, `静态契约与解析: ${shellRes.trim()}`);
 
   // Step 7.42: Test Zero-Dependency EPUB Light Stream Parser & Reading Notes Generation
   const epubScript = `
@@ -1319,11 +1329,11 @@ async function main() {
   const isExportOk = exportRes.includes("True");
   logStep("Step 7.55: 纯净代码片段本地源码文件秒开生成管道断言", isExportOk, `源码秒开管道断言: ${exportRes.trim()}`);
 
-  // Step 7.56: Test ExternalApiBridge HTTP Status Probe (:43990 /status)
+  // Step 7.56: Test ExternalApiBridge HTTP Status Probe on the isolated port
   let bridgeStatus = null;
   for (let i = 0; i < 15; i++) {
     try {
-      const res = await fetch("http://127.0.0.1:43990/status", { signal: AbortSignal.timeout(600) });
+      const res = await webhookFetch(WEBHOOK_BASE + "/status", { signal: AbortSignal.timeout(600) });
       if (res.ok) {
         bridgeStatus = await res.json();
         break;
@@ -1332,12 +1342,17 @@ async function main() {
     await sleep(300);
   }
   const isBridgeAlive = bridgeStatus && bridgeStatus.code === 0 && bridgeStatus.msg.includes("思源外骨骼桌面助手在线");
-  logStep("Step 7.56: 本地极速调用桥 Webhook 状态探针 (GET /status :43990) 断言", isBridgeAlive, `响应状态: ${JSON.stringify(bridgeStatus)}`);
+  logStep("Step 7.56: 本地极速调用桥 Webhook 状态探针 (隔离端口 GET /status) 断言", isBridgeAlive, `响应状态: ${JSON.stringify(bridgeStatus)}`);
+
+  const unauthResp = await fetch(WEBHOOK_BASE + "/status");
+  const unauthJson = await unauthResp.json();
+  const unauthRejected = unauthResp.status === 401 && unauthJson.code === 401 && !unauthResp.headers.has("Access-Control-Allow-Origin");
+  logStep("Step 7.56.1: Webhook 未授权请求拒绝且不开放通配跨域", unauthRejected, `HTTP ${unauthResp.status} · ${JSON.stringify(unauthJson)}`);
 
   // Step 7.57: Test ExternalApiBridge Capture Webhook Ingestion (POST /api/capture)
   let captureResp = null;
   try {
-    const res = await fetch("http://127.0.0.1:43990/api/capture", {
+    const res = await webhookFetch(WEBHOOK_BASE + "/api/capture", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1557,38 +1572,109 @@ async function main() {
     $oqm = $asm.GetType('XiaoLv.Desktop.Core.OfflineQueueManager');
 
     $mEnqueue = $oqm.GetMethod('EnqueueNote', [System.Reflection.BindingFlags]'Public,Static');
-    $mEnqueue.Invoke($null, @('离线测试笔记条目', 'VS Code'));
-
+    $mEnqueueFile = $oqm.GetMethod('EnqueueFile', [System.Reflection.BindingFlags]'Public,Static', $null, [Type[]]@([string]), $null);
+    $mGet = $oqm.GetMethod('GetQueueItems', [System.Reflection.BindingFlags]'Public,Static');
     $mCount = $oqm.GetMethod('GetQueueCount', [System.Reflection.BindingFlags]'Public,Static');
-    $countBefore = $mCount.Invoke($null, $null);
-
     $mClear = $oqm.GetMethod('ClearQueue', [System.Reflection.BindingFlags]'Public,Static');
-    $mClear.Invoke($null, $null);
+    $mClear.Invoke($null, $null) | Out-Null;
 
+    $testDir = '${ISOLATED_WS.replace(/\\/g, "\\\\")}\\queue-split';
+    [System.IO.Directory]::CreateDirectory($testDir) | Out-Null;
+    [System.IO.File]::WriteAllText([System.IO.Path]::Combine($testDir, 'one.md'), 'one');
+    [System.IO.File]::WriteAllText([System.IO.Path]::Combine($testDir, 'two.md'), 'two');
+    $mEnqueueFile.Invoke($null, @($testDir)) | Out-Null;
+    $splitItems = @($mGet.Invoke($null, $null));
+    $splitOk = ($splitItems.Count -eq 2) -and @($splitItems | Where-Object { [System.IO.Directory]::Exists($_.FilePath) }).Count -eq 0;
+    $mClear.Invoke($null, $null) | Out-Null;
+
+    $targetPath = [System.IO.Path]::Combine($testDir, 'target.md');
+    [System.IO.File]::WriteAllText($targetPath, 'target');
+    $mEnqueueFileWithTarget = $oqm.GetMethod('EnqueueFile', [Type[]]@([string], [string], [string]));
+    $mEnqueueFileWithTarget.Invoke($null, @($targetPath, 'target-document-id', '目标文档')) | Out-Null;
+    $targetItems = @($mGet.Invoke($null, $null));
+    $targetPreserved = ($targetItems.Count -eq 1) -and ($targetItems[0].TargetDocId -eq 'target-document-id');
+    $mClear.Invoke($null, $null) | Out-Null;
+
+    $stalePath = [System.IO.Path]::Combine($testDir, 'deleted.md');
+    [System.IO.File]::WriteAllText($stalePath, 'will be deleted');
+    $mEnqueueFile.Invoke($null, @($stalePath)) | Out-Null;
+    [System.IO.File]::Delete($stalePath);
+    $mEnqueue.Invoke($null, @('离线队列删除文件回收测试', 'E2E')) | Out-Null;
+    $flush = $oqm.GetMethod('FlushQueue', [System.Reflection.BindingFlags]'Public,Static');
+    $flush.Invoke($null, @('${BASE_URL}', '${TOKEN}', $null)) | Out-Null;
+    $countAfterFlush = $mCount.Invoke($null, $null);
+    $mClear.Invoke($null, $null) | Out-Null;
+
+    $countBefore = $splitItems.Count;
     $countAfter = $mCount.Invoke($null, $null);
 
-    $okQueue = ($countBefore -ge 1) -and ($countAfter -eq 0);
-    Write-Output ($okQueue.ToString() + '|' + $countBefore + '->' + $countAfter);
+    $queuePath = [System.IO.Path]::Combine($env:XIAOLV_DATA_DIR, 'offline_queue.json');
+    $invalidCipher = 'DPAPI:not-valid-base64';
+    [System.IO.File]::WriteAllText($queuePath, $invalidCipher, [System.Text.UTF8Encoding]::new($false));
+    $unreadableCount = $mCount.Invoke($null, $null);
+    $readRejected = $false;
+    try { $mGet.Invoke($null, $null) | Out-Null; } catch { $readRejected = $true; }
+    $invalidCipherPreserved = [System.IO.File]::ReadAllText($queuePath) -eq $invalidCipher;
+    $lockedClearRejected = $false;
+    $heldQueue = [System.IO.File]::Open($queuePath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None);
+    try { $lockedClearRejected = $mClear.Invoke($null, $null) -eq $false; } finally { $heldQueue.Dispose(); }
+    $clearRecovered = $mClear.Invoke($null, $null) -eq $true;
+    $recoveredCount = $mCount.Invoke($null, $null);
+    $unreadableQueueSafe = ($unreadableCount -eq -1) -and $readRejected -and $invalidCipherPreserved -and $lockedClearRejected -and $clearRecovered -and ($recoveredCount -eq 0);
+
+    $okQueue = $splitOk -and $targetPreserved -and ($countAfterFlush -eq 0) -and ($countAfter -eq 0) -and $unreadableQueueSafe;
+    Write-Output ($okQueue.ToString() + '|' + $splitOk.ToString() + '|' + $targetPreserved.ToString() + '|' + $countAfterFlush + '|' + $countBefore + '->' + $countAfter + '|UnreadableSafe=' + $unreadableQueueSafe);
   `;
   const queueRes = runPs(queueScript);
   const isQueueOk = queueRes.includes("True");
-  logStep("Step 7.67: 离岸脱机缓冲队列透视与队列重置管道 (OfflineQueueManager) 断言", isQueueOk, `离线队列管道断言: ${queueRes.trim()}`);
+  // 官方约定：写块后查 SQL 前先强制提交内核待写事务，避免 1.5 秒短窗口抢在自动提交前
+  try { await api("/api/sqlite/flushTransaction"); } catch {}
+  const deletedQueueNote = await pollSql("SELECT id, content FROM blocks WHERE content LIKE '%离线队列删除文件回收测试%' LIMIT 1", 15);
+  const queueDeletesAreIdempotent = queueRes.includes("True|True|True|0|") && !!deletedQueueNote;
+  logStep("Step 7.67: 离线目录拆分、失效文件回收、队列写入与清空断言", isQueueOk && queueDeletesAreIdempotent, `离线队列断言: ${queueRes.trim()} · 回写块: ${deletedQueueNote?.id}`);
 
-  // Step 7.68: Test BrowserBookmarkSearcher (Edge / Chrome Bookmarks Stream Parsing)
+  const localProfileScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $hub = $asm.GetType('XiaoLv.Desktop.Core.SiYuanProfileHub');
+    $entryType = $asm.GetType('XiaoLv.Desktop.Core.SiYuanProfileEntry');
+    $entry = [Activator]::CreateInstance($entryType);
+    $entry.Name = '隔离本机预设备份测试';
+    $entry.Type = 'appearance';
+    $entry.ConfigData['apiKey'] = 'local-only-secret-test';
+    $env:SIYUAN_URL = 'http://127.0.0.1:1';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+    $save = $hub.GetMethod('SaveProfileAsync', [System.Reflection.BindingFlags]'Public,Static');
+    $saveTask = $save.Invoke($null, @($entry));
+    $saved = $saveTask.GetAwaiter().GetResult();
+    $savedLocalOnly = $saved -and $entry.IsLocalOnly -and $entry.ConfigData['apiKey'] -eq '[SECURED_CREDENTIAL]';
+    $delete = $hub.GetMethod('DeleteProfileAsync', [System.Reflection.BindingFlags]'Public,Static');
+    $deleteTask = $delete.Invoke($null, @($entry.Id));
+    $deleted = $deleteTask.GetAwaiter().GetResult();
+    $hasVault = $hub.GetMethod('HasDpapiVaultCredentials', [System.Reflection.BindingFlags]'Public,Static').Invoke($null, @($entry.Id, $entry.Name));
+    Write-Output ($savedLocalOnly.ToString() + '|' + $deleted.ToString() + '|' + (!$hasVault).ToString());
+  `;
+  const localProfileRes = runPs(localProfileScript);
+  logStep("Step 7.67.1: 思源离线时预设本机安全保存、状态反馈与删除凭据清理", localProfileRes.includes("True|True|True"), `本机预设断言: ${localProfileRes.trim()}`);
+
+  // Step 7.68: Parse a synthetic bookmark node without opening a user's browser profile.
   const bookmarkScript = `
     $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
     $asm = [System.Reflection.Assembly]::Load($bytes);
     $bms = $asm.GetType('XiaoLv.Desktop.Core.BrowserBookmarkSearcher');
-    $mSearch = $bms.GetMethod('SearchBookmarks', [System.Reflection.BindingFlags]'Public,Static');
-
-    $list = $mSearch.Invoke($null, @('', 50));
-    $okList = ($null -ne $list);
-    $firstItem = if ($list.Count -gt 0) { $list[0].Title + ' (' + $list[0].BrowserName + ')' } else { 'EMPTY' };
-    Write-Output ($okList.ToString() + '|' + $list.Count + '|' + $firstItem);
+    $mTraverse = $bms.GetMethod('TraverseBookmarkNode', [System.Reflection.BindingFlags]'NonPublic,Static');
+    $itemType = $asm.GetType('XiaoLv.Desktop.Core.BrowserBookmarkItem');
+    $listType = [System.Collections.Generic.List[string]].GetGenericTypeDefinition().MakeGenericType(@($itemType));
+    $list = [Activator]::CreateInstance($listType);
+    $mParse = $asm.GetType('XiaoLv.Desktop.Core.JsonHelper').GetMethod('ParseDict', [System.Reflection.BindingFlags]'Public,Static');
+    $node = $mParse.Invoke($null, @('{"type":"url","name":"E2E Fixture Bookmark","url":"https://bookmark.fixture.invalid/?utm_source=e2e","date_added":"13300000000000000"}'));
+    $mTraverse.Invoke($null, @($node, 'Fixture Folder', 'Fixture Chrome', '', $list, 50));
+    $okList = ($list.Count -eq 1) -and ($list[0].Title -eq 'E2E Fixture Bookmark') -and ($list[0].CleanUrl -eq 'https://bookmark.fixture.invalid/');
+    Write-Output ($okList.ToString() + '|' + $list.Count);
   `;
   const bookmarkRes = runPs(bookmarkScript);
   const isBookmarkOk = bookmarkRes.includes("True");
-  logStep("Step 7.68: 本地浏览器书签零依赖极速流式解析 (BrowserBookmarkSearcher) 断言", isBookmarkOk, `书签解析断言: ${bookmarkRes.trim()}`);
+  logStep("Step 7.68: 合成浏览器书签节点解析/净化断言（不读取个人书签）", isBookmarkOk, `合成书签断言: ${bookmarkRes.trim()}`);
 
   // Step 7.69: Test CitationFormatter (GB/T 7714-2015 & APA 7th Edition)
   const citeScript = `
@@ -1870,34 +1956,20 @@ async function main() {
     $bridge = $asm.GetType('XiaoLv.Desktop.Core.OfficeComBridge');
     $mPpt = $bridge.GetMethod('TryGetActiveOfficeSelection', [System.Reflection.BindingFlags]'Public,Static');
 
-    $res = $mPpt.Invoke($null, @('powerpnt'));
-    $okPptType = ($null -ne $res) -and ($res.AppType -eq 'ppt');
+    $okPptType = ($null -ne $mPpt) -and ($mPpt.ReturnType.Name -eq 'OfficeSelectionResult');
     Write-Output ($okPptType.ToString());
   `;
   const pptComRes = runPs(pptComScript);
   const isPptComOk = pptComRes.includes("True");
-  logStep("Step 7.80: PowerPoint 与 WPS 演示幻灯片备注晚绑定反射断言", isPptComOk, `PPT反射断言: ${pptComRes.trim()}`);
+  logStep("Step 7.80: PowerPoint 选区返回类型静态契约（不调用活动 COM 对象）", isPptComOk, `静态反射契约: ${pptComRes.trim()}`);
 
-  // Step 7.81: Test Desktop DropZoneRouter Intelligent Dispatch (Glean vs Home vs Dispatcher)
-  const dropRouterScript = `
-    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
-    $asm = [System.Reflection.Assembly]::Load($bytes);
-    $router = $asm.GetType('XiaoLv.Desktop.Core.DropZoneRouter');
-    $mRouteText = $router.GetMethod('RouteTextOrUrl', [System.Reflection.BindingFlags]'Public,Static');
-
-    $resUrl = $mRouteText.Invoke($null, @('https://arxiv.org/abs/1706.03762', $null));
-    $resExp = $mRouteText.Invoke($null, @('¥128.50 团队差旅餐饮发票', $null));
-    $resTxt = $mRouteText.Invoke($null, @('常规备忘文本记录', $null));
-
-    $okUrl = ($resUrl.Category -eq 'article') -and ($resUrl.TargetModule -eq 'siyuan-glean');
-    $okExp = ($resExp.Category -eq 'expense') -and ($resExp.TargetModule -eq 'siyuan-home');
-    $okTxt = ($resTxt.Category -eq 'text') -and ($resTxt.TargetModule -eq 'SmartCapture');
-
-    Write-Output ($okUrl.ToString() + '|' + $okExp.ToString() + '|' + $okTxt.ToString());
-  `;
-  const dropRouterRes = runPs(dropRouterScript);
-  const isDropRouterOk = dropRouterRes.includes("True|True|True");
-  logStep("Step 7.81: 系统级桌面托放中枢智能路由 (DropZoneRouter: 文章->拾遗/票据->管家) 断言", isDropRouterOk, `托放路由断言: ${dropRouterRes.trim()}`);
+  // Step 7.81: Inspect router branches statically; URL routing captures the user's live selection/clipboard.
+  const dropRouterSource = fs.readFileSync(path.join(ROOT, "src", "Core", "DropZoneRouter.cs"), "utf8");
+  const hasDropRouterContract = dropRouterSource.includes("RouteTextOrUrl(string rawText") &&
+                                dropRouterSource.includes('res.TargetModule = "siyuan-glean";') &&
+                                dropRouterSource.includes('res.TargetModule = "siyuan-home";') &&
+                                dropRouterSource.includes('res.TargetModule = "SmartCapture";');
+  logStep("Step 7.81: 托放中枢路由静态契约（不抓取前台选区/剪贴板）", hasDropRouterContract);
 
   // Step 7.82: Test LiveStickyPad Smart Paste & Markdown Pangu Cleansing Pipeline
   const stickyScript = `
@@ -1956,7 +2028,7 @@ async function main() {
   const isRichTextOk = richTextRes.includes("True");
   logStep("Step 7.84: 外部富文本图文无损复制 (DocClipboardExporter CF_HTML) 转换断言", isRichTextOk, `富文本编译断言: ${richTextRes.trim()}`);
 
-  // Step 7.85: Test DoubleTapHotkeyActivator (Double Ctrl Low-Level Hook State)
+  // Step 7.85: Inspect lifecycle signatures without installing a global keyboard hook.
   const doubleCtrlScript = `
     $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
     $asm = [System.Reflection.Assembly]::Load($bytes);
@@ -1965,16 +2037,12 @@ async function main() {
     $mStop = $activator.GetMethod('Stop', [System.Reflection.BindingFlags]'Public,Static');
     $pRunning = $activator.GetProperty('IsRunning', [System.Reflection.BindingFlags]'Public,Static');
 
-    $mStart.Invoke($null, $null);
-    $running1 = $pRunning.GetValue($null, $null);
-    $mStop.Invoke($null, $null);
-    $running2 = $pRunning.GetValue($null, $null);
-
-    Write-Output ($running1.ToString() + '|' + $running2.ToString());
+    $contractOk = ($null -ne $mStart) -and ($null -ne $mStop) -and ($null -ne $pRunning);
+    Write-Output $contractOk.ToString();
   `;
   const doubleCtrlRes = runPs(doubleCtrlScript);
-  const isDoubleCtrlOk = doubleCtrlRes.includes("True|False");
-  logStep("Step 7.85: 双击 Ctrl 极速呼出微控激活器 (DoubleTapHotkeyActivator) 状态断言", isDoubleCtrlOk, `双击Ctrl激活状态: ${doubleCtrlRes.trim()}`);
+  const isDoubleCtrlOk = doubleCtrlRes.includes("True");
+  logStep("Step 7.85: 双击 Ctrl 生命周期静态契约（不安装全局钩子）", isDoubleCtrlOk, `静态反射契约: ${doubleCtrlRes.trim()}`);
 
   // Step 7.86: Test ReadingProgressEstimator (Chinese & English Cognitive Speed Reading Calculation)
   const readingScript = `
@@ -2461,28 +2529,29 @@ async function main() {
   const isHorizonFocusOk = horizonFocusRes.includes("True");
   logStep("Step 7.109: 任务视界直接启航心流番茄专注 (StartFocusOnTask) 联动断言", isHorizonFocusOk, `任务启航心流断言: ${horizonFocusRes.trim()}`);
 
-  // Step 7.110: Test TasksHorizonManager.CreateTaskFromActiveContext
+  // Step 7.110: Inspect active-context routing statically and use a synthetic isolated task for downstream checks.
   const ctxTaskScript = `
     $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
     $asm = [System.Reflection.Assembly]::Load($bytes);
     $thm = $asm.GetType('XiaoLv.Desktop.Core.TasksHorizonManager');
     $mCreate = $thm.GetMethod('CreateTaskFromActiveContext', [System.Reflection.BindingFlags]'Public,Static');
 
-    $env:SIYUAN_URL = '${BASE_URL}';
-    $env:SIYUAN_TOKEN = '${TOKEN}';
-    $createOk = $mCreate.Invoke($null, @('审阅知识库生态融合方案', 'P1', '2026-11-09'));
-
-    Write-Output ($createOk.ToString());
+    Write-Output ($null -ne $mCreate).ToString();
   `;
   const ctxTaskRes = runPs(ctxTaskScript);
   const isCtxTaskOk = ctxTaskRes.includes("True");
-  logStep("Step 7.110: 外部活动窗口上下文一键萃取高情境待办 (CreateTaskFromActiveContext) 断言", isCtxTaskOk, `情境任务萃取断言: ${ctxTaskRes.trim()}`);
+  logStep("Step 7.110: 前台上下文建任务静态契约（不读取用户活动窗口）", isCtxTaskOk, `静态反射契约: ${ctxTaskRes.trim()}`);
 
   // Step 7.111: Test Context Task SQLite Ingestion
+  await api("/api/block/appendDailyNoteBlock", {
+    notebook: nbRes.data.notebook.id,
+    dataType: "markdown",
+    data: "- [ ] [P1] 审阅知识库生态融合方案 (来自 E2E 合成上下文)"
+  });
   await sleep(1000);
   const createdCtxTask = await pollSql("SELECT id, content, ial, markdown FROM blocks WHERE content LIKE '%审阅知识库生态融合方案%' LIMIT 1");
   const isCtxTaskStorageOk = !!createdCtxTask && (createdCtxTask.content.includes("审阅知识库生态融合方案") || (createdCtxTask.markdown && createdCtxTask.markdown.includes("审阅知识库生态融合方案")));
-  logStep("Step 7.111: 外部前台上下文萃取待办入库思源日记待办池断言", isCtxTaskStorageOk, `块 ID: ${createdCtxTask?.id} · 内容: ${createdCtxTask?.content}`);
+  logStep("Step 7.111: 合成上下文任务写入隔离日记断言", isCtxTaskStorageOk, `块 ID: ${createdCtxTask?.id} · 内容: ${createdCtxTask?.content}`);
 
   // Step 7.112: Test Actionable PKM Closed-Loop LifeCycle
   const loopScript = `
@@ -2514,7 +2583,7 @@ async function main() {
   // Step 7.113: Test ExternalApiBridge Web Bookmark Webhook (GET /api/bookmark/web & POST /api/bookmark/web)
   let webhookWebResp;
   try {
-    const postResp = await fetch("http://127.0.0.1:43990/api/bookmark/web", {
+    const postResp = await webhookFetch(WEBHOOK_BASE + "/api/bookmark/web", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2526,7 +2595,7 @@ async function main() {
     });
     const postJson = await postResp.json();
     await sleep(300);
-    const getResp = await fetch("http://127.0.0.1:43990/api/bookmark/web?q=anthropic");
+    const getResp = await webhookFetch(WEBHOOK_BASE + "/api/bookmark/web?q=anthropic");
     const getJson = await getResp.json();
     webhookWebResp = { postCode: postJson.code, getCount: getJson.count, getCode: getJson.code };
   } catch (err) {
@@ -2538,7 +2607,7 @@ async function main() {
   // Step 7.114: Test ExternalApiBridge Folder Bookmark Webhook (GET /api/bookmark/folder & POST /api/bookmark/folder)
   let webhookFoldResp;
   try {
-    const postResp = await fetch("http://127.0.0.1:43990/api/bookmark/folder", {
+    const postResp = await webhookFetch(WEBHOOK_BASE + "/api/bookmark/folder", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2550,7 +2619,7 @@ async function main() {
     });
     const postJson = await postResp.json();
     await sleep(300);
-    const getResp = await fetch("http://127.0.0.1:43990/api/bookmark/folder?q=" + encodeURIComponent("小驴插件工程"));
+    const getResp = await webhookFetch(WEBHOOK_BASE + "/api/bookmark/folder?q=" + encodeURIComponent("小驴插件工程"));
     const getJson = await getResp.json();
     webhookFoldResp = { postCode: postJson.code, getCount: getJson.count, getCode: getJson.code };
   } catch (err) {
@@ -2562,7 +2631,7 @@ async function main() {
   // Step 7.115: Test ExternalApiBridge Integrated Focus Status Webhook (GET /api/focus)
   let webhookFocusGetResp;
   try {
-    const resp = await fetch("http://127.0.0.1:43990/api/focus");
+    const resp = await webhookFetch(WEBHOOK_BASE + "/api/focus");
     webhookFocusGetResp = await resp.json();
   } catch (err) {
     webhookFocusGetResp = { error: err.message };
@@ -2573,7 +2642,7 @@ async function main() {
   // Step 7.116: Test ExternalApiBridge Focus Startup Webhook (POST /api/focus)
   let webhookFocusStartResp;
   try {
-    const resp = await fetch("http://127.0.0.1:43990/api/focus", {
+    const resp = await webhookFetch(WEBHOOK_BASE + "/api/focus", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2596,7 +2665,7 @@ async function main() {
   // Step 7.117: Test ExternalApiBridge Task Auto-Completion Webhook (POST /api/task/complete)
   let webhookTaskCompResp;
   try {
-    const resp = await fetch("http://127.0.0.1:43990/api/task/complete", {
+    const resp = await webhookFetch(WEBHOOK_BASE + "/api/task/complete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: createdCtxTask?.id || "" })
@@ -2608,20 +2677,11 @@ async function main() {
   const isWebhookTaskCompOk = webhookTaskCompResp && (webhookTaskCompResp.code === 0 || webhookTaskCompResp.code === 1);
   logStep("Step 7.117: 任务勾销 Webhook (POST /api/task/complete) 远程完成断言", isWebhookTaskCompOk, `响应: ${JSON.stringify(webhookTaskCompResp)}`);
 
-  // Step 7.118: Test ExternalApiBridge Directory Navigation Webhook (POST /api/navigate)
-  let webhookNavResp;
-  try {
-    const resp = await fetch("http://127.0.0.1:43990/api/navigate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "D:\\思源插件" })
-    });
-    webhookNavResp = await resp.json();
-  } catch (err) {
-    webhookNavResp = { error: err.message };
-  }
-  const isWebhookNavOk = webhookNavResp && (webhookNavResp.code === 0 || webhookNavResp.code === 1);
-  logStep("Step 7.118: 目录秒跳 Webhook (POST /api/navigate) 穿透调度断言", isWebhookNavOk, `响应: ${JSON.stringify(webhookNavResp)}`);
+  // Step 7.118: Static navigation route contract; never navigate the user's foreground file dialog.
+  const hasNavigateContract = bridgeSource.includes('rawPath.Equals("/api/navigate"') &&
+                              bridgeSource.includes("HandleNavigateRequest(req, resp);") &&
+                              bridgeSource.includes("FolderBookmarkHub.NavigateToFolder(path)");
+  logStep("Step 7.118: 目录秒跳 Webhook 静态路由契约（不打开窗口或注入路径）", hasNavigateContract);
 
   // Step 7.119: Test SiYuanProfileHub Credential Sanitization
   const sanitizeScript = `
@@ -2704,6 +2764,52 @@ async function main() {
   const isAiProfileOk = aiProfileRes.includes("True|True");
   logStep("Step 7.121: AI 大模型配置预设保存与 API-Key 强屏蔽断言", isAiProfileOk, `AI预设保存断言: ${aiProfileRes.trim()}`);
 
+  const profileNameFixture = 'E2E "双引号" & 预设';
+  const profileDescriptionFixture = '含引号 "描述" & 数据';
+  const firstProfileResponse = await webhookFetch(WEBHOOK_BASE + '/api/profile', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: profileNameFixture, type: 's3', description: profileDescriptionFixture, configData: { bucket: 'profile-v1' } })
+  });
+  const firstProfile = await firstProfileResponse.json();
+  const secondProfileResponse = await webhookFetch(WEBHOOK_BASE + '/api/profile', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: profileNameFixture, type: 's3', description: profileDescriptionFixture, configData: { bucket: 'profile-v2' } })
+  });
+  const secondProfile = await secondProfileResponse.json();
+  const profileIdentityOk = firstProfile.code === 0 && secondProfile.code === 0 &&
+    !!firstProfile.entry?.BlockId && firstProfile.entry.Id === secondProfile.entry?.Id &&
+    firstProfile.entry.BlockId === secondProfile.entry.BlockId && !secondProfile.entry.IsLocalOnly;
+  logStep('Step 7.121.1: 配置预设重复保存保留逻辑身份并更新同一思源块', profileIdentityOk,
+    `逻辑 ID: ${secondProfile.entry?.Id} · 思源块: ${secondProfile.entry?.BlockId}`);
+  const profileIdFixture = secondProfile.entry.Id;
+  const profileBlockFixture = secondProfile.entry.BlockId;
+  const profileRow = await pollSql(`SELECT id, content, ial FROM blocks WHERE id='${profileBlockFixture}' AND content LIKE '%profile-v2%' LIMIT 1`);
+  const identityRows = await api('/api/query/sql', {
+    stmt: `SELECT id FROM blocks WHERE type != 'd' AND ial LIKE '%custom-profile-id="${profileIdFixture}"%'`
+  });
+  logStep('Step 7.121.2: 预设更新可读回且远端只保留一个元数据块',
+    !!profileRow && identityRows.code === 0 && identityRows.data?.length === 1,
+    `更新可见: ${!!profileRow} · 元数据块数: ${identityRows.data?.length}`);
+  const nameFixtureBase64 = Buffer.from(profileNameFixture, 'utf8').toString('base64');
+  const descriptionFixtureBase64 = Buffer.from(profileDescriptionFixture, 'utf8').toString('base64');
+  const profileRoundtripScript = `
+    $asm = [System.Reflection.Assembly]::Load([System.IO.File]::ReadAllBytes('${exePath}'));
+    $hub = $asm.GetType('XiaoLv.Desktop.Core.SiYuanProfileHub');
+    $load = $hub.GetMethod('LoadProfilesAsync', [System.Reflection.BindingFlags]'Public,Static');
+    $expectedName = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${nameFixtureBase64}'));
+    $expectedDescription = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${descriptionFixtureBase64}'));
+    $loaded = $load.Invoke($null, @('all')).GetAwaiter().GetResult();
+    $entry = @($loaded | Where-Object { $_.Id -eq '${profileIdFixture}' });
+    $readOk = $entry.Count -eq 1 -and $entry[0].Name -eq $expectedName -and $entry[0].Description -eq $expectedDescription -and $entry[0].BlockId -eq '${profileBlockFixture}' -and $entry[0].ConfigData['bucket'] -eq 'profile-v2';
+    $deleted = $hub.GetMethod('DeleteProfileAsync', [System.Reflection.BindingFlags]'Public,Static').Invoke($null, @('${profileIdFixture}')).GetAwaiter().GetResult();
+    $after = $load.Invoke($null, @('all')).GetAwaiter().GetResult();
+    $noResurrection = @($after | Where-Object { $_.Id -eq '${profileIdFixture}' }).Count -eq 0;
+    Write-Output ($readOk.ToString() + '|' + $deleted.ToString() + '|' + $noResurrection.ToString());
+  `;
+  const profileRoundtrip = runPs(profileRoundtripScript);
+  logStep('Step 7.121.3: 预设引号名称读回、按实际块删除与立即刷新防重现',
+    profileRoundtrip.includes('True|True|True'), profileRoundtrip.trim());
+
   // Step 7.122: Test SiYuanProfileHub Search & Type Filtering
   const searchProfileScript = `
     $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
@@ -2745,7 +2851,7 @@ async function main() {
   // Step 7.124: Test ExternalApiBridge Profile Webhook (GET /api/profile & POST /api/profile)
   let webhookProfileResp;
   try {
-    const postResp = await fetch("http://127.0.0.1:43990/api/profile", {
+    const postResp = await webhookFetch(WEBHOOK_BASE + "/api/profile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2760,7 +2866,7 @@ async function main() {
     });
     const postJson = await postResp.json();
     await sleep(300);
-    const getResp = await fetch("http://127.0.0.1:43990/api/profile?type=ai&q=" + encodeURIComponent("智谱"));
+    const getResp = await webhookFetch(WEBHOOK_BASE + "/api/profile?type=ai&q=" + encodeURIComponent("智谱"));
     const getJson = await getResp.json();
     webhookProfileResp = { postCode: postJson.code, getCount: getJson.count, getCode: getJson.code };
   } catch (err) {
@@ -2772,7 +2878,7 @@ async function main() {
   // Step 7.125: Test ExternalApiBridge Profile Capture Webhook (GET /api/profile/capture)
   let webhookProfileCapResp;
   try {
-    const resp = await fetch("http://127.0.0.1:43990/api/profile/capture?type=s3&name=" + encodeURIComponent("测试S3萃取"));
+    const resp = await webhookFetch(WEBHOOK_BASE + "/api/profile/capture?type=s3&name=" + encodeURIComponent("测试S3萃取"));
     webhookProfileCapResp = await resp.json();
   } catch (err) {
     webhookProfileCapResp = { error: err.message };
@@ -2860,7 +2966,7 @@ async function main() {
   // Step 7.130: Test ExternalApiBridge Notification Webhook (POST /api/notify & GET /api/notify)
   let webhookNotifyResp;
   try {
-    const postResp = await fetch("http://127.0.0.1:43990/api/notify", {
+    const postResp = await webhookFetch(WEBHOOK_BASE + "/api/notify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2872,7 +2978,7 @@ async function main() {
     });
     const postJson = await postResp.json();
     await sleep(200);
-    const getResp = await fetch("http://127.0.0.1:43990/api/notify?q=" + encodeURIComponent("Quicker远程触发"));
+    const getResp = await webhookFetch(WEBHOOK_BASE + "/api/notify?q=" + encodeURIComponent("Quicker远程触发"));
     const getJson = await getResp.json();
     webhookNotifyResp = { postCode: postJson.code, getCount: getJson.count, getCode: getJson.code };
   } catch (err) {
@@ -2884,7 +2990,7 @@ async function main() {
   // Step 7.131: Test ExternalApiBridge Notification Journal Webhook (GET /api/notify/journal)
   let webhookJournalResp;
   try {
-    const resp = await fetch("http://127.0.0.1:43990/api/notify/journal");
+    const resp = await webhookFetch(WEBHOOK_BASE + "/api/notify/journal");
     webhookJournalResp = await resp.json();
   } catch (err) {
     webhookJournalResp = { error: err.message };
@@ -3026,23 +3132,18 @@ async function main() {
                          panelContent.includes('triggerLaunchpadCaptureExplorer');
   logStep("Step 7.144: 启动台双模态过滤与响应式渲染驱动逻辑断言", hasLaunchpadJs, `启动台驱动函数完整性: ${hasLaunchpadJs}`);
 
-  // Step 7.145: Test ExternalApiBridge Unified Launchpad Endpoint (GET /api/launchpad & POST /api/launchpad)
+  // Step 7.145: Runtime list plus static launch contract; do not launch Explorer or a browser.
   let webhookLaunchpadResp;
   try {
-    const getResp = await fetch("http://127.0.0.1:43990/api/launchpad");
+    const getResp = await webhookFetch(WEBHOOK_BASE + "/api/launchpad");
     const getJson = await getResp.json();
-    const postResp = await fetch("http://127.0.0.1:43990/api/launchpad", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "folder", target: "D:\\" })
-    });
-    const postJson = await postResp.json();
     webhookLaunchpadResp = {
       getCode: getJson.code,
       hasData: !!getJson.data,
       total: getJson.data?.total,
-      postCode: postJson.code,
-      postMsg: postJson.msg
+      staticLaunchContract: bridgeSource.includes('rawPath.Equals("/api/launchpad"') &&
+                            bridgeSource.includes("HandleLaunchpadRequest(req, resp);") &&
+                            bridgeSource.includes("FolderBookmarkHub.NavigateToFolder(target)")
     };
   } catch (err) {
     webhookLaunchpadResp = { error: err.message };
@@ -3050,8 +3151,8 @@ async function main() {
   const isWebhookLaunchpadOk = webhookLaunchpadResp &&
                                webhookLaunchpadResp.getCode === 0 &&
                                webhookLaunchpadResp.hasData &&
-                               webhookLaunchpadResp.postCode === 0;
-  logStep("Step 7.145: 极速调用桥启动台聚合接口 (GET/POST /api/launchpad) 断言", isWebhookLaunchpadOk, `聚合响应: ${JSON.stringify(webhookLaunchpadResp)}`);
+                               webhookLaunchpadResp.staticLaunchContract;
+  logStep("Step 7.145: 启动台聚合 GET 与启动静态契约（不实际启动应用）", isWebhookLaunchpadOk, `聚合响应与静态契约: ${JSON.stringify(webhookLaunchpadResp)}`);
 
   // Step 7.146: Test Launchpad Keyboard Blind 1~9 & Enter Handling
   const hasBlindNav = panelContent.includes('e.key === "Enter"') &&
@@ -3125,7 +3226,7 @@ async function main() {
   // Step 7.152: Test ExternalApiBridge Clip Merge Webhook (POST /api/clip/merge)
   let webhookClipResp;
   try {
-    const postResp = await fetch("http://127.0.0.1:43990/api/clip/merge", {
+    const postResp = await webhookFetch(WEBHOOK_BASE + "/api/clip/merge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3203,7 +3304,7 @@ async function main() {
   // Step 7.157: Test ExternalApiBridge Radial Graph Webhook (GET /api/graph/radial)
   let webhookGraphResp;
   try {
-    const getResp = await fetch("http://127.0.0.1:43990/api/graph/radial?width=900&height=500");
+    const getResp = await webhookFetch(WEBHOOK_BASE + "/api/graph/radial?width=900&height=500");
     const getJson = await getResp.json();
     webhookGraphResp = {
       code: getJson.code,
@@ -3264,7 +3365,7 @@ async function main() {
   // Step 7.164: Test ExternalApiBridge Profile Webhook Full Extraction
   let webhookProfileHubResp;
   try {
-    const getResp = await fetch("http://127.0.0.1:43990/api/profile");
+    const getResp = await webhookFetch(WEBHOOK_BASE + "/api/profile");
     const getJson = await getResp.json();
     webhookProfileHubResp = {
       code: getJson.code,
@@ -3326,7 +3427,7 @@ async function main() {
   // Step 7.169: Test ExternalApiBridge Doctor Webhook (GET /api/doctor/diagnose)
   let webhookDoctorResp;
   try {
-    const getResp = await fetch("http://127.0.0.1:43990/api/doctor/diagnose");
+    const getResp = await webhookFetch(WEBHOOK_BASE + "/api/doctor/diagnose");
     const getJson = await getResp.json();
     webhookDoctorResp = {
       code: getJson.code,
@@ -3372,7 +3473,7 @@ async function main() {
   logStep("Step 7.173: 外部库镜像工作台左右双栏布局与卡片样式规范断言", hasVaultCss, `双栏工作台样式规范: ${hasVaultCss}`);
 
   // Step 7.174: Test VaultMirrorInspector ReadNoteContent in C# Backend
-  const tempTestMd = path.join(ROOT, "e2e_vault_test.md");
+  const tempTestMd = path.join(ISOLATED_WS, "e2e_vault_test.md");
   fs.writeFileSync(tempTestMd, "# 外部架构研读笔记\n\n这是一篇位于外部知识库中的Markdown文献，包含关键技术结论。", "utf8");
   const vaultReadScript = `
     $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
@@ -3401,7 +3502,7 @@ async function main() {
   // Step 7.176: Test ExternalApiBridge Vault Webhook Suite (GET /api/vault/notes & GET /api/vault/read)
   let webhookVaultResp;
   try {
-    const getResp = await fetch("http://127.0.0.1:43990/api/vault/notes?path=" + encodeURIComponent(ROOT));
+    const getResp = await webhookFetch(WEBHOOK_BASE + "/api/vault/notes?path=" + encodeURIComponent(ROOT));
     const getJson = await getResp.json();
     webhookVaultResp = {
       code: getJson.code,
@@ -3450,7 +3551,7 @@ async function main() {
   // Step 7.181: Test ExternalApiBridge Document Outline Webhook (GET /api/outline/tree)
   let webhookOmmResp;
   try {
-    const getResp = await fetch("http://127.0.0.1:43990/api/outline/tree");
+    const getResp = await webhookFetch(WEBHOOK_BASE + "/api/outline/tree");
     const getJson = await getResp.json();
     webhookOmmResp = {
       code: getJson.code,
@@ -3505,9 +3606,9 @@ async function main() {
   // Step 7.187: Test ExternalApiBridge Table Webhook Suite (GET /api/table/list & GET /api/table/data)
   let webhookTableResp;
   try {
-    const listResp = await fetch("http://127.0.0.1:43990/api/table/list");
+    const listResp = await webhookFetch(WEBHOOK_BASE + "/api/table/list");
     const listJson = await listResp.json();
-    const dataResp = await fetch("http://127.0.0.1:43990/api/table/data");
+    const dataResp = await webhookFetch(WEBHOOK_BASE + "/api/table/data");
     const dataJson = await dataResp.json();
     webhookTableResp = {
       listCode: listJson.code,
@@ -3560,26 +3661,17 @@ async function main() {
                     panelContent.includes('dumpCodeSnippetToDaily');
   logStep("Step 7.192: 代码工作台多语言过滤、纯净直贴与日记沉淀驱动逻辑断言", hasCodeJs, `前端驱动函数完整性: ${hasCodeJs}`);
 
-  // Step 7.193: Test ExternalApiBridge Code Snippet Webhook Suite (GET /api/code/snippets & POST /api/code/open)
+  // Step 7.193: Runtime snippet list plus static export route; no associated editor launch.
   let webhookCodeResp;
   try {
-    const getResp = await fetch("http://127.0.0.1:43990/api/code/snippets?lang=all");
+    const getResp = await webhookFetch(WEBHOOK_BASE + "/api/code/snippets?lang=all");
     const getJson = await getResp.json();
-    const openResp = await fetch("http://127.0.0.1:43990/api/code/open", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        code: "def test_e2e_code():\n    return 'pure_source'",
-        lang: "python",
-        title: "e2e_test_snippet"
-      })
-    });
-    const openJson = await openResp.json();
     webhookCodeResp = {
       getCode: getJson.code,
       hasSnippets: Array.isArray(getJson.data),
-      openCode: openJson.code,
-      hasPath: !!openJson.path
+      staticExportContract: bridgeSource.includes('rawPath.Equals("/api/code/open"') &&
+                            bridgeSource.includes("HandleCodeOpenRequest(req, resp);") &&
+                            bridgeSource.includes("CodeSnippetManager.ExportAndWatchSourceFile(code, lang, title, blockId, true)")
     };
   } catch (err) {
     webhookCodeResp = { error: err.message };
@@ -3587,9 +3679,8 @@ async function main() {
   const isWebhookCodeOk = webhookCodeResp &&
                           webhookCodeResp.getCode === 0 &&
                           webhookCodeResp.hasSnippets &&
-                          webhookCodeResp.openCode === 0 &&
-                          webhookCodeResp.hasPath;
-  logStep("Step 7.193: 极速调用桥代码检索与源文件秒开接口 (GET/POST /api/code) 断言", isWebhookCodeOk, `代码接口响应: ${JSON.stringify(webhookCodeResp)}`);
+                          webhookCodeResp.staticExportContract;
+  logStep("Step 7.193: 代码检索 GET 与外部编辑器静态路由契约（不打开编辑器）", isWebhookCodeOk, `代码查询与静态契约: ${JSON.stringify(webhookCodeResp)}`);
 
   // Step 7.194: Test Search Routing Linkage for code/snip prefix in panel.html
   const hasCodeSearchLink = panelContent.includes('q === "code" || q === "snip"') &&
@@ -3666,7 +3757,7 @@ async function main() {
     });
     testCodeBlockId = appendCodeRes.data?.[0]?.doOperations?.[0]?.id || "";
     if (testCodeBlockId) {
-      const updResp = await fetch("http://127.0.0.1:43990/api/code/update", {
+      const updResp = await webhookFetch(WEBHOOK_BASE + "/api/code/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -3730,7 +3821,7 @@ async function main() {
     });
     testTableBlockId = appendTblRes.data?.[0]?.doOperations?.[0]?.id || "";
     if (testTableBlockId) {
-      const updTblResp = await fetch("http://127.0.0.1:43990/api/table/update", {
+      const updTblResp = await webhookFetch(WEBHOOK_BASE + "/api/table/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -3777,7 +3868,7 @@ async function main() {
   let profileApplyOk = false;
   let profileApplySummary = "";
   try {
-    const applyResp = await fetch("http://127.0.0.1:43990/api/profile/apply", {
+    const applyResp = await webhookFetch(WEBHOOK_BASE + "/api/profile/apply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: "阿里通义千问 Qwen-Max 旗舰模型" })
@@ -3817,7 +3908,7 @@ async function main() {
   // Step 7.210: Test ExternalApiBridge Onboarding Probe Endpoint (GET /api/system/onboarding)
   let webhookObResp;
   try {
-    const getResp = await fetch("http://127.0.0.1:43990/api/system/onboarding");
+    const getResp = await webhookFetch(WEBHOOK_BASE + "/api/system/onboarding");
     const getJson = await getResp.json();
     webhookObResp = {
       code: getJson.code,
@@ -3840,11 +3931,11 @@ async function main() {
   logStep("Step 7.211: 零配置首启向导大视窗 (onboarding-wizard-modal) 与冲突热键一键自愈驱动断言", hasOnboardingUi, `首启向导模版完整性: ${hasOnboardingUi}`);
 
   // Step 7.212: Test External Vault Note In-Place Disk Write-Back (POST /api/vault/write)
-  const tempWriteVaultMd = path.join(ROOT, "e2e_vault_writeback_test.md");
+  const tempWriteVaultMd = path.join(ISOLATED_WS, "e2e_vault_writeback_test.md");
   fs.writeFileSync(tempWriteVaultMd, "# 初始外部笔记\n\n待修改内容", "utf8");
   let vaultWriteOk = false;
   try {
-    const writeResp = await fetch("http://127.0.0.1:43990/api/vault/write", {
+    const writeResp = await webhookFetch(WEBHOOK_BASE + "/api/vault/write", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3877,7 +3968,7 @@ async function main() {
     });
     testHeadingBlockId = appendHRes.data?.[0]?.doOperations?.[0]?.id || "";
     if (testHeadingBlockId) {
-      const renResp = await fetch("http://127.0.0.1:43990/api/outline/rename", {
+      const renResp = await webhookFetch(WEBHOOK_BASE + "/api/outline/rename", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -4157,82 +4248,72 @@ async function main() {
   const offlineNote = "⚡ 离岸应急记录：思源停机期间在桌面记录的突发想法";
   await sendViaPipe("SYS", offlineNote);
 
-  const qPath = path.join(process.env.LOCALAPPDATA, "XiaoLvDesktop", "offline_queue.json");
+  const qPath = path.join(DATA_DIR, "offline_queue.json");
   let qOk = false;
   let qContent = "";
+  let queueCipherOk = false;
   for (let i = 0; i < 65; i++) {
-    if (fs.existsSync(qPath)) {
-      try {
-        qContent = fs.readFileSync(qPath, "utf8");
-        if (qContent.includes("离岸应急记录")) {
-          qOk = true;
-          break;
-        }
-      } catch {}
+    try {
+      const queueScript = `
+        $bytes = [System.IO.File]::ReadAllBytes('${EXE.replace(/\\/g, "\\\\")}');
+        $asm = [System.Reflection.Assembly]::Load($bytes);
+        $queue = $asm.GetType('XiaoLv.Desktop.Core.OfflineQueueManager');
+        $items = $queue.GetMethod('GetQueueItems', [System.Reflection.BindingFlags]'Public,Static').Invoke($null, $null);
+        $item = $items | Where-Object { $_.Content -like '*离岸应急记录*' } | Select-Object -First 1;
+        if ($null -ne $item) { Write-Output $item.Content }
+      `;
+      qContent = runPs(queueScript);
+      if (fs.existsSync(qPath)) {
+        const storedQueue = fs.readFileSync(qPath, "utf8").replace(/^\uFEFF/, "");
+        queueCipherOk = storedQueue.startsWith("DPAPI:") && !storedQueue.includes("离岸应急记录");
+      }
+      if (qContent.includes("离岸应急记录")) {
+        qOk = true;
+        break;
+      }
+    } catch {
     }
     await sleep(300);
   }
-  logStep("Step 8.1: 内核离线状态下速记自动降级存入离线加密队列", qOk, `离岸队列大小: ${qContent.length} 字节`);
+  logStep("Step 8.1: 内核离线状态下速记存入 DPAPI 加密队列", qOk && queueCipherOk, `队列解密可读: ${qOk} · 密文不含正文: ${queueCipherOk}`);
 
   // Restart isolated kernel
   console.log("重新启动隔离内核，模拟思源启动恢复上线...");
-  const kernelProc2 = spawnIsolatedKernel();
+  kernelProc = spawnIsolatedKernel();
   await waitBoot();
   logStep("Step 8.2: 隔离内核重新启动上线", true);
 
   // Allow guardian to discover and flush or flush directly
-  await sleep(1500);
-  let flushedRow = await pollSql("SELECT id, content FROM blocks WHERE content LIKE '%离岸应急记录%' LIMIT 1", 5);
-
-  if (!flushedRow) {
-    if (fs.existsSync(qPath)) {
-      const rawText = fs.readFileSync(qPath, "utf8").replace(/^\uFEFF/, "");
-      const items = JSON.parse(rawText || "[]");
-      for (const it of items) {
-        const textVal = it.Content || it.content || "";
-        const appendRes = await api("/api/block/appendDailyNoteBlock", {
-          notebook: nbRes.data?.notebook?.id,
-          data: `- 02:00 ${textVal}`,
-          dataType: "markdown"
-        });
-      }
-      fs.writeFileSync(qPath, "[]", "utf8");
-    }
-    await sleep(600);
-    flushedRow = await pollSql("SELECT id, content FROM blocks WHERE content LIKE '%离岸应急记录%' LIMIT 1", 10);
-  }
+  let flushedRow = await pollSql("SELECT id, content FROM blocks WHERE content LIKE '%离岸应急记录%' LIMIT 1", 45, 500);
+  if (!flushedRow) throw new Error("离线队列未自动补录；测试不会伪造成功或清空生产队列");
 
   logStep("Step 8.3: 内核恢复后离线笔记静默补录回今日日记", !!flushedRow, `回写块 ID: ${flushedRow?.id}`);
 
   // Step 9: Teardown
-  stopProcess("思源外骨骼");
-  stopProcess("思源小驴");
   if (!KEEP) {
+    await stopChild(desktopProc);
     try { await api("/api/system/exit", { force: true }); } catch {}
-    await sleep(800);
-    stopPreviousIsolatedKernel();
-    try {
-      fs.rmSync(ISOLATED_WS, { recursive: true, force: true });
-    } catch {}
+    await stopChild(kernelProc);
+    const workspaceRemoved = await removeIsolatedWorkspace();
+    if (!workspaceRemoved) throw new Error(`隔离沙箱清理失败，请关闭仍占用该临时目录的进程：${ISOLATED_WS}`);
     logStep("Step 9: 隔离沙箱与靶场内核安全销毁清理", true);
-
-    // Restore live background instance
-    execSync(`powershell.exe -NoProfile -Command "Start-Process -FilePath '${EXE}'"`, { stdio: "ignore" });
-    console.log("✓ 已为用户恢复日常生产版思源外骨骼后台常驻进程");
   } else {
     console.log(`\n保留隔离环境: ${BASE_URL} (工作区: ${ISOLATED_WS})`);
     logStep("Step 9: 隔离环境保持在线 (--keep)", true);
   }
 
   console.log("\n================================================================================");
-  console.log(`🎉 全部 ${results.length} 项隔离靶场端到端真机验收 100% PASS！`);
+  console.log(`全部 ${results.length} 项隔离自动化检查已通过。`);
   console.log("================================================================================");
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error("\n❌ E2E 隔离靶场验收失败:", err.message);
-  stopProcess("思源外骨骼");
-  stopProcess("思源小驴");
-  stopPreviousIsolatedKernel();
+  if (!KEEP) {
+    await stopChild(desktopProc);
+    await stopChild(kernelProc);
+    const workspaceRemoved = await removeIsolatedWorkspace();
+    if (!workspaceRemoved) console.error(`隔离沙箱目录仍被占用，未强行清理：${ISOLATED_WS}`);
+  }
   process.exit(1);
 });

@@ -8,16 +8,23 @@ namespace XiaoLv.Desktop.Core
     public class AppSettings
     {
         private static AppSettings _instance;
+        private static readonly object _instanceLock = new object();
         public static AppSettings Instance
         {
             get
             {
-                if (_instance == null)
+                lock (_instanceLock)
                 {
-                    _instance = Load();
+                    if (_instance == null) _instance = Load();
+                    return _instance;
                 }
-                return _instance;
             }
+        }
+
+        public static void ReplaceInstance(AppSettings settings)
+        {
+            if (settings == null) throw new ArgumentNullException("settings");
+            lock (_instanceLock) _instance = settings;
         }
 
         public string MasterHotKey { get; set; }
@@ -86,7 +93,7 @@ namespace XiaoLv.Desktop.Core
             AiModel = "qwen2.5:latest";
             AiApiKey = "";
             CustomSnippetsJson = "[]";
-            WebhookEnabled = true;
+            WebhookEnabled = false;
             WebhookPort = 43989;
             WebhookToken = "";
             DropZoneEnabled = true;
@@ -154,17 +161,41 @@ namespace XiaoLv.Desktop.Core
                 }
             }
             catch { }
+            if (string.IsNullOrWhiteSpace(s.WebhookToken)) s.WebhookEnabled = false;
             return s;
         }
 
-        public void Save()
+        public bool Save()
         {
+            bool isolated = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SIYUAN_URL"));
+            bool hasIsolatedDataDir = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("XIAOLV_DATA_DIR"));
+            if (isolated && !hasIsolatedDataDir) return false;
+
+            string tempPath = null;
             try
             {
                 var json = JsonHelper.ToJson(this);
-                File.WriteAllText(SettingsFilePath, json, new UTF8Encoding(false));
+                var targetPath = SettingsFilePath;
+                var directory = Path.GetDirectoryName(targetPath);
+                if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
+                tempPath = targetPath + ".tmp." + Guid.NewGuid().ToString("N");
+                File.WriteAllText(tempPath, json, new UTF8Encoding(false));
+                if (File.Exists(targetPath)) File.Replace(tempPath, targetPath, null);
+                else File.Move(tempPath, targetPath);
+                return true;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Error("Saving application settings failed: " + ex.Message);
+                return false;
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(tempPath))
+                {
+                    try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch { }
+                }
+            }
         }
     }
 }

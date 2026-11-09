@@ -32,6 +32,41 @@ namespace XiaoLv.Desktop
         private static DropZoneWindow _dropZoneWindow;
         private static System.Windows.Application _wpfApp;
 
+        private static bool IsIsolatedRun
+        {
+            get { return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SIYUAN_URL")); }
+        }
+
+        private static void ConfigureExternalApiBridge(AppSettings settings)
+        {
+            string token = settings.WebhookToken;
+            int port = settings.WebhookPort > 0 && settings.WebhookPort <= 65535 ? settings.WebhookPort : 43989;
+
+            if (IsIsolatedRun)
+            {
+                token = Environment.GetEnvironmentVariable("XIAOLV_WEBHOOK_TOKEN") ?? "";
+                int isolatedPort;
+                if (int.TryParse(Environment.GetEnvironmentVariable("XIAOLV_WEBHOOK_PORT"), out isolatedPort) &&
+                    isolatedPort > 0 && isolatedPort <= 65535)
+                {
+                    port = isolatedPort;
+                }
+
+                settings.WebhookToken = token;
+                settings.WebhookEnabled = !string.IsNullOrWhiteSpace(token);
+            }
+
+            if (!string.IsNullOrWhiteSpace(token) && (IsIsolatedRun || settings.WebhookEnabled))
+            {
+                ExternalApiBridge.Stop();
+                ExternalApiBridge.Start(port, token);
+            }
+            else
+            {
+                ExternalApiBridge.Stop();
+            }
+        }
+
         [STAThread]
         public static void Main(string[] args)
         {
@@ -86,15 +121,18 @@ namespace XiaoLv.Desktop
             AppDomain.CurrentDomain.ProcessExit += (s, e) => ExitApplication();
 
             // 异步注册私有协议与右键菜单（非阻塞后台执行）
-            ThreadPool.QueueUserWorkItem(s =>
+            if (!IsIsolatedRun)
             {
-                try
+                ThreadPool.QueueUserWorkItem(s =>
                 {
-                    ProtocolRegistrar.RegisterProtocol();
-                    ShellContextMenuManager.Register();
-                }
-                catch { }
-            });
+                    try
+                    {
+                        ProtocolRegistrar.RegisterProtocol();
+                        ShellContextMenuManager.Register();
+                    }
+                    catch { }
+                });
+            }
 
 	            // 启动 IPC 管道服务监听
 	            _ipcServer = new IpcManager.Server();
@@ -102,9 +140,7 @@ namespace XiaoLv.Desktop
 	            _ipcServer.Start();
 
 	            // 启动本地外部极速调用桥与 Webhook 回路 (Quicker / AutoHotkey / 脚本免切窗调用)
-	            if (AppSettings.Instance.WebhookEnabled)
-	            {
-	                ExternalApiBridge.OnApiShowRequested += (panel, query) =>
+	            ExternalApiBridge.OnApiShowRequested += (panel, query) =>
 	                {
 	                    if (_wpfApp != null && _wpfApp.Dispatcher != null)
 	                    {
@@ -128,9 +164,8 @@ namespace XiaoLv.Desktop
 	                            }
 	                        }));
 	                    }
-	                };
-	                ExternalApiBridge.Start(AppSettings.Instance.WebhookPort);
-	            }
+	            };
+	            ConfigureExternalApiBridge(AppSettings.Instance);
 
 	            // 初始化窗口并在消息循环启动后立即离屏预热 WebView2
 	            _bentoWindow = new BentoWindow();
@@ -138,7 +173,7 @@ namespace XiaoLv.Desktop
 	            _dialogWindow = new DialogWindow();
 	            _dropZoneWindow = new DropZoneWindow();
 	            _dropZoneWindow.OnNotificationRequested += (t, m) => SafeNotify(t, m);
-	            if (AppSettings.Instance.DropZoneEnabled)
+            if (!IsIsolatedRun && AppSettings.Instance.DropZoneEnabled)
 	            {
 	                _dropZoneWindow.Show();
 	            }
@@ -164,7 +199,9 @@ namespace XiaoLv.Desktop
             {
                 try
                 {
-                    var s = AppSettings.Instance;
+                    var previousSettings = AppSettings.Instance;
+                    var s = JsonHelper.FromJson<AppSettings>(JsonHelper.ToJson(previousSettings));
+                    if (s == null) throw new InvalidOperationException("无法建立设置暂存副本。");
                     var dict = JsonHelper.ParseDict(json);
 
                     s.MasterHotKey = JsonHelper.GetString(dict, "masterHotKey", s.MasterHotKey);
@@ -192,36 +229,79 @@ namespace XiaoLv.Desktop
                     s.AiModel = JsonHelper.GetString(dict, "aiModel", s.AiModel);
                     s.AiApiKey = JsonHelper.GetString(dict, "aiApiKey", s.AiApiKey);
 	                    s.CustomSnippetsJson = JsonHelper.GetString(dict, "customSnippetsJson", s.CustomSnippetsJson);
-	                    SnippetExpansionEngine.ReloadCustomSnippets(s.CustomSnippetsJson);
-	                    s.WebhookEnabled = JsonHelper.GetBool(dict, "webhookEnabled", s.WebhookEnabled);
-	                    s.WebhookPort = JsonHelper.GetInt(dict, "webhookPort", s.WebhookPort);
-	                    if (s.WebhookPort <= 0) s.WebhookPort = 43989;
-		                    s.WebhookToken = JsonHelper.GetString(dict, "webhookToken", s.WebhookToken);
+		                    bool webhookRequested = JsonHelper.GetBool(dict, "webhookEnabled", s.WebhookEnabled);
+		                    string requestedWebhookToken = JsonHelper.GetString(dict, "webhookToken", s.WebhookToken).Trim();
+		                    if (!IsIsolatedRun)
+		                    {
+		                        s.WebhookToken = requestedWebhookToken;
+		                        s.WebhookEnabled = webhookRequested && !string.IsNullOrWhiteSpace(requestedWebhookToken);
+		                        s.WebhookPort = JsonHelper.GetInt(dict, "webhookPort", s.WebhookPort);
+		                        if (s.WebhookPort <= 0 || s.WebhookPort > 65535) s.WebhookPort = 43989;
+		                    }
 		                    s.DropZoneEnabled = JsonHelper.GetBool(dict, "dropZoneEnabled", s.DropZoneEnabled);
+		                    s.DoubleCtrlActivationEnabled = JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", s.DoubleCtrlActivationEnabled);
 
-		                    s.Save();
+                    bool previousAutoStart = false;
+                    bool autoStartRegistrationChanged = false;
+                    string settingsWarning = null;
+                    if (!IsIsolatedRun)
+                    {
+                        previousAutoStart = SystemTray.IsAutoStartEnabled();
+                        if (s.AutoStart != previousAutoStart)
+                        {
+                            if (SystemTray.SetAutoStart(s.AutoStart)) autoStartRegistrationChanged = true;
+                            else
+                            {
+                                s.AutoStart = previousAutoStart;
+                                settingsWarning = "设置已保存，但开机启动注册失败，已恢复原开机启动状态。";
+                            }
+                        }
+                    }
+
+                    if (!s.Save())
+                    {
+                        if (autoStartRegistrationChanged) SystemTray.SetAutoStart(previousAutoStart);
+                        _bentoWindow.NotifyDesktopSettingsSaved(false, "设置文件写入失败，无法确认保存结果。请检查本机权限后重试。", ExternalApiBridge.IsRunning);
+                        return;
+                    }
+	                    AppSettings.ReplaceInstance(s);
 		                    SelectionHelper.AutoFloatEnabled = s.AutoFloatEnabled;
-		                    SystemTray.SetAutoStart(s.AutoStart);
-		                    if (s.ShellContextMenuEnabled) ShellContextMenuManager.Register();
-		                    else ShellContextMenuManager.Unregister();
-		                    _hotkeys.RegisterConfiguredHotKeys(s.MasterHotKey, s.PenHotKey, s.OcrHotKey, s.QuickHotKey, s.FsrsHotKey, s.ClipHotKey);
-		                    if (s.WebhookEnabled)
+	                    SnippetExpansionEngine.ReloadCustomSnippets(s.CustomSnippetsJson);
+			                    if (!IsIsolatedRun)
+			                    {
+			                        if (s.ShellContextMenuEnabled) ShellContextMenuManager.Register();
+			                        else ShellContextMenuManager.Unregister();
+			                        _hotkeys.RegisterConfiguredHotKeys(s.MasterHotKey, s.PenHotKey, s.OcrHotKey, s.QuickHotKey, s.FsrsHotKey, s.ClipHotKey);
+			                    }
+		                    if (!IsIsolatedRun) ConfigureExternalApiBridge(s);
+				                    if (!IsIsolatedRun)
+				                    {
+				                        if (s.DropZoneEnabled) _dropZoneWindow.Show();
+				                        else _dropZoneWindow.Hide();
+				                        if (s.DoubleCtrlActivationEnabled) DoubleTapHotkeyActivator.Start();
+				                        else DoubleTapHotkeyActivator.Stop();
+				                    }
+	                    string webhookWarning = settingsWarning;
+		                    if (!IsIsolatedRun && webhookRequested && string.IsNullOrWhiteSpace(requestedWebhookToken))
 		                    {
-		                        ExternalApiBridge.Stop();
-		                        ExternalApiBridge.Start(s.WebhookPort);
+		                        webhookWarning = "其他设置已保存；Webhook 因缺少安全令牌保持关闭，请生成令牌后重试。";
 		                    }
-		                    else
+		                    else if (!IsIsolatedRun && s.WebhookEnabled && !ExternalApiBridge.IsRunning)
 		                    {
-		                        ExternalApiBridge.Stop();
+		                        s.WebhookEnabled = false;
+	                        bool persistedOffState = s.Save();
+	                        webhookWarning = persistedOffState
+	                            ? "其他设置已保存；Webhook 未能启动，已保持关闭。请检查端口后重试。"
+	                            : "Webhook 未能启动，且关闭状态写入失败。请检查本机权限后重试。";
 		                    }
-			                    if (s.DropZoneEnabled) _dropZoneWindow.Show();
-			                    else _dropZoneWindow.Hide();
-			                    s.DoubleCtrlActivationEnabled = JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", s.DoubleCtrlActivationEnabled);
-			                    if (s.DoubleCtrlActivationEnabled) DoubleTapHotkeyActivator.Start();
-			                    else DoubleTapHotkeyActivator.Stop();
-			                    SafeNotify("思源外骨骼", "✓ 桌面助手偏好设置已更新并立即生效！");
+                    _bentoWindow.NotifyDesktopSettingsSaved(true, null, s.WebhookEnabled, webhookWarning);
+		                    SafeNotify("思源外骨骼", webhookWarning ?? "✓ 桌面助手偏好设置已更新并立即生效！");
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Logger.Error("Saving desktop preferences failed: " + ex);
+                    if (_bentoWindow != null) _bentoWindow.NotifyDesktopSettingsSaved(false, ex.Message, ExternalApiBridge.IsRunning);
+                }
             };
 
             _capsuleWindow.OnCapsuleCommand += (op, text) =>
@@ -250,8 +330,8 @@ namespace XiaoLv.Desktop
             SelectionHelper.AutoFloatEnabled = settings.AutoFloatEnabled;
 
             // 智能剪贴板感知监听 (URL/表格/代码提纯)
-            ClipboardWatcher.IsEnabled = settings.SmartClipboardEnabled;
-            ClipboardWatcher.Start();
+            ClipboardWatcher.IsEnabled = !IsIsolatedRun && settings.SmartClipboardEnabled;
+            if (!IsIsolatedRun) ClipboardWatcher.Start();
 
             // 启动思源内核健康守护与离岸队列监听
             SiYuanGuardian.NotifyCallback = (t, m) => SafeNotify(t, m);
@@ -290,10 +370,13 @@ namespace XiaoLv.Desktop
             _hotkeys.OnFsrsReviewRequested += () => StartFsrsReview();
             _hotkeys.OnWebClipRequested += () => StartWebClip();
 
-	            bool hotkeysOk = _hotkeys.RegisterConfiguredHotKeys(settings.MasterHotKey, settings.PenHotKey, settings.OcrHotKey, settings.QuickHotKey, settings.FsrsHotKey, settings.ClipHotKey);
+            if (!IsIsolatedRun)
+            {
+                _hotkeys.RegisterConfiguredHotKeys(settings.MasterHotKey, settings.PenHotKey, settings.OcrHotKey, settings.QuickHotKey, settings.FsrsHotKey, settings.ClipHotKey);
+            }
 
 	            // 双击 Ctrl 极速呼出微控激活器 (对标 Listary / Raycast)
-	            if (settings.DoubleCtrlActivationEnabled)
+            if (!IsIsolatedRun && settings.DoubleCtrlActivationEnabled)
 	            {
 	                DoubleTapHotkeyActivator.OnDoubleCtrlTriggered += () =>
 	                {
@@ -306,14 +389,17 @@ namespace XiaoLv.Desktop
 	            }
 
             // 智能划选鼠标微控 (PopClip 模式支持)
-            SelectionHelper.StartMouseHook();
-            SelectionHelper.OnAutoSelectionDetected += (selected) =>
+            if (!IsIsolatedRun)
             {
-                _wpfApp.Dispatcher.Invoke(() =>
+                SelectionHelper.StartMouseHook();
+                SelectionHelper.OnAutoSelectionDetected += (selected) =>
                 {
-                    _capsuleWindow.ShowNearCursor(selected);
-                });
-            };
+                    _wpfApp.Dispatcher.Invoke(() =>
+                    {
+                        _capsuleWindow.ShowNearCursor(selected);
+                    });
+                };
+            }
 
 	            // Office 本地文档联动热重载监听
 	            OfficeFileWatcher.NotificationHandler = (title, text) => SafeNotify(title, text);
@@ -359,7 +445,7 @@ namespace XiaoLv.Desktop
             _tray.OnCheckConnectionClicked += () => CheckSiYuanConnection();
             _tray.OnCheckUpdateClicked += () => PerformCheckUpdate(true);
             _tray.OnExitClicked += () => ExitApplication();
-            _tray.Initialize(null);
+            if (!IsIsolatedRun) _tray.Initialize(null);
 
             // 启动提示
             if (args.Length == 0 || !Array.Exists(args, a => a.Contains("autostart")))
@@ -722,6 +808,7 @@ namespace XiaoLv.Desktop
                 else if (full.Contains("✓") || full.Contains("完成") || full.Contains("达成") || full.Contains("成功") || full.Contains("🟢") || full.Contains("🎉")) level = "success";
 
                 OmniNotificationHub.Push(title, message, level, "desktop");
+                if (IsIsolatedRun) return;
 
                 if (_wpfApp != null && _wpfApp.Dispatcher != null && !_wpfApp.Dispatcher.HasShutdownStarted)
                 {
@@ -843,6 +930,28 @@ namespace XiaoLv.Desktop
             {
                 _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel(initialQuery));
             }
+        }
+
+        public static bool ReRegisterConfiguredHotKeys()
+        {
+            if (IsIsolatedRun) return true;
+            if (_hotkeys == null) return false;
+            bool registered = false;
+            Action register = () =>
+            {
+                var settings = AppSettings.Instance;
+                registered = _hotkeys.RegisterConfiguredHotKeys(
+                    settings.MasterHotKey,
+                    settings.PenHotKey,
+                    settings.OcrHotKey,
+                    settings.QuickHotKey,
+                    settings.FsrsHotKey,
+                    settings.ClipHotKey);
+            };
+
+            if (_wpfApp != null && !_wpfApp.Dispatcher.CheckAccess()) _wpfApp.Dispatcher.Invoke(register);
+            else register();
+            return registered;
         }
 
         public static void OpenPenCapsule(string initialText = null)

@@ -20,6 +20,7 @@ namespace XiaoLv.Desktop.UI
         private TextBlock _sizeTip;
 
         public event Action<Bitmap> OnRegionCaptured;
+        public event Action<string> OnCaptureFailed;
 
         public SnippingOverlayWindow()
         {
@@ -134,6 +135,7 @@ namespace XiaoLv.Desktop.UI
                 int width = (int)Math.Abs(dipX2 - dipX1);
                 int height = (int)Math.Abs(dipY2 - dipY1);
 
+                bool screenCoordinatesResolved = false;
                 try
                 {
                     var p1 = PointToScreen(new Point(dipX1, dipY1));
@@ -142,28 +144,57 @@ namespace XiaoLv.Desktop.UI
                     screenY = (int)Math.Round(p1.Y);
                     width = (int)Math.Round(Math.Abs(p2.X - p1.X));
                     height = (int)Math.Round(Math.Abs(p2.Y - p1.Y));
+                    screenCoordinatesResolved = true;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    NotifyCaptureFailed("无法读取截图区域坐标：" + ex.Message);
+                }
 
                 Close();
 
-                if (width > 8 && height > 8)
+                if (!screenCoordinatesResolved) return;
+                if (width < 9 || height < 9)
                 {
-                    try
+                    NotifyCaptureFailed("截图区域太小，请拖动选择至少 9 × 9 像素的区域后重试。");
+                    return;
+                }
+
+                Bitmap bmp = null;
+                bool ownershipTransferred = false;
+                try
+                {
+                    bmp = new Bitmap(width, height);
+                    using (var g = Graphics.FromImage(bmp))
                     {
-                        var bmp = new Bitmap(width, height);
-                        using (var g = Graphics.FromImage(bmp))
-                        {
-                            g.CopyFromScreen(screenX, screenY, 0, 0, new System.Drawing.Size(width, height));
-                        }
-                        if (OnRegionCaptured != null)
-                        {
-                            OnRegionCaptured(bmp);
-                        }
+                        g.CopyFromScreen(screenX, screenY, 0, 0, new System.Drawing.Size(width, height));
                     }
-                    catch { }
+
+                    var captured = OnRegionCaptured;
+                    if (captured == null)
+                    {
+                        NotifyCaptureFailed("截图已完成，但当前没有可接收截图的处理器。");
+                        return;
+                    }
+                    captured(bmp);
+                    ownershipTransferred = true;
+                }
+                catch (Exception ex)
+                {
+                    NotifyCaptureFailed("截图捕获失败：" + ex.Message + "。请重试，或检查屏幕捕获权限。");
+                }
+                finally
+                {
+                    if (!ownershipTransferred && bmp != null) bmp.Dispose();
                 }
             }
+        }
+
+        private void NotifyCaptureFailed(string message)
+        {
+            var handler = OnCaptureFailed;
+            if (handler == null) return;
+            try { handler(message); } catch { }
         }
     }
 }

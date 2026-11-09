@@ -318,6 +318,7 @@
       flex-wrap: nowrap;
       scrollbar-width: none;
       min-width: 0;
+      max-width: min(55vw, 720px);
     }
     .telemetry-pills::-webkit-scrollbar {
       display: none;
@@ -334,6 +335,23 @@
       white-space: nowrap;
       flex-shrink: 0;
       line-height: 1.25;
+    }
+    button.t-pill {
+      appearance: none;
+      font: inherit;
+      cursor: pointer;
+      min-height: 28px;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    button.t-pill:hover {
+      color: var(--text-primary);
+      border-color: var(--indigo-primary);
+      background: var(--bg-card);
+    }
+    button.t-pill:focus-visible,
+    .theme-toggle-btn:focus-visible {
+      outline: 2px solid var(--indigo-primary);
+      outline-offset: 2px;
     }
     .dot-live {
       width: 7px;
@@ -368,13 +386,51 @@
       white-space: nowrap;
     }
     @media (max-width: 1080px) {
+      .telemetry-header {
+        flex-wrap: wrap;
+        padding: 8px 12px;
+      }
+      .brand-wrap {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
       .brand-title > span:first-child {
-        max-width: 112px;
+        max-width: min(48vw, 280px);
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      #telemetry-sync {
-        display: none !important;
+      .telemetry-right {
+        flex: 1 1 100%;
+        justify-content: flex-start;
+        min-width: 0;
+        overflow-x: auto;
+        padding: 2px 2px 4px;
+        scrollbar-width: thin;
+        flex-wrap: nowrap;
+      }
+      .telemetry-pills {
+        max-width: none;
+        flex: 1 1 auto;
+      }
+    }
+    @media (max-width: 700px) {
+      .telemetry-header {
+        padding: 7px 9px;
+        gap: 5px;
+      }
+      .brand-logo {
+        width: 28px;
+        height: 28px;
+      }
+      .brand-title {
+        font-size: 12px;
+      }
+      .brand-title > span:first-child {
+        max-width: 56vw;
+      }
+      .theme-toggle-btn {
+        width: 28px;
+        height: 28px;
       }
     }
     .theme-toggle-btn:hover {
@@ -530,9 +586,22 @@
       gap: 8px;
       overflow-x: auto;
       flex: 1;
+      min-width: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-hairline) transparent;
     }
     .category-tabs::-webkit-scrollbar {
-      display: none;
+      height: 4px;
+    }
+    .category-tabs::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .category-tabs::-webkit-scrollbar-thumb {
+      background: var(--border-hairline);
+      border-radius: 4px;
+    }
+    .category-tabs::-webkit-scrollbar-thumb:hover {
+      background: var(--indigo-light);
     }
     .cat-btn {
       background: transparent;
@@ -547,6 +616,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      flex: 0 0 auto;
     }
     .cat-btn:hover {
       color: var(--text-primary);
@@ -2185,6 +2255,7 @@
     }
     .intent-chip {
       font-size: 11px;
+      font-family: inherit;
       padding: 3px 9px;
       border-radius: 6px;
       background: var(--key-badge-bg);
@@ -2198,6 +2269,11 @@
       flex-shrink: 0;
       transition: all 0.15s ease;
       user-select: none;
+    }
+    .intent-chip[role="button"]:focus-visible,
+    .scope-switch-pill[role="button"]:focus-visible {
+      outline: 2px solid var(--border-selected);
+      outline-offset: 2px;
     }
     .intent-chip:hover {
       border-color: var(--indigo-light);
@@ -3908,34 +3984,34 @@
           <span class="dot-live"></span>
           <span id="telemetry-kernel-text">思源内核已就绪</span>
         </div>
-        <div class="t-pill" id="telemetry-sync" style="cursor: pointer;" onclick="triggerManualSync()" title="思源云端同步守护 (点击立即安全触发增量数据同步)">
+        <button type="button" class="t-pill" id="telemetry-sync" onclick="triggerManualSync()" title="思源云端同步守护 (点击立即安全触发增量数据同步)" aria-label="立即触发思源云端增量同步">
           <span class="dot-live" id="sync-dot" style="background: var(--emerald-mint);"></span>
           <span id="telemetry-sync-text">云同步就绪</span>
-        </div>
-        <div class="t-pill" id="telemetry-today" style="cursor: pointer;" onclick="toggleTodayTimeline()" title="点击滑出今日日记记录的全部灵感、待办与笔记时间流">
+        </button>
+        <button type="button" class="t-pill" id="telemetry-today" onclick="toggleTodayTimeline()" title="点击滑出今日日记记录的全部灵感、待办与笔记时间流" aria-label="打开今日日记时间线">
           <span style="color: var(--emerald-mint); font-weight: 700;">📅</span>
           <span id="telemetry-today-text">今日 0 块</span>
-        </div>
-        <div class="t-pill" id="telemetry-tasks" style="cursor: pointer;" onclick="toggleTasksKanbanModal()" title="全景待办四象限与看板工作台 (点击查看大盘看板)">
+        </button>
+        <button type="button" class="t-pill" id="telemetry-tasks" onclick="toggleTasksKanbanModal()" title="全景待办四象限与看板工作台 (点击查看大盘看板)" aria-label="打开全景待办看板">
           <span style="color: var(--tech-amber); font-weight: 700;">📋</span>
           <span id="telemetry-tasks-text">待办 --</span>
-        </div>
-        <div class="t-pill" id="telemetry-focus" style="cursor: pointer;" onclick="insertPrefix('pom:25 ')" title="心流专注与番茄钟 (点击快速开启 25 分钟专注)">
+        </button>
+        <button type="button" class="t-pill" id="telemetry-focus" onclick="insertPrefix('pom:25 ')" title="心流专注与番茄钟 (点击快速开启 25 分钟专注)" aria-label="快速开始 25 分钟专注">
           <span style="color: var(--rose-agent); font-weight: 700;">🍅</span>
           <span id="telemetry-focus-text">专注 25m</span>
-        </div>
-        <div class="t-pill" id="telemetry-mem" style="cursor: pointer;" onclick="triggerTrimMemory()" title="物理工作集内存 (点击立即深度压缩与垃圾清理)">
+        </button>
+        <button type="button" class="t-pill" id="telemetry-mem" onclick="triggerTrimMemory()" title="物理工作集内存 (点击立即深度压缩与垃圾清理)" aria-label="立即整理应用内存">
           <span class="dot-live" id="mem-dot" style="background: var(--titanium-cyan);"></span>
           <span id="telemetry-mem-text">内存 --</span>
-        </div>
-        <div class="t-pill" id="telemetry-riff" style="display: none; cursor: pointer;" onclick="executeItem({ id: 'syfsrs', title: 'FSRS 闪卡微舱' })" title="点击立即在桌面微舱刷卡">
+        </button>
+        <button type="button" class="t-pill" id="telemetry-riff" style="display: none;" onclick="executeItem({ id: 'syfsrs', title: 'FSRS 闪卡微舱' })" title="点击立即在桌面微舱刷卡" aria-label="开始闪卡复习">
           <span style="color: var(--cyber-purple); font-weight: 700;">🧠</span>
           <span id="telemetry-riff-text">待复习 0 张</span>
-        </div>
-        <div class="t-pill" id="telemetry-queue" style="display: none; cursor: pointer; border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.12);" onclick="showOfflineQueueModal()" title="离线应急缓冲队列 (点击查看详情或立即回写)">
+        </button>
+        <button type="button" class="t-pill" id="telemetry-queue" style="display: none; border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.12);" onclick="showOfflineQueueModal()" title="离线应急缓冲队列 (点击查看详情或立即回写)" aria-label="查看离线队列并尝试回写">
           <span style="color: var(--tech-amber); font-weight: 700;">📦</span>
           <span id="telemetry-queue-text" style="color: var(--tech-amber); font-weight: 700;">离线 0 条</span>
-        </div>
+        </button>
       </div>
 
       <button class="theme-toggle-btn" id="launchpad-btn" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台 (🚀)" style="position: relative; color: var(--cyber-sky);">
@@ -4343,9 +4419,18 @@
               <span>🌟 Lifelog 智能分流 (账目/专注/打卡)</span>
             </label>
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
-              <input type="checkbox" id="pref-desktop-webhook" style="accent-color: var(--indigo-primary);" checked />
+              <input type="checkbox" id="pref-desktop-webhook" style="accent-color: var(--indigo-primary);" />
               <span>⚡ Quicker / AHK 外部调用 Webhook 回路 (:43989)</span>
             </label>
+            <div style="margin: 2px 0 4px 22px; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; align-items: center;">
+              <input type="password" id="pref-desktop-webhook-token" class="search-input" autocomplete="off" spellcheck="false" placeholder="Webhook 安全令牌" aria-label="Webhook 安全令牌" style="min-width: 0; height: 30px; font-family: monospace; font-size: 11px;" />
+              <button type="button" class="pref-btn" id="pref-desktop-webhook-token-visibility" onclick="toggleWebhookTokenVisibility()" title="显示或隐藏安全令牌">显示</button>
+              <button type="button" class="pref-btn" onclick="generateWebhookToken()" title="生成新的 256 位本地调用令牌">生成</button>
+            </div>
+            <div style="margin: 0 0 4px 22px; display: flex; align-items: center; gap: 6px;">
+              <button type="button" class="pref-btn" onclick="copyWebhookToken()" title="复制 Webhook 令牌">复制令牌</button>
+              <span style="font-size: 10.5px; color: var(--text-muted);">请求需携带 <code>X-Token</code>；换新令牌后旧调用将失效。</span>
+            </div>
           </div>
         </div>
 
@@ -4473,7 +4558,7 @@
         <span style="font-size: 11px; color: var(--text-muted);">💡 快捷提示：按 <b>Ctrl+S</b> 亦可随时保存并立即生效设置，按 <b>Esc</b> 关闭</span>
         <div style="display: flex; gap: 8px;">
           <button class="pref-btn" onclick="togglePreferencesModal()" style="font-size: 11.5px; padding: 4px 12px;">取消</button>
-          <button class="pref-btn pref-btn-primary" onclick="saveDesktopPreferences()" style="font-size: 11.5px; font-weight: 700; padding: 4px 18px; background: var(--indigo-primary); color: #fff;">💾 保存全部设置并生效 (Ctrl+S)</button>
+          <button type="button" class="pref-btn pref-btn-primary" id="save-desktop-preferences-btn" onclick="saveDesktopPreferences()" style="font-size: 11.5px; font-weight: 700; padding: 4px 18px; background: var(--indigo-primary); color: #fff;">💾 保存全部设置并生效 (Ctrl+S)</button>
         </div>
       </div>
     </div>
@@ -4580,7 +4665,7 @@
             <tr><td><span class="hint-kbd">Ctrl + P</span></td><td>置顶 / 取消置顶常用卡片或文档</td></tr>
             <tr><td><span class="hint-kbd">Ctrl + / -</span></td><td><b>字号无极缩放</b>：桌面图钉便签 HUD 放大/缩小阅读字号</td></tr>
             <tr><td><span class="hint-kbd">Space (空格)</span></td><td>在附件秒查 (att:) 中直接使用本地默认程序打开文件</td></tr>
-            <tr><td><span class="hint-kbd">Tab</span></td><td>在全景面板中快速循环切换功能分类</td></tr>
+            <tr><td><span class="hint-kbd">Tab / Shift+Tab</span></td><td>按顺序聚焦按钮、分类与指令；Enter 或空格激活当前控件</td></tr>
             <tr><td><span class="hint-kbd">Esc</span></td><td>关闭当前弹窗、抽屉或退出总控面板 (双击清空输入)</td></tr>
           </table>
         </div>
@@ -5232,14 +5317,15 @@
         <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="closeOfflineQueueModal()">✕</button>
       </div>
       <div class="help-body" style="gap: 12px;">
-        <div id="offline-queue-modal-body" style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px; font-size: 12px; max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
-          <div style="text-align: center; color: var(--text-muted); padding: 24px;">队列为空，所有速记已成功落盘至思源。</div>
+        <div id="offline-queue-modal-body" aria-live="polite" style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 12px; font-size: 12px; max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+          <div style="text-align: center; color: var(--text-muted); padding: 24px;">打开队列后读取待处理记录。</div>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-hairline); padding-top: 10px;">
-          <span style="font-size: 11px; color: var(--text-muted);">💡 当思源未运行时速记自动缓冲于此，思源启动后自动回写</span>
-          <div style="display: flex; gap: 8px;">
-            <button class="inspector-dock-btn" onclick="clearOfflineQueue()" title="清空全部离线缓冲记录">🗑️ 清空队列</button>
-            <button class="inspector-dock-btn primary" onclick="flushOfflineQueue()" title="立即将队列中的速记回写到思源今日日记">🚀 立即回写至思源</button>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-hairline); padding-top: 10px;">
+          <span id="offline-queue-status" role="status" style="font-size: 11px; color: var(--text-muted);">恢复连接后会自动重试；指定文档的文件保留原目标。</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <button type="button" id="offline-queue-retry-btn" class="inspector-dock-btn" onclick="requestOfflineQueueOperation('get')">刷新</button>
+            <button type="button" id="offline-queue-clear-btn" class="inspector-dock-btn" onclick="clearOfflineQueue()" title="清空全部离线缓冲记录">🗑️ 清空队列</button>
+            <button type="button" id="offline-queue-flush-btn" class="inspector-dock-btn primary" onclick="flushOfflineQueue()" title="按记录的目标回写至思源">🚀 立即回写至思源</button>
           </div>
         </div>
       </div>
@@ -5644,6 +5730,13 @@
       const catAll = document.getElementById("cat-btn-all");
       if (catAll) catAll.innerText = `全部 (${PANEL_ITEMS.length})`;
 
+      enhanceInlineActionAccessibility();
+      const inlineActionObserver = new MutationObserver(records => {
+        records.forEach(record => record.addedNodes.forEach(node => {
+          if (node.nodeType === Node.ELEMENT_NODE) enhanceInlineActionAccessibility(node);
+        }));
+      });
+      inlineActionObserver.observe(document.body, { childList: true, subtree: true });
       applyTheme(currentTheme);
       syncLayoutButtons();
       handleSearch("");
@@ -5663,7 +5756,28 @@
       });
 
       window.addEventListener("keydown", (e) => {
+        if (e.defaultPrevented || e.isComposing) return;
         const isInputFocused = (document.activeElement === searchInput);
+
+        // Keep native Tab order and the focused control's own Enter/Space behavior.
+        if (e.key === 'Tab') return;
+        if (typeof ModalStackManager !== "undefined" && ModalStackManager.hasAnyModalOpen()) {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            window.handleGlobalEscapeKey();
+          } else {
+            const ifm = document.getElementById("inline-form-modal");
+            const active = document.activeElement;
+            if (ifm && ifm.classList.contains("open") && e.key === "Enter" && active && active.tagName === 'INPUT') {
+              e.preventDefault();
+              submitInlineFormModal();
+            }
+          }
+          return;
+        }
+        const focusedControl = e.target && e.target.closest
+          ? e.target.closest('button, a, input, textarea, select, [contenteditable="true"], [role="button"]') : null;
+        if (!isInputFocused && focusedControl && e.key !== 'Escape') return;
 
         // Ctrl + 1 ~ 9 快速盲打执行当前搜索结果的前 9 项
         if (e.ctrlKey && !e.altKey && !e.shiftKey && e.key >= "1" && e.key <= "9") {
@@ -5738,23 +5852,6 @@
           return;
         }
 
-        // 若当前有顶层内联表单、九宫格菜单或任意全景工作台弹窗处于打开态，交由模态栈统一接管
-        if (typeof ModalStackManager !== "undefined" && ModalStackManager.hasAnyModalOpen()) {
-          if (e.key === "Escape") {
-            e.preventDefault();
-            window.handleGlobalEscapeKey();
-            return;
-          }
-          const ifm = document.getElementById("inline-form-modal");
-          if (ifm && ifm.classList.contains("open") && e.key === "Enter" && (!document.activeElement || document.activeElement.tagName !== "TEXTAREA")) {
-            e.preventDefault();
-            submitInlineFormModal();
-            return;
-          }
-          // 其余按键交由弹窗自身输入框/编辑器处理，不触发底层卡片网格导航
-          return;
-        }
-
         if (e.key === "ArrowDown") {
           e.preventDefault();
           moveSelection(isSplitSearchModeActive() ? 1 : getColCount());
@@ -5789,9 +5886,6 @@
         } else if (e.key === "Escape") {
           e.preventDefault();
           window.handleGlobalEscapeKey();
-        } else if (e.key === "Tab") {
-          e.preventDefault();
-          cycleCategory();
         } else if (!isInputFocused) {
           if (e.key === "?" || (e.shiftKey && e.key === "/")) {
             e.preventDefault();
@@ -6530,6 +6624,25 @@
         btn.style.display = si.value.trim().length > 0 ? "inline-flex" : "none";
       }
     }
+
+    function enhanceInlineActionAccessibility(root = document) {
+      const selector = ".intent-chip[onclick], .scope-switch-pill[onclick]";
+      if (root.matches && root.matches(selector)) {
+        root.setAttribute("role", "button");
+        if (!root.hasAttribute("tabindex")) root.tabIndex = 0;
+      }
+      if (root.querySelectorAll) root.querySelectorAll(selector).forEach(action => {
+        action.setAttribute("role", "button");
+        if (!action.hasAttribute("tabindex")) action.tabIndex = 0;
+      });
+    }
+
+    document.addEventListener("keydown", event => {
+      const target = event.target && event.target.closest ? event.target.closest('.intent-chip[role="button"], .scope-switch-pill[role="button"]') : null;
+      if (!target || (event.key !== "Enter" && event.key !== " ")) return;
+      event.preventDefault();
+      target.click();
+    });
 
     function handleSearch(query) {
       const raw = query.trim();
@@ -8838,6 +8951,10 @@
             clipChip = document.createElement("span");
             clipChip.id = "clipboard-stream-chip";
             clipChip.className = "intent-chip";
+            clipChip.setAttribute("role", "button");
+            clipChip.tabIndex = 0;
+            clipChip.setAttribute("role", "button");
+            clipChip.tabIndex = 0;
             clipChip.style.borderColor = "var(--emerald-mint)";
             clipChip.style.color = "var(--emerald-mint)";
             clipChip.style.background = "rgba(16, 185, 129, 0.12)";
@@ -11326,16 +11443,70 @@
     // ==========================================================
     // 离岸应急缓冲队列感知与回写 (Offline Queue Management)
     // ==========================================================
+    let offlineQueuePendingOperation = '';
+    let offlineQueueOperationTimer = 0;
+
+    function setOfflineQueueBusy(operation) {
+      offlineQueuePendingOperation = operation || '';
+      const pending = !!offlineQueuePendingOperation;
+      ['offline-queue-retry-btn', 'offline-queue-clear-btn', 'offline-queue-flush-btn'].forEach(id => {
+        const button = document.getElementById(id);
+        if (button) button.disabled = pending;
+      });
+      const body = document.getElementById('offline-queue-modal-body');
+      if (body) body.setAttribute('aria-busy', String(pending));
+      const status = document.getElementById('offline-queue-status');
+      const labels = { get: '正在读取本机队列…', flush: '正在回写，失败记录会保留…', clear: '正在清空本机队列…' };
+      if (status && pending) status.textContent = labels[operation] || '正在处理…';
+    }
+
+    function requestOfflineQueueOperation(operation) {
+      if (offlineQueuePendingOperation) return false;
+      const ops = { get: 'getOfflineQueue', flush: 'flushOfflineQueue', clear: 'clearOfflineQueue' };
+      if (!ops[operation]) return false;
+      if (!window.chrome || !window.chrome.webview) {
+        showToast('浏览器预览未连接桌面助手，未执行队列操作。');
+        const status = document.getElementById('offline-queue-status');
+        if (status) status.textContent = '预览模式：请在桌面助手中查看本机队列。';
+        return false;
+      }
+      setOfflineQueueBusy(operation);
+      offlineQueueOperationTimer = window.setTimeout(() => {
+        window.onOfflineQueueLoaded({ code: 1, operation, msg: '主机尚未返回结果，请稍后刷新确认。' });
+      }, 30000);
+      try {
+        window.chrome.webview.postMessage(JSON.stringify({ op: ops[operation] }));
+      } catch (error) {
+        window.onOfflineQueueLoaded({ code: 1, operation, msg: '无法连接桌面助手，请刷新后重试。' });
+      }
+      return true;
+    }
+
+    function formatOfflineQueueDate(value) {
+      const match = typeof value === 'string' && /^\/Date\((-?\d+)(?:[+-]\d{4})?\)\/$/.exec(value);
+      const date = new Date(match ? Number(match[1]) : value);
+      return value && Number.isFinite(date.getTime()) ? date.toLocaleString() : '时间未知';
+    }
+
     function updateOfflineQueueBadge(info) {
       const count = info ? (info.count || 0) : (window.__OFFLINE_QUEUE_COUNT__ || 0);
+      window.__OFFLINE_QUEUE_COUNT__ = count;
       const qPill = document.getElementById("telemetry-queue");
       const qText = document.getElementById("telemetry-queue-text");
       if (qPill && qText) {
-        if (count > 0) {
+        if (count < 0) {
           qPill.style.display = "inline-flex";
+          qPill.title = "离线队列无法读取，原数据未清除。点击查看错误并检查 DPAPI 用户或文件权限。";
+          qText.textContent = "队列异常";
+          qText.style.color = "var(--rose-agent)";
+        } else if (count > 0) {
+          qPill.style.display = "inline-flex";
+          qPill.title = "离线应急缓冲队列 (点击查看详情或立即回写)";
           qText.textContent = `离线 ${count} 条`;
+          qText.style.color = "var(--tech-amber)";
         } else {
           qPill.style.display = "none";
+          qPill.title = "离线应急缓冲队列";
         }
       }
     }
@@ -11343,9 +11514,7 @@
     function showOfflineQueueModal() {
       const modal = document.getElementById("offline-queue-modal");
       if (modal) modal.classList.add("open");
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'getOfflineQueue' }));
-      }
+      requestOfflineQueueOperation('get');
     }
 
     function closeOfflineQueueModal(e) {
@@ -11363,48 +11532,59 @@
     window.onOfflineQueueLoaded = function(payload) {
       const badge = document.getElementById("offline-queue-modal-badge");
       const body = document.getElementById("offline-queue-modal-body");
+      const status = document.getElementById('offline-queue-status');
+      if (!payload) return;
+      if (!payload.operation || payload.operation === offlineQueuePendingOperation) {
+        if (offlineQueueOperationTimer) window.clearTimeout(offlineQueueOperationTimer);
+        offlineQueueOperationTimer = 0;
+        setOfflineQueueBusy('');
+      }
+      if (payload.code != null && payload.code !== 0) {
+        if (badge) badge.textContent = payload.operation === 'clear' ? '清空失败' : (payload.operation === 'flush' ? '回写未确认' : '读取失败');
+        updateOfflineQueueBadge({ count: -1 });
+        if (status) status.textContent = '操作未确认，请刷新检查；原队列文件已保留。';
+        if (body) body.innerHTML = `<div style="text-align:center;color:var(--rose-agent);padding:24px;overflow-wrap:anywhere;">${escapeHtml(payload.msg || '离线队列无法读取。请用创建队列时的 Windows 用户登录，并检查本机数据目录权限。')}</div>`;
+        return;
+      }
       const items = (payload && Array.isArray(payload.items)) ? payload.items : ((payload && Array.isArray(payload.data)) ? payload.data : []);
       if (badge) badge.textContent = `${items.length} 条待回写`;
       updateOfflineQueueBadge({ count: items.length });
+      if (status) {
+        status.textContent = payload.operation === 'flush'
+          ? (items.length ? `回写完成检查，仍有 ${items.length} 条待重试。` : '本机队列已处理完成。')
+          : (payload.operation === 'clear' ? (items.length ? `清空已完成，另有 ${items.length} 条新记录。` : '本机队列已清空。') : '恢复连接后会自动重试；指定文档的文件保留原目标。');
+      }
       if (!body) return;
 
       if (items.length === 0) {
-        body.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 24px;">队列为空，所有速记已成功落盘至思源。</div>`;
+        body.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 24px;">本机队列为空，没有待回写记录。</div>`;
         return;
       }
 
       body.innerHTML = items.map((it, idx) => `
         <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-hairline); border-radius: 6px; padding: 8px 10px;">
           <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-muted); margin-bottom: 4px;">
-            <span>⏱️ 离线暂存于: ${escapeHtml(it.CreatedAt ? new Date(it.CreatedAt).toLocaleString() : '最近')}</span>
+            <span>⏱️ 离线暂存于: ${escapeHtml(formatOfflineQueueDate(it.CreatedAt))}</span>
             <span class="tag-badge badge-native" style="font-size: 9px;">${escapeHtml(it.Type || 'note')}</span>
           </div>
-          <div style="font-size: 12px; color: var(--text-primary); line-height: 1.5; white-space: pre-wrap;">${escapeHtml(it.Content || it.FilePath || '')}</div>
+          <div style="font-size: 12px; color: var(--text-primary); line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere;">${escapeHtml(it.Content || it.FilePath || '')}</div>
+          ${it.Type === 'file' ? `<div style="font-size:11px;color:var(--text-muted);overflow-wrap:anywhere;margin-top:4px;">目标：${escapeHtml(it.TargetDocTitle || it.TargetDocId || '今日日记')}<br>${escapeHtml(it.FilePath || '')}</div>` : ''}
         </div>
       `).join("");
     };
 
     function flushOfflineQueue() {
-      showToast("🚀 正在将离线队列回写至思源今日日记...");
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'flushOfflineQueue' }));
-      }
-      setTimeout(() => {
-        closeOfflineQueueModal();
-      }, 500);
+      if (requestOfflineQueueOperation('flush')) showToast('正在按记录目标回写；请等待处理结果。');
     }
 
     function clearOfflineQueue() {
+      if (offlineQueuePendingOperation) return;
       showInlineConfirmModal({
         title: "清空离线缓冲队列",
         message: "确定要清空全部离线缓冲记录吗？",
         danger: true,
         onConfirm: () => {
-          if (window.chrome && window.chrome.webview) {
-            window.chrome.webview.postMessage(JSON.stringify({ op: 'clearOfflineQueue' }));
-          }
-          closeOfflineQueueModal();
-          showToast("✓ 离线缓冲队列已清空");
+          requestOfflineQueueOperation('clear');
         }
       });
     }
@@ -13548,6 +13728,10 @@
     window.onFileDroppedToSiYuan = function(res) {
       if (!res) return;
       const fn = res.fileName || "外部文件";
+      if (res.success !== true) {
+        showToast(res.message || (res.queued ? `文件【${fn}】已进入本机队列，等待恢复连接。` : `文件【${fn}】未能写入，请检查连接后重试。`));
+        return;
+      }
       const fp = res.filePath || "";
       const docTitle = res.docTitle || "今日日记";
       const docId = res.docId || "";
@@ -13570,6 +13754,19 @@
     const _origOnOfflineQueueLoaded = window.onOfflineQueueLoaded;
     window.onOfflineQueueLoaded = function(res) {
       if (_origOnOfflineQueueLoaded) _origOnOfflineQueueLoaded(res);
+      if (res && res.code != null && res.code !== 0) {
+        if (hasActiveSearchPrefix(['queue', 'offline'])) {
+          filteredItems = [];
+          selectedIndex = 0;
+          renderItems();
+          const banner = document.getElementById('intent-banner');
+          if (banner) {
+            banner.style.display = 'flex';
+            banner.innerHTML = `<span>离线队列暂时无法读取，原数据已保留。</span><button type="button" class="scope-switch-pill" onclick="requestOfflineQueueOperation('get')">重新读取</button>`;
+          }
+        }
+        return;
+      }
       const list = (res && Array.isArray(res.data)) ? res.data : ((res && Array.isArray(res.items)) ? res.items : null);
       if (!list) return;
       if (!hasActiveSearchPrefix(["queue", "offline"])) return;
@@ -13578,7 +13775,7 @@
         id: `queue_${it.Id || idx}`,
         group: "offline",
         title: `⏳ [离岸脱机缓冲] ${escapeHtml(it.Content || '速记')}`,
-        desc: `录入时间: ${it.CreatedAt ? new Date(it.CreatedAt).toLocaleString() : '离线'} · 来源: ${it.SourceWindow || '桌面'} (等待内核上线自动合流)`,
+        desc: `录入时间: ${formatOfflineQueueDate(it.CreatedAt)} · 目标: ${it.TargetDocTitle || it.TargetDocId || '今日日记'} · 来源: ${it.SourceWindow || '桌面'}`,
         hotkey: "Enter",
         iconType: "cloud",
         iconColor: "var(--tech-amber)",
@@ -13606,10 +13803,7 @@
     };
 
     function flushOfflineQueueNow() {
-      if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({ op: 'flushOfflineQueue' }));
-        showToast("✓ 正在尝试合流写入思源笔记...");
-      }
+      flushOfflineQueue();
     }
 
     window.onBrowserBookmarksLoaded = function(res) {
@@ -14229,6 +14423,10 @@
         return;
       }
       const p = res.data;
+      if (p.CaptureWarning) {
+        showToast("❌ " + String(p.CaptureWarning));
+        return;
+      }
       if (window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({
           op: 'saveProfile',
@@ -14262,18 +14460,24 @@
         } else {
           insertPrefix('cfg:');
         }
+      } else if (res) {
+        showToast("❌ 配置预设删除失败，原记录已保留。请重试。");
       }
     };
 
     window.onProfileSaved = function(res) {
       if (res && res.success) {
-        showToast("🎉 配置预设已安全脱敏沉淀至思源专属文档与本地缓存！");
+        showToast(res.localOnly
+          ? "✓ 配置预设仅安全保存在本机；思源暂不可达，尚未写入思源文档。"
+          : "🎉 配置预设已安全脱敏沉淀至思源专属文档与本地缓存！");
         const modal = document.getElementById("profile-hub-modal");
         if (modal && modal.classList.contains("open")) {
           requestProfileHubData();
         } else {
           insertPrefix('cfg:');
         }
+      } else if (res) {
+        showToast("❌ 配置预设未能完整保存；请检查思源连接和本机磁盘权限后重试。");
       }
     };
 
@@ -15519,7 +15723,9 @@
         const smEl = document.getElementById("pref-desktop-shellmenu");
         if (smEl) smEl.checked = s.shellContextMenuEnabled != null ? !!s.shellContextMenuEnabled : true;
         const whEl = document.getElementById("pref-desktop-webhook");
-        if (whEl) whEl.checked = s.webhookEnabled != null ? !!s.webhookEnabled : true;
+        if (whEl) whEl.checked = !!s.webhookEnabled;
+        const whTokenEl = document.getElementById("pref-desktop-webhook-token");
+        if (whTokenEl) whTokenEl.value = s.webhookToken || "";
         const llEl = document.getElementById("pref-desktop-lifelog");
         if (llEl) llEl.checked = s.lifelogAutoSectionEnabled != null ? !!s.lifelogAutoSectionEnabled : true;
         const tEl = document.getElementById("pref-desktop-sniptool");
@@ -15608,7 +15814,93 @@
       }
     }
 
+    let desktopSettingsSavePending = false;
+    let desktopSettingsSaveTimer = 0;
+
+    function setDesktopSettingsSaveState(isSaving) {
+      const button = document.getElementById("save-desktop-preferences-btn");
+      if (!button) return;
+      button.disabled = isSaving;
+      button.setAttribute("aria-busy", isSaving ? "true" : "false");
+      button.textContent = isSaving ? "正在保存设置..." : "💾 保存全部设置并生效 (Ctrl+S)";
+    }
+
+    function onDesktopSettingsSaved(result) {
+      if (!desktopSettingsSavePending) return;
+      desktopSettingsSavePending = false;
+      if (desktopSettingsSaveTimer) window.clearTimeout(desktopSettingsSaveTimer);
+      desktopSettingsSaveTimer = 0;
+      setDesktopSettingsSaveState(false);
+      const saved = result && result.success === true;
+      const webhookToggle = document.getElementById("pref-desktop-webhook");
+      if (webhookToggle && result && typeof result.webhookEnabled === "boolean") {
+        webhookToggle.checked = result.webhookEnabled;
+      }
+      if (saved) {
+        showToast(result && result.warning ? String(result.warning) : "✓ 桌面设置已保存并生效");
+      } else {
+        const detail = result && result.error ? String(result.error) : "主机未能保存设置，请重试。";
+        showToast("设置保存失败：" + detail);
+      }
+    }
+    window.onDesktopSettingsSaved = onDesktopSettingsSaved;
+
+    function createWebhookTokenValue() {
+      if (!window.crypto || !window.crypto.getRandomValues) return "";
+      const bytes = new Uint8Array(32);
+      window.crypto.getRandomValues(bytes);
+      return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function generateWebhookToken() {
+      const input = document.getElementById("pref-desktop-webhook-token");
+      if (!input) return;
+      const token = createWebhookTokenValue();
+      if (!token) {
+        showToast("当前运行环境无法安全生成令牌");
+        return;
+      }
+      input.value = token;
+      input.type = "password";
+      const visibilityButton = document.getElementById("pref-desktop-webhook-token-visibility");
+      if (visibilityButton) visibilityButton.textContent = "显示";
+      input.focus();
+      input.select();
+      showToast("已生成新令牌，保存设置后生效");
+    }
+
+    function toggleWebhookTokenVisibility() {
+      const input = document.getElementById("pref-desktop-webhook-token");
+      const button = document.getElementById("pref-desktop-webhook-token-visibility");
+      if (!input || !button) return;
+      const reveal = input.type === "password";
+      input.type = reveal ? "text" : "password";
+      button.textContent = reveal ? "隐藏" : "显示";
+      button.title = reveal ? "隐藏安全令牌" : "显示安全令牌";
+    }
+
+    async function copyWebhookToken() {
+      const input = document.getElementById("pref-desktop-webhook-token");
+      if (!input || !input.value) {
+        showToast("请先生成或填写 Webhook 令牌");
+        return;
+      }
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(input.value);
+        } else {
+          input.focus();
+          input.select();
+          if (!document.execCommand("copy")) throw new Error("复制不可用");
+        }
+        showToast("Webhook 令牌已复制");
+      } catch {
+        showToast("复制失败，请选中令牌后手动复制");
+      }
+    }
+
     function saveDesktopPreferences() {
+      if (desktopSettingsSavePending) return;
       const mVal = (document.getElementById("pref-desktop-master-key")?.value || "Alt+Shift+Q").trim();
       const pVal = (document.getElementById("pref-desktop-pen-key")?.value || "Alt+Shift+W").trim();
       const oVal = (document.getElementById("pref-desktop-ocr-key")?.value || "Alt+Shift+C").trim();
@@ -15628,6 +15920,16 @@
       const sndVal = !!document.getElementById("pref-desktop-sound")?.checked;
       const smVal = !!document.getElementById("pref-desktop-shellmenu")?.checked;
       const whVal = !!document.getElementById("pref-desktop-webhook")?.checked;
+      const webhookTokenInput = document.getElementById("pref-desktop-webhook-token");
+      let webhookTokenVal = (webhookTokenInput?.value || "").trim();
+      if (whVal && !webhookTokenVal) {
+        webhookTokenVal = createWebhookTokenValue();
+        if (!webhookTokenVal) {
+          showToast("Webhook 已启用，但无法安全生成令牌");
+          return;
+        }
+        if (webhookTokenInput) webhookTokenInput.value = webhookTokenVal;
+      }
       const llVal = !!document.getElementById("pref-desktop-lifelog")?.checked;
       const aiEnVal = !!document.getElementById("pref-desktop-ai-enabled")?.checked;
       const aiUrlVal = (document.getElementById("pref-desktop-ai-url")?.value || "http://localhost:11434/v1").trim();
@@ -15635,36 +15937,47 @@
       const aiKeyVal = (document.getElementById("pref-desktop-ai-key")?.value || "").trim();
 
       if (window.chrome && window.chrome.webview) {
-        window.chrome.webview.postMessage(JSON.stringify({
-          op: 'saveSettings',
-          masterHotKey: mVal,
-          penHotKey: pVal,
-          ocrHotKey: oVal,
-          quickHotKey: qVal,
-          fsrsHotKey: rkVal,
-          clipHotKey: gVal,
-          preferredSnippingTool: tVal,
-          preferredSearchEngine: seVal,
-          dailyNoteTargetHeading: hVal,
-          quickNoteContinuationSec: isNaN(cVal) ? 30 : cVal,
-          quickNoteTargetDoc: dVal,
-          webClipDefaultMode: cmVal,
-          webClipTargetFolder: cfVal,
-          webClipCustomTemplate: ctplVal,
-          autoFloatEnabled: fVal,
-          autoStart: aVal,
-          soundFeedbackEnabled: sndVal,
-	          shellContextMenuEnabled: smVal,
-	          webhookEnabled: whVal,
-	          lifelogAutoSectionEnabled: llVal,
-          aiEnabled: aiEnVal,
-          aiBaseUrl: aiUrlVal,
-          aiModel: aiModelVal,
-          aiApiKey: aiKeyVal,
-          customSnippetsJson: JSON.stringify(collectCustomSnippetRows())
-        }));
-        showToast("✓ 桌面设置已提交保存！");
+        desktopSettingsSavePending = true;
+        setDesktopSettingsSaveState(true);
+        showToast("正在保存桌面设置...");
+        try {
+          window.chrome.webview.postMessage(JSON.stringify({
+            op: 'saveSettings',
+            masterHotKey: mVal,
+            penHotKey: pVal,
+            ocrHotKey: oVal,
+            quickHotKey: qVal,
+            fsrsHotKey: rkVal,
+            clipHotKey: gVal,
+            preferredSnippingTool: tVal,
+            preferredSearchEngine: seVal,
+            dailyNoteTargetHeading: hVal,
+            quickNoteContinuationSec: isNaN(cVal) ? 30 : cVal,
+            quickNoteTargetDoc: dVal,
+            webClipDefaultMode: cmVal,
+            webClipTargetFolder: cfVal,
+            webClipCustomTemplate: ctplVal,
+            autoFloatEnabled: fVal,
+            autoStart: aVal,
+            soundFeedbackEnabled: sndVal,
+            shellContextMenuEnabled: smVal,
+            webhookEnabled: whVal,
+            webhookToken: webhookTokenVal,
+            lifelogAutoSectionEnabled: llVal,
+            aiEnabled: aiEnVal,
+            aiBaseUrl: aiUrlVal,
+            aiModel: aiModelVal,
+            aiApiKey: aiKeyVal,
+            customSnippetsJson: JSON.stringify(collectCustomSnippetRows())
+          }));
+          desktopSettingsSaveTimer = window.setTimeout(() => {
+            onDesktopSettingsSaved({ success: false, error: "主机未返回保存结果，请检查连接后重试。" });
+          }, 15000);
+        } catch (error) {
+          onDesktopSettingsSaved({ success: false, error: error && error.message ? error.message : "无法提交设置" });
+        }
       } else {
+        setDesktopSettingsSaveState(false);
         showToast("✓ 浏览器预览模式：已模拟保存设置");
       }
     }
@@ -17010,6 +17323,7 @@
                   <span style="font-size: 20px;">${icon}</span>
                   ${p.IsActive ? '<span class="profile-badge" style="background: rgba(16,185,129,0.2); color: var(--emerald-mint); border-color: rgba(16,185,129,0.45);">🟢 当前生效</span>' : ''}
                   ${p.HasVaultCredentials ? '<span class="profile-badge" style="background: rgba(245,158,11,0.16); color: var(--tech-amber); border-color: rgba(245,158,11,0.4);" title="真实密钥已通过 Windows 原生 DPAPI 硬件加密锁入本机保险箱">🔐 DPAPI锁密</span>' : ''}
+                  ${p.IsLocalOnly ? '<span class="profile-badge" style="background: rgba(56,189,248,0.14); color: var(--cyber-sky); border-color: rgba(56,189,248,0.36);" title="当前配置仅安全保存在本机，尚未写入思源文档">仅本机</span>' : ''}
                 </div>
                 <span class="profile-badge ${typeClass}">${p.Type ? p.Type.toUpperCase() : "S3"}</span>
               </div>
@@ -19590,6 +19904,8 @@
 
       if (typeof res.healed === "number" && res.healed > 0) {
         showToast(`🎉 已成功为您自动修复 ${res.healed} 项冲突快捷键！`);
+      } else if (res.saveFailed === true || res.healed < 0) {
+        showToast("❌ 快捷键设置未能保存或应用，原键位保持不变；请检查权限后重试。");
       }
 
       const pill = document.getElementById("ob-score-pill");

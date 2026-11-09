@@ -83,15 +83,34 @@ namespace XiaoLv.Desktop.Core
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
                 var snipper = new SnippingOverlayWindow();
+                snipper.OnCaptureFailed += (message) =>
+                {
+                    if (showNotice != null) showNotice("思源外骨骼 · 截图失败", message);
+                };
                 snipper.OnRegionCaptured += (bmp) =>
                 {
                     if (showNotice != null) showNotice("思源外骨骼 · 离线 OCR", "正在通过本地硬件加速引擎识别文字...");
                     ThreadPool.QueueUserWorkItem(s =>
                     {
-                        string recognized = LocalOcrEngine.RecognizeBitmap(bmp);
-                        if (onCaptured != null)
+                        bool ownershipTransferred = false;
+                        try
                         {
+                            string recognized = LocalOcrEngine.RecognizeBitmap(bmp);
+                            if (onCaptured == null)
+                            {
+                                if (showNotice != null) showNotice("思源外骨骼 · 截图失败", "截图已捕获，但当前没有后续处理器。");
+                                return;
+                            }
                             onCaptured(recognized, bmp);
+                            ownershipTransferred = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            if (showNotice != null) showNotice("思源外骨骼 · 截图失败", "本地 OCR 或截图处理失败：" + ex.Message);
+                        }
+                        finally
+                        {
+                            if (!ownershipTransferred && bmp != null) bmp.Dispose();
                         }
                     });
                 };
@@ -105,6 +124,7 @@ namespace XiaoLv.Desktop.Core
             var watcherThread = new Thread(() =>
             {
                 int start = Environment.TickCount;
+                bool captureReceived = false;
                 string initialText = "";
                 try { if (Clipboard.ContainsText()) initialText = Clipboard.GetText(); } catch { }
 
@@ -116,13 +136,36 @@ namespace XiaoLv.Desktop.Core
                         // 1. 如果产生了图片
                         if (Clipboard.ContainsImage())
                         {
-                            var img = Clipboard.GetImage();
-                            if (img != null)
+                            using (var img = Clipboard.GetImage())
                             {
-                                var bmp = new Bitmap(img);
-                                string ocr = LocalOcrEngine.RecognizeBitmap(bmp);
-                                if (onCaptured != null) onCaptured(ocr, bmp);
-                                return;
+                                if (img != null)
+                                {
+                                    var bmp = new Bitmap(img);
+                                    bool ownershipTransferred = false;
+                                    try
+                                    {
+                                        string ocr = LocalOcrEngine.RecognizeBitmap(bmp);
+                                        if (onCaptured != null)
+                                        {
+                                            onCaptured(ocr, bmp);
+                                            ownershipTransferred = true;
+                                        }
+                                        else if (showNotice != null)
+                                        {
+                                            showNotice("思源外骨骼 · 截图失败", "截图已捕获，但当前没有后续处理器。");
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        if (showNotice != null) showNotice("思源外骨骼 · 截图失败", "截图处理失败：" + ex.Message);
+                                    }
+                                    finally
+                                    {
+                                        if (!ownershipTransferred) bmp.Dispose();
+                                    }
+                                    captureReceived = true;
+                                    return;
+                                }
                             }
                         }
 
@@ -133,11 +176,16 @@ namespace XiaoLv.Desktop.Core
                             if (!string.IsNullOrEmpty(currentText) && currentText != initialText)
                             {
                                 if (onCaptured != null) onCaptured(currentText, null);
+                                captureReceived = true;
                                 return;
                             }
                         }
                     }
                     catch { }
+                }
+                if (!captureReceived && showNotice != null)
+                {
+                    showNotice("思源外骨骼 · 截图未完成", "30 秒内没有检测到新截图或识别文本，请重新截图后重试。");
                 }
             });
             watcherThread.IsBackground = true;

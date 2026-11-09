@@ -1,14 +1,14 @@
 # 思源外骨骼 · 桌面穿透工作台 (SiYuan Exoskeleton) v3.0.0
 
 > 🚀 **专为思源笔记打造的 0ms 原生 Windows 桌面穿透工作台与本地生态连接中枢**  
-> 纯原生 Windows C# 5.0 / .NET Framework 4.8 (x64) + 嵌入式 WebView2 架构 · 零外部平台依赖 · **真正纯单文件绿色便携（3.67 MB 单 EXE 包含全部离线资产与运行时），后台冷压缩常驻 ~13-25 MB，待机 CPU 0.0%**
+> 原生 Windows C# / .NET Framework 4.8 (x64) + WebView2 架构 · 主程序 EXE 内嵌前端资产和 WebView2Loader；运行前仍需 WebView2 Runtime · 后台资源占用随功能和运行时状态变化
 
 ---
 
 ```
                        ┌──────────────────────────────────────────────┐
                        │           思源外骨骼 (SiYuan Exoskeleton)     │
-                       │   Windows 原生单文件桌面穿透工作台 (~3.14MB)   │
+                       │   Windows 原生桌面穿透工作台                 │
                        └──────────────────────┬───────────────────────┘
                                               │
          ┌────────────────────────────────────┼────────────────────────────────────┐
@@ -25,7 +25,7 @@
                                               │
          ┌────────────────────────────────────┴────────────────────────────────────┐
          │ Win32底层能力: 内核文件监听(ReadDirectoryChangesW) / COM晚绑定 / 虚拟桌面 │
-         │               双右键集成(Explorer) / 5层内存制冷(~11MB) / 原生剪贴板管道  │
+         │               双右键集成(Explorer) / WebView2内存管理 / 原生剪贴板管道   │
          └────────────────────────────────────┬────────────────────────────────────┘
                                               │ 零插件穿透 (HTTP Loopback + SQLite)
                                               ▼
@@ -49,10 +49,11 @@
 ## 二、 核心能力全景矩阵 (v3.0.0 最新演进)
 
 ### 1. ★ 全面摆脱外部依赖，进化为纯 C# 原生高性能单文件应用
-- **纯单文件自给自足 (`思源外骨骼.exe`)**：内嵌全部前端离线资产、SVG 图标与 `WebView2Loader.dll`，单一可执行程序仅 **3.14 MB**，解压或单文件运行皆可，无环境安装负担；
-- **5 级极限内存制冷引擎 (`MemoryOptimizer.cs`)**：Chromium 裁剪 + WebView2 隐匿挂起 (`TrySuspendAsync`) + Win32 工作集深度修剪 + CLR LOH 垃圾回收紧缩，空闲常驻内存稳定在 **~11 MB**（CPU 0.0%）；
+- **单 EXE 内嵌应用资源 (`思源外骨骼.exe`)**：前端离线资产、SVG 图标及 `WebView2Loader.dll` 嵌入主程序；系统仍需安装 WebView2 Runtime。需要快速热更新时可使用同级 `assets` 目录；
+- **WebView2 空闲资源管理 (`MemoryOptimizer.cs`)**：通过 WebView2 挂起、Win32 工作集修剪和 CLR 垃圾回收降低空闲资源占用；实际数值取决于功能、WebView2 Runtime 与主机环境；
 - **零插件中转直连内核 (`SiYuanClient.cs`)**：彻底注销小驴快门等内部代理插件，基于高性能连接池直通思源 REST API 与 SQLite；支持 IPv4 (`127.0.0.1`) / IPv6 (`[::1]`) 双环回智能穿透；
-- **离岸缓冲队列 100% 自动兜底 (`OfflineQueueManager.cs`)**：思源未开机、升级重启或断网时，速记笔记自动落入本地加密缓冲，思源上线后静默自动合流补录，绝不丢字。
+- **离岸缓冲队列兜底 (`OfflineQueueManager.cs`)**：思源未开机或暂时离线时，速记会尝试写入当前 Windows 用户 DPAPI 加密队列；队列写入失败会明确提示，思源恢复后周期性重试补录。
+- **队列状态可核对**：读取/解密异常显示“队列异常”，保留原文件；回写与清空等待实际回执，部分失败显示剩余记录。文件队列显示其原路径及指定目标文档。
 
 ### 2. ★ 本地 Office (Word / Excel / PPT) 零依赖流式透视与双向锚点 (`OfficeOpenXmlParser.cs`)
 - **零第三方依赖极致轻量 (<30ms · <8MB 内存)**：纯基于 .NET 4.8 内置 `ZipArchive` + `XmlReader` 纯流式解包，无任何外部 DLL，电脑即使未装 Office/WPS 亦可毫秒级透视内容；
@@ -132,12 +133,12 @@
 - **截图工具自由选择**：自动探测 **PixPin**、**Snipaste** 或内置硬件加速引擎，设置页提供状态探针一键切换。
 
 ### 14. ★ 本地极速调用桥与 Quicker / AutoHotkey / Raycast Webhook 回路 (`ExternalApiBridge.cs`)
-- **零依赖高并发本地环回服务 (`127.0.0.1:43989`)**：基于 .NET 内置 `HttpListener` 实现轻量极速 Webhook，响应延迟 **<1ms**，0% 待机 CPU；
+- **本地环回服务 (`127.0.0.1:43989`)**：基于 .NET 内置 `HttpListener` 提供 Webhook 接口，默认关闭；
 - **多端与外部宏工具一键直通**：
   - **`POST /api/capture`**：支持 Quicker、AutoHotkey、Stream Deck、本地 Python/Shell 脚本一键免切窗速记，自动携带来源软件与标题，无感追加今日日记；
   - **`GET /api/today` & `GET /api/tasks`**：免开思源客户端瞬时透视今日时间流及全库未完成待办；
   - **`POST /api/show`**：支持指定唤起总控工作台、随身划笔或 FSRS 闪卡微舱；
-- **严密本地安全隔离**：严格锁定 `127.0.0.1` 环回接口，拒绝任何局域网或外部 IP 穿透，支持自定义 `WebhookToken` 安全鉴权。
+- **严密本地安全隔离**：默认关闭；启用后必须配置安全令牌，所有请求都需在 `X-Token` 或 Bearer 头中鉴权，浏览器 CORS 仅允许环回来源。
 
 ### 15. ★ 数据表格与属性视图 (AV 数据库) 智能转换与排版引擎 (`TableToAvConverter.cs`)
 - **多源表格智能解包**：秒级识别剪贴板或文档内的 Markdown 表格、TSV（从 Excel/WPS 复制的制表符栅格）、CSV 逗号分隔文本；
@@ -441,6 +442,7 @@
 - **配置预设本机 Windows DPAPI 凭据保险箱与一键热切换 (`SiYuanProfileHub` + `POST /api/profile/apply`)**：
   - **零外部依赖硬件级加密**：基于 Windows 原生 `crypt32.dll` (`CryptProtectData` / `CryptUnprotectData`) 将敏感密钥（`apiKey` / `secretKey` / `accessKey` / `password`）加密锁入本机专属 `local_vault_dpapi.json`，同时思源笔记库《/配置预设》与导出蓝图依然 100% 保持 `[SECURED_CREDENTIAL]` 脱敏铁律；
   - **一键热切换激活 (`⚡ 激活生效`)**：点击预设卡片即可从本机 DPAPI 保险箱自动解密还原凭据并注入运行时热切换生效（卡片实时点亮 `🟢 当前生效` 与 `🔐 DPAPI锁密` 徽章）。
+  - **预设身份与更新**：本机缓存分别记录逻辑 `Id` 与思源 `BlockId`。同名同类型重复保存更新原配置块，删除时验证实际块身份；旧格式可读回，历史重复条目不会自动批量清除。
 
 ### 63. ★ P2 零配置首启 4 维环境自检向导与全工作台读写终态封板 (`FirstRunEnvironmentDoctor.cs`)
 - **零配置首启 4 维环境自动探针 (`#onboarding-wizard-modal` · `init:` / `wizard:` · `GET /api/system/onboarding`)**：
@@ -459,7 +461,7 @@
 
 | 快捷键 | 视窗组件 | 核心定位与使用场景 |
 | :--- | :--- | :--- |
-| 🎯 **`Alt+Shift+Q`** | **Bento 穿透罗盘** | 1180×740 黄金画幅，31 款王牌卡片，`b:` 块秒搜、`d:` 文档、`att:` 附件、`fav:` 网站、`fold:` 目录、`cfg:` 预设、`notice:` 通知、`t:` 待办、`pom:` 番茄、双栏反链抽屉、Office/PDF 透视。 |
+| 🎯 **`Alt+Shift+Q`** | **Bento 穿透罗盘** | 默认显示 22 项精简卡片，可切换查看全部 31 项；支持 `b:` 块秒搜、`d:` 文档、`att:` 附件、`fav:` 网站、`fold:` 目录、`cfg:` 预设、`notice:` 通知、`t:` 待办、`pom:` 番茄、双栏反链抽屉、Office/PDF 透视。 |
 | ✏️ **`Alt+Shift+W`** | **随身划笔微胶囊** | 410×188 跟随光标，数字键 1~6 盲打分发，双链认知雷达反查，边界自适应翻转，支持拖拽移动。 |
 | 📸 **`Alt+Shift+C`** | **截屏离线 OCR** | 自动调动本地已装 PixPin / Snipaste 或内置硬件加速引擎，原图与文字双通道入库。 |
 | ⚡ **`Alt+Shift+S`** | **极简速记 HUD** | 居中胶囊，30s 粘滞防碎块，前缀意图分流，`Ctrl+Enter` 扩展多行草稿微舱。 |
@@ -516,19 +518,22 @@
 
 ---
 
-## 五、 构建与自动化真机测试 (E2E Isolated Test)
+## 五、 构建与隔离自动化检查
 
-本项目配备全自动化真机隔离靶场验证机制（在独立临时端口 `43988` 拉起专用沙箱内核开展真实调用，绝不污染用户真实笔记）：
+本项目配备隔离环境自动化检查（在唯一临时工作区与随机端口启动专用内核；不结束生产进程、不读取或清理生产离线队列）：
 
 ```bash
 # 编译最新单文件独立可执行程序
 node build-desktop.mjs
 
-# 执行全量 242 项端到端隔离真机自动化验收
+# 执行隔离环境自动化检查（包含内核/API、核心逻辑和静态结构断言）
 pnpm e2e:isolated
+
+# 使用独立 headless Chrome 检查 1280 / 920 / 880 宽度下布局与键盘交互
+npm run test:ui:headless
 ```
 
-### 自动化验收覆盖面（242 / 242 PASS · 100% 通过）：
+### 自动化检查覆盖面
 1. 隔离思源 3.8.9 内核冷启动与笔记本绑定；
 2. 单条速记、30 秒防碎块粘滞合并、前台应用环境与 URL 溯源注水；
 3. Lifelog 账目 (`¥`)、专注区间 (`~45m`)、习惯打卡 (`+water`) 自动时序分流；
@@ -606,17 +611,19 @@ pnpm e2e:isolated
 
 ---
 
-## 七、 自动化端到端隔离真机验收 (E2E Testbench)
+## 七、 隔离自动化检查 (E2E Testbench)
 
-为确保在极端脱机、异常并发及重度生产环境下零崩溃，思源外骨骼自带完备的端到端隔离自动化测试套件 (`scripts/e2e-isolated.mjs`)：
+思源外骨骼自带隔离自动化检查脚本 (`scripts/e2e-isolated.mjs`)。每次运行会报告实际执行的检查数量；检查混合了隔离内核/API、C# 核心逻辑和源码结构断言，不代表相同数量的真实桌面交互：
 
 ```bash
-# 启动专用隔离内核沙箱 (Port: 43988) 自动化验收
+# 启动专用隔离内核沙箱 (随机端口) 自动化检查
 pnpm e2e:isolated
 ```
 
-- **217 项核心能力断言 100% PASS**：覆盖冷启动、30秒粘滞防碎块、上下文环境注水、意图分流（待办/闪卡）、FSRS 评级闭环、原生块检索、双链认知雷达、健康体检、全库附件检索、3D PDF 断行自愈、6大平台去噪、Office/EPUB/XMind流式透视、音视频时间戳笔记、纯净代码提取、Quicker Webhook 回路、数据表格类型推导与AV映射、本地PDF页码锚点感知、CLI 调度器、异构笔记语法对齐(Obsidian/Logseq)、智能超链嵌入(Smart Paste URL)、变量命名法转换、双向反链与图谱雷达、全景待办视界与Checklist导出、浮墨漫游回顾、离线队列管理、本地浏览器书签穿透检索、学术文献国标著录(GB/T 7714 & APA)与BibTeX生成、桌面心流计时器与自动时序沉淀、剪贴板历史批量合并排版、悬空死链深度诊断、外部Markdown与CSV直投、多语言源码结构化入库、双链自动重定向自愈、独立HTML网页导出、Word批注逆向注入与回写、PPT演讲备注晚绑定监听、桌面边缘托放中枢智能路由、活便签智能粘贴管道、外部富文本图文无损复制(CF_HTML与Base64图片内嵌)、双击Ctrl极速呼出微控激活器、长文认知阅读字数与耗时智能预估、知识卡片SVG长图生成、多屏幕多DPI自愈吸附、外部Markdown知识库镜像透视、知识库隐私敏感脱敏(PrivacySanitizer)、全库52周时序热力图(HabitHeatmapGenerator)、双向知识网络星轨拓扑图谱(GraphVisualizer)、全景网站收藏中枢(WebBookmarkHub)、本地文件夹收藏与#32770对话框秒跳穿透(FolderBookmarkHub)、底栏番茄钟生态感知(DockTomatoBridge)、Actionable PKM任务专注结绳闭环、思源脱敏配置预设管理(SiYuanProfileHub)、全景通知事件流与15s去重(OmniNotificationHub)、全景待办四象限大看板(tasks-kanban-modal)、52周年度热力大画廊(heatmap-gallery-modal)、通知中心独立视窗(notification-center-modal)、全景网站与工程文件夹大图标启动台(launchpad-modal)、剪贴板多选碎片拼版工作台(clip-studio-modal)、双向知识网络星轨拓扑全景大视窗(graph-modal)、思源常用配置预设与大模型驱动中枢(profile-hub-modal)、系统全库综合体检与死链清道夫(system-doctor-modal)、外部知识库与Markdown目录镜像透视工作台(vault-mirror-modal)、全景大纲与交互思维导图独立大工作台(outline-mindmap-modal)、全库数据表格与属性视图透视矩阵大工作台(table-grid-modal)、全库代码片段与多语言纯净源码工作台(code-studio-modal)、顶栏九宫格工作台矩阵(studio-switcher-popover)、全局统一模态栈四级Esc回退(ModalStackManager)、暗夜黑曜内联表单与原生目录浏览(InlineFormModal + FolderBrowserDialog)及断网离线队列回写；
-- **真实守护进程保护**：测试全程在独立沙箱与避让端口执行，自动化完成后即刻无感恢复生产版守护进程。
+- 检查包含冷启动、速记写入、意图分流、搜索、文件处理、Webhook、写回和离线队列等路径。运行报告应区分隔离内核/API、逻辑检查、静态结构断言与真实 Windows/WebView2 用户交互；真实主机和外部提供方验收需另行记录。
+- 测试使用随机临时工作区、独立应用数据目录、随机内核与 Webhook 端口；隔离模式跳过系统协议、资源管理器菜单、全局热键、鼠标钩子和托盘注册，退出时只结束本次启动的子进程并清理本次临时目录。
+- `XIAOLV_WORKSPACE_DIR` 指定隔离测试的本地工作区；显式 `SIYUAN_URL` 不会借用生产令牌或资产路径。测试配置和书签使用虚构样本，音效关闭；涉及系统注册、全局输入和外部应用启动的检查仅验证静态契约，实际桌面联动需单独验收。
+- 请串行运行隔离 E2E；测试实例的 IPC 管道与互斥锁尚未按每次运行区分。`test:ui:headless` 使用独立 Chrome 配置与后台页面，可检查 Tab 顺序、模态输入隔离、队列失败反馈及 880/920/1280 视口布局。
 
 ---
 

@@ -124,10 +124,12 @@ public static class SmartCaptureMain
 
         if (string.IsNullOrWhiteSpace(syUrl))
         {
-            XiaoLv.Desktop.Core.OfflineQueueManager.EnqueueNote(text, windowTitle);
-            SafeContext.Set(context, "是否成功", true);
+            bool queued = XiaoLv.Desktop.Core.OfflineQueueManager.EnqueueNote(text, windowTitle);
+            SafeContext.Set(context, "是否成功", queued);
             SafeContext.Set(context, "需要通知", true);
-            SafeContext.Set(context, "通知反馈", "✓ 思源未启动，速记已安全进入离岸队列，思源启动后自动补录入库！");
+            SafeContext.Set(context, "通知反馈", queued
+                ? "✓ 思源未启动，速记已加密存入离岸队列，思源启动后自动补录入库。"
+                : "❌ 思源未启动，离岸队列写入失败；请检查磁盘空间和权限后重试。");
             return;
         }
 
@@ -135,20 +137,24 @@ public static class SmartCaptureMain
         var kernelProbe = SyKernelRequest.DoRequest(syUrl, token, "/api/system/version", "{}");
         if (!kernelProbe.Success)
         {
-            XiaoLv.Desktop.Core.OfflineQueueManager.EnqueueNote(text, windowTitle);
-            SafeContext.Set(context, "是否成功", true);
+            bool queued = XiaoLv.Desktop.Core.OfflineQueueManager.EnqueueNote(text, windowTitle);
+            SafeContext.Set(context, "是否成功", queued);
             SafeContext.Set(context, "需要通知", true);
-            SafeContext.Set(context, "通知反馈", "✓ 思源未就绪或暂时离线，笔记已自动存入离岸安全队列，上线后自动同步！");
+            SafeContext.Set(context, "通知反馈", queued
+                ? "✓ 思源暂时离线，笔记已加密存入离岸队列，上线后自动同步。"
+                : "❌ 思源暂时离线，离岸队列写入失败；请检查磁盘空间和权限后重试。");
             return;
         }
 
         diaryNotebookId = SafeContext.GetDiaryNotebookId(context, syUrl, token);
         if (string.IsNullOrEmpty(diaryNotebookId))
         {
-            XiaoLv.Desktop.Core.OfflineQueueManager.EnqueueNote(text, windowTitle);
-            SafeContext.Set(context, "是否成功", true);
+            bool queued = XiaoLv.Desktop.Core.OfflineQueueManager.EnqueueNote(text, windowTitle);
+            SafeContext.Set(context, "是否成功", queued);
             SafeContext.Set(context, "需要通知", true);
-            SafeContext.Set(context, "通知反馈", "✓ 思源未就绪或暂时不可达，笔记已自动存入离线安全队列，恢复后自动同步！");
+            SafeContext.Set(context, "通知反馈", queued
+                ? "✓ 思源暂时不可达，笔记已加密存入离岸队列，恢复后自动同步。"
+                : "❌ 思源暂时不可达，离岸队列写入失败；请检查磁盘空间和权限后重试。");
             return;
         }
 
@@ -485,10 +491,12 @@ public static class SmartCaptureMain
             }
             else
             {
-                XiaoLv.Desktop.Core.OfflineQueueManager.EnqueueNote(text, windowTitle);
-                SafeContext.Set(context, "是否成功", true);
+                bool queued = XiaoLv.Desktop.Core.OfflineQueueManager.EnqueueNote(text, windowTitle);
+                SafeContext.Set(context, "是否成功", queued);
                 SafeContext.Set(context, "需要通知", true);
-                SafeContext.Set(context, "通知反馈", "✓ 思源文件锁冲突，待办已安全转入离线队列自动补录！");
+                SafeContext.Set(context, "通知反馈", queued
+                    ? "✓ 思源写入失败，待办已加密存入离岸队列并等待重试。"
+                    : "❌ 思源写入失败，离岸队列也无法保存待办；请立即复制内容并检查磁盘权限。");
                 return;
             }
         }
@@ -792,10 +800,12 @@ public static class SmartCaptureMain
 
         if (!appOk)
         {
-            XiaoLv.Desktop.Core.OfflineQueueManager.EnqueueNote(text, windowTitle);
-            SafeContext.Set(context, "是否成功", true);
+            bool queued = XiaoLv.Desktop.Core.OfflineQueueManager.EnqueueNote(text, windowTitle);
+            SafeContext.Set(context, "是否成功", queued);
             SafeContext.Set(context, "需要通知", true);
-            SafeContext.Set(context, "通知反馈", "✓ 思源未就绪或暂时不可达，笔记已自动存入离线安全队列，恢复后自动同步！");
+            SafeContext.Set(context, "通知反馈", queued
+                ? "✓ 思源暂时不可达，笔记已加密存入离岸队列，恢复后自动同步。"
+                : "❌ 思源暂时不可达，离岸队列写入失败；请检查磁盘空间和权限后重试。");
             return;
         }
 

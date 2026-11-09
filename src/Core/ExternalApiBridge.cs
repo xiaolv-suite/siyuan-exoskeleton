@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -21,6 +22,7 @@ namespace XiaoLv.Desktop.Core
         private static Thread _listenThread;
         private static bool _isRunning = false;
         private static int _activePort = 43989;
+        private static string _authenticationToken = "";
 
         public static int ActivePort { get { return _activePort; } }
         public static bool IsRunning { get { return _isRunning; } }
@@ -31,18 +33,26 @@ namespace XiaoLv.Desktop.Core
         /// <summary>
         /// 启动本地 Webhook 监听服务
         /// </summary>
-        public static void Start(int port = 43989)
+        public static void Start(int port = 43989, string token = null)
         {
             if (_isRunning) return;
 
+            string authenticationToken = token ?? AppSettings.Instance.WebhookToken;
+            if (string.IsNullOrWhiteSpace(authenticationToken))
+            {
+                Logger.Info("ExternalApiBridge start rejected because no authentication token is configured.");
+                return;
+            }
+
             // 隔离沙箱环境下自动避让为 43990 端口，杜绝与生产环境守护进程端口争抢
             var isIsolated = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SIYUAN_URL"));
-            if (isIsolated && port == 43989)
+            if (isIsolated && port == 43989 && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("XIAOLV_WEBHOOK_PORT")))
             {
                 port = 43990;
             }
 
             _activePort = port;
+            _authenticationToken = authenticationToken;
 
             try
             {
@@ -73,6 +83,7 @@ namespace XiaoLv.Desktop.Core
         public static void Stop()
         {
             _isRunning = false;
+            _authenticationToken = "";
             try
             {
                 if (_listener != null)
@@ -112,41 +123,47 @@ namespace XiaoLv.Desktop.Core
 
             try
             {
-                // 1. 设置跨域与本地安全响应头
-                resp.Headers.Add("Access-Control-Allow-Origin", "*");
-                resp.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-                resp.Headers.Add("Access-Control-Allow-Headers", "Content-Type, X-Token, Authorization");
+                // Browser access is limited to loopback origins; native automation does not send Origin.
+                string origin = req.Headers["Origin"];
+                Uri originUri;
+                if (!string.IsNullOrEmpty(origin) && Uri.TryCreate(origin, UriKind.Absolute, out originUri) &&
+                    originUri.IsLoopback && originUri.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    resp.Headers["Access-Control-Allow-Origin"] = origin;
+                    resp.Headers["Vary"] = "Origin";
+                    resp.Headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
+                    resp.Headers["Access-Control-Allow-Headers"] = "Content-Type, X-Token, Authorization";
+                }
 
                 if (req.HttpMethod.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
                 {
-                    resp.StatusCode = 200;
+                    resp.StatusCode = string.IsNullOrEmpty(resp.Headers["Access-Control-Allow-Origin"]) ? 403 : 200;
                     resp.Close();
                     return;
                 }
 
-                // 2. 本地安全令牌校验 (若配置了 WebhookToken)
-                string configuredToken = AppSettings.Instance.WebhookToken;
-                if (!string.IsNullOrEmpty(configuredToken))
+                // 2. Authentication is mandatory, including when settings are changed at runtime.
+                string configuredToken = _authenticationToken;
+                if (string.IsNullOrWhiteSpace(configuredToken))
                 {
-                    string headerToken = req.Headers["X-Token"];
-                    if (string.IsNullOrEmpty(headerToken))
-                    {
-                        string auth = req.Headers["Authorization"];
-                        if (!string.IsNullOrEmpty(auth) && auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-                        {
-                            headerToken = auth.Substring(7).Trim();
-                        }
-                    }
-                    if (string.IsNullOrEmpty(headerToken))
-                    {
-                        headerToken = req.QueryString["token"];
-                    }
+                    WriteJsonResponse(resp, 503, new { code = 503, msg = "Webhook 未配置安全令牌，服务不可用" });
+                    return;
+                }
 
-                    if (headerToken != configuredToken)
+                string headerToken = req.Headers["X-Token"];
+                if (string.IsNullOrEmpty(headerToken))
+                {
+                    string auth = req.Headers["Authorization"];
+                    if (!string.IsNullOrEmpty(auth) && auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
                     {
-                        WriteJsonResponse(resp, 401, new { code = 401, msg = "未提供有效本地安全鉴权令牌 (Unauthorized)" });
-                        return;
+                        headerToken = auth.Substring(7).Trim();
                     }
+                }
+
+                if (!FixedTimeTokenEquals(headerToken, configuredToken))
+                {
+                    WriteJsonResponse(resp, 401, new { code = 401, msg = "未提供有效本地安全鉴权令牌 (Unauthorized)" });
+                    return;
                 }
 
                 // 3. 路由匹配
@@ -410,6 +427,20 @@ namespace XiaoLv.Desktop.Core
                     WriteJsonResponse(resp, 500, new { code = 500, msg = "内部处理异常: " + ex.Message });
                 }
                 catch { }
+            }
+        }
+
+        private static bool FixedTimeTokenEquals(string supplied, string configured)
+        {
+            if (string.IsNullOrEmpty(supplied) || string.IsNullOrEmpty(configured)) return false;
+
+            using (var sha = SHA256.Create())
+            {
+                byte[] left = sha.ComputeHash(Encoding.UTF8.GetBytes(supplied));
+                byte[] right = sha.ComputeHash(Encoding.UTF8.GetBytes(configured));
+                int difference = 0;
+                for (int i = 0; i < left.Length; i++) difference |= left[i] ^ right[i];
+                return difference == 0;
             }
         }
 
@@ -833,7 +864,14 @@ namespace XiaoLv.Desktop.Core
 		                ThreadPool.QueueUserWorkItem(async s =>
 		                {
 		                    bool ok = await SiYuanProfileHub.SaveProfileAsync(entry);
-		                    WriteJsonResponse(resp, 200, new { code = ok ? 0 : 1, msg = ok ? "配置预设已保存" : "保存失败", entry = entry });
+		                    WriteJsonResponse(resp, 200, new
+                            {
+                                code = ok ? 0 : 1,
+                                msg = ok
+                                    ? (entry.IsLocalOnly ? "配置仅保存在本机；思源暂不可达，尚未写入思源文档" : "配置预设已保存")
+                                    : "保存失败",
+                                entry = entry
+                            });
 		                });
 		                return;
 		            }

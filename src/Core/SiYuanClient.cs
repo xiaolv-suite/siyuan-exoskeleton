@@ -49,7 +49,21 @@ namespace XiaoLv.Desktop.Core
         private static string _discoveredWorkspaceDir = @"D:\SIYUAN";
         public static string DiscoveredWorkspaceDir
         {
-            get { return _discoveredWorkspaceDir; }
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SIYUAN_URL")))
+                {
+                    var explicitWorkspace = Environment.GetEnvironmentVariable("XIAOLV_WORKSPACE_DIR");
+                    if (string.IsNullOrWhiteSpace(explicitWorkspace) || !Path.IsPathRooted(explicitWorkspace)) return "";
+                    try
+                    {
+                        var resolvedWorkspace = Path.GetFullPath(explicitWorkspace);
+                        return Directory.Exists(resolvedWorkspace) ? resolvedWorkspace : "";
+                    }
+                    catch { return ""; }
+                }
+                return _discoveredWorkspaceDir;
+            }
             private set { _discoveredWorkspaceDir = value; }
         }
 
@@ -57,9 +71,19 @@ namespace XiaoLv.Desktop.Core
         {
             get
             {
+                bool explicitConnection = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SIYUAN_URL"));
+                string workspace = DiscoveredWorkspaceDir;
+                if (explicitConnection)
+                {
+                    if (string.IsNullOrEmpty(workspace))
+                    {
+                        throw new InvalidOperationException("SIYUAN_URL requires an existing absolute XIAOLV_WORKSPACE_DIR for local workspace access.");
+                    }
+                    return Path.Combine(workspace, "data", "assets");
+                }
                 try
                 {
-                    var dir = Path.Combine(DiscoveredWorkspaceDir, "data", "assets");
+                    var dir = Path.Combine(workspace, "data", "assets");
                     if (Directory.Exists(dir)) return dir;
                 }
                 catch { }
@@ -107,9 +131,10 @@ namespace XiaoLv.Desktop.Core
                 // 1. 系统环境变量显式指定（沙箱隔离靶场优先）
                 var envUrl = Environment.GetEnvironmentVariable("SIYUAN_URL");
                 var envTok = Environment.GetEnvironmentVariable("SIYUAN_TOKEN");
-                if (!string.IsNullOrEmpty(envUrl) && !string.IsNullOrEmpty(envTok))
+                if (!string.IsNullOrWhiteSpace(envUrl))
                 {
-                    return new SiYuanConnection { Url = envUrl.TrimEnd('/'), Token = envTok.Trim() };
+                    // An explicit endpoint must never borrow credentials or a workspace from a production installation.
+                    return new SiYuanConnection { Url = envUrl.Trim().TrimEnd('/'), Token = (envTok ?? "").Trim() };
                 }
 
                 int now = Environment.TickCount;

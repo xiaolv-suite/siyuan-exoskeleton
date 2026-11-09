@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
-const ROOT = 'D:/思源插件/思源小驴桌面助手';
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 const CSC = 'C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe';
 const WPF_DIR = 'C:/Windows/Microsoft.NET/Framework64/v4.0.30319/WPF';
 const NET_DIR = 'C:/Windows/Microsoft.NET/Framework64/v4.0.30319';
@@ -10,63 +11,19 @@ const NET_DIR = 'C:/Windows/Microsoft.NET/Framework64/v4.0.30319';
 const outDir = path.join(ROOT, 'bin/Release');
 fs.mkdirSync(outDir, { recursive: true });
 
-// 1. Gracefully terminate running instances if any & sweep ghost tray icons
-try {
-  execSync('chcp 65001 > nul && taskkill /F /T /IM "思源外骨骼.exe" & taskkill /F /T /IM "思源小驴.exe"', { stdio: "ignore" });
-  // 扫清任务栏与溢出托盘中的幽灵图标
-  const sweepScript = `
-    Add-Type -TypeDefinition @'
-    using System; using System.Runtime.InteropServices;
-    public class TC {
-      [DllImport(\"user32.dll\")] public static extern IntPtr FindWindow(string c, string w);
-      [DllImport(\"user32.dll\")] public static extern IntPtr FindWindowEx(IntPtr p, IntPtr a, string c, string w);
-      [DllImport(\"user32.dll\")] public static extern bool GetClientRect(IntPtr h, out RECT r);
-      [DllImport(\"user32.dll\")] public static extern IntPtr SendMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
-      [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
-      public static void S() {
-        IntPtr t = FindWindow(\"Shell_TrayWnd\", null);
-        if (t != IntPtr.Zero) {
-          IntPtr n = FindWindowEx(t, IntPtr.Zero, \"TrayNotifyWnd\", null);
-          if (n != IntPtr.Zero) {
-            IntPtr p = FindWindowEx(n, IntPtr.Zero, \"SysPager\", null);
-            IntPtr b = FindWindowEx(p != IntPtr.Zero ? p : n, IntPtr.Zero, \"ToolbarWindow32\", null);
-            if (b != IntPtr.Zero) W(b);
-          }
-        }
-        IntPtr o = FindWindow(\"NotifyIconOverflowWindow\", null);
-        if (o != IntPtr.Zero) {
-          IntPtr b = FindWindowEx(o, IntPtr.Zero, \"ToolbarWindow32\", null);
-          if (b != IntPtr.Zero) W(b);
-        }
-      }
-      private static void W(IntPtr b) {
-        RECT r; if (GetClientRect(b, out r)) {
-          for (int x = 2; x < r.R; x += 6) {
-            for (int y = 2; y < r.B; y += 6) {
-              SendMessage(b, 0x0200, IntPtr.Zero, (IntPtr)((y << 16) | (x & 0xFFFF)));
-            }
-          }
-        }
-      }
-    }
-'@ -ErrorAction SilentlyContinue; [TC]::S();
-  `;
-  execSync(`powershell.exe -NoProfile -Command "${sweepScript.replace(/\r?\n/g, ' ')}"`, { stdio: "ignore" });
-} catch {}
-
-// 2. Sync WebView2 loose dependencies for directory mode
+// 1. Sync WebView2 loose dependencies for directory mode
 const libDir = path.join(ROOT, 'lib');
 fs.readdirSync(libDir).forEach(f => {
   fs.copyFileSync(path.join(libDir, f), path.join(outDir, f));
 });
 
-// 3. Sync loose assets folder for rapid live reload mode
+// 2. Sync loose assets folder for rapid live reload mode
 const assetsDst = path.join(outDir, 'assets');
 fs.mkdirSync(assetsDst, { recursive: true });
 const assetsSrc = path.join(ROOT, 'assets');
 fs.cpSync(assetsSrc, assetsDst, { recursive: true });
 
-// 4. Compress assets into assets.zip for embedded single-file self-extract mode
+// 3. Compress assets into assets.zip for embedded single-file self-extract mode
 const assetsZip = path.join(ROOT, 'assets.zip');
 console.log('Packing assets.zip for single-file embedding...');
 execSync(`powershell -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; if(Test-Path '${assetsZip}') { Remove-Item '${assetsZip}' -Force }; [System.IO.Compression.ZipFile]::CreateFromDirectory('${assetsSrc}', '${assetsZip}')"`);

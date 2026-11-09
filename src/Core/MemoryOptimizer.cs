@@ -67,25 +67,8 @@ namespace XiaoLv.Desktop.Core
                 EmptyWorkingSet(currentProcessHandle);
                 SetProcessWorkingSetSize(currentProcessHandle, (IntPtr)(-1), (IntPtr)(-1));
 
-                // 3. 递归修剪本应用派生出的所有 WebView2 子进程物理工作集 (msedgewebview2.exe)
-                try
-                {
-                    int myPid = Process.GetCurrentProcess().Id;
-                    var wvProcs = Process.GetProcessesByName("msedgewebview2");
-                    foreach (var wp in wvProcs)
-                    {
-                        try
-                        {
-                            using (wp)
-                            {
-                                EmptyWorkingSet(wp.Handle);
-                                SetProcessWorkingSetSize(wp.Handle, (IntPtr)(-1), (IntPtr)(-1));
-                            }
-                        }
-                        catch { }
-                    }
-                }
-                catch { }
+                // WebView2 resources are suspended through this application's window instances.
+                // A process-name match cannot establish ownership of other applications' renderers.
             }
             catch { }
         }

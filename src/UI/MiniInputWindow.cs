@@ -80,8 +80,10 @@ namespace XiaoLv.Desktop.UI
                             }
                             else if (ext == ".mp3" || ext == ".wav" || ext == ".m4a")
                             {
-                                _inputBox.Text = "🎙️ 录音: " + System.IO.Path.GetFileName(f) + "\n" + f;
-                                _statusBadgeText.Text = "🎙️ 已挂载录音文件";
+                                string audioName = System.IO.Path.GetFileName(f);
+                                string audioLink = "[🎙️ 录音: " + audioName + "](" + f + ") ";
+                                InsertAttachmentAtCaret(audioLink);
+                                _statusBadgeText.Text = "🎙️ 已附加录音文件";
                             }
                             else
                             {
@@ -747,6 +749,14 @@ namespace XiaoLv.Desktop.UI
             _inputBox.Focus();
         }
 
+        private void InsertAttachmentAtCaret(string attachment)
+        {
+            if (_inputBox == null || string.IsNullOrEmpty(attachment)) return;
+            int caret = Math.Max(0, Math.Min(_inputBox.CaretIndex, _inputBox.Text.Length));
+            _inputBox.Text = _inputBox.Text.Insert(caret, attachment);
+            _inputBox.CaretIndex = caret + attachment.Length;
+        }
+
         private void ToggleTodo()
         {
             string cur = (_inputBox.Text ?? "").Trim();
@@ -1251,9 +1261,11 @@ namespace XiaoLv.Desktop.UI
                 if (!string.IsNullOrEmpty(txt))
                 {
                     string safeTitle = !string.IsNullOrEmpty(title) ? title : "便签模板";
-                    SnippetExpansionEngine.AddCustomSnippet(":" + Math.Abs(safeTitle.GetHashCode() % 1000), safeTitle, txt);
-                    win._statusBadgeText.Text = "✓ 已加入常用模板！";
-                    SoundPlayerHelper.PlayFeedback();
+                    bool added = SnippetExpansionEngine.AddCustomSnippet(":" + Math.Abs(safeTitle.GetHashCode() % 1000), safeTitle, txt);
+                    win._statusBadgeText.Text = added
+                        ? "✓ 已加入常用模板！"
+                        : "❌ 模板保存失败，请检查磁盘空间或权限。";
+                    if (added) SoundPlayerHelper.PlayFeedback();
                 }
             });
 

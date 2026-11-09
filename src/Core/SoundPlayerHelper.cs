@@ -16,6 +16,7 @@ namespace XiaoLv.Desktop.Core
 
         public static void PlayFeedback()
         {
+            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SIYUAN_URL"))) return;
             if (!AppSettings.Instance.SoundFeedbackEnabled) return;
 
             ThreadPool.QueueUserWorkItem(state =>

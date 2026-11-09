@@ -200,11 +200,19 @@ namespace XiaoLv.Desktop.Core
         public static int AutoHealConflictingHotkeys()
         {
             int healed = 0;
+            var s = AppSettings.Instance;
+            if (s == null) return 0;
+
+            string oldMaster = s.MasterHotKey;
+            string oldPen = s.PenHotKey;
+            string oldOcr = s.OcrHotKey;
+            string oldQuick = s.QuickHotKey;
+            string oldFsrs = s.FsrsHotKey;
+            string oldClip = s.ClipHotKey;
             try
             {
                 var reports = HotkeyConflictManager.DiagnoseAllHotkeys();
-                var s = AppSettings.Instance;
-                if (reports == null || s == null) return 0;
+                if (reports == null) return 0;
 
                 foreach (var r in reports)
                 {
@@ -225,11 +233,37 @@ namespace XiaoLv.Desktop.Core
 
                 if (healed > 0)
                 {
-                    s.Save();
+                    if (!s.Save())
+                    {
+                        RestoreHotkeys(s, oldMaster, oldPen, oldOcr, oldQuick, oldFsrs, oldClip);
+                        return -1;
+                    }
+                    if (!XiaoLv.Desktop.Program.ReRegisterConfiguredHotKeys())
+                    {
+                        RestoreHotkeys(s, oldMaster, oldPen, oldOcr, oldQuick, oldFsrs, oldClip);
+                        s.Save();
+                        return -1;
+                    }
                 }
             }
-            catch { }
+            catch
+            {
+                RestoreHotkeys(s, oldMaster, oldPen, oldOcr, oldQuick, oldFsrs, oldClip);
+                s.Save();
+                XiaoLv.Desktop.Program.ReRegisterConfiguredHotKeys();
+                return -1;
+            }
             return healed;
+        }
+
+        private static void RestoreHotkeys(AppSettings settings, string master, string pen, string ocr, string quick, string fsrs, string clip)
+        {
+            settings.MasterHotKey = master;
+            settings.PenHotKey = pen;
+            settings.OcrHotKey = ocr;
+            settings.QuickHotKey = quick;
+            settings.FsrsHotKey = fsrs;
+            settings.ClipHotKey = clip;
         }
     }
 }

@@ -49,19 +49,28 @@ namespace XiaoLv.Desktop.Core
                         currentOnline = res.Success;
                     }
 
-                    // 状态流转检测：如果从离线变成在线
-                    if (currentOnline && !_lastOnlineState)
+                    // Retry pending records whenever the kernel is reachable; short outages may fall between heartbeats.
+                    int queuedCount = OfflineQueueManager.GetQueueCount();
+                    if (queuedCount < 0)
                     {
-                        if (OfflineQueueManager.GetQueueCount() > 0)
+                        Logger.Error("SiYuanGuardian cannot inspect the offline queue; preserving the file and skipping flush.");
+                    }
+                    if (currentOnline && queuedCount > 0)
+                    {
+                        if (!_lastOnlineState)
                         {
                             Thread.Sleep(1200); // 稍等内核完全就绪
-                            OfflineQueueManager.FlushQueue(syUrl, token, NotifyCallback);
                         }
+                        bool flushed = OfflineQueueManager.FlushQueue(syUrl, token, NotifyCallback);
+                        Logger.Info("SiYuanGuardian checked " + queuedCount + " queued records; flush result=" + flushed);
                     }
 
                     _lastOnlineState = currentOnline;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Logger.Error("SiYuanGuardian monitor iteration failed", ex);
+                }
 
                 // 每 6 秒做一次极轻量的低频心跳
                 for (int i = 0; i < 60 && _isRunning; i++)

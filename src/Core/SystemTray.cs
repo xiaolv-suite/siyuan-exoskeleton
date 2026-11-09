@@ -132,10 +132,19 @@ namespace XiaoLv.Desktop.Core
             itemPopClip.Click += (s, e) =>
             {
                 bool newState = !itemPopClip.Checked;
+                bool oldState = SelectionHelper.AutoFloatEnabled;
+                bool oldSetting = AppSettings.Instance.AutoFloatEnabled;
                 SelectionHelper.AutoFloatEnabled = newState;
                 itemPopClip.Checked = newState;
                 AppSettings.Instance.AutoFloatEnabled = newState;
-                AppSettings.Instance.Save();
+                if (!AppSettings.Instance.Save())
+                {
+                    SelectionHelper.AutoFloatEnabled = oldState;
+                    itemPopClip.Checked = oldState;
+                    AppSettings.Instance.AutoFloatEnabled = oldSetting;
+                    ShowNotice("思源外骨骼", "❌ PopClip 设置未能保存，已恢复原状态。请检查磁盘空间和权限。");
+                    return;
+                }
                 ShowNotice("思源外骨骼", newState ? "已开启 PopClip 模式：任意软件划选文字自动浮现胶囊！" : "已关闭 PopClip 模式：仅在按快捷键时呼出。");
             };
 
@@ -144,10 +153,19 @@ namespace XiaoLv.Desktop.Core
             itemSmartClip.Click += (s, e) =>
             {
                 bool newState = !itemSmartClip.Checked;
+                bool oldState = ClipboardWatcher.IsEnabled;
+                bool oldSetting = AppSettings.Instance.SmartClipboardEnabled;
                 ClipboardWatcher.IsEnabled = newState;
                 itemSmartClip.Checked = newState;
                 AppSettings.Instance.SmartClipboardEnabled = newState;
-                AppSettings.Instance.Save();
+                if (!AppSettings.Instance.Save())
+                {
+                    ClipboardWatcher.IsEnabled = oldState;
+                    itemSmartClip.Checked = oldState;
+                    AppSettings.Instance.SmartClipboardEnabled = oldSetting;
+                    ShowNotice("思源外骨骼", "❌ 剪贴板感知设置未能保存，已恢复原状态。请检查磁盘空间和权限。");
+                    return;
+                }
                 ShowNotice("思源外骨骼", newState ? "已开启智能剪贴板感知：复制链接/表格/代码自动提纯与结构化！" : "已关闭智能剪贴板感知。");
             };
 
@@ -193,10 +211,23 @@ namespace XiaoLv.Desktop.Core
             itemAutoStart.Click += (s, e) =>
             {
                 bool newState = !itemAutoStart.Checked;
-                SetAutoStart(newState);
+                var settings = AppSettings.Instance;
+                bool oldSetting = settings.AutoStart;
+                if (!SetAutoStart(newState))
+                {
+                    ShowNotice("思源外骨骼", "❌ 开机启动注册失败，设置未更改。");
+                    return;
+                }
+                settings.AutoStart = newState;
+                if (!settings.Save())
+                {
+                    SetAutoStart(oldSetting);
+                    settings.AutoStart = oldSetting;
+                    itemAutoStart.Checked = oldSetting;
+                    ShowNotice("思源外骨骼", "❌ 开机启动设置未能保存，已恢复原状态。");
+                    return;
+                }
                 itemAutoStart.Checked = newState;
-                AppSettings.Instance.AutoStart = newState;
-                AppSettings.Instance.Save();
                 ShowNotice("思源外骨骼", newState ? "已开启开机自启！" : "已关闭开机自启。");
             };
 
@@ -352,13 +383,13 @@ namespace XiaoLv.Desktop.Core
             catch { return false; }
         }
 
-        public static void SetAutoStart(bool enable)
+        public static bool SetAutoStart(bool enable)
         {
             try
             {
-                using (var key = Registry.CurrentUser.OpenSubKey(RUN_KEY, true))
+                using (var key = Registry.CurrentUser.CreateSubKey(RUN_KEY))
                 {
-                    if (key == null) return;
+                    if (key == null) return false;
                     if (enable)
                     {
                         var exe = Application.ExecutablePath;
@@ -368,9 +399,14 @@ namespace XiaoLv.Desktop.Core
                     {
                         key.DeleteValue(APP_NAME, false);
                     }
+                    return IsAutoStartEnabled() == enable;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.Error("Updating auto-start registration failed", ex);
+                return false;
+            }
         }
 
         public void Dispose()

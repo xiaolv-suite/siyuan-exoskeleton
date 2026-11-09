@@ -43,6 +43,15 @@ namespace XiaoLv.Desktop.Core
         {
             try
             {
+                var isolatedDataDir = Environment.GetEnvironmentVariable("XIAOLV_DATA_DIR");
+                if (!string.IsNullOrWhiteSpace(isolatedDataDir))
+                {
+                    var fullIsolatedDataDir = Path.GetFullPath(isolatedDataDir);
+                    if (!Directory.Exists(fullIsolatedDataDir)) Directory.CreateDirectory(fullIsolatedDataDir);
+                    _isPortableMode = false;
+                    return fullIsolatedDataDir;
+                }
+
                 // 0. 隔离靶场优先：若环境变量指定 SIYUAN_URL，为保持 E2E 隔离靶场一致性，使用 AppData 模式
                 if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SIYUAN_URL")))
                 {

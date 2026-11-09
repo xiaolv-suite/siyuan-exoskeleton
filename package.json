@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node build-desktop.mjs",
+    "test:ui:headless": "node scripts/ui-headless-smoke.mjs",
     "e2e:isolated": "node scripts/e2e-isolated.mjs",
     "test:isolated": "node scripts/e2e-isolated.mjs",
     "test:isolated:keep": "node scripts/e2e-isolated.mjs --keep"

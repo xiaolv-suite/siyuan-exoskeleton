@@ -65,6 +65,33 @@ namespace XiaoLv.Desktop.UI
         public event Action<string> OnSaveSettingsRequested;
         public event Action<string, string> OnNotificationRequested;
 
+        public void NotifyDesktopSettingsSaved(bool success, string error = null, bool? webhookEnabled = null, string warning = null)
+        {
+            if (_webView == null || _webView.CoreWebView2 == null) return;
+            var payload = JsonHelper.ToJson(new { success = success, error = error, webhookEnabled = webhookEnabled, warning = warning });
+            _webView.CoreWebView2.ExecuteScriptAsync("if(window.onDesktopSettingsSaved) window.onDesktopSettingsSaved(" + payload + ");");
+        }
+
+        private void NotifyOfflineQueueReadFailure(Exception ex, string operation = "get")
+        {
+            Logger.Error("Offline queue UI request failed; queue data was not changed", ex);
+            try
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (_webView != null && _webView.CoreWebView2 != null)
+                    {
+                        var payload = JsonHelper.ToJson(new { code = 1, operation = operation, msg = "队列无法读取或更新；原文件已保留。请确认使用原 Windows 用户并检查数据目录权限。" });
+                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOfflineQueueLoaded) window.onOfflineQueueLoaded(" + payload + ");");
+                    }
+                }));
+            }
+            catch (Exception dispatchError)
+            {
+                Logger.Error("Could not report offline queue read failure to the UI", dispatchError);
+            }
+        }
+
         public BentoWindow()
         {
             Title = "思源外骨骼 · 桌面穿透工作台";
@@ -115,7 +142,10 @@ namespace XiaoLv.Desktop.UI
                                         if (_webView != null && _webView.CoreWebView2 != null)
                                         {
                                             var dropPayload = new Dictionary<string, object>();
-                                            dropPayload["success"] = true;
+                                            bool accepted = !string.IsNullOrEmpty(msg) && msg.StartsWith("✓", StringComparison.Ordinal);
+                                            bool queued = accepted && (title ?? "").Contains("离岸");
+                                            dropPayload["success"] = accepted && !queued;
+                                            dropPayload["queued"] = queued;
                                             dropPayload["filePath"] = droppedFile ?? "";
                                             dropPayload["fileName"] = Path.GetFileName(droppedFile ?? "");
                                             dropPayload["docId"] = targetDoc ?? "";
@@ -232,6 +262,16 @@ namespace XiaoLv.Desktop.UI
                 }
                 catch { }
             }, null, 1000, Timeout.Infinite);
+        }
+
+        private static void RestoreHotkeySetting(AppSettings settings, string configKey, string value)
+        {
+            if (configKey == "masterHotKey") settings.MasterHotKey = value;
+            else if (configKey == "penHotKey") settings.PenHotKey = value;
+            else if (configKey == "ocrHotKey") settings.OcrHotKey = value;
+            else if (configKey == "quickHotKey") settings.QuickHotKey = value;
+            else if (configKey == "fsrsHotKey") settings.FsrsHotKey = value;
+            else if (configKey == "clipHotKey") settings.ClipHotKey = value;
         }
 
         private static Dictionary<string, string> _cachedNbMap = null;
@@ -930,11 +970,11 @@ namespace XiaoLv.Desktop.UI
                             {
                                 if (_webView != null && _webView.CoreWebView2 != null)
                                 {
-                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOfflineQueueLoaded) window.onOfflineQueueLoaded(" + JsonHelper.ToJson(new { code = 0, count = items.Count, data = items, items = items }) + ");");
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOfflineQueueLoaded) window.onOfflineQueueLoaded(" + JsonHelper.ToJson(new { code = 0, operation = "get", count = items.Count, data = items, items = items }) + ");");
                                 }
                             });
                         }
-                        catch { }
+                        catch (Exception ex) { NotifyOfflineQueueReadFailure(ex); }
                     });
                     return;
                 }
@@ -950,21 +990,17 @@ namespace XiaoLv.Desktop.UI
                             {
                                 if (OnNotificationRequested != null) OnNotificationRequested(t, m);
                             });
-                            if (ok && OnNotificationRequested != null)
-                            {
-                                OnNotificationRequested("离线缓冲队列", "✓ 离线速记已全部合流补录至今日日记！");
-                            }
                             var remainingItems = OfflineQueueManager.GetQueueItems();
                             Dispatcher.Invoke(() =>
                             {
                                 if (_webView != null && _webView.CoreWebView2 != null)
                                 {
                                     _webView.CoreWebView2.ExecuteScriptAsync(string.Format("if(window.updateOfflineQueueBadge) window.updateOfflineQueueBadge({{ count: {0} }});", remainingItems.Count));
-                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOfflineQueueLoaded) window.onOfflineQueueLoaded(" + JsonHelper.ToJson(new { code = 0, count = remainingItems.Count, data = remainingItems, items = remainingItems, flushed = ok }) + ");");
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOfflineQueueLoaded) window.onOfflineQueueLoaded(" + JsonHelper.ToJson(new { code = 0, operation = "flush", count = remainingItems.Count, data = remainingItems, items = remainingItems, flushed = ok }) + ");");
                                 }
                             });
                         }
-                        catch { }
+                        catch (Exception ex) { NotifyOfflineQueueReadFailure(ex, "flush"); }
                     });
                     return;
                 }
@@ -1854,12 +1890,14 @@ namespace XiaoLv.Desktop.UI
 										                            {
 										                                if (_webView != null && _webView.CoreWebView2 != null)
 										                                {
-										                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onProfileSaved) window.onProfileSaved(" + JsonHelper.ToJson(new { code = 0, success = ok }) + ");");
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onProfileSaved) window.onProfileSaved(" + JsonHelper.ToJson(new { code = 0, success = ok, localOnly = entry.IsLocalOnly }) + ");");
 										                                }
 										                            });
 										                            if (ok && OnNotificationRequested != null)
 										                            {
-										                                OnNotificationRequested("配置预设中枢", "✓ 预设【" + entry.Name + "】已安全脱敏沉淀至思源文档与本地缓存！");
+                                                OnNotificationRequested("配置预设中枢", entry.IsLocalOnly
+                                                    ? "✓ 预设【" + entry.Name + "】仅安全保存在本机；思源暂不可达，尚未写入思源文档。"
+                                                    : "✓ 预设【" + entry.Name + "】已安全脱敏沉淀至思源文档与本地缓存！");
 										                            }
 										                        }
 										                        catch { }
@@ -2737,11 +2775,23 @@ namespace XiaoLv.Desktop.UI
 
                 if (op.Equals("clearOfflineQueue", StringComparison.OrdinalIgnoreCase))
                 {
-                    OfflineQueueManager.ClearQueue();
-                    if (_webView != null && _webView.CoreWebView2 != null)
+                    ThreadPool.QueueUserWorkItem(s =>
                     {
-                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.updateOfflineQueueBadge) window.updateOfflineQueueBadge({ count: 0 });");
-                    }
+                        try
+                        {
+                            if (!OfflineQueueManager.ClearQueue()) throw new IOException("离线队列清空失败。");
+                            var remainingItems = OfflineQueueManager.GetQueueItems();
+                            Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                if (_webView != null && _webView.CoreWebView2 != null)
+                                {
+                                    var payload = JsonHelper.ToJson(new { code = 0, operation = "clear", count = remainingItems.Count, data = remainingItems, items = remainingItems });
+                                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.onOfflineQueueLoaded) window.onOfflineQueueLoaded(" + payload + ");");
+                                }
+                            }));
+                        }
+                        catch (Exception ex) { NotifyOfflineQueueReadFailure(ex, "clear"); }
+                    });
                     return;
                 }
 
@@ -3977,14 +4027,28 @@ namespace XiaoLv.Desktop.UI
                     if (!string.IsNullOrEmpty(cfgKey) && !string.IsNullOrEmpty(newKey))
                     {
                         var settings = AppSettings.Instance;
-                        if (cfgKey == "masterHotKey") settings.MasterHotKey = newKey;
-                        else if (cfgKey == "penHotKey") settings.PenHotKey = newKey;
-                        else if (cfgKey == "ocrHotKey") settings.OcrHotKey = newKey;
-                        else if (cfgKey == "quickHotKey") settings.QuickHotKey = newKey;
-                        else if (cfgKey == "fsrsHotKey") settings.FsrsHotKey = newKey;
-                        else if (cfgKey == "clipHotKey") settings.ClipHotKey = newKey;
+                        string oldKey = null;
+                        if (cfgKey == "masterHotKey") { oldKey = settings.MasterHotKey; settings.MasterHotKey = newKey; }
+                        else if (cfgKey == "penHotKey") { oldKey = settings.PenHotKey; settings.PenHotKey = newKey; }
+                        else if (cfgKey == "ocrHotKey") { oldKey = settings.OcrHotKey; settings.OcrHotKey = newKey; }
+                        else if (cfgKey == "quickHotKey") { oldKey = settings.QuickHotKey; settings.QuickHotKey = newKey; }
+                        else if (cfgKey == "fsrsHotKey") { oldKey = settings.FsrsHotKey; settings.FsrsHotKey = newKey; }
+                        else if (cfgKey == "clipHotKey") { oldKey = settings.ClipHotKey; settings.ClipHotKey = newKey; }
+                        if (oldKey == null) return;
 
-                        settings.Save();
+                        if (!settings.Save())
+                        {
+                            RestoreHotkeySetting(settings, cfgKey, oldKey);
+                            if (OnNotificationRequested != null) OnNotificationRequested("快捷键冲突自愈", "❌ 快捷键设置保存失败，原键位保持不变。请检查磁盘权限后重试。");
+                            return;
+                        }
+                        if (!XiaoLv.Desktop.Program.ReRegisterConfiguredHotKeys())
+                        {
+                            RestoreHotkeySetting(settings, cfgKey, oldKey);
+                            settings.Save();
+                            if (OnNotificationRequested != null) OnNotificationRequested("快捷键冲突自愈", "❌ 快捷键未能重新注册，已恢复原键位。");
+                            return;
+                        }
                         SoundPlayerHelper.PlayFeedback();
                         if (OnNotificationRequested != null)
                         {
@@ -4150,7 +4214,8 @@ namespace XiaoLv.Desktop.UI
             {
                 if (!string.IsNullOrEmpty(initialQuery))
                 {
-                    _webView.CoreWebView2.ExecuteScriptAsync(string.Format("if(window.insertPrefix) window.insertPrefix('{0}');", initialQuery.Replace("'", "\\'")));
+                    string queryJson = JsonHelper.ToJson(initialQuery);
+                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.insertPrefix) window.insertPrefix(" + queryJson + ");");
                 }
                 else
                 {

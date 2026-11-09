@@ -76,6 +76,13 @@ namespace XiaoLv.Desktop.Core
                 CurrentShortcut = hotkeyStr
             };
 
+            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SIYUAN_URL")))
+            {
+                report.IsAvailable = false;
+                report.ConflictCulprit = "隔离验证未执行全局快捷键探测";
+                return report;
+            }
+
             uint mods, vk;
             if (!ParseHotkey(hotkeyStr, out mods, out vk))
             {
@@ -104,6 +111,7 @@ namespace XiaoLv.Desktop.Core
         /// </summary>
         public static bool TestProbeRegister(uint mods, uint vk)
         {
+            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SIYUAN_URL"))) return false;
             int testId = 98000 + _rand.Next(1, 1000);
             IntPtr dummyHwnd = IntPtr.Zero;
 

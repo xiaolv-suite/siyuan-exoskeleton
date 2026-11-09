@@ -4122,6 +4122,21 @@ async function main() {
                                        panelContent.includes('function triggerQuickNoteVoiceDictation');
   logStep("Step 7.235: 待办勾销防丢字与离线队列去重 Bug 修复 + 六大功能合并 (22项精简合并视图/格式与高亮双标签/四合一导航/看板内嵌番茄/三合一速记/五域检索栏) 断言", hasBugFixesAndConsolidations, `Bug修复与六大功能合并闭环: ${hasBugFixesAndConsolidations}`);
 
+  // Step 7.236: Test 5 User-Centric Display & Interaction Enhancements (Card Sub-Action Pills, Default Consolidated View, Live Recent-Doc Hub, Split-List Explicit Row Actions & Type-First Intent Bar)
+  const hasUserCentricDisplayUpgrades = panelContent.includes('const CARD_QUICK_ACTIONS =') &&
+                                        panelContent.includes('function renderCardQuickActionsHtml') &&
+                                        panelContent.includes('class="card-subactions-row"') &&
+                                        panelContent.includes('class="card-subaction-pill"') &&
+                                        panelContent.includes('let currentCategory = "consolidated";') &&
+                                        panelContent.includes('function toggleHomePillarsHub') &&
+                                        panelContent.includes('class="pillar-recent-doc-row"') &&
+                                        panelContent.includes('function renderSplitRowQuickActions') &&
+                                        panelContent.includes('function handleSplitRowClick') &&
+                                        panelContent.includes('function cancelHoverSearchItem') &&
+                                        panelContent.includes('class="split-left-header"') &&
+                                        panelContent.includes('function quickSubmitInputAsTask');
+  logStep("Step 7.236: 五大用户体验显示优化 (卡片内嵌一触即达子功能胶囊、首屏默认22项精简视图、首屏最近文档动态直达与可折叠导览、双栏行内显式操作按钮与防误触、先打字后选动作流) 断言", hasUserCentricDisplayUpgrades, `用户体验显示优化闭环: ${hasUserCentricDisplayUpgrades}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

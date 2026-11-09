@@ -3741,6 +3741,152 @@
       color: #0b1120;
     }
 
+    /* 卡片内嵌一触即达子功能胶囊行 (Card Direct Sub-Action Matrix) */
+    .card-subactions-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+    .card-subaction-pill {
+      padding: 3.5px 8.5px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-inset);
+      color: var(--text-primary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.14s ease;
+      font-family: inherit;
+      white-space: nowrap;
+      line-height: 1.25;
+    }
+    .card-subaction-pill:hover {
+      border-color: var(--cyber-sky);
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--cyber-sky);
+      transform: translateY(-1px);
+    }
+    [data-theme="light"] .card-subaction-pill {
+      background: #F1F5F9;
+      border-color: #CBD5E1;
+      color: #1E293B;
+    }
+    [data-theme="light"] .card-subaction-pill:hover {
+      background: #EEF2FF;
+      border-color: #4F46E5;
+      color: #3730A3;
+    }
+
+    /* 首页三大场景动态感知舱增强与折叠条 */
+    .pillar-live-pill {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 1.5px 7px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--cyber-sky);
+      cursor: pointer;
+      transition: all 0.14s ease;
+      white-space: nowrap;
+    }
+    .pillar-live-pill:hover {
+      background: var(--cyber-sky);
+      color: #0b1120;
+    }
+    .pillar-recent-doc-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      font-size: 11px;
+      transition: all 0.14s ease;
+    }
+    .pillar-recent-doc-row:hover {
+      border-color: var(--cyber-sky);
+    }
+    .pillar-collapsed-bar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: var(--bg-inset);
+      border: 1px dashed var(--border-hairline);
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    /* 双栏搜索模式左侧顶部状态指引条与行内显式操作按钮 */
+    .split-left-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 5px 10px;
+      border-radius: 7px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-hairline);
+      font-size: 11px;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+    .search-row-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .search-row-btn {
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 10.5px;
+      font-weight: 600;
+      border: 1px solid var(--border-hairline);
+      background: var(--key-badge-bg);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.12s ease;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .search-row-btn:hover {
+      border-color: var(--cyber-sky);
+      color: var(--cyber-sky);
+      background: rgba(56, 189, 248, 0.14);
+    }
+    .search-row-btn.primary {
+      color: var(--emerald-mint);
+      border-color: rgba(16, 185, 129, 0.38);
+      background: rgba(16, 185, 129, 0.1);
+    }
+    .search-row-btn.primary:hover {
+      background: var(--emerald-mint);
+      color: #0b1120;
+    }
+    .chip-group-tag {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--text-muted);
+      padding: 1px 4px;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
   </style>
 </head>
 <body>
@@ -3837,33 +3983,38 @@
         type="text"
         id="search-input"
         class="search-input"
-        placeholder="在此打字：点右侧「🔍 搜笔记」查全库，或点「📥 记入日记」直接写进今日日记..."
+        placeholder="直接打字：无需记指令！输入后可点右侧「🔍 搜笔记」、「📥 记入日记」或「📋 存待办」..."
         autocomplete="off"
         spellcheck="false"
         autofocus
       />
       <div class="search-shortcuts">
         <button type="button" id="search-clear-btn" class="search-clear-btn" onclick="clearSearchInput()" style="display: none;" title="清空输入内容 (Esc)">✕</button>
-        <button type="button" class="search-action-btn search-scope-btn" onclick="insertPrefix('b:')" title="在思源全库正文块与文档中搜索，支持一键贴双链 (b:)">🔍 搜笔记</button>
-        <button type="button" class="search-action-btn search-capture-btn" onclick="quickSubmitInputToDaily()" title="将输入框文字直接记入今日日记；若为空则弹出速记框">📥 记入日记</button>
+        <button type="button" class="search-action-btn search-scope-btn" onclick="insertPrefix('b:')" title="在思源全库正文块与文档中搜索已输入文字，支持一键贴双链 (b:)">🔍 搜笔记</button>
+        <button type="button" class="search-action-btn search-capture-btn" onclick="quickSubmitInputToDaily()" title="将输入框文字直接记入今日日记；若为空则弹出三合一速记框">📥 记入日记</button>
+        <button type="button" class="search-action-btn" style="background: rgba(245, 158, 11, 0.16); border: 1px solid rgba(245, 158, 11, 0.45); color: var(--tech-amber);" onclick="quickSubmitInputAsTask()" title="将输入框文字直接存为思源未完成待办 (- [ ])；若为空则弹出新建待办">📋 存待办</button>
         <span class="key-badge">Esc 退出</span>
       </div>
     </div>
 
-    <!-- Quick Intent Chips below the search box (首屏核心高频胶囊 + 可展开全量指令抽屉) -->
+    <!-- Quick Intent Chips below the search box (按【速记·秒搜·工作台】3大直观分组呈现 + 可展开全量指令抽屉) -->
     <div class="quick-intent-chips" id="quick-intent-chips">
+      <span class="chip-group-tag">【速记】</span>
       <span class="intent-chip" onclick="stampCurrentTime()" title="在输入框前置盖上当前时间戳 (HH:mm)"><b>🕒</b> 时间</span>
       <span class="intent-chip" data-prefix="!" onclick="insertPrefix('!')" title="点击切换【待办速记】模式 (再次点击可取消前缀)"><b>!</b> 待办</span>
       <span class="intent-chip" data-prefix="pom:" onclick="insertPrefix('pom:25 ')" title="点击切换【番茄专注】模式 (再次点击可取消前缀)"><b>🍅</b> 番茄钟</span>
       <span class="chip-divider"></span>
-      <span class="intent-chip" data-prefix="b:" onclick="insertPrefix('b:')" title="点击切换【搜正文块】模式，保留已输关键词 (再次点击退出模式)"><b>b:</b> 块级秒搜</span>
-      <span class="intent-chip" data-prefix="d:" onclick="insertPrefix('d:')" title="点击切换【搜文档标题】模式，保留已输关键词 (再次点击退出模式)"><b>d:</b> 文档</span>
+      <span class="chip-group-tag">【秒搜】</span>
+      <span class="intent-chip" data-prefix="b:" onclick="insertPrefix('b:')" title="点击切换【搜正文块】模式，保留已输关键词 (再次点击退出模式)"><b>b:</b> 搜正文块</span>
+      <span class="intent-chip" data-prefix="d:" onclick="insertPrefix('d:')" title="点击切换【搜文档标题】模式，保留已输关键词 (再次点击退出模式)"><b>d:</b> 搜文档</span>
+      <span class="intent-chip" data-prefix="att:" onclick="insertPrefix('att:')" title="点击切换【搜PDF/Office附件】模式，保留已输关键词"><b>att:</b> 搜附件</span>
+      <span class="chip-divider"></span>
+      <span class="chip-group-tag">【工作台】</span>
       <span class="intent-chip" onclick="toggleLaunchpadModal()" title="全景网站与工程文件夹大图标启动台，大图标磁贴平铺与 1~9 盲打秒开"><b>🚀</b> 启动台</span>
       <span class="intent-chip" onclick="toggleClipStudioModal()" title="打开剪贴板多选碎片拼版工作台，自由选段、调序与实时模板化拼版"><b>📋</b> 拼版工作台</span>
       <span class="intent-chip" onclick="toggleCodeStudioModal()" title="全库代码片段与多语言纯净源码工作台，支持语言筛选、纯净直贴与VS Code秒开"><b>⌨️</b> 代码工作台</span>
       <span class="intent-chip" onclick="toggleGraphModal()" title="全景双向知识网络星轨拓扑视窗，辐射漫游与关系拓扑穿透"><b>🌌</b> 星轨图谱</span>
       <span class="intent-chip" onclick="toggleTodayTimeline()" title="无需切入思源，0ms 滑出今日日记记录的全部灵感、待办与笔记"><b>📅</b> 今日时间轴</span>
-      <span class="intent-chip" onclick="toggleHeatmapGalleryModal()" title="查看全库 52 周知识心流沉淀大画廊与年轮徽章"><b>🔥</b> 沉淀热力图</span>
       <span class="intent-chip more-chips-toggle" id="toggle-more-chips-btn" onclick="toggleMoreIntentChips()" title="展开/收起按 4 大分类整理的扩展语法与工具"><b>✨</b> 更多指令 ▾</span>
     </div>
 
@@ -3921,13 +4072,13 @@
   <!-- Controls Bar: Category Tabs & Layout Switcher -->
   <div class="controls-bar">
     <nav class="category-tabs" id="category-tabs">
-      <button class="cat-btn active" id="cat-btn-all" onclick="setCategoryFilter('all')">全部 (31)</button>
-      <button class="cat-btn" id="cat-btn-consolidated" onclick="setCategoryFilter('consolidated')" title="合并同源高频功能（网址+目录、待办+番茄、净化+高亮、速记+语音），一屏清爽直达">✨ 精简合并 (22)</button>
-      <button class="cat-btn" id="cat-btn-capture" onclick="setCategoryFilter('capture')">📝 极速捕获 (6)</button>
-      <button class="cat-btn" id="cat-btn-search" onclick="setCategoryFilter('search')">🔍 搜索资产 (10)</button>
-      <button class="cat-btn" id="cat-btn-learning" onclick="setCategoryFilter('learning')">🧩 生态直达 (8 · Alt+1~8)</button>
-      <button class="cat-btn" id="cat-btn-commands" onclick="setCategoryFilter('commands')">🌐 格式心流 (4)</button>
-      <button class="cat-btn" id="cat-btn-maintenance" onclick="setCategoryFilter('maintenance')">⚙️ 系统运维 (3)</button>
+      <button class="cat-btn active" id="cat-btn-consolidated" onclick="setCategoryFilter('consolidated')" title="默认推荐：已将同源高频功能（速记+语音+模板、网址+目录+书签、待办+番茄、净化+高亮）合并为 22 张直达卡片">✨ 精简推荐 (22)</button>
+      <button class="cat-btn" id="cat-btn-all" onclick="setCategoryFilter('all')" title="展开显示全部 31 项独立功能卡片">全部 (31)</button>
+      <button class="cat-btn" id="cat-btn-capture" onclick="setCategoryFilter('capture')">📝 记笔记·采集 (6)</button>
+      <button class="cat-btn" id="cat-btn-search" onclick="setCategoryFilter('search')">🔍 查资料·导航 (10)</button>
+      <button class="cat-btn" id="cat-btn-learning" onclick="setCategoryFilter('learning')">🧩 思源插件 (8 · Alt+1~8)</button>
+      <button class="cat-btn" id="cat-btn-commands" onclick="setCategoryFilter('commands')">🎨 格式·剪贴板 (4)</button>
+      <button class="cat-btn" id="cat-btn-maintenance" onclick="setCategoryFilter('maintenance')">🩺 体检·找回 (3)</button>
     </nav>
     <button type="button" class="cat-btn" id="workflow-guide-btn" onclick="toggleWorkflowGuideBanner()" style="border-color: rgba(56, 189, 248, 0.35); color: var(--cyber-sky); font-weight: 600; flex-shrink: 0;" title="展开/收起 4 大高频场景一图速览">🧭 四步上手</button>
     <div class="layout-switcher" title="切换视图排版模式">
@@ -5395,15 +5546,15 @@
 
     const GROUP_ORDER = ["capture", "search", "learning", "commands", "maintenance"];
     const GROUP_TITLES = {
-      favorites: "⭐ 高频常用与最近",
-      capture: "📝 极速捕获与速记",
-      search: "🔍 搜索、导航与资产",
-      learning: "🧩 生态插件直达 (Alt+1~9 跨软件直开)",
-      commands: "🌐 格式化与扩展心流",
-      maintenance: "⚙️ 系统与数据运维"
+      favorites: "⭐ 你的高频常用与最近使用",
+      capture: "📝 一、随手记笔记 · 网页剪藏 · 截图识字",
+      search: "🔍 二、查全库笔记 · 网址目录导航 · 待办与专注",
+      learning: "🧩 三、思源插件生态直达 (按 Alt+1~8 跨软件秒开)",
+      commands: "🎨 四、格式净化外发 · B3原色高亮 · 模型配置",
+      maintenance: "🩺 五、误删历史找回 · 死链体检 · 系统守护"
     };
 
-    let currentCategory = "all";
+    let currentCategory = "consolidated";
     let layoutMode = localStorage.getItem("omni_panel_layout") || "grid";
     let currentTheme = localStorage.getItem("omni_panel_theme") || (window.__DESKTOP_SETTINGS__ && window.__DESKTOP_SETTINGS__.defaultTheme) || "dark";
     let selectedIndex = 0;
@@ -5781,26 +5932,242 @@
 
     const CONSOLIDATED_CARD_OVERRIDES = {
       sys: {
-        title: "多态与语音速记 (三合一)",
-        desc: "【已合并：多态速记 + 语音听写去噪 + 模板速插】点击弹出三合一速记舱：支持打字/语音去噪/一键插入复盘模板直接写入今日日记",
+        title: "随手速记 · 语音与模板",
+        desc: "一句话写进思源今日日记（支持打字、🎙️语音去噪、一键套用模板；前加 ! 变待办、? 变闪卡）",
         badge: "速记·语音·模板"
       },
+      sypen: {
+        title: "随身划笔 · 1~8 精加工",
+        desc: "选中文字按 Alt+Shift+W 呼出微胶囊（或点下方按钮）：一键入日记、制闪卡、转待办、钉桌面活便签",
+        badge: "划词·活便签"
+      },
+      syg: {
+        title: "网页剪藏 · 批注与收藏",
+        desc: "自动抓取当前浏览器网页标题、正文与链接；可选存日记文献卡、建独立研读专页、AI 提炼或加入导航",
+        badge: "网页4态入库"
+      },
+      syimg: {
+        title: "截屏识字 · 离线 OCR",
+        desc: "框选屏幕任意区域或识别剪贴板图片，提取文字与表格后可图文一并记入日记、复制或转闪卡",
+        badge: "框选·识剪贴板"
+      },
+      syoff: {
+        title: "表格矩阵 · 代码与拼版",
+        desc: "双击原位修改思源表格并一键导出 Excel；或切换打开全库代码工作台、剪贴板多段拼版台",
+        badge: "表格·代码·拼版"
+      },
+      syf: {
+        title: "全库快查 · 双链与剪贴板",
+        desc: "打字秒搜思源正文块、文档标题、星标书签与最近 30 条剪贴板；回车打开，Shift+Enter 贴双链到光标",
+        badge: "5域秒搜·贴双链"
+      },
       syfav: {
-        title: "网址与目录导航 (四合一)",
-        desc: "【已合并：网站收藏 fav: + 工程目录 fold: + 浏览器书签 bm: + 启动台】一站式管理常用网页、浏览器收藏夹与对话框文件夹秒跳",
+        title: "网址收藏 · 目录与书签",
+        desc: "一站式管理思源网站收藏、打开/保存对话框文件夹秒跳、直搜 Edge/Chrome 书签与 1~9 大图标启动台",
         badge: "网址·目录·书签"
       },
       sytask: {
-        title: "四象限待办与心流番茄 (二合一)",
-        desc: "【已合并：全景待办看板 + 番茄专注计时】汇总全库未完成 - [ ] 任务，看板顶栏直接内嵌 15/25/45m 番茄钟，专注结束自动打勾结绳",
-        badge: "待办·番茄闭环"
+        title: "待办看板 · 番茄专注",
+        desc: "汇总全库未完成的 - [ ] 任务到四象限看板；支持直接打勾完成、一键开启 15/25/45m 番茄倒计时",
+        badge: "四象限·番茄钟"
+      },
+      syatt: {
+        title: "附件文献 · 全盘文件秒搜",
+        desc: "秒查思源库内 PDF/Word/Excel 附件并透视目录（空格秒开、Shift+Enter 贴引用），或联动 Everything 搜全盘",
+        badge: "PDF·Office·全盘"
+      },
+      syd: {
+        title: "今日日记 · 热力图与漫游",
+        desc: "0ms 滑出今日日记时间轴查看今天记录的全部内容；支持查看 52 周沉淀热力图或随机漫游历史笔记",
+        badge: "时间轴·热力图"
+      },
+      syo: {
+        title: "大纲脑图 · 星轨与外部库",
+        desc: "可视化浏览文档 H1~H6 大纲与思维导图（支持原位改名调级），或切换星轨双链图谱与外部 Markdown 库",
+        badge: "大纲·脑图·图谱"
       },
       syx: {
-        title: "格式净化与 B3 高亮 (二合一)",
-        desc: "【已合并：纯净 Markdown 导出 + 思源 B3 原色高亮】双标签工作台：一键剥离 {: id} 转微信/Word富文本，或应用思源原生荧光高亮配色",
+        title: "格式净化 · B3 原色高亮",
+        desc: "双标签工作台：① 剥离 {: id} 属性转微信/Word 富文本与脱敏外发；② 一键套用思源原生 B3 荧光高亮",
         badge: "去杂质·B3调色"
+      },
+      sytrash: {
+        title: "误删找回 · 历史与离线队列",
+        desc: "浏览思源回收站与历史版本快照并一键恢复到今日日记；支持打开官方数据历史大窗与离线缓冲队列",
+        badge: "回收站·时光机"
+      },
+      syh: {
+        title: "系统体检 · 死链与孤儿清理",
+        desc: "一键扫描全库失效死链并自动修复、清理无引用孤儿附件、查看通知事件中心与首启环境探针",
+        badge: "死链自愈·体检"
       }
     };
+
+    // 卡片正面内嵌「一触即达子功能胶囊」矩阵 (让用户无需盲猜或翻页，直接在卡片上点选具体子功能)
+    const CARD_QUICK_ACTIONS = {
+      sys: [
+        { label: "⚡ 写日记", title: "弹出三合一速记框直接写入今日日记", onClick: "promptQuickNoteInlineModal()" },
+        { label: "📋 记待办(!)", title: "直接录入一条 - [ ] 待办任务", onClick: "insertPrefix('!')" },
+        { label: "🎙️ 语音去噪", title: "打开语音听写与口头语去噪微舱", onClick: "insertPrefix('voice:')" },
+        { label: "📑 插模板", title: "选择复盘/会议/文献卡模板", onClick: "insertPrefix('v:')" }
+      ],
+      sypen: [
+        { label: "✏️ 1~8精加工台", title: "打开窗内随身划笔 1~8 键可视化工作台", onClick: "setSearchInputValue('pen:')" },
+        { label: "📌 钉桌面便签", title: "在桌面新建一个常驻置顶活便签", onClick: "pinAsStickyNote('桌面置顶活便签', '', '')" },
+        { label: "🪟 鼠标旁微窗", title: "在鼠标光标旁呼出轻量 1~8 键微胶囊 (Alt+Shift+W)", onClick: "sendHostMessage({ op: 'executeCommand', cmd: 'sypen', text: '', keepOpen: false })" }
+      ],
+      syg: [
+        { label: "📑 存文献卡", title: "抓取当前浏览器网页存为今日日记文献卡", onClick: "setSearchInputValue('g:')" },
+        { label: "📄 建研读专页", title: "在思源中新建独立网页研读文档", onClick: "setSearchInputValue('g:'); setTimeout(() => { selectedIndex = 1; renderItems(); if(filteredItems[1]) renderWebClipInspector(filteredItems[1]); }, 60);" },
+        { label: "⭐ 存网站收藏", title: "将当前网页加入全景网站收藏夹", onClick: "setSearchInputValue('g:'); setTimeout(() => { selectedIndex = 2; renderItems(); if(filteredItems[2]) renderWebClipInspector(filteredItems[2]); }, 60);" },
+        { label: "🤖 AI提炼", title: "调用 AI 提炼 3 条核心要点后入库", onClick: "setSearchInputValue('g:'); setTimeout(() => { selectedIndex = 3; renderItems(); if(filteredItems[3]) renderWebClipInspector(filteredItems[3]); }, 60);" }
+      ],
+      syimg: [
+        { label: "📸 框选截屏识字", title: "立即框选屏幕任意区域并识别图中文字", onClick: "setSearchInputValue('ocr:'); setTimeout(() => startScreenSnipForWorkbench(), 80);" },
+        { label: "🖼️ 识剪贴板图", title: "直接识别当前系统剪贴板里的截图文字", onClick: "setSearchInputValue('ocr:'); setTimeout(() => ocrClipboardImageNow(), 80);" },
+        { label: "🪟 截图微胶囊", title: "框选截图后在鼠标旁弹出 1~8 键微胶囊", onClick: "triggerFloatingOcrSnip()" }
+      ],
+      syoff: [
+        { label: "📊 表格透视台", title: "浏览与双击修改全库表格并导出 Excel", onClick: "toggleTableGridModal()" },
+        { label: "⌨️ 代码工作台", title: "打开全库代码片段工作台 (支持 VS Code 双向写回)", onClick: "toggleCodeStudioModal()" },
+        { label: "📋 多段拼版台", title: "打开剪贴板多选碎片拼版工作台", onClick: "toggleClipStudioModal()" }
+      ],
+      syvoice: [
+        { label: "🎙️ 语音听写舱", title: "打开语音听写与口语去噪面板", onClick: "setSearchInputValue('voice:')" },
+        { label: "⚡ 三合一速记", title: "打开速记弹窗", onClick: "promptQuickNoteInlineModal()" }
+      ],
+      syf: [
+        { label: "🧱 搜块(b:)", title: "搜索思源全库正文块并一键贴双链", onClick: "insertPrefix('b:')" },
+        { label: "📄 搜文档(d:)", title: "搜索思源全库文档标题", onClick: "insertPrefix('d:')" },
+        { label: "⭐ 星标块(m:)", title: "查看思源中加了书签/星标的重点块", onClick: "insertPrefix('m:')" },
+        { label: "📋 剪贴板(c:)", title: "查看最近 30 条复制记录", onClick: "insertPrefix('c:')" }
+      ],
+      syfav: [
+        { label: "🚀 大图标启动台", title: "打开四合一全景大图标启动台 (支持 1~9 盲打)", onClick: "toggleLaunchpadModal('all')" },
+        { label: "🌐 网站收藏", title: "检索与管理思源常用网址收藏 (fav:)", onClick: "insertPrefix('fav:')" },
+        { label: "📂 目录秒跳", title: "文件打开/保存对话框原位跳转工程目录 (fold:)", onClick: "insertPrefix('fold:')" },
+        { label: "🔖 浏览器书签", title: "直接检索 Edge/Chrome 浏览器本地书签 (bm:)", onClick: "insertPrefix('bm:')" }
+      ],
+      syfold: [
+        { label: "📂 目录列表", title: "查看已收藏的本地工程文件夹 (fold:)", onClick: "insertPrefix('fold:')" },
+        { label: "🚀 启动台目录页", title: "打开大图标启动台文件夹页签", onClick: "toggleLaunchpadModal('folder')" },
+        { label: "➕ 抓当前目录", title: "一键抓取当前打开的资源管理器目录", onClick: "triggerLaunchpadCaptureExplorer()" }
+      ],
+      sytask: [
+        { label: "🎴 四象限大看板", title: "打开全景四象限待办看板 (内嵌番茄计时器)", onClick: "toggleTasksKanbanModal()" },
+        { label: "📋 待办列表(t:)", title: "列表秒查全库未完成待办并直接打勾", onClick: "insertPrefix('t:')" },
+        { label: "🍅 25m番茄钟", title: "打开桌面番茄专注计时台", onClick: "insertPrefix('pom:25 ')" },
+        { label: "➕ 新建待办", title: "立即新建一条带优先级的待办事项", onClick: "promptCreateNewTaskModal()" }
+      ],
+      sypom: [
+        { label: "⚡ 15m冲刺", title: "开启 15 分钟快速冲刺番茄钟", onClick: "insertPrefix('pom:15 ')" },
+        { label: "🍅 25m标准", title: "开启 25 分钟标准番茄钟", onClick: "insertPrefix('pom:25 ')" },
+        { label: "🔥 45m攻坚", title: "开启 45 分钟深度攻坚番茄钟", onClick: "insertPrefix('pom:45 ')" },
+        { label: "🎴 待办看板", title: "打开四象限待办大看板", onClick: "toggleTasksKanbanModal()" }
+      ],
+      syatt: [
+        { label: "📕 搜PDF(pdf:)", title: "检索思源库内 PDF 文献并提取目录大纲", onClick: "setSearchInputValue('pdf:')" },
+        { label: "📊 搜Office", title: "检索库内 Word / Excel / PPT 附件", onClick: "setSearchInputValue('office:')" },
+        { label: "📎 全部附件", title: "列出思源库内全部附件资产 (att:)", onClick: "insertPrefix('att:')" },
+        { label: "🔍 搜全盘文件", title: "调用本地 Everything / Listary 检索全盘文件", onClick: "insertPrefix('ev:')" }
+      ],
+      sytag: [
+        { label: "🏷️ 浏览全部标签", title: "列出思源全库带有 #标签# 的笔记并支持导出汇总", onClick: "insertPrefix('tag:')" },
+        { label: "✍️ 记带标签笔记", title: "快速记一条带 #标签# 的笔记到今日日记", onClick: "promptQuickNoteInlineModal()" }
+      ],
+      syd: [
+        { label: "📅 今日时间轴", title: "滑出今日日记时间轴查看今天记录的所有内容", onClick: "toggleTodayTimeline()" },
+        { label: "🔥 52周热力图", title: "打开 52 周知识沉淀热力图大画廊", onClick: "toggleHeatmapGalleryModal()" },
+        { label: "🎲 漫游回顾", title: "随机抽取一条历史重点笔记温故知新", onClick: "triggerFlashback()" }
+      ],
+      syo: [
+        { label: "🗺️ 大纲与导图", title: "打开文档 H1~H6 大纲与交互式思维导图工作台", onClick: "toggleOutlineMindmapModal()" },
+        { label: "🌌 星轨双链图谱", title: "打开全库双向链接知识网络星轨拓扑视窗", onClick: "toggleGraphModal()" },
+        { label: "🗄️ 外部MD库", title: "打开外部本地 Markdown 目录读写工作台", onClick: "toggleVaultMirrorModal()" }
+      ],
+      syws: [
+        { label: "🏢 现场快照列表", title: "查看已保存的多软件工作现场快照", onClick: "insertPrefix('ws:')" },
+        { label: "📸 保存当前现场", title: "一键记录当前打开的思源文档、网页与本地文件组合", onClick: "sendHostMessage({ op: 'saveWorkspace', name: '' })" }
+      ],
+      syda: [
+        { label: "🏃 免切窗打卡(+)", title: "在当前输入框直接记录一条习惯打卡", onClick: "insertPrefix('+阅读 30min')" },
+        { label: "🪟 打卡主面板", title: "唤醒思源并打开小驴打卡插件大窗 (Alt+1)", onClick: "launchPluginDirectItem('syda')" }
+      ],
+      syhome: [
+        { label: "💰 免切窗记账(¥)", title: "在当前输入框直接记录一笔账目开销", onClick: "insertPrefix('¥35 午餐')" },
+        { label: "🪟 管家主面板", title: "唤醒思源并打开小驴管家插件大窗 (Alt+2)", onClick: "launchPluginDirectItem('syhome')" }
+      ],
+      syrm: [
+        { label: "👥 记人脉往来(@)", title: "免切窗记录一条人脉互动并自动生成双链", onClick: "insertPrefix('@')" },
+        { label: "🪟 人脉主面板", title: "唤醒思源并打开人脉工作台插件大窗 (Alt+3)", onClick: "launchPluginDirectItem('syrm')" }
+      ],
+      sysg_plugin: [
+        { label: "🌐 剪藏当前网页", title: "抓取当前浏览器网页存入思源", onClick: "insertPrefix('g:')" },
+        { label: "🪟 稍后读主面板", title: "唤醒思源并打开小驴拾遗稍后读收件箱 (Alt+4)", onClick: "launchPluginDirectItem('sysg_plugin')" }
+      ],
+      syv: [
+        { label: "🌅 每日复盘模板", title: "选择晨间目标与晚间复盘等结构化模板 (v:)", onClick: "insertPrefix('v:')" },
+        { label: "📋 剪贴板拼版", title: "打开剪贴板多选碎片拼版工作台", onClick: "toggleClipStudioModal()" },
+        { label: "🪟 常用语插件", title: "唤醒思源并打开常用语插件面板 (Alt+5)", onClick: "launchPluginDirectItem('syv')" }
+      ],
+      syfsrs: [
+        { label: "🧠 桌面极速刷卡", title: "在桌面弹出微卡片直接按空格翻面、1~4评分复习", onClick: "executeItem(PANEL_ITEMS.find(x => x.id === 'syfsrs'))" },
+        { label: "➕ 制新闪卡(?)", title: "输入 ? 问题 // 答案 快速制作一张原生 FSRS 闪卡", onClick: "insertPrefix('?')" },
+        { label: "🪟 闪卡中心大窗", title: "唤醒思源并打开闪卡中心主面板 (Alt+6)", onClick: "launchPluginDirectItem('syfsrs')" }
+      ],
+      sybk: [
+        { label: "🪟 打开备考练习台", title: "唤醒思源并打开备考与错题练习台 (Alt+7)", onClick: "launchPluginDirectItem('sybk')" }
+      ],
+      sylq: [
+        { label: "🪟 打开雷切页签切换", title: "唤醒思源并打开雷切页签快速切换器 (Alt+8)", onClick: "launchPluginDirectItem('sylq')" }
+      ],
+      syx: [
+        { label: "📋 净Markdown", title: "剥离思源 {: id} 属性与双链括号后纯净复制", onClick: "setSearchInputValue('x:')" },
+        { label: "💬 转微信/Word", title: "转为带标题列表排版的富文本，保真粘贴到微信/Word", onClick: "setSearchInputValue('x:'); setTimeout(() => { selectedIndex = 1; renderItems(); }, 60);" },
+        { label: "🖍️ B3原色高亮", title: "切换到思源原生 B3 荧光背景与文字配色标签页", onClick: "setSearchInputValue('color:')" },
+        { label: "🛡️ 隐私脱敏", title: "自动隐藏手机号、身份证与 API 密钥后复制", onClick: "setSearchInputValue('x:'); setTimeout(() => { selectedIndex = 2; renderItems(); }, 60);" }
+      ],
+      syp: [
+        { label: "🖍️ B3高亮工作台", title: "打开窗内思源原生 B3 原色高亮调色台", onClick: "setSearchInputValue('color:')" },
+        { label: "🪟 悬浮调色盘", title: "呼出独立悬浮调色盘对思源选中文字直接上色", onClick: "openNativeSypDialog()" },
+        { label: "✨ 去杂质导出", title: "切换到纯净 Markdown 与微信富文本转换台", onClick: "setSearchInputValue('x:')" }
+      ],
+      sycmd: [
+        { label: "🧩 搜已装插件命令", title: "检索并调用思源中已安装的所有插件命令 (p:)", onClick: "insertPrefix('p:')" },
+        { label: "📊 数据库单行直投", title: "检索思源属性视图数据库并直接追加记录 (av:)", onClick: "insertPrefix('av:')" }
+      ],
+      syprofile: [
+        { label: "🤖 AI与云配置", title: "打开 AI 大模型与 S3 云同步加密预设工作台", onClick: "toggleProfileHubModal()" },
+        { label: "⚙️ 偏好设置", title: "打开外骨骼全局快捷键、主题与简码设置", onClick: "togglePreferencesModal()" },
+        { label: "🧭 首启环境自检", title: "打开 4 维环境探针与冲突热键一键自愈向导", onClick: "toggleOnboardingWizardModal()" }
+      ],
+      sytrash: [
+        { label: "🗑️ 浏览回收站", title: "检索思源误删笔记与历史快照并一键恢复到今日日记", onClick: "insertPrefix('trash:')" },
+        { label: "🕒 官方数据历史", title: "唤醒思源并打开官方原生数据历史大窗", onClick: "openNativeDataHistory()" },
+        { label: "📦 离线缓冲队列", title: "查看思源未运行期间暂存的离线速记队列", onClick: "showOfflineQueueModal()" }
+      ],
+      syh: [
+        { label: "🩺 死链与孤儿体检", title: "打开全库失效死链自愈与孤儿附件清理工作台", onClick: "toggleSystemDoctorModal()" },
+        { label: "🔔 通知事件中心", title: "打开近期操作回执与告警事件流中心", onClick: "toggleNotificationCenterModal()" },
+        { label: "🧭 环境与热键自检", title: "运行本机内核连接与全局热键冲突探针", onClick: "toggleOnboardingWizardModal()" }
+      ],
+      synotice: [
+        { label: "🔔 通知中心大窗", title: "打开全景通知与生命事件中心弹窗", onClick: "toggleNotificationCenterModal()" },
+        { label: "📜 检索历史回执", title: "在双栏列表中搜索历史通知回执 (notice:)", onClick: "insertPrefix('notice:')" }
+      ]
+    };
+
+    function renderCardQuickActionsHtml(item) {
+      const actions = CARD_QUICK_ACTIONS[item && item.id];
+      if (!Array.isArray(actions) || actions.length === 0) return "";
+      return `
+        <div class="card-subactions-row" onclick="event.stopPropagation()">
+          ${actions.map(act => `
+            <button type="button" class="card-subaction-pill" onclick="event.stopPropagation(); ${act.onClick}" title="${escapeQuote(act.title || act.label)}">${act.label}</button>
+          `).join("")}
+        </div>
+      `;
+    }
 
     function showOnlyRecommended() {
       hiddenIds = PANEL_ITEMS.filter(it => !CONSOLIDATED_CARD_IDS.includes(it.id)).map(it => it.id);
@@ -7446,23 +7813,66 @@
         }
       }
 
-      if (filteredItems.length === 0 && raw.length > 0 && !activeIntentAction) {
-        activeIntentAction = "sys";
+      if (raw.length > 0 && !activeIntentAction && !hasPrefixSearch(raw)) {
+        if (filteredItems.length === 0) {
+          activeIntentAction = "sys";
+        }
         banner.style.display = "flex";
+        const shortRaw = escapeHtml(raw.length > 18 ? raw.substring(0, 18) + "..." : raw);
         banner.innerHTML = `
           <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-            <span class="intent-tag">📝 回车记入日记 · 🔍 切换检索域</span>
+            <span class="intent-tag">💡 对「${shortRaw}」执行：</span>
+            <span class="scope-switch-pill" style="background: rgba(16,185,129,0.18); border-color: var(--emerald-mint); color: var(--emerald-mint);" onclick="quickSubmitInputToDaily()">📥 记入今日日记</span>
+            <span class="scope-switch-pill" style="background: rgba(245,158,11,0.18); border-color: var(--tech-amber); color: var(--tech-amber);" onclick="quickSubmitInputAsTask()">📋 存为待办任务</span>
             <span class="scope-switch-pill" onclick="insertPrefix('b:')">🧱 搜正文块 (b:)</span>
             <span class="scope-switch-pill" onclick="insertPrefix('d:')">📄 搜文档 (d:)</span>
             <span class="scope-switch-pill" onclick="insertPrefix('att:')">📎 搜PDF/附件 (att:)</span>
-            <span class="scope-switch-pill" onclick="insertPrefix('c:')">📋 搜剪贴板 (c:)</span>
             <span class="scope-switch-pill" onclick="insertPrefix('tag:')"># 搜标签 (tag:)</span>
           </div>
-          <span style="font-size: 10px; opacity: 0.85; white-space: nowrap;">↵ 确认记一笔</span>
+          <span style="font-size: 10px; opacity: 0.85; white-space: nowrap;">${filteredItems.length === 0 ? '↵ 回车直接记入日记' : '可点上方按钮直接处理已输文字'}</span>
         `;
+      } else if (raw.length === 0 && !activeIntentAction) {
+        banner.style.display = "none";
       }
 
       selectedIndex = 0;
+      renderItems();
+    }
+
+    function quickSubmitInputAsTask() {
+      const si = document.getElementById("search-input");
+      const raw = si ? si.value.trim().replace(/^([!！]|t:|todo:)\s*/i, "") : "";
+      if (!raw) {
+        promptCreateNewTaskModal();
+        return;
+      }
+      const taskMd = `- [ ] ${raw}`;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({
+          op: 'executeCommand',
+          cmd: 'sys',
+          text: taskMd,
+          keepOpen: true
+        }));
+      } else if (window.onQuickNoteCompleted) {
+        window.onQuickNoteCompleted({
+          success: true,
+          text: taskMd,
+          sourceLabel: "待办已入库"
+        });
+      }
+      if (si) {
+        si.value = "";
+        updateSearchClearBtn();
+        handleSearch("");
+      }
+      showToast(`📋 已存为今日待办：${raw.substring(0, 28)}`);
+    }
+
+    let isHomePillarsCollapsed = localStorage.getItem("omni_pillars_collapsed") === "true";
+    function toggleHomePillarsHub() {
+      isHomePillarsCollapsed = !isHomePillarsCollapsed;
+      localStorage.setItem("omni_pillars_collapsed", isHomePillarsCollapsed ? "true" : "false");
       renderItems();
     }
 
@@ -7534,50 +7944,92 @@
       const queryVal = document.getElementById("search-input") ? document.getElementById("search-input").value.trim() : "";
       let itemsToRender = [...filteredItems];
 
-      // 仅当 "all" 或 "consolidated" 分类且无搜索词时，先在首屏顶部渲染「三大核心操作直达舱」，再按分组聚类排序
+      // 仅当 "all" 或 "consolidated" 分类且无搜索词时，先在首屏顶部渲染「三大核心操作与最近文档直达舱」，再按分组聚类排序
       if ((currentCategory === "all" || currentCategory === "consolidated") && !queryVal && !editMode) {
-        const hubEl = document.createElement("section");
-        hubEl.className = "home-three-pillars-hub";
-        hubEl.id = "home-three-pillars-hub";
-        hubEl.innerHTML = `
-          <article class="pillar-box">
-            <div class="pillar-box-header">
-              <span>① 📝 记一笔 · 写入思源</span>
-              <span class="pillar-box-sub">Alt+Shift+S</span>
+        const todayText = document.getElementById("telemetry-today-text")?.innerText || "今日日记";
+        const tasksText = document.getElementById("telemetry-tasks-text")?.innerText || "待办看板";
+        const recentDocs = (window.__OMNI_RUNTIME__ && Array.isArray(window.__OMNI_RUNTIME__.recentDocs))
+          ? window.__OMNI_RUNTIME__.recentDocs.filter(d => d && d.id).slice(0, 2)
+          : [];
+        const recentDocsHtml = recentDocs.length > 0
+          ? recentDocs.map(d => {
+              const title = d.content || "(无题文档)";
+              return `
+                <div class="pillar-recent-doc-row">
+                  <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; color: var(--text-primary); font-weight: 600; cursor: pointer;" onclick="openStandaloneDoc('${escapeQuote(d.id)}')" title="点击在思源中打开最近修改文档《${escapeQuote(title)}》">📄 ${escapeHtml(title)}</span>
+                  <div style="display: inline-flex; gap: 4px; flex-shrink: 0;">
+                    <button type="button" class="search-row-btn primary" onclick="openStandaloneDoc('${escapeQuote(d.id)}')" title="在思源中打开此文档">打开</button>
+                    <button type="button" class="search-row-btn" onclick="pasteAtCursor('[${escapeQuote(title)}](siyuan://blocks/${escapeQuote(d.id)})')" title="将该文档链接粘贴到外部光标处">贴双链</button>
+                  </div>
+                </div>
+              `;
+            }).join("")
+          : `
+            <button type="button" class="pillar-action-btn" onclick="insertPrefix('d:')" title="搜索思源全库文档标题并一键打开">📄 搜全库文档</button>
+            <button type="button" class="pillar-action-btn" onclick="insertPrefix('att:')" title="搜索库内 PDF、Office 文档与图片附件">📎 搜PDF与附件</button>
+          `;
+
+        if (isHomePillarsCollapsed) {
+          const colBar = document.createElement("div");
+          colBar.className = "pillar-collapsed-bar";
+          colBar.id = "home-three-pillars-hub";
+          colBar.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span style="font-weight: 700; color: var(--cyber-sky);">🧭 快捷三景导览：</span>
+              <span class="pillar-live-pill" onclick="promptQuickNoteInlineModal()">⚡ 随手记一笔</span>
+              <span class="pillar-live-pill" onclick="toggleTodayTimeline()">📅 ${escapeHtml(todayText)}</span>
+              <span class="pillar-live-pill" onclick="insertPrefix('b:')">🧱 搜块贴双链</span>
+              <span class="pillar-live-pill" onclick="toggleTasksKanbanModal()">📋 ${escapeHtml(tasksText)}</span>
             </div>
-            <div class="pillar-actions-grid">
-              <button type="button" class="pillar-action-btn" onclick="promptQuickNoteInlineModal()" title="弹出三合一速记框（打字/语音听写去噪/插入常用模板）直接存入今日日记">⚡ 速记 / 🎙️语音 / 模板</button>
-              <button type="button" class="pillar-action-btn" onclick="executeItem(PANEL_ITEMS.find(x => x.id === 'syg'))" title="抓取当前浏览器打开的网页存入思源">🌐 剪藏当前网页</button>
-              <button type="button" class="pillar-action-btn" onclick="executeItem(PANEL_ITEMS.find(x => x.id === 'syimg'))" title="框选屏幕截图并自动识别图中文字">📸 截屏识别文字</button>
-              <button type="button" class="pillar-action-btn" onclick="toggleTodayTimeline()" title="查看今天已经记入日记的所有内容">📅 看今日日记流</button>
-            </div>
-          </article>
-          <article class="pillar-box">
-            <div class="pillar-box-header">
-              <span>② 🔍 找内容 · 贴入双链</span>
-              <span class="pillar-box-sub">Shift+Enter 贴光标</span>
-            </div>
-            <div class="pillar-actions-grid">
-              <button type="button" class="pillar-action-btn" onclick="insertPrefix('b:')" title="浏览最近笔记块或打字搜正文，Shift+Enter 贴双链">🧱 搜正文块贴双链</button>
-              <button type="button" class="pillar-action-btn" onclick="insertPrefix('d:')" title="搜索思源全库文档标题并一键打开">📄 搜全库文档</button>
-              <button type="button" class="pillar-action-btn" onclick="insertPrefix('att:')" title="搜索库内 PDF、Office 文档与图片附件">📎 搜PDF与附件</button>
-              <button type="button" class="pillar-action-btn" onclick="insertPrefix('fav:')" title="四合一导航：思源网站收藏 + 工程目录秒跳 + 浏览器书签">🌐 网址与目录导航</button>
-            </div>
-          </article>
-          <article class="pillar-box">
-            <div class="pillar-box-header">
-              <span>③ 🎛️ 开工作台 · 深度整理</span>
-              <span class="pillar-box-sub">支持双向写回思源</span>
-            </div>
-            <div class="pillar-actions-grid">
-              <button type="button" class="pillar-action-btn" onclick="toggleCodeStudioModal()" title="浏览全库代码块，支持外部 VS Code 编辑自动回写">⌨️ 代码工作台</button>
-              <button type="button" class="pillar-action-btn" onclick="toggleTableGridModal()" title="浏览与编辑全库表格，支持一键导出 Excel">📊 表格透视编辑</button>
-              <button type="button" class="pillar-action-btn" onclick="toggleOutlineMindmapModal()" title="查看文档 H1~H6 大纲与思维导图，支持原位改名">🗺️ 大纲与导图</button>
-              <button type="button" class="pillar-action-btn" onclick="toggleTasksKanbanModal()" title="打开四象限待办看板（内嵌心流番茄计时器）">🎴 待办与番茄钟</button>
-            </div>
-          </article>
-        `;
-        container.appendChild(hubEl);
+            <button type="button" class="search-row-btn" onclick="toggleHomePillarsHub()">展开导览 ▼</button>
+          `;
+          container.appendChild(colBar);
+        } else {
+          const hubEl = document.createElement("section");
+          hubEl.className = "home-three-pillars-hub";
+          hubEl.id = "home-three-pillars-hub";
+          hubEl.innerHTML = `
+            <article class="pillar-box">
+              <div class="pillar-box-header">
+                <span>① 📝 记一笔 · 写入思源</span>
+                <span class="pillar-live-pill" onclick="toggleTodayTimeline()" title="点击查看今日日记时间轴">📅 ${escapeHtml(todayText)} ▸</span>
+              </div>
+              <div class="pillar-actions-grid">
+                <button type="button" class="pillar-action-btn" onclick="promptQuickNoteInlineModal()" title="弹出三合一速记框（打字/语音听写去噪/插入常用模板）直接存入今日日记">⚡ 速记 / 🎙️语音 / 模板</button>
+                <button type="button" class="pillar-action-btn" onclick="executeItem(PANEL_ITEMS.find(x => x.id === 'syg'))" title="抓取当前浏览器打开的网页存入思源">🌐 剪藏当前网页</button>
+                <button type="button" class="pillar-action-btn" onclick="executeItem(PANEL_ITEMS.find(x => x.id === 'syimg'))" title="框选屏幕截图并自动识别图中文字">📸 截屏识别文字</button>
+                <button type="button" class="pillar-action-btn" onclick="toggleTodayTimeline()" title="查看今天已经记入日记的所有内容">📅 看今日日记流</button>
+              </div>
+            </article>
+            <article class="pillar-box">
+              <div class="pillar-box-header">
+                <span>② 🔍 找内容 · 贴入双链</span>
+                <span class="pillar-live-pill" onclick="insertPrefix('b:')" title="进入 5 域全库秒搜">Shift+↵ 贴双链 ▸</span>
+              </div>
+              <div class="pillar-actions-grid">
+                <button type="button" class="pillar-action-btn" onclick="insertPrefix('b:')" title="浏览最近笔记块或打字搜正文，Shift+Enter 贴双链">🧱 搜正文块贴双链</button>
+                <button type="button" class="pillar-action-btn" onclick="insertPrefix('fav:')" title="四合一导航：思源网站收藏 + 工程目录秒跳 + 浏览器书签">🌐 网址与目录导航</button>
+                ${recentDocs.length > 0 ? `<div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px;">${recentDocsHtml}</div>` : recentDocsHtml}
+              </div>
+            </article>
+            <article class="pillar-box">
+              <div class="pillar-box-header">
+                <span>③ 🎛️ 开工作台 · 深度整理</span>
+                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                  <span class="pillar-live-pill" onclick="toggleTasksKanbanModal()" title="打开四象限待办看板">📋 ${escapeHtml(tasksText)}</span>
+                  <button type="button" class="search-row-btn" style="padding: 1px 5px; font-size: 10px;" onclick="toggleHomePillarsHub()" title="收起顶部三栏导览，腾出更多纵向空间展示卡片">收起 ▲</button>
+                </div>
+              </div>
+              <div class="pillar-actions-grid">
+                <button type="button" class="pillar-action-btn" onclick="toggleCodeStudioModal()" title="浏览全库代码块，支持外部 VS Code 编辑自动回写">⌨️ 代码工作台</button>
+                <button type="button" class="pillar-action-btn" onclick="toggleTableGridModal()" title="浏览与编辑全库表格，支持一键导出 Excel">📊 表格透视编辑</button>
+                <button type="button" class="pillar-action-btn" onclick="toggleOutlineMindmapModal()" title="查看文档 H1~H6 大纲与思维导图，支持原位改名">🗺️ 大纲与导图</button>
+                <button type="button" class="pillar-action-btn" onclick="toggleTasksKanbanModal()" title="打开四象限待办看板（内嵌心流番茄计时器）">🎴 待办与番茄钟</button>
+              </div>
+            </article>
+          `;
+          container.appendChild(hubEl);
+        }
 
         const basePool = currentCategory === "consolidated"
           ? PANEL_ITEMS.filter(it => CONSOLIDATED_CARD_IDS.includes(it.id) && !isHidden(it.id)).map(it => CONSOLIDATED_CARD_OVERRIDES[it.id] ? Object.assign({}, it, CONSOLIDATED_CARD_OVERRIDES[it.id]) : it)
@@ -7613,6 +8065,7 @@
         }
 
         const isSelected = (index === selectedIndex);
+        const subActionsHtml = renderCardQuickActionsHtml(item);
 
         if (layoutMode === "grid") {
           const card = document.createElement("div");
@@ -7643,6 +8096,7 @@
               </div>
             </div>
             <div class="card-desc" title="${escapeQuote(item.desc)}">${item.desc}</div>
+            ${subActionsHtml}
             <div class="card-footer">
               <div class="card-footer-left">
                 <span class="tag-badge ${item.badgeCls}">${item.badge}</span>
@@ -7685,6 +8139,7 @@
                   <span class="card-mode-pill ${modeMeta.cls}" title="${modeMeta.title}">${modeMeta.label}</span>
                 </div>
                 <div class="list-desc">${item.desc}</div>
+                ${subActionsHtml}
               </div>
             </div>
             <div class="list-right">
@@ -9974,14 +10429,84 @@
       `;
     }
 
+    function renderSplitRowQuickActions(it, idx) {
+      if (!it) return "";
+      if (it.taskData && it.taskData.BlockId) {
+        const bid = escapeQuote(it.taskData.BlockId);
+        const rawMd = escapeQuote(it.taskData.Markdown || it.taskData.CleanTask || "");
+        const cleanTask = escapeQuote(it.taskData.CleanTask || it.title || "待办事项");
+        const docTitle = escapeQuote(it.taskData.DocTitle || "今日日记");
+        return `
+          <div class="search-row-actions" onclick="event.stopPropagation()">
+            <button type="button" class="search-row-btn primary" onclick="event.stopPropagation(); toggleTaskCompleteNow('${bid}', '${rawMd}')" title="直接将该待办标记为已完成 (- [x])">✓ 完成</button>
+            <button type="button" class="search-row-btn" onclick="event.stopPropagation(); startTaskFocusSession('${bid}', '${cleanTask}', '${docTitle}', 25)" title="为此待办开启 25 分钟番茄专注">🍅 专注</button>
+          </div>
+        `;
+      }
+      if (it.blockId || it.docId) {
+        return `
+          <div class="search-row-actions" onclick="event.stopPropagation()">
+            <button type="button" class="search-row-btn primary" onclick="event.stopPropagation(); executeItem(filteredItems[${idx}])" title="在思源笔记中定位打开 (Enter)">🪟 打开</button>
+            <button type="button" class="search-row-btn" onclick="event.stopPropagation(); selectedIndex = ${idx}; executeSelected(true)" title="将双链 ((id)) 直接粘贴到当前外部软件光标处 (Shift+Enter)">🔗 贴双链</button>
+          </div>
+        `;
+      }
+      if (it.isAssetItem && it.assetData) {
+        return `
+          <div class="search-row-actions" onclick="event.stopPropagation()">
+            <button type="button" class="search-row-btn primary" onclick="event.stopPropagation(); openAssetLocalFile('${escapeQuote(it.assetData.fullPath)}')" title="用本地默认软件秒开此附件 (Space/Enter)">📂 秒开</button>
+            <button type="button" class="search-row-btn" onclick="event.stopPropagation(); pasteAtCursor('[${escapeQuote(it.assetData.fileName)}](${escapeQuote(it.assetData.assetRel)})')" title="粘贴附件引用链接到光标处 (Shift+Enter)">🔗 贴引用</button>
+          </div>
+        `;
+      }
+      if (it.favData || (it.isBookmarkItem && it.bmData)) {
+        return `
+          <div class="search-row-actions" onclick="event.stopPropagation()">
+            <button type="button" class="search-row-btn primary" onclick="event.stopPropagation(); executeItem(filteredItems[${idx}])" title="在默认浏览器中打开此网页 (Enter)">🌐 打开</button>
+            <button type="button" class="search-row-btn" onclick="event.stopPropagation(); selectedIndex = ${idx}; executeSelected(true)" title="将 Markdown 链接粘贴到当前外部窗口光标处 (Shift+Enter)">🔗 贴链接</button>
+          </div>
+        `;
+      }
+      if (it.folderData) {
+        return `
+          <div class="search-row-actions" onclick="event.stopPropagation()">
+            <button type="button" class="search-row-btn primary" onclick="event.stopPropagation(); executeItem(filteredItems[${idx}])" title="若当前有打开/保存文件对话框则原位秒跳该目录，否则在资源管理器打开">📂 跳目录</button>
+            <button type="button" class="search-row-btn" onclick="event.stopPropagation(); selectedIndex = ${idx}; executeSelected(true)" title="将文件夹完整路径粘贴到光标处">📋 贴路径</button>
+          </div>
+        `;
+      }
+      if (it.templateContent || it.clipData) {
+        return `
+          <div class="search-row-actions" onclick="event.stopPropagation()">
+            <button type="button" class="search-row-btn primary" onclick="event.stopPropagation(); executeItem(filteredItems[${idx}])" title="写入思源今日日记 (Enter)">📥 入日记</button>
+            <button type="button" class="search-row-btn" onclick="event.stopPropagation(); pasteAtCursor(filteredItems[${idx}].templateContent || (filteredItems[${idx}].clipData && filteredItems[${idx}].clipData.markdown) || '')" title="直接粘贴到当前外部窗口光标处 (Shift+Enter)">⚡ 贴光标</button>
+          </div>
+        `;
+      }
+      if (it.isWebClipItem || it.isPenWorkbenchItem || it.isOcrWorkbenchItem || it.isCleanMdItem || it.isColorStyleItem || it.isFlowTimerItem) {
+        return `
+          <div class="search-row-actions" onclick="event.stopPropagation()">
+            <button type="button" class="search-row-btn primary" onclick="event.stopPropagation(); executeItem(filteredItems[${idx}])" title="立即执行此项操作 (Enter)">▶ 执行</button>
+          </div>
+        `;
+      }
+      return "";
+    }
+
     function renderSplitSearchResults(container, items, selectedIdx) {
       const q = document.getElementById("search-input") ? document.getElementById("search-input").value.trim() : "";
       container.innerHTML = `
-        <div class="search-results-pane" id="search-results-pane">
+        <div class="search-results-pane" id="search-results-pane" onmouseleave="cancelHoverSearchItem()">
+          ${items.length > 0 ? `
+            <div class="split-left-header">
+              <span>📋 共 <b>${items.length}</b> 项 · 悬停/单击右侧预览，或直接点行内按钮</span>
+              <button type="button" class="search-row-btn" onclick="clearSearchInput()" title="退回主页 (Esc)">⬅️ 返回主页</button>
+            </div>
+          ` : ""}
           ${items.length === 0 ? getSplitModeEmptyStateHtml(q) : items.map((it, idx) => {
             const isSel = (idx === selectedIdx);
             return `
-              <div class="search-item-row ${isSel ? 'selected' : ''}" data-index="${idx}" onclick="executeItem(filteredItems[${idx}])" onmouseenter="onHoverSearchItem(${idx})">
+              <div class="search-item-row ${isSel ? 'selected' : ''}" data-index="${idx}" onclick="handleSplitRowClick(${idx})" ondblclick="executeItem(filteredItems[${idx}])" onmouseenter="onHoverSearchItem(${idx})" onmouseleave="cancelHoverSearchItem()">
                 <div class="search-item-left">
                   <div class="search-item-icon" style="color: ${it.iconColor};">${renderItemIcon(it)}</div>
                   <div class="search-item-text">
@@ -9990,6 +10515,7 @@
                   </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                  ${renderSplitRowQuickActions(it, idx)}
                   ${idx < 9 ? `<span class="quick-num-badge" title="按 Ctrl+${idx + 1} 直接执行">^${idx + 1}</span>` : ""}
                   <span class="tag-badge ${it.badgeCls} search-item-badge">${it.badge}</span>
                 </div>
@@ -10012,18 +10538,62 @@
       }
     }
 
-    function onHoverSearchItem(idx) {
-      if (selectedIndex === idx) return;
-      const container = document.getElementById("view-container");
-      if (!container) return;
-      const prevEl = container.querySelector(`[data-index="${selectedIndex}"]`);
-      const nextEl = container.querySelector(`[data-index="${idx}"]`);
-      selectedIndex = idx;
-      if (prevEl && nextEl) {
-        prevEl.classList.remove("selected");
-        nextEl.classList.add("selected");
+    let _hoverSearchTimer = 0;
+    function cancelHoverSearchItem() {
+      if (_hoverSearchTimer) {
+        clearTimeout(_hoverSearchTimer);
+        _hoverSearchTimer = 0;
       }
-      requestBlockContext(filteredItems[selectedIndex]);
+    }
+
+    function handleSplitRowClick(idx) {
+      cancelHoverSearchItem();
+      const it = filteredItems[idx];
+      if (!it) return;
+      if (selectedIndex !== idx) {
+        const container = document.getElementById("view-container");
+        if (container) {
+          const prevEl = container.querySelector(`[data-index="${selectedIndex}"]`);
+          const nextEl = container.querySelector(`[data-index="${idx}"]`);
+          if (prevEl) prevEl.classList.remove("selected");
+          if (nextEl) nextEl.classList.add("selected");
+        }
+        selectedIndex = idx;
+        requestBlockContext(it);
+        if (it.isWebClipItem || it.isPenWorkbenchItem || it.isOcrWorkbenchItem || it.isCleanMdItem || it.isColorStyleItem || it.isFlowTimerItem || typeof it.action === "function") {
+          executeItem(it);
+        }
+        return;
+      }
+      executeItem(it);
+    }
+
+    function onHoverSearchItem(idx) {
+      cancelHoverSearchItem();
+      if (selectedIndex === idx) return;
+      // 若用户正在右侧预览/编辑区内输入文字，绝不因鼠标划过左侧而冲掉右侧编辑态
+      const inspector = document.getElementById("search-inspector-pane");
+      const activeEl = document.activeElement;
+      if (inspector && activeEl && inspector.contains(activeEl)) {
+        const tag = (activeEl.tagName || "").toUpperCase();
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || activeEl.isContentEditable) {
+          return;
+        }
+      }
+      _hoverSearchTimer = setTimeout(() => {
+        _hoverSearchTimer = 0;
+        if (selectedIndex === idx) return;
+        const container = document.getElementById("view-container");
+        if (!container) return;
+        const prevEl = container.querySelector(`[data-index="${selectedIndex}"]`);
+        const nextEl = container.querySelector(`[data-index="${idx}"]`);
+        selectedIndex = idx;
+        if (prevEl && nextEl) {
+          prevEl.classList.remove("selected");
+          nextEl.classList.add("selected");
+        }
+        requestBlockContext(filteredItems[selectedIndex]);
+      }, 130);
     }
 
     let currentInspectorTab = "detail";

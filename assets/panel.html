@@ -3904,6 +3904,82 @@
       color: var(--text-secondary);
       margin-bottom: 4px;
     }
+    .demo-loop-strip {
+      grid-column: 1 / -1;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-hairline);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .demo-loop-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .demo-loop-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .demo-loop-skip {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      transition: all 0.14s ease;
+    }
+    .demo-loop-skip:hover {
+      color: var(--text-secondary);
+      border-color: var(--border-hairline);
+    }
+    .demo-loop-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .demo-loop-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      border-radius: 9px;
+      padding: 9px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+    .demo-loop-card:hover {
+      border-color: var(--emerald-mint);
+      transform: translateY(-1px);
+    }
+    .demo-loop-card-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .demo-loop-card-desc {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+    .demo-loop-card-btn {
+      align-self: flex-start;
+      padding: 3px 9px;
+      border-radius: 6px;
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid var(--emerald-mint);
+      color: var(--emerald-mint);
+      font-size: 10.5px;
+      font-weight: 700;
+    }
 
     /* 双栏搜索模式左侧顶部状态指引条与行内显式操作按钮 */
     .split-left-header {
@@ -7994,6 +8070,29 @@
     }
 
     let isHomePillarsCollapsed = localStorage.getItem("omni_pillars_collapsed") === "true";
+    function isDemoLoopDone() {
+      return localStorage.getItem("omni_demo_loop_done") === "true";
+    }
+    function dismissDemoLoop() {
+      localStorage.setItem("omni_demo_loop_done", "true");
+      renderItems();
+    }
+    function runDemoLoopAction(kind) {
+      const demoTexts = {
+        diary: "🚀 外骨骼体验：我的第一条速记已进入今日日记！",
+        task: "- [ ] 体验外骨骼：在思源中把这条待办勾掉",
+        flash: "?思源外骨骼是什么？它是思源笔记的 Windows 伴侣程序，提供全局速记、网页剪藏、秒搜与闪卡复习"
+      };
+      const text = demoTexts[kind] || demoTexts.diary;
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(JSON.stringify({ op: "executeCommand", cmd: "sys", text: text, keepOpen: true }));
+      } else if (window.onQuickNoteCompleted) {
+        window.onQuickNoteCompleted({ success: true, text: text, sourceLabel: "新手演示" });
+      }
+      localStorage.setItem("omni_demo_loop_done", "true");
+      renderItems();
+      showToast(kind === "task" ? "✅ 已写入今日待办！到「全景待办视界」即可勾销" : kind === "flash" ? "✅ 闪卡已创建！Alt+Shift+R 三秒微刷卡开刷" : "✅ 已写入今日日记！这就是外骨骼的记一笔速度");
+    }
     function toggleHomePillarsHub() {
       isHomePillarsCollapsed = !isHomePillarsCollapsed;
       localStorage.setItem("omni_pillars_collapsed", isHomePillarsCollapsed ? "true" : "false");
@@ -8092,6 +8191,38 @@
             <button type="button" class="pillar-action-btn" onclick="insertPrefix('d:')" title="搜索思源全库文档标题并一键打开">📄 搜全库文档</button>
             <button type="button" class="pillar-action-btn" onclick="insertPrefix('att:')" title="搜索库内 PDF、Office 文档与图片附件">📎 搜PDF与附件</button>
           `;
+
+        const todayCountMatch = /^今日\s*(\d+)\s*块/.exec(todayText);
+        const todayCount = todayCountMatch ? parseInt(todayCountMatch[1], 10) : 0;
+        if (currentCategory === "consolidated" && !isDemoLoopDone() && todayCount === 0) {
+          const demoEl = document.createElement("div");
+          demoEl.className = "demo-loop-strip";
+          demoEl.id = "demo-loop-strip";
+          demoEl.innerHTML = `
+            <div class="demo-loop-head">
+              <span class="demo-loop-title">🎯 30 秒上手：点一下，真实写入你的思源（只出现这一次）</span>
+              <span class="demo-loop-skip" onclick="dismissDemoLoop()">跳过演示 ✕</span>
+            </div>
+            <div class="demo-loop-cards">
+              <div class="demo-loop-card" onclick="runDemoLoopAction('diary')" title="点击即真实写入思源今日日记">
+                <span class="demo-loop-card-title">📝 第一条速记</span>
+                <span class="demo-loop-card-desc">一行文字进入今日日记，这就是「随手记」的全部操作</span>
+                <span class="demo-loop-card-btn">▶ 试试看</span>
+              </div>
+              <div class="demo-loop-card" onclick="runDemoLoopAction('task')" title="点击即真实创建一条待办任务">
+                <span class="demo-loop-card-title">📋 第一条待办</span>
+                <span class="demo-loop-card-desc">自动进入四象限看板，之后在思源里勾选即完成</span>
+                <span class="demo-loop-card-btn">▶ 试试看</span>
+              </div>
+              <div class="demo-loop-card" onclick="runDemoLoopAction('flash')" title="点击即真实创建一张问答闪卡">
+                <span class="demo-loop-card-title">🃏 第一张闪卡</span>
+                <span class="demo-loop-card-desc">问句秒变记忆卡片，Alt+Shift+R 三秒微刷卡随时复习</span>
+                <span class="demo-loop-card-btn">▶ 试试看</span>
+              </div>
+            </div>
+          `;
+          container.appendChild(demoEl);
+        }
 
         if (isHomePillarsCollapsed) {
           const colBar = document.createElement("div");

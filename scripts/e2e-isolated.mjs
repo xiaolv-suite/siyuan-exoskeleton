@@ -4238,6 +4238,20 @@ async function main() {
                                panelContent.includes('📋 存为待办任务</button>');
   logStep("Step 7.237: 搜索兜底命令保证 (意图条问AI、泛空状态记日记/存待办/问AI、任何输入必有用) 断言", hasFallbackGuarantee, `兜底命令闭环: ${hasFallbackGuarantee}`);
 
+  // Step 7.238: Test 30-Second First-Run Demo Action Loop (Raycast Walkthrough + CmdPal Home style)
+  const hasDemoLoop = panelContent.includes('function runDemoLoopAction') &&
+                      panelContent.includes('function isDemoLoopDone') &&
+                      panelContent.includes('function dismissDemoLoop') &&
+                      panelContent.includes('"demo-loop-strip"') &&
+                      panelContent.includes('class="demo-loop-card"') &&
+                      panelContent.includes('omni_demo_loop_done') &&
+                      panelContent.includes('🎯 30 秒上手：点一下，真实写入你的思源') &&
+                      panelContent.includes("runDemoLoopAction('diary')") &&
+                      panelContent.includes("runDemoLoopAction('task')") &&
+                      panelContent.includes("runDemoLoopAction('flash')") &&
+                      panelContent.includes('跳过演示 ✕');
+  logStep("Step 7.238: 首启 30 秒演示动作回路 (三张示例卡一键真实写入日记/待办/闪卡、完成即隐藏、可跳过) 断言", hasDemoLoop, `演示动作回路闭环: ${hasDemoLoop}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

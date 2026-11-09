@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Web.Script.Serialization;
 using Quicker.Public;
 using XiaoLv.Desktop.Core;
 public class ReceiptResult
@@ -153,7 +154,7 @@ public static class LvGetReceipt
         {
             var body = "{\"path\":\"" + path + "\"}";
             var r = SyKernelRequest.DoRequest(baseUrl, token, "/api/file/getFile", body);
-            if (r.Success && !string.IsNullOrWhiteSpace(r.Text) && !r.Text.Contains("\"code\":"))
+            if (r.Success && !string.IsNullOrWhiteSpace(r.Text))
             {
                 return r.Text;
             }
@@ -169,8 +170,8 @@ public static class LvGetReceipt
     {
         if (string.IsNullOrEmpty(ndjsonText) || string.IsNullOrEmpty(targetId)) return null;
 
-        // 优化：仅截取尾部 32KB（对于每行约 200 字节的回执，涵盖约 160 行活跃记录）
-        const int tailWindowBytes = 32768;
+        // Bounded tail accommodates structured receipts; JSON strings can contain braces and IDs.
+        const int tailWindowBytes = 262144;
         string searchWindow = ndjsonText;
         if (ndjsonText.Length > tailWindowBytes)
         {
@@ -187,10 +188,13 @@ public static class LvGetReceipt
             if (line.Length == 0) continue;
 
             // 极速子串探测，不匹配跳过
-            if (!line.Contains(targetKey)) continue;
-
-            // 命中目标行，解析核心字段
-            return ParseReceiptLine(line);
+            if (!line.Contains(targetKey) && !line.Contains(targetId)) continue;
+            try {
+                var serializer = new JavaScriptSerializer { MaxJsonLength = 262144 };
+                var obj = serializer.DeserializeObject(line) as Dictionary<string, object>;
+                if (obj == null || !obj.ContainsKey("id") || !(obj["id"] is string) || (string)obj["id"] != targetId) continue;
+                return ParseReceiptLine(line);
+            } catch { /* malformed or a partial tail is never a success receipt */ }
         }
 
         return null;
@@ -204,13 +208,17 @@ public static class LvGetReceipt
     {
         try
         {
-            var status = ExtractStringField(line, "status") ?? "unknown";
-            var message = ExtractStringField(line, "message") ?? "";
-            var elapsedStr = ExtractRawField(line, "elapsedMs");
+            var serializer = new JavaScriptSerializer { MaxJsonLength = 262144 };
+            var obj = serializer.DeserializeObject(line) as Dictionary<string, object>;
+            if (obj == null) throw new FormatException("Invalid receipt object");
+            var status = obj.ContainsKey("status") ? obj["status"] as string : "unknown";
+            if (status != "recorded" && status != "duplicate" && status != "failed" && status != "unknown" && status != "rejected" && status != "expired") status = "unknown";
+            var message = obj.ContainsKey("message") ? obj["message"] as string ?? "" : "";
+            var elapsedStr = obj.ContainsKey("elapsedMs") ? Convert.ToString(obj["elapsedMs"]) : "0";
             int elapsed = 0;
             if (!string.IsNullOrEmpty(elapsedStr)) int.TryParse(elapsedStr, out elapsed);
 
-            var dataJson = ExtractObjectField(line, "data") ?? "{}";
+            var dataJson = obj.ContainsKey("data") ? serializer.Serialize(obj["data"]) : "{}";
 
             return new ReceiptMatch
             {
@@ -224,8 +232,8 @@ public static class LvGetReceipt
         {
             return new ReceiptMatch
             {
-                Status = "recorded",
-                Message = "回执命中（轻量解析模式）",
+                Status = "unknown",
+                Message = "回执格式无法确认，请按原请求 ID 对账",
                 DataJson = "{}",
                 ElapsedMs = 0
             };

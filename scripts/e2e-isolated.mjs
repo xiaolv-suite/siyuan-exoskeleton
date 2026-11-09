@@ -4574,6 +4574,32 @@ async function main() {
                              panelContent.includes('{query}');
   logStep("Step 7.249: AI 路由器 (ai: 前缀目标列表 / Tab 一键路由 / 剪贴板交接复制提问 / http(s) 白名单 / 偏好可编辑默认豆包千问Kimi秘塔) 断言", hasAiRouteRuntime && hasAiRouteContract, `默认目标运行时: ${aiRouteRes.trim()} · 契约: ${hasAiRouteContract}`);
 
+  // Step 7.250: Test Browser Clipper Companion Extension (P2-3/P2-4: MV3 extension over /api/write)
+  const extDir = path.join(ROOT, 'browser-extension');
+  const extManifest = JSON.parse(fs.readFileSync(path.join(extDir, 'manifest.json'), 'utf8'));
+  const extBg = fs.readFileSync(path.join(extDir, 'background.js'), 'utf8');
+  const extOptions = fs.readFileSync(path.join(extDir, 'options.js'), 'utf8');
+  const extPopup = fs.readFileSync(path.join(extDir, 'popup.js'), 'utf8');
+  const extReadme = fs.readFileSync(path.join(extDir, 'README.md'), 'utf8');
+  const quickerDoc = fs.readFileSync(path.join(ROOT, 'docs', 'QUICKER-README.md'), 'utf8');
+  const hasExtPackage = extManifest.manifest_version === 3 &&
+                        Array.isArray(extManifest.permissions) && extManifest.permissions.includes("contextMenus") &&
+                        Array.isArray(extManifest.host_permissions) && extManifest.host_permissions.some(h => h.includes("127.0.0.1")) &&
+                        fs.existsSync(path.join(extDir, 'icon128.png')) &&
+                        extBg.includes('/api/write') &&
+                        extBg.includes('X-Token');
+  const hasExtBehavior = extBg.includes('"xlv-clip-selection"') &&
+                         extBg.includes('"xlv-clip-page"') &&
+                         extBg.includes('chrome.notifications.create') &&
+                         extOptions.includes('/status') &&
+                         extOptions.includes('"X-Token"') &&
+                         extPopup.includes('/api/write') &&
+                         extReadme.includes('加载已解压') &&
+                         quickerDoc.includes('/api/capture') &&
+                         quickerDoc.includes('/api/write') &&
+                         quickerDoc.includes('演示 GIF 分镜');
+  logStep("Step 7.250: 浏览器剪藏伴侣扩展 (MV3: 划词右键/整页收藏/批注弹窗 → 本地 /api/write X-Token 直写) 与 Quicker/AHK/uTools 上架素材断言", hasExtPackage && hasExtBehavior, `扩展包: ${hasExtPackage} · 行为与素材: ${hasExtBehavior}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

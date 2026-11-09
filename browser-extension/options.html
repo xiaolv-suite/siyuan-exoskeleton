@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>思源外骨骼剪藏伴侣 · 设置</title>
+  <style>
+    body { font-family: "Microsoft YaHei", sans-serif; background: #0f172a; color: #e2e8f0; padding: 24px; width: 420px; }
+    h2 { margin: 0 0 4px; font-size: 16px; color: #38bdf8; }
+    p.tip { margin: 0 0 16px; font-size: 12px; color: #94a3b8; line-height: 1.6; }
+    label { display: block; font-size: 12px; color: #cbd5e1; margin: 12px 0 4px; }
+    input { width: 100%; box-sizing: border-box; padding: 7px 10px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; font-size: 13px; }
+    button { margin-top: 14px; padding: 8px 16px; border-radius: 6px; border: 1px solid #10b981; background: rgba(16,185,129,.16); color: #10b981; font-weight: 700; cursor: pointer; }
+    button.secondary { border-color: #334155; background: #1e293b; color: #cbd5e1; font-weight: 400; }
+    #status { margin-top: 10px; font-size: 12px; min-height: 18px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <h2>⚙️ 思源外骨骼剪藏伴侣</h2>
+  <p class="tip">Token 来自思源外骨骼 → 偏好设置 → Webhook 令牌；剪藏数据经本机 127.0.0.1 直写思源，不经云端。</p>
+  <label>Webhook Token（必填）</label>
+  <input type="password" id="token" placeholder="外骨骼偏好设置中的 Webhook 令牌" />
+  <label>日记小节名（剪藏进入今日日记的哪个小节）</label>
+  <input type="text" id="heading" placeholder="默认：🌐 网页剪藏" />
+  <label>外骨骼 Webhook 端口</label>
+  <input type="number" id="port" placeholder="默认 43989" />
+  <button id="save">💾 保存设置</button>
+  <button id="test" class="secondary">🔍 测试连接</button>
+  <div id="status"></div>
+  <script src="options.js"></script>
+</body>
+</html>

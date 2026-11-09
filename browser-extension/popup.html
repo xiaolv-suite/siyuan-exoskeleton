@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { font-family: "Microsoft YaHei", sans-serif; background: #0f172a; color: #e2e8f0; width: 320px; padding: 14px; margin: 0; }
+    h3 { margin: 0 0 8px; font-size: 14px; color: #38bdf8; }
+    #title { font-size: 12px; color: #cbd5e1; margin-bottom: 8px; word-break: break-all; }
+    textarea { width: 100%; box-sizing: border-box; height: 64px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; font-size: 12px; padding: 6px 8px; resize: vertical; }
+    button { margin-top: 10px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #10b981; background: rgba(16,185,129,.16); color: #10b981; font-weight: 700; cursor: pointer; }
+    button.secondary { border-color: #334155; background: #1e293b; color: #cbd5e1; font-weight: 400; }
+    #status { margin-top: 8px; font-size: 12px; min-height: 16px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <h3>🌐 存入思源</h3>
+  <div id="title">读取当前网页…</div>
+  <textarea id="note" placeholder="可写一句批注（可选），随网页一起入日记"></textarea>
+  <button id="save">📑 整页收藏到今日日记</button>
+  <button id="copy" class="secondary">📋 仅复制 Markdown 链接</button>
+  <div id="status"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

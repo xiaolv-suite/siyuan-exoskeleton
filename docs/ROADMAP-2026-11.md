@@ -144,8 +144,8 @@
 
 1. ✅ **MCP server 封装**：`思源外骨骼.exe --mcp` 无头 stdio NDJSON JSON-RPC（零 UI 零互斥），7 工具（siyuan_write/search_blocks/search_docs/today_entries/unfinished_tasks/due_cards_count/status）复用参数化写入桥与 kernel API；E2E 真机 spawn 验证握手+工具表+写入落库；坑：winexe 下 Console.InputEncoding 不可靠（GBK 乱码），必须 OpenStandardInput+UTF8 裸流。新增 GET /api/openapi OpenAPI 3.0 自描述端点（9 路径）+ docs/MCP-README.md 接入指南（Claude Desktop/ChatBox/Cursor 配置）
 2. ✅ **AI 路由器**：`ai: 问题` 前缀 + 搜索框 Tab 一键路由 + 意图条「📤 AI 路由」；剪贴板交接范式（先复制提问再打开目标，粘贴即问——URL 预填不确定也不误事）；默认 4 目标（豆包/千问/Kimi/秘塔）偏好可编辑（{query} 占位模板）；后端 aiRouteLaunch op 仅 http(s) 白名单；E2E 回调对账抓漏 onAiRouteLaunched 已补
-3. **Quicker 动作广场上架**：把高频动作做成 Quicker 可导入动作（复制粘贴即装）。
-4. **（可选）轻量浏览器扩展**：划词/高亮 → webhook，先于完整剪藏扩展补「片段模式」。
+3. ✅ **Quicker/AHK/uTools 上架素材**（docs/QUICKER-README.md）：5 套 Quicker HTTP 动作配方（速记/剪藏/待办/闪卡/远程控制）+ AHK 片段 + Quicklink 指引 + 5 镜 30 秒演示 GIF 分镜 + 上架检查清单
+4. ✅ **轻量浏览器扩展**（browser-extension/，MV3）：划词右键/整页收藏/批注弹窗 → 本地 /api/write (X-Token) 直写今日日记「🌐 网页剪藏」小节；选项页 Token/端口/小节可配 + 测试连接探针；数据全程 127.0.0.1 零云端——对标 Obsidian Clipper 片段+整页双模式
 
 ### 决策红线（明确不做）
 

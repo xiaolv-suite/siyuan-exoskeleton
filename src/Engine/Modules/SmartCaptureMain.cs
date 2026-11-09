@@ -870,6 +870,37 @@ public static class SmartCaptureMain
     /// 灵感 1 核心能力：0ms 网页极速剪藏卡 (Alt+Shift+G / g:)
     /// 免浏览器扩展，毫秒抓取前台网页标题与 URL，网站定制去噪，生成嵌套列表文献卡并联动小驴拾遗未读分拣
     /// </summary>
+    /// <summary>
+    /// P1-4 剪藏域名路由：解析 AppSettings.ClipDomainRules（每行 "域名 => /目标文件夹/"），
+    /// 按主机名精确/子域后缀匹配返回命中的目标文件夹；未命中返回空串。
+    /// </summary>
+    public static string ResolveClipDomainFolder(string url)
+    {
+        string rules = AppSettings.Instance.ClipDomainRules;
+        if (string.IsNullOrWhiteSpace(rules) || string.IsNullOrWhiteSpace(url)) return "";
+        string host = "";
+        try { host = new Uri(url).Host.ToLowerInvariant(); } catch { }
+        if (string.IsNullOrEmpty(host)) return "";
+        if (host.StartsWith("www.")) host = host.Substring(4);
+        foreach (var line in rules.Replace("\r\n", "\n").Split('\n'))
+        {
+            var parts = line.Split(new string[] { "=>" }, 2, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length != 2) continue;
+            string domain = parts[0].Trim().ToLowerInvariant();
+            string folder = parts[1].Trim();
+            if (string.IsNullOrEmpty(domain) || string.IsNullOrEmpty(folder)) continue;
+            if (domain.StartsWith("www.")) domain = domain.Substring(4);
+            if (host == domain || host.EndsWith("." + domain))
+            {
+                folder = folder.Trim().Replace("\\", "/");
+                if (!folder.StartsWith("/")) folder = "/" + folder;
+                if (!folder.EndsWith("/")) folder = folder + "/";
+                return folder;
+            }
+        }
+        return "";
+    }
+
     public static void ExecuteWebClip(Action<string, string> notify)
     {
         ExecuteWebClip(notify, "", "card");
@@ -1029,6 +1060,10 @@ public static class SmartCaptureMain
                     rawFolder = rawFolder.Trim().Replace("\\", "/");
                     if (!rawFolder.StartsWith("/")) rawFolder = "/" + rawFolder;
                     if (!rawFolder.EndsWith("/")) rawFolder = rawFolder + "/";
+
+                    // P1-4 剪藏域名路由：域名规则命中时覆盖研读专页目标文件夹 (学 Obsidian Clipper 按域名归档)
+                    string domainFolder = ResolveClipDomainFolder(url);
+                    if (!string.IsNullOrEmpty(domainFolder)) rawFolder = domainFolder;
 
                     string docPath = rawFolder + safeDocTitle;
                     var createReq = "{\"notebook\":\"" + SafeContext.EscapeJson(targetNbId) + "\",\"path\":\"" + SafeContext.EscapeJson(docPath) + "\",\"markdown\":\"" + SafeContext.EscapeJson(fullMd) + "\"}";

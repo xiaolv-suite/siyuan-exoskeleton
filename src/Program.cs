@@ -447,6 +447,11 @@ namespace XiaoLv.Desktop
                     StartFsrsReview();
                     return;
                 }
+                if (jumpKind == "clips")
+                {
+                    _bentoWindow.ShowPanel("d:读库");
+                    return;
+                }
                 _bentoWindow.ShowPanel(jumpKind == "tasks" ? "t:" : null);
             });
             if (!IsIsolatedRun)

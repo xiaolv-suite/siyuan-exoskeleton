@@ -4392,6 +4392,40 @@ async function main() {
                          panelContent.includes("insertPrefix('ocr:')");
   logStep("Step 7.244: OCR 写回闭环 (截图识字落库→custom-ocr-text 属性→JOIN 属性表结构化秒搜 ocr: 前缀，补 #13714) 断言", hasOcrWriteBack && hasOcrContract, `属性检索: ${!!ocrJoinRow} · 契约: ${hasOcrContract} · 关键词样例: ${ocrKw}`);
 
+  // Step 7.245: Test Clip Domain Routing + Unread Review Loop (P1-4)
+  const clipRouteScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $settingsType = $asm.GetType('XiaoLv.Desktop.Core.AppSettings');
+    $instProp = $settingsType.GetProperty('Instance', [System.Reflection.BindingFlags]'Public,Static');
+    $inst = $instProp.GetValue($null, $null);
+    $rulesProp = $settingsType.GetProperty('ClipDomainRules');
+    $rulesProp.SetValue($inst, 'github.com => /读库/开发/' + [char]10 + 'zhihu.com => /读库/观点/', $null);
+    $scm = $asm.GetType('SmartCaptureMain');
+    $mRoute = $scm.GetMethod('ResolveClipDomainFolder', [System.Reflection.BindingFlags]'Public,Static');
+    $r1 = $mRoute.Invoke($null, @('https://github.com/xiaolv/exo'));
+    $r2 = $mRoute.Invoke($null, @('https://www.zhihu.com/question/123'));
+    $r3 = $mRoute.Invoke($null, @('https://example.com/none'));
+    $ok = ($r1 -eq '/读库/开发/') -and ($r2 -eq '/读库/观点/') -and ($r3 -eq '');
+    Write-Output ($ok.ToString() + '|' + $r1 + '|' + $r2 + '|' + $r3);
+  `;
+  const clipRouteRes = runPs(clipRouteScript);
+  const hasClipRouteRuntime = clipRouteRes.includes("True");
+  const appSettingsCs = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'AppSettings.cs'), 'utf8');
+  const smartCapCs = fs.readFileSync(path.join(ROOT, 'src', 'Engine', 'Modules', 'SmartCaptureMain.cs'), 'utf8');
+  const guardianP14 = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'ReminderGuardian.cs'), 'utf8');
+  const programP14 = fs.readFileSync(path.join(ROOT, 'src', 'Program.cs'), 'utf8');
+  const hasClipRouteContract = appSettingsCs.includes('public string ClipDomainRules') &&
+                               appSettingsCs.includes('"clipDomainRules"') &&
+                               smartCapCs.includes('public static string ResolveClipDomainFolder') &&
+                               smartCapCs.includes('剪藏域名路由') &&
+                               panelContent.includes('pref-desktop-clipdomainrules') &&
+                               panelContent.includes('clipDomainRules: cdrVal') &&
+                               guardianP14.includes('CountStaleUnreadClips') &&
+                               guardianP14.includes("custom-clip-status") &&
+                               programP14.includes('ShowPanel("d:读库")');
+  logStep("Step 7.245: 剪藏域名路由 (域名=>目录规则反射真机命中/子域匹配/未命中空) 与 3 天未读回顾提醒 (托盘气泡→d:读库) 断言", hasClipRouteRuntime && hasClipRouteContract, `路由运行时: ${hasClipRouteRuntime} · 契约: ${hasClipRouteContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

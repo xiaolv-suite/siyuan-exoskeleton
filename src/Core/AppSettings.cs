@@ -50,6 +50,9 @@ namespace XiaoLv.Desktop.Core
         public bool LifelogAutoSectionEnabled { get; set; }
         public string WebClipDefaultMode { get; set; }
         public string WebClipTargetFolder { get; set; }
+
+        /// <summary>P1-4 剪藏域名路由规则，每行一条: 域名 => /目标文件夹/</summary>
+        public string ClipDomainRules { get; set; }
         public string WebClipCustomTemplate { get; set; }
         public bool AiEnabled { get; set; }
         public string AiBaseUrl { get; set; }
@@ -87,6 +90,7 @@ namespace XiaoLv.Desktop.Core
             LifelogAutoSectionEnabled = true;
             WebClipDefaultMode = "card";
             WebClipTargetFolder = "/读库/";
+            ClipDomainRules = "";
             WebClipCustomTemplate = "";
             AiEnabled = false;
             AiBaseUrl = "http://localhost:11434/v1";
@@ -142,6 +146,7 @@ namespace XiaoLv.Desktop.Core
                     s.WebClipDefaultMode = JsonHelper.GetString(dict, "webClipDefaultMode", s.WebClipDefaultMode);
                     s.WebClipTargetFolder = JsonHelper.GetString(dict, "webClipTargetFolder", s.WebClipTargetFolder);
                     s.WebClipCustomTemplate = JsonHelper.GetString(dict, "webClipCustomTemplate", s.WebClipCustomTemplate);
+                    s.ClipDomainRules = JsonHelper.GetString(dict, "clipDomainRules", s.ClipDomainRules);
                     s.AiEnabled = JsonHelper.GetBool(dict, "aiEnabled", s.AiEnabled);
                     s.AiBaseUrl = JsonHelper.GetString(dict, "aiBaseUrl", s.AiBaseUrl);
                     s.AiModel = JsonHelper.GetString(dict, "aiModel", s.AiModel);

@@ -21,6 +21,7 @@ namespace XiaoLv.Desktop.Core
 
         private static int _lastDueCards = -1;
         private static string _lastTaskStamp = "";
+        private static string _lastClipStamp = "";
         private static int _checking = 0;
 
         /// <param name="onNotify">(标题, 正文, 跳转意图)</param>
@@ -72,6 +73,21 @@ namespace XiaoLv.Desktop.Core
                 }
             }
             catch { }
+            try
+            {
+                // P1-4 剪藏回顾闭环 (学简悦)：3 天前剪藏仍未读 → 每日一次托盘气泡提醒
+                int unreadClips = CountStaleUnreadClips();
+                if (unreadClips > 0)
+                {
+                    string clipStamp = DateTime.Now.ToString("yyyy-MM-dd") + "|" + unreadClips;
+                    if (clipStamp != _lastClipStamp)
+                    {
+                        _lastClipStamp = clipStamp;
+                        Notify("📚 剪藏回顾提醒", "有 " + unreadClips + " 条 3 天前的剪藏还没读过。点击通知 → 打开读库文档列表", "clips");
+                    }
+                }
+            }
+            catch { }
             finally { Interlocked.Exchange(ref _checking, 0); }
         }
 
@@ -110,6 +126,22 @@ namespace XiaoLv.Desktop.Core
                 else if (cmp < 0) overdue++;
             }
             return new int[] { dueToday, overdue };
+        }
+
+        /// <summary>P1-4 剪藏回顾：统计 custom-clip-status=unread 且创建时间超过 3 天的剪藏专页数量</summary>
+        private static int CountStaleUnreadClips()
+        {
+            try
+            {
+                string cutoff = DateTime.Now.AddDays(-3).ToString("yyyyMMddHHmmss");
+                var rows = SiYuanClient.SqlAsync("SELECT COUNT(*) AS n FROM attributes a JOIN blocks b ON b.id = a.block_id WHERE a.name = 'custom-clip-status' AND a.value = 'unread' AND b.created < '" + cutoff + "'").GetAwaiter().GetResult();
+                if (rows == null || rows.Count == 0) return 0;
+                var first = rows[0] as Dictionary<string, object>;
+                int n = 0;
+                if (first != null) int.TryParse(JsonHelper.GetString(first, "n", "0"), out n);
+                return n;
+            }
+            catch { return 0; }
         }
 
         private static void Notify(string title, string message, string jumpKind)

@@ -420,6 +420,7 @@ namespace XiaoLv.Desktop
             // 系统托盘初始化
             _tray = new SystemTray();
             _tray.OnOpenPanelClicked += () => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel());
+            _tray.OnOnboardingClicked += () => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel("@onboard"));
             _tray.OnOpenPenClicked += () => _wpfApp.Dispatcher.Invoke(() =>
             {
                 string selected = SelectionHelper.CaptureSelectedText(200);

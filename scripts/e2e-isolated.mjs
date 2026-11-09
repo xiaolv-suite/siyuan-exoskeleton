@@ -4252,6 +4252,41 @@ async function main() {
                       panelContent.includes('跳过演示 ✕');
   logStep("Step 7.238: 首启 30 秒演示动作回路 (三张示例卡一键真实写入日记/待办/闪卡、完成即隐藏、可跳过) 断言", hasDemoLoop, `演示动作回路闭环: ${hasDemoLoop}`);
 
+  // Step 7.239: Test Action Plaza (searchable one-click catalog of prefixes, cards & webhooks)
+  const hasActionPlaza = panelContent.includes('id="action-plaza-modal"') &&
+                         panelContent.includes('function toggleActionPlazaModal') &&
+                         panelContent.includes('function renderActionPlazaList') &&
+                         panelContent.includes('const PLAZA_PREFIX_ACTIONS') &&
+                         panelContent.includes('const PLAZA_WEBHOOK_ACTIONS') &&
+                         panelContent.includes('function copyPlazaWebhookUrl') &&
+                         panelContent.includes('<b>🎯</b> 动作广场') &&
+                         panelContent.includes('🎯 动作广场</button>') &&
+                         panelContent.includes("PLAZA_PREFIX_ACTIONS.filter");
+  logStep("Step 7.239: 动作广场 (前缀语法/功能卡/Webhook 三域目录可搜索可一键执行与复制) 断言", hasActionPlaza, `动作广场闭环: ${hasActionPlaza}`);
+
+  // Step 7.240: Test 5-Task Onboarding Checklist + Tray First-Item Contract
+  const bentoCsOnboard = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'BentoWindow.cs'), 'utf8');
+  const trayCsOnboard = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'SystemTray.cs'), 'utf8');
+  const programCsOnboard = fs.readFileSync(path.join(ROOT, 'src', 'Program.cs'), 'utf8');
+  const hasOnboardChecklist = panelContent.includes('const ONBOARD_TASK_DEFS') &&
+                              panelContent.includes('function markOnboardTask') &&
+                              panelContent.includes('function openOnboardingTasksModal') &&
+                              panelContent.includes('id="onboarding-tasks-modal"') &&
+                              panelContent.includes('omni_onboard_tasks_v1') &&
+                              panelContent.includes('"onboard-mini-bar"') &&
+                              panelContent.includes('markOnboardTask("clip")') &&
+                              panelContent.includes('markOnboardTask("note")') &&
+                              panelContent.includes('markOnboardTask("ai")') &&
+                              panelContent.includes('markOnboardTask("kanban")') &&
+                              panelContent.includes('if (raw) markOnboardTask("search")');
+  const hasTrayOnboardContract = trayCsOnboard.includes('OnOnboardingClicked') &&
+                                 trayCsOnboard.includes('🧭 新手上路 · 5 步玩转外骨骼') &&
+                                 trayCsOnboard.includes('_menu.Items.Insert(0, itemOnboard)') &&
+                                 bentoCsOnboard.includes('initialQuery == "@onboard"') &&
+                                 bentoCsOnboard.includes('window.openOnboardingTasksModal') &&
+                                 programCsOnboard.includes('ShowPanel("@onboard")');
+  logStep("Step 7.240: 新手上路 5 步清单 (五动作自动打勾/进度条/迷你条) 与托盘首项契约 (Insert0→@onboard→清单弹窗) 断言", hasOnboardChecklist && hasTrayOnboardContract, `清单闭环: ${hasOnboardChecklist} · 托盘契约: ${hasTrayOnboardContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

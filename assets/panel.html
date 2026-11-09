@@ -3980,6 +3980,133 @@
       font-size: 10.5px;
       font-weight: 700;
     }
+    .plaza-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 2px 8px;
+    }
+    .plaza-search {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      border-radius: 7px;
+      padding: 5px 9px;
+      color: var(--text-primary);
+      font-size: 11.5px;
+      outline: none;
+    }
+    .plaza-search:focus {
+      border-color: var(--cyber-sky);
+    }
+    .plaza-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .plaza-sec-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin: 6px 0 1px;
+    }
+    .plaza-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 6px 9px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      border-radius: 8px;
+      transition: all 0.14s ease;
+    }
+    .plaza-row:hover {
+      border-color: var(--cyber-sky);
+    }
+    .plaza-badge {
+      flex-shrink: 0;
+      min-width: 64px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid var(--cyber-sky);
+      color: var(--cyber-sky);
+      white-space: nowrap;
+    }
+    .plaza-main {
+      flex: 1;
+      min-width: 0;
+    }
+    .plaza-name {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .plaza-desc {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .plaza-ops {
+      flex-shrink: 0;
+      display: inline-flex;
+      gap: 4px;
+    }
+    .plaza-btn {
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 10.5px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+    .plaza-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--cyber-sky);
+    }
+    .plaza-btn.primary {
+      background: rgba(16, 185, 129, 0.16);
+      border-color: var(--emerald-mint);
+      color: var(--emerald-mint);
+      font-weight: 700;
+    }
+    .onboard-task-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      padding: 9px 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      border-radius: 9px;
+    }
+    .onboard-task-row.done {
+      opacity: 0.62;
+    }
+    .onboard-task-icon {
+      font-size: 15px;
+      line-height: 1.2;
+    }
+    .onboard-mini-bar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: var(--bg-inset);
+      border: 1px dashed var(--emerald-mint);
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
 
     /* 双栏搜索模式左侧顶部状态指引条与行内显式操作按钮 */
     .split-left-header {
@@ -4167,6 +4294,7 @@
       <span class="intent-chip" onclick="toggleCodeStudioModal()" title="全库代码片段与多语言纯净源码工作台，支持语言筛选、纯净直贴与VS Code秒开"><b>⌨️</b> 代码工作台</span>
       <span class="intent-chip" onclick="toggleGraphModal()" title="全景双向知识网络星轨拓扑视窗，辐射漫游与关系拓扑穿透"><b>🌌</b> 星轨图谱</span>
       <span class="intent-chip" onclick="toggleTodayTimeline()" title="无需切入思源，0ms 滑出今日日记记录的全部灵感、待办与笔记"><b>📅</b> 今日时间轴</span>
+      <span class="intent-chip" onclick="toggleActionPlazaModal()" title="打开动作广场：全部热键、前缀语法、功能卡与远程调用，搜索后一键执行"><b>🎯</b> 动作广场</span>
       <span class="intent-chip more-chips-toggle" id="toggle-more-chips-btn" onclick="toggleMoreIntentChips()" title="展开/收起按 4 大分类整理的扩展语法与工具"><b>✨</b> 更多指令 ▾</span>
     </div>
 
@@ -4641,6 +4769,45 @@
   </div>
 
   <!-- AI 前置提炼结果模态弹窗 -->
+  <div class="help-modal-overlay" id="action-plaza-modal" onclick="closeActionPlazaOnBg(event)">
+    <div class="help-modal-box" onclick="event.stopPropagation()" style="max-width: 720px;">
+      <div class="help-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">🎯</span>
+          <span style="font-weight: 700; font-size: 14px;">动作广场 · 每个动作点一下就能用</span>
+        </div>
+        <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleActionPlazaModal()">✕</button>
+      </div>
+      <div class="help-body" style="gap: 10px;">
+        <div class="plaza-toolbar">
+          <input type="text" class="plaza-search" id="plaza-search-input" placeholder="🔍 搜动作名、语法或功能，如「剪藏」「闪卡」「b:」" oninput="renderActionPlazaList()" onkeydown="if(event.key==='Escape'){event.stopPropagation();toggleActionPlazaModal();}">
+          <span style="font-size: 10px; color: var(--text-muted); white-space: nowrap;" id="plaza-count-text"></span>
+        </div>
+        <div class="plaza-list" id="action-plaza-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="help-modal-overlay" id="onboarding-tasks-modal" onclick="closeOnboardingTasksOnBg(event)">
+    <div class="help-modal-box" onclick="event.stopPropagation()" style="max-width: 560px;">
+      <div class="help-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">🧭</span>
+          <span style="font-weight: 700; font-size: 14px;">新手上路 · 5 步玩转外骨骼</span>
+        </div>
+        <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleOnboardingTasksModal()">✕</button>
+      </div>
+      <div class="help-body" style="gap: 10px;">
+        <div style="font-size: 11.5px; color: var(--text-secondary);">按顺序做完这 5 件事，你就掌握了外骨骼 80% 的日常用法。每完成一步会自动打勾。</div>
+        <div style="height: 6px; border-radius: 4px; background: var(--bg-inset); overflow: hidden;">
+          <div id="onboard-progress-fill" style="height: 100%; width: 0%; border-radius: 4px; background: var(--emerald-mint); transition: width 0.3s ease;"></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 7px;" id="onboarding-tasks-list"></div>
+        <button type="button" class="fg-try-btn" onclick="dismissOnboardingTasks()" style="align-self: center;">先跳过，托盘菜单「🧭 新手上路」随时找回</button>
+      </div>
+    </div>
+  </div>
+
   <div class="help-modal-overlay" id="ai-result-modal" onclick="closeAiResultModal(event)">
     <div class="help-modal-box" onclick="event.stopPropagation()" style="max-width: 620px;">
       <div class="help-header">
@@ -4670,6 +4837,7 @@
           <span style="font-weight: 700; font-size: 14px;">思源外骨骼 · 快捷键与心流罗盘</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="pref-btn" onclick="toggleActionPlazaModal()" style="font-size: 11px; padding: 3px 10px; color: var(--cyber-sky); border-color: rgba(56, 189, 248, 0.45); font-weight: 700;" title="打开动作广场：全部动作可搜索、可一键执行">🎯 动作广场</button>
           <button class="pref-btn" onclick="toggleOnboardingWizardModal()" style="font-size: 11px; padding: 3px 10px; color: var(--tech-amber); border-color: rgba(245, 158, 11, 0.45); font-weight: 700;" title="打开零配置首启 4 维环境自检与生态向导">🧭 环境自检向导</button>
           <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleCheatsheet()">✕</button>
         </div>
@@ -6723,6 +6891,7 @@
     function handleSearch(query) {
       const raw = query.trim();
       const q = raw.toLowerCase();
+      if (raw) markOnboardTask("search");
       const banner = document.getElementById("intent-banner");
       const chips = document.getElementById("quick-intent-chips");
       if (chips) chips.style.display = "flex";
@@ -8093,6 +8262,167 @@
       renderItems();
       showToast(kind === "task" ? "✅ 已写入今日待办！到「全景待办视界」即可勾销" : kind === "flash" ? "✅ 闪卡已创建！Alt+Shift+R 三秒微刷卡开刷" : "✅ 已写入今日日记！这就是外骨骼的记一笔速度");
     }
+
+    // ==================== P0-3 动作广场：全部动作可搜索、可一键执行 ====================
+    const PLAZA_PREFIX_ACTIONS = [
+      { badge: "! 事项", name: "待办速记", desc: "回车即把 - [ ] 任务写入今日日记", run: "insertPrefix('!')" },
+      { badge: "? 问//答", name: "秒建闪卡", desc: "问句自动生成 FSRS 问答卡进复习库", run: "insertPrefix('?')" },
+      { badge: "¥ 金额", name: "Lifelog 记账", desc: "自动分流进日记专属账目小节", run: "insertPrefix('¥')" },
+      { badge: "~ 时长", name: "专注时序", desc: "~45m 自动倒推起止时间记专注", run: "insertPrefix('~')" },
+      { badge: "+ 项目", name: "习惯打卡", desc: "+喝水600ml 自动打标进习惯小节", run: "insertPrefix('+')" },
+      { badge: ">> 小节", name: "内联小节路由", desc: "写入日记指定小节，不存在则自动创建", run: "insertPrefix('>>')" },
+      { badge: ">@ 文档", name: "跨文档直投", desc: "免切窗把内容追加到指定思源文档", run: "insertPrefix('>@')" },
+      { badge: "g: 批注", name: "网页批注剪藏", desc: "网页元数据 + 选区正文 + 个人洞见一体入库", run: "insertPrefix('g:')" },
+      { badge: "b: 关键词", name: "块级秒搜", desc: "全库正文/代码/标题毫秒检索，回车定位", run: "insertPrefix('b:')" },
+      { badge: "d: 关键词", name: "文档秒搜", desc: "按标题匹配思源文档并一键打开", run: "insertPrefix('d:')" },
+      { badge: "c: 关键词", name: "剪贴板历史", desc: "30 条容量，支持 c:url / c:code / c:table 筛选", run: "insertPrefix('c:')" },
+      { badge: "att: 名称", name: "附件秒查坞", desc: "PDF/表格/图片附件秒定，联动本地检索", run: "insertPrefix('att:')" },
+      { badge: "office: 名称", name: "办公文献穿透", desc: "Office/PDF 大纲透视、批注待办与页码锚点", run: "insertPrefix('office:')" },
+      { badge: "ev: 关键词", name: "全盘文件秒查", desc: "直通本地 Listary / Everything 检索工具", run: "insertPrefix('ev:')" },
+      { badge: "t: 关键词", name: "待办穿透", desc: "全库未完成 - [ ] 任务秒搜与一键勾销", run: "insertPrefix('t:')" },
+      { badge: "tag: 标签", name: "标签穿透坞", desc: "按 #标签# 过滤全库笔记块", run: "insertPrefix('tag:')" },
+      { badge: "m: 关键词", name: "书签秒搜", desc: "思源书签块与星标收藏检索直达", run: "insertPrefix('m:')" },
+      { badge: "v: 关键词", name: "模板直投", desc: "常用语与 Prompt 模板渲染进日记", run: "insertPrefix('v:')" },
+      { badge: "rand:", name: "浮墨漫游", desc: "随机打捞一条旧笔记重温灵感", run: "insertPrefix('rand:')" },
+      { badge: "pom: 分钟", name: "番茄专注", desc: "pom:25 启动 25 分钟心流番茄钟", run: "insertPrefix('pom:25 ')" },
+      { badge: "trash: 关键词", name: "回收站打捞", desc: "误删历史快照检索与 1 键复原", run: "insertPrefix('trash:')" },
+      { badge: "ws:", name: "工作现场快照", desc: "虚拟桌面工作现场保存与一键恢复", run: "insertPrefix('ws:')" },
+      { badge: "cfg: 关键词", name: "配置预设", desc: "S3/AI 模型等配置凭据一键热切换", run: "insertPrefix('cfg:')" }
+    ];
+    const PLAZA_WEBHOOK_ACTIONS = [
+      { badge: "POST", name: "/api/capture", desc: "免切窗速记入库（Quicker/AHK 最佳通道）" },
+      { badge: "POST", name: "/api/action", desc: "核心指令分流：cmd+text 执行任意动作" },
+      { badge: "GET", name: "/api/today", desc: "今日时间轴速览 JSON" },
+      { badge: "GET", name: "/api/tasks", desc: "全库未完成待办提取" },
+      { badge: "POST", name: "/api/search", desc: "全库块检索" },
+      { badge: "GET", name: "/api/focus", desc: "全景专注状态探针" },
+      { badge: "POST", name: "/api/notify", desc: "推送通知进外骨骼通知中心" },
+      { badge: "GET", name: "/api/status", desc: "存活探针：版本 / 连接 / pid" }
+    ];
+    function toggleActionPlazaModal() {
+      const modal = document.getElementById("action-plaza-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) {
+        const inp = document.getElementById("plaza-search-input");
+        if (inp) inp.value = "";
+        renderActionPlazaList();
+        if (inp) setTimeout(() => inp.focus(), 60);
+      }
+    }
+    function closeActionPlazaOnBg(e) {
+      const modal = document.getElementById("action-plaza-modal");
+      if (modal) modal.classList.remove("open");
+    }
+    function copyPlazaWebhookUrl(path) {
+      const port = (window.__DESKTOP_SETTINGS__ && window.__DESKTOP_SETTINGS__.webhookPort) || 43989;
+      copyToClipboard("http://127.0.0.1:" + port + path, "✓ 已复制 Webhook 地址（请求需带 X-Token，见偏好设置）");
+    }
+    function renderActionPlazaList() {
+      const listEl = document.getElementById("action-plaza-list");
+      if (!listEl) return;
+      const kw = ((document.getElementById("plaza-search-input") || {}).value || "").trim().toLowerCase();
+      const prefixes = PLAZA_PREFIX_ACTIONS.filter(p => !kw || (p.badge + " " + p.name + " " + p.desc).toLowerCase().includes(kw));
+      const cards = PANEL_ITEMS.filter(it => !kw || (it.title + " " + (it.desc || "") + " " + (it.id || "") + " " + (it.pinyin || "")).toLowerCase().includes(kw));
+      const hooks = PLAZA_WEBHOOK_ACTIONS.filter(w => !kw || (w.name + " " + w.desc).toLowerCase().includes(kw));
+      let html = "";
+      let total = 0;
+      if (prefixes.length) {
+        total += prefixes.length;
+        html += `<div class="plaza-sec-title">⚡ 意图前缀语法（搜索框直接键入）</div>` + prefixes.map(p =>
+          `<div class="plaza-row" onclick="${p.run}"><span class="plaza-badge">${p.badge}</span><div class="plaza-main"><div class="plaza-name">${p.name}</div><div class="plaza-desc">${p.desc}</div></div><div class="plaza-ops"><button type="button" class="plaza-btn primary" onclick="event.stopPropagation(); ${p.run}">▶ 试一下</button></div></div>`
+        ).join("");
+      }
+      if (cards.length) {
+        total += cards.length;
+        html += `<div class="plaza-sec-title">🃏 功能卡全家福（一键直达）</div>` + cards.map(it =>
+          `<div class="plaza-row"><span class="plaza-badge">${it.hotkey || it.id}</span><div class="plaza-main"><div class="plaza-name">${it.title}</div><div class="plaza-desc">${(it.desc || "").substring(0, 52)}</div></div><div class="plaza-ops"><button type="button" class="plaza-btn primary" onclick="toggleActionPlazaModal(); executeItem(PANEL_ITEMS.find(x => x.id === '${it.id}'))">▶ 执行</button></div></div>`
+        ).join("");
+      }
+      if (hooks.length) {
+        total += hooks.length;
+        html += `<div class="plaza-sec-title">🌐 远程调用 Webhook（Quicker / uTools / 脚本）</div>` + hooks.map(w =>
+          `<div class="plaza-row"><span class="plaza-badge">${w.badge}</span><div class="plaza-main"><div class="plaza-name">${w.name}</div><div class="plaza-desc">${w.desc}</div></div><div class="plaza-ops"><button type="button" class="plaza-btn" onclick="copyPlazaWebhookUrl('${w.name}')">🔗 复制地址</button></div></div>`
+        ).join("");
+      }
+      if (!total) html = `<div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 18px 0;">没有匹配的动作，换个关键词试试</div>`;
+      listEl.innerHTML = html;
+      const cnt = document.getElementById("plaza-count-text");
+      if (cnt) cnt.textContent = `${total} 个动作`;
+    }
+
+    // ==================== P0-4 新手上路：5 步玩转外骨骼 ====================
+    const ONBOARD_TASK_DEFS = [
+      { key: "note", icon: "📝", title: "记第一笔速记", desc: "按 Alt+Shift+S 或点首页「⚡ 随手记一笔」，写一句话进今日日记", go: "toggleOnboardingTasksModal(); promptQuickNoteInlineModal();" },
+      { key: "kanban", icon: "🎴", title: "打开四象限待办看板", desc: "把脑子里的待办清空进去，回车即建任务，拖动即分优先级", go: "toggleOnboardingTasksModal(); toggleTasksKanbanModal();" },
+      { key: "search", icon: "🔍", title: "全库秒搜一次", desc: "在搜索框输入 b: 加关键词，回车定位任意旧笔记并贴双链", go: "toggleOnboardingTasksModal(); insertPrefix('b:');" },
+      { key: "clip", icon: "🌐", title: "剪藏一个网页", desc: "在浏览器里按 Alt+Shift+G，当前网页一键进思源", go: "toggleOnboardingTasksModal(); executeItem(PANEL_ITEMS.find(x => x.id === 'syg'));" },
+      { key: "ai", icon: "🤖", title: "问一次 AI", desc: "搜索框随便打字 → 点「🤖 问 AI」，回答弹窗即出", go: "toggleOnboardingTasksModal(); focusSearchInputForAiAsk();" }
+    ];
+    function getOnboardState() {
+      try { return JSON.parse(localStorage.getItem("omni_onboard_tasks_v1") || "{}"); } catch (e) { return {}; }
+    }
+    function getOnboardDoneCount() {
+      const st = getOnboardState();
+      return ONBOARD_TASK_DEFS.filter(t => st[t.key]).length;
+    }
+    function markOnboardTask(key) {
+      const st = getOnboardState();
+      if (st[key]) return;
+      st[key] = 1;
+      localStorage.setItem("omni_onboard_tasks_v1", JSON.stringify(st));
+      const doneCount = getOnboardDoneCount();
+      const def = ONBOARD_TASK_DEFS.find(t => t.key === key);
+      showToast(doneCount >= ONBOARD_TASK_DEFS.length ? "🎉 新手上路 5/5 全部完成！你已经会用外骨骼了" : `🧭 新手上路 ${doneCount}/5：${def ? def.title : key} 已完成！`);
+      renderOnboardingTasksList();
+    }
+    function focusSearchInputForAiAsk() {
+      const si = document.getElementById("search-input");
+      if (si) si.focus();
+      showToast("💬 输入想问的内容，然后点右侧「🤖 问 AI」");
+    }
+    function openOnboardingTasksModal() {
+      const modal = document.getElementById("onboarding-tasks-modal");
+      if (modal && !modal.classList.contains("open")) {
+        modal.classList.add("open");
+        renderOnboardingTasksList();
+      }
+    }
+    function toggleOnboardingTasksModal() {
+      const modal = document.getElementById("onboarding-tasks-modal");
+      if (!modal) return;
+      const isOpen = modal.classList.toggle("open");
+      if (isOpen) renderOnboardingTasksList();
+    }
+    function closeOnboardingTasksOnBg(e) {
+      const modal = document.getElementById("onboarding-tasks-modal");
+      if (modal) modal.classList.remove("open");
+    }
+    function dismissOnboardingTasks() {
+      localStorage.setItem("omni_onboard_tasks_dismissed", "true");
+      const modal = document.getElementById("onboarding-tasks-modal");
+      if (modal) modal.classList.remove("open");
+      showToast("🧭 已收起新手清单，托盘菜单「🧭 新手上路」随时找回");
+    }
+    function renderOnboardingTasksList() {
+      const listEl = document.getElementById("onboarding-tasks-list");
+      if (!listEl) return;
+      const st = getOnboardState();
+      const doneCount = getOnboardDoneCount();
+      const fill = document.getElementById("onboard-progress-fill");
+      if (fill) fill.style.width = Math.round((doneCount / ONBOARD_TASK_DEFS.length) * 100) + "%";
+      listEl.innerHTML = ONBOARD_TASK_DEFS.map(t => {
+        const done = !!st[t.key];
+        return `<div class="onboard-task-row${done ? " done" : ""}">
+          <span class="onboard-task-icon">${done ? "✅" : t.icon}</span>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 12px; font-weight: 700; color: var(--text-primary);">${t.title}</div>
+            <div style="font-size: 10.5px; color: var(--text-muted); line-height: 1.45;">${t.desc}</div>
+          </div>
+          ${done ? "" : `<button type="button" class="plaza-btn primary" style="flex-shrink: 0;" onclick="${t.go}">▶ 去完成</button>`}
+        </div>`;
+      }).join("");
+    }
     function toggleHomePillarsHub() {
       isHomePillarsCollapsed = !isHomePillarsCollapsed;
       localStorage.setItem("omni_pillars_collapsed", isHomePillarsCollapsed ? "true" : "false");
@@ -8222,6 +8552,14 @@
             </div>
           `;
           container.appendChild(demoEl);
+        } else if (currentCategory === "consolidated" && isDemoLoopDone() &&
+                   localStorage.getItem("omni_onboard_tasks_dismissed") !== "true" &&
+                   getOnboardDoneCount() > 0 && getOnboardDoneCount() < ONBOARD_TASK_DEFS.length) {
+          const doneCount = getOnboardDoneCount();
+          const mini = document.createElement("div");
+          mini.className = "onboard-mini-bar";
+          mini.innerHTML = `<span>🧭 新手上路 ${doneCount}/5 — 掌握外骨骼日常用法的最后几步</span><span style="display: inline-flex; gap: 6px; align-items: center;"><button type="button" class="search-row-btn primary" onclick="openOnboardingTasksModal()">继续 ▸</button><button type="button" class="search-row-btn" onclick="dismissOnboardingTasks()" title="收起，可从托盘菜单「🧭 新手上路」随时找回">✕</button></span>`;
+          container.appendChild(mini);
         }
 
         if (isHomePillarsCollapsed) {
@@ -9667,6 +10005,7 @@
 
     window.onWebClipCompleted = function(res) {
       if (!res) return;
+      markOnboardTask("clip");
       const title = res.title || "网页剪藏笔记";
       const url = res.url || "";
       const blockId = res.blockId || res.docId || "";
@@ -10029,6 +10368,7 @@
     // ==========================================================
     window.onQuickNoteCompleted = function(res) {
       if (!res) return;
+      markOnboardTask("note");
       const text = res.text || "";
       const blockId = res.blockId || "";
       const label = res.sourceLabel || "速记已入库";
@@ -13570,6 +13910,7 @@
       if (!modal) return;
       const isOpen = modal.classList.toggle("open");
       if (isOpen) {
+        markOnboardTask("kanban");
         loadKanbanData();
       }
     }
@@ -16276,6 +16617,7 @@
       const ok = res && (res.Success || res.success);
       const content = res ? (res.Content || res.content) : "";
       if (ok && content) {
+        markOnboardTask("ai");
         showAiResultModal(content, res.LatencyMs || res.latencyMs);
       } else {
         showToast("⚠️ AI 提炼响应异常: " + (res?.ErrorMessage || res?.error || "连接超时"));
@@ -19197,6 +19539,8 @@
       "timeline-modal",
       "preferences-modal",
       "cheatsheet-modal",
+      "action-plaza-modal",
+      "onboarding-tasks-modal",
       "ai-result-modal",
       "offline-queue-modal",
       "feature-guide-modal"

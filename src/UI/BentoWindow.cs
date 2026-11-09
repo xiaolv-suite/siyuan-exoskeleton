@@ -4215,7 +4215,15 @@ namespace XiaoLv.Desktop.UI
                 if (!string.IsNullOrEmpty(initialQuery))
                 {
                     string queryJson = JsonHelper.ToJson(initialQuery);
-                    _webView.CoreWebView2.ExecuteScriptAsync("if(window.insertPrefix) window.insertPrefix(" + queryJson + ");");
+                    if (initialQuery == "@onboard")
+                    {
+                        // 托盘「新手上路」专用通道：打开面板并滑出 5 步上手清单
+                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.openOnboardingTasksModal) { window.openOnboardingTasksModal(); } else if(window.insertPrefix) { window.insertPrefix('onboard:'); }");
+                    }
+                    else
+                    {
+                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.insertPrefix) window.insertPrefix(" + queryJson + ");");
+                    }
                 }
                 else
                 {

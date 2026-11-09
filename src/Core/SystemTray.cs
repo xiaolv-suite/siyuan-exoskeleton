@@ -14,6 +14,7 @@ namespace XiaoLv.Desktop.Core
         private NotifyIcon _notifyIcon;
         private ContextMenuStrip _menu;
 
+        public event Action OnOnboardingClicked;
         public event Action OnOpenPanelClicked;
         public event Action OnOpenPenClicked;
         public event Action OnSnippingOcrClicked;
@@ -38,6 +39,9 @@ namespace XiaoLv.Desktop.Core
 
             _menu = new ContextMenuStrip();
             _menu.Font = new Font("Microsoft YaHei", 9f);
+
+            var itemOnboard = new ToolStripMenuItem("🧭 新手上路 · 5 步玩转外骨骼");
+            itemOnboard.Click += (s, e) => { if (OnOnboardingClicked != null) OnOnboardingClicked(); };
 
             var itemPanel = new ToolStripMenuItem("🪟 思源外骨骼 · 全局面板 (Alt+Shift+Q)");
             itemPanel.Font = new Font("Microsoft YaHei", 9f, FontStyle.Bold);
@@ -239,6 +243,7 @@ namespace XiaoLv.Desktop.Core
             var itemExit = new ToolStripMenuItem("❌ 退出思源外骨骼");
             itemExit.Click += (s, e) => { if (OnExitClicked != null) OnExitClicked(); };
 
+            _menu.Items.Insert(0, itemOnboard);
             _menu.Items.Add(itemPanel);
             _menu.Items.Add(itemPen);
             _menu.Items.Add(itemOcr);

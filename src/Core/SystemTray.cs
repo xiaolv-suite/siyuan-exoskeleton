@@ -15,6 +15,7 @@ namespace XiaoLv.Desktop.Core
         private ContextMenuStrip _menu;
 
         public event Action OnOnboardingClicked;
+        public event Action OnBalloonTipClicked;
         public event Action OnOpenPanelClicked;
         public event Action OnOpenPenClicked;
         public event Action OnSnippingOcrClicked;
@@ -275,6 +276,11 @@ namespace XiaoLv.Desktop.Core
             _notifyIcon.Text = "思源外骨骼 · 桌面穿透工作台 v3.0.0";
             _notifyIcon.ContextMenuStrip = _menu;
             _notifyIcon.Visible = true;
+            // 气泡通知点击即达：ReminderGuardian 的提醒按 LastJumpKind 智能跳转（fsrs→微刷卡 / tasks→待办视界）
+            _notifyIcon.BalloonTipClicked += (s, e) =>
+            {
+                if (OnBalloonTipClicked != null) OnBalloonTipClicked();
+            };
 
             if (customIcon != null)
             {

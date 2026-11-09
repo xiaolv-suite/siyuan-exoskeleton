@@ -135,7 +135,7 @@
 ### P1 · 能力补位（社区有 issue 背书、集市空白的 4+1 个空白）
 
 1. ✅ **参数化写入深链**（ParameterizedWriteBridge）：`siyuan-exoskeleton://write` + REST `/api/write` 双入口，复用 SYS 分流管线（>>小节/>@直投/task/flash），动作广场可复制模板
-2. **系统级提醒守护**：常驻轮询待办 deadline + 闪卡到期 → Windows 原生 toast（思源关闭也能收）→ 点击深链跳块 → toast 上「完成/延后」回写。补 #15002。
+2. ✅ **系统级提醒守护**（ReminderGuardian）：10 分钟轮询到期闪卡(getRiffDueCards) + 📅/due: 截止日任务 → 托盘系统气泡（思源不在前台也能收）→ 点击智能跳转（fsrs→三秒微刷卡 / tasks→t: 待办视界）；数量指纹防轰炸、每日每状态一次、隔离靶场禁启
 3. **OCR 写回闭环**：截图 OCR 文本写块 `custom-` 属性 → `/api/query/sql` 可检索；OCR 结果可编辑。补 #13714。
 4. **剪藏模板路由**：域名规则 → 笔记本/模板/字段；三模式（整页 Reader / 只剪片段 / 只剪高亮）；图片资产本地化 upload；轻量「3 天前剪藏未读」回顾提醒（学简悦）。
 5. **剪贴板胶囊多格式**：粘贴为纯文本 / 转 Markdown、历史搜索、Pin 置顶、多条合并成便签（Ditto 标准，显著超越 Win+V 基线）。

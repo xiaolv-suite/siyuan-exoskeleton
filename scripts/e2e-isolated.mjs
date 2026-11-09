@@ -4338,6 +4338,36 @@ async function main() {
                                 panelContent.includes('已复制参数化写入深链模板');
   logStep("Step 7.242: 参数化写入双入口 (深链 ://write + REST /api/write → SYS 分流管线真实落库：小节路由与待办动作) 断言", hasParamWrite && hasParamWriteContract, `REST写入: ${writeJson1.code}/${!!writeRow} · 待办: ${writeJson2.code}/${!!writeTaskRow} · 契约: ${hasParamWriteContract}`);
 
+  // Step 7.243: Test System-Level Reminder Guardian (P1-2, tray balloon + due cards + task deadlines)
+  const guardianCs = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'ReminderGuardian.cs'), 'utf8');
+  const guardianProgram = fs.readFileSync(path.join(ROOT, 'src', 'Program.cs'), 'utf8');
+  const guardianTray = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'SystemTray.cs'), 'utf8');
+  const hasGuardianSource = guardianCs.includes('public static class ReminderGuardian') &&
+                            guardianCs.includes('getRiffDueCards') &&
+                            guardianCs.includes('LastJumpKind') &&
+                            guardianCs.includes('90000, 600000') &&
+                            guardianCs.includes('(?:📅\\s*|due:\\s*)(\\d{4}-\\d{2}-\\d{2})');
+  const hasGuardianWiring = guardianProgram.includes('ReminderGuardian.Start(') &&
+                            guardianProgram.includes('if (!IsIsolatedRun)') &&
+                            guardianProgram.includes('OnBalloonTipClicked') &&
+                            guardianProgram.includes('StartFsrsReview();') &&
+                            guardianTray.includes('public event Action OnBalloonTipClicked') &&
+                            guardianTray.includes('_notifyIcon.BalloonTipClicked');
+  const guardianReflectScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $g = $asm.GetType('XiaoLv.Desktop.Core.ReminderGuardian');
+    if ($g -eq $null) { Write-Output 'TYPE_MISSING'; exit; }
+    $mStart = $g.GetMethod('Start', [System.Reflection.BindingFlags]'Public,Static');
+    $mCheck = $g.GetMethod('CheckNow', [System.Reflection.BindingFlags]'Public,Static');
+    $fKind = $g.GetField('LastJumpKind', [System.Reflection.BindingFlags]'Public,Static');
+    $ok = ($mStart -ne $null) -and ($mCheck -ne $null) -and ($fKind -ne $null) -and ($mStart.GetParameters().Length -eq 1);
+    Write-Output ($ok.ToString());
+  `;
+  const guardianReflectRes = runPs(guardianReflectScript);
+  const hasGuardianRuntime = guardianReflectRes.includes("True");
+  logStep("Step 7.243: 系统级提醒守护 (到期闪卡+📅截止日轮询→托盘气泡→点击智能跳转 fsrs/tasks，隔离靶场禁启) 断言", hasGuardianSource && hasGuardianWiring && hasGuardianRuntime, `源码: ${hasGuardianSource} · 接线: ${hasGuardianWiring} · 反射: ${hasGuardianRuntime}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

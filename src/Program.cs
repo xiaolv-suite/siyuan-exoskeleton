@@ -437,6 +437,22 @@ namespace XiaoLv.Desktop
 	            _tray.OnFsrsReviewClicked += () => StartFsrsReview();
 	            _tray.OnWebClipClicked += () => StartWebClip();
 	            _tray.OnFlashbackClicked += () => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel("rand:"));
+            // 系统级提醒守护 (P1-2)：气泡点击按 LastJumpKind 智能跳转；隔离靶场不启动以保证 E2E 确定性
+            _tray.OnBalloonTipClicked += () => _wpfApp.Dispatcher.Invoke(() =>
+            {
+                string jumpKind = ReminderGuardian.LastJumpKind;
+                ReminderGuardian.LastJumpKind = "";
+                if (jumpKind == "fsrs")
+                {
+                    StartFsrsReview();
+                    return;
+                }
+                _bentoWindow.ShowPanel(jumpKind == "tasks" ? "t:" : null);
+            });
+            if (!IsIsolatedRun)
+            {
+                ReminderGuardian.Start((t, m, k) => _tray.ShowNotice(t, m, System.Windows.Forms.ToolTipIcon.Info));
+            }
             _tray.OnManualSyncClicked += () =>
             {
                 ThreadPool.QueueUserWorkItem(async s =>

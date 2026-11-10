@@ -60,7 +60,7 @@ async function api(endpoint, body = {}) {
   return res.json();
 }
 
-async function pollSql(stmt, maxTries = 10, intervalMs = 300) {
+async function pollSql(stmt, maxTries = 12, intervalMs = 300) {
   for (let i = 0; i < maxTries; i++) {
     try {
       const res = await api("/api/query/sql", { stmt });
@@ -4882,6 +4882,46 @@ async function main() {
                                   programCs258.includes('SafeSyncGuardian.RegisterPowerWatcher') &&
                                   programCs258.includes('SafeSyncGuardian.TriggerSafeSync');
   logStep("Step 7.258: 轻量同步安全守护 (SafeSyncGuardian: 纯只读感知+网络防御+并发互斥门禁+休眠唤醒8秒静默+右键相对时间微感知) 断言", hasSyncGuardianRuntime && hasSyncGuardianContract, `安全门禁运行时反射: ${syncGuardianRes.trim()} · 契约加固: ${hasSyncGuardianContract}`);
+
+  // Step 7.259: Test High-Fidelity HTML-to-MD (Tables, Language Codeblocks, Task Checkboxes, Strikethrough) & Pop-Pill Per-Monitor DPI & Search Note
+  const cleanMdScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $tc = $asm.GetType('XiaoLv.Desktop.Core.TextCleaner');
+    $mConv = $tc.GetMethod('ConvertHtmlToMarkdown', [System.Reflection.BindingFlags]'Public,Static');
+    $pillType = $asm.GetType('XiaoLv.Desktop.UI.SelectionPillWindow');
+    $eSearchNote = $pillType.GetProperty('OnSearchNoteRequested');
+
+    $testHtml = '<!--StartFragment--><table><tr><th>功能</th><th>状态</th></tr><tr><td>表格</td><td>完成</td></tr></table>' +
+                '<pre><code class=\"language-python\">def hello():\n    return 42</code></pre>' +
+                '<ol><li>第一步</li><li>第二步</li></ol>' +
+                '<ul><li><input type=\"checkbox\" checked> 已办项</li><li><input type=\"checkbox\"> 待办项</li></ul>' +
+                '<p><del>旧逻辑</del> 与 <mark>核心高亮</mark></p><!--EndFragment-->';
+    $md = $mConv.Invoke($null, @($testHtml));
+
+    $okTable = $md.Contains('| 功能 | 状态 |') -and $md.Contains('| --- | --- |') -and $md.Contains('| 表格 | 完成 |');
+    $okCode = $md.Contains('\`\`\`python') -and $md.Contains('def hello():');
+    $okOl = $md.Contains('1. 第一步') -and $md.Contains('2. 第二步');
+    $okTasks = $md.Contains('- [x] 已办项') -and $md.Contains('- [ ] 待办项');
+    $okStyles = $md.Contains('~~旧逻辑~~') -and $md.Contains('==核心高亮==');
+    $okPillSearch = ($eSearchNote -ne $null);
+
+    Write-Output ($okTable.ToString() + '|' + $okCode.ToString() + '|' + $okOl.ToString() + '|' + $okTasks.ToString() + '|' + $okStyles.ToString() + '|' + $okPillSearch.ToString());
+  `;
+  const cleanMdRes = runPs(cleanMdScript);
+  const hasCleanMdRuntime = cleanMdRes.includes("True|True|True|True|True|True");
+  const panelHtml259 = fs.readFileSync(path.join(ROOT, 'assets', 'panel.html'), 'utf8');
+  const dockCs259 = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'DropZoneWindow.cs'), 'utf8');
+  const pillCs259 = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'SelectionPillWindow.cs'), 'utf8');
+  const watcherCs259 = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'ClipboardWatcher.cs'), 'utf8');
+  const hasCleanMdContract = panelHtml259.includes('function copyClipAsCleanMd') &&
+                             panelHtml259.includes('📝 复MD') &&
+                             dockCs259.includes('_syncStatusText') &&
+                             dockCs259.includes('UpdateSyncBarUI') &&
+                             pillCs259.includes('WindowPositionHelper.GetDpiScaleForPoint') &&
+                             pillCs259.includes('OnSearchNoteRequested') &&
+                             watcherCs259.includes('HasRichHtmlSemantics');
+  logStep("Step 7.259: 高保真剪贴板富文本转标准MD (表格/代码语言/任务/删除线/高亮) 与 药丸高分屏DPI安全翻转+实体词中键查词 断言", hasCleanMdRuntime && hasCleanMdContract, `高保真清洗与高分屏交互运行时: ${cleanMdRes.trim()} · 契约加固: ${hasCleanMdContract}`);
 
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");

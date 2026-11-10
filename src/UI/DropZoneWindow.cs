@@ -40,6 +40,9 @@ namespace XiaoLv.Desktop.UI
         private DispatcherTimer _collapseTimer;
         private DispatcherTimer _expandHoverTimer;
         private DispatcherTimer _fullscreenWatcher;
+        private Border _syncDot;
+        private TextBlock _syncStatusText;
+        private int _lastSyncProbeTick = 0;
 
         // 垂直位置拖动记忆状态
         private bool _isDraggingVertical = false;
@@ -330,6 +333,53 @@ namespace XiaoLv.Desktop.UI
             _expandedContent.Children.Add(CreateDropCard("🌐", "网页剪藏", "拖入URL自动提取并读库分拣"));
             _expandedContent.Children.Add(CreateDropCard("📁", "本地文件", "拖入Office/PDF/源码直接归档"));
 
+            // 最底部：克制的同步护航微状态条 (仅状态感知+安全一键增量同步)
+            var syncBar = new Border
+            {
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isLight ? "#00000008" : "#ffffff0a")),
+                CornerRadius = new CornerRadius(5),
+                Padding = new Thickness(6, 3, 6, 3),
+                Margin = new Thickness(0, 4, 0, 0),
+                Cursor = Cursors.Hand,
+                ToolTip = "点击触发安全增量同步 (已内置网络防御与防重入锁)"
+            };
+            var syncRow = new Grid();
+            var syncLeft = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            _syncDot = new Border
+            {
+                Width = 6,
+                Height = 6,
+                CornerRadius = new CornerRadius(3),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10b981")),
+                Margin = new Thickness(0, 0, 5, 0)
+            };
+            _syncStatusText = new TextBlock
+            {
+                Text = "云同步: " + SafeSyncGuardian.LastKnownRelativeTime,
+                FontSize = 9,
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isLight ? "#475569" : "#94a3b8"))
+            };
+            syncLeft.Children.Add(_syncDot);
+            syncLeft.Children.Add(_syncStatusText);
+
+            var syncTriggerHint = new TextBlock
+            {
+                Text = "🔄 同步",
+                FontSize = 9,
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isLight ? "#0284c7" : "#38bdf8")),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            syncRow.Children.Add(syncLeft);
+            syncRow.Children.Add(syncTriggerHint);
+            syncBar.Child = syncRow;
+            syncBar.MouseLeftButtonUp += (s, e) =>
+            {
+                Collapse();
+                if (OnSyncRequested != null) OnSyncRequested();
+            };
+            _expandedContent.Children.Add(syncBar);
+
             grid.Children.Add(_dockHandle);
             grid.Children.Add(_expandedContent);
             _rootBorder.Child = grid;
@@ -541,6 +591,19 @@ namespace XiaoLv.Desktop.UI
             return b;
         }
 
+        private void UpdateSyncBarUI(bool isOnline, string relTime)
+        {
+            if (_syncDot != null)
+            {
+                string dotColor = !isOnline ? "#94a3b8" : (relTime == "未同步" ? "#f59e0b" : "#10b981");
+                _syncDot.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dotColor));
+            }
+            if (_syncStatusText != null)
+            {
+                _syncStatusText.Text = "云同步: " + (string.IsNullOrEmpty(relTime) ? "未知" : relTime);
+            }
+        }
+
         public void Expand()
         {
             if (_isExpanded) return;
@@ -550,12 +613,35 @@ namespace XiaoLv.Desktop.UI
 
             var workArea = SystemParameters.WorkArea;
             Width = 190;
-            Height = 220;
+            Height = 244;
             Left = workArea.Right - Width;
 
             double maxTop = workArea.Bottom - Height;
             if (Top > maxTop) Top = maxTop;
             if (Top < workArea.Top) Top = workArea.Top;
+
+            // 先秒显内存中的缓存状态，随后按 30 秒节流安全刷新只读状态
+            try
+            {
+                string rel = SafeSyncGuardian.LastKnownRelativeTime;
+                UpdateSyncBarUI(rel != "离线", rel);
+                int nowTick = Environment.TickCount;
+                if (_lastSyncProbeTick == 0 || (nowTick - _lastSyncProbeTick) > 30000)
+                {
+                    _lastSyncProbeTick = nowTick;
+                    SafeSyncGuardian.RefreshStatusAsync().ContinueWith(t =>
+                    {
+                        if (!t.IsFaulted && t.Result != null)
+                        {
+                            Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                UpdateSyncBarUI(t.Result.IsOnline, t.Result.RelativeTimeDesc);
+                            }));
+                        }
+                    });
+                }
+            }
+            catch { }
         }
 
         public void Collapse()

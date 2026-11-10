@@ -716,9 +716,9 @@ namespace XiaoLv.Desktop.Core
         }
 
         /// <summary>
-        /// 将剪贴板富文本 HTML (CF_HTML) 智能转换为高保真 Markdown
-        /// 完整保留超链接 [text](url)、加粗 **text**、斜体 *text*、代码 `code`、图片 ![alt](src) 与引用 > quote
-        /// 对标 Obsidian Web Clipper 2024 / Readwise Reader，解决普通纯文本丢失超链接与格式坍塌痛点
+        /// 将剪贴板富文本 HTML (CF_HTML) 智能转换为高保真、标准 Clean Markdown
+        /// 完整保留超链接 [text](url)、表格 |col|、代码块语言 ```lang、有序/任务列表、删除线 ~~、高亮 == 与引用 > quote
+        /// 对标 Obsidian Web Clipper 2024 / Readwise Reader，彻底解决复制表格拍扁与格式污染痛点
         /// </summary>
         public static string ConvertHtmlToMarkdown(string html)
         {
@@ -733,24 +733,44 @@ namespace XiaoLv.Desktop.Core
                 fragment = html.Substring(startIdx + 20, endIdx - (startIdx + 20));
             }
 
-            // 2. 剥离脚本与样式 (script, style, head, meta, noscript)
-            fragment = Regex.Replace(fragment, @"<(script|style|head|meta|noscript)[^>]*>[\s\S]*?</\1>", "", RegexOptions.IgnoreCase);
+            // 2. 剥离脚本、样式与注释 (script, style, head, meta, noscript)
+            fragment = Regex.Replace(fragment, @"<(script|style|head|meta|noscript|svg)[^>]*>[\s\S]*?</\1>", "", RegexOptions.IgnoreCase);
+            fragment = Regex.Replace(fragment, @"<!--[\s\S]*?-->", "");
 
-            // 3. 转换标题 h1~h6
+            // 3. 隔离并高保真提取多行代码块 <pre><code class="language-xxx">...</code></pre>
+            var codePlaceholders = new List<string>();
+            fragment = Regex.Replace(fragment, @"<pre[^>]*>\s*(?:<code([^>]*)>([\s\S]*?)</code>|([\s\S]*?))\s*</pre>", delegate(Match m)
+            {
+                string attrs = m.Groups[1].Success ? m.Groups[1].Value : "";
+                string rawCode = m.Groups[2].Success ? m.Groups[2].Value : m.Groups[3].Value;
+                string lang = "";
+                if (!string.IsNullOrEmpty(attrs))
+                {
+                    var lm = Regex.Match(attrs, @"(?:language-|lang-)([a-zA-Z0-9_+\-#]+)", RegexOptions.IgnoreCase);
+                    if (lm.Success) lang = lm.Groups[1].Value.ToLowerInvariant();
+                }
+                // 代码内部把 <br> 还原为换行，并剥离高亮 span 等标签
+                string cleanCode = Regex.Replace(rawCode, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
+                cleanCode = Regex.Replace(cleanCode, @"<[^>]+>", "");
+                cleanCode = System.Net.WebUtility.HtmlDecode(cleanCode).Trim('\r', '\n');
+                string blockMd = "\n\n```" + lang + "\n" + cleanCode + "\n```\n\n";
+                int idx = codePlaceholders.Count;
+                codePlaceholders.Add(blockMd);
+                return "\uE000CB_" + idx + "\uE001";
+            }, RegexOptions.IgnoreCase);
+
+            // 4. 转换标题 h1~h6
             for (int h = 1; h <= 6; h++)
             {
                 string hashes = new string('#', h);
-                fragment = Regex.Replace(fragment, @"<h" + h + @"[^>]*>([\s\S]*?)</h" + h + @">", "\n\n" + hashes + " $1\n\n", RegexOptions.IgnoreCase);
+                fragment = Regex.Replace(fragment, @"<h" + h + @"[^>]*>([\s\S]*?)</h" + h + @">", delegate(Match m)
+                {
+                    string titleInner = Regex.Replace(m.Groups[1].Value, @"<[^>]+>", "").Trim();
+                    return string.IsNullOrEmpty(titleInner) ? "" : ("\n\n" + hashes + " " + titleInner + "\n\n");
+                }, RegexOptions.IgnoreCase);
             }
 
-            // 4. 转换多行代码块 <pre><code ...>...</code></pre> 或 <pre>...</pre>
-            fragment = Regex.Replace(fragment, @"<pre[^>]*><code[^>]*>([\s\S]*?)</code></pre>", "\n\n```\n$1\n```\n\n", RegexOptions.IgnoreCase);
-            fragment = Regex.Replace(fragment, @"<pre[^>]*>([\s\S]*?)</pre>", "\n\n```\n$1\n```\n\n", RegexOptions.IgnoreCase);
-
-            // 5. 转换行内代码 <code>...</code>
-            fragment = Regex.Replace(fragment, @"<code[^>]*>([\s\S]*?)</code>", "`$1`", RegexOptions.IgnoreCase);
-
-            // 6. 转换超链接 <a href="url"...>text</a>
+            // 5. 转换超链接 <a href="url"...>text</a>（在表格前执行，保留表格内超链接）
             fragment = Regex.Replace(fragment, @"<a\s+[^>]*?href=[""']([^""']+)[""'][^>]*>([\s\S]*?)</a>", delegate(Match m)
             {
                 string u = m.Groups[1].Value.Trim();
@@ -761,7 +781,7 @@ namespace XiaoLv.Desktop.Core
                 return "[" + t + "](" + pureU + ")";
             }, RegexOptions.IgnoreCase);
 
-            // 7. 转换图片 <img src="url" alt="alt" ...>
+            // 6. 转换图片 <img src="url" alt="alt" ...>
             fragment = Regex.Replace(fragment, @"<img\s+[^>]*?src=[""']([^""']+)[""'][^>]*>", delegate(Match m)
             {
                 string tag = m.Value;
@@ -773,23 +793,92 @@ namespace XiaoLv.Desktop.Core
                 return "\n\n![" + alt + "](" + pureSrc + ")\n\n";
             }, RegexOptions.IgnoreCase);
 
-            // 8. 转换加粗与强调 <strong> / <b> / <em> / <i>
+            // 7. 转换行内代码、加粗、斜体、删除线、思源高亮
+            fragment = Regex.Replace(fragment, @"<code[^>]*>([\s\S]*?)</code>", "`$1`", RegexOptions.IgnoreCase);
             fragment = Regex.Replace(fragment, @"<(strong|b)[^>]*>([\s\S]*?)</\1>", "**$2**", RegexOptions.IgnoreCase);
             fragment = Regex.Replace(fragment, @"<(em|i)[^>]*>([\s\S]*?)</\1>", "*$2*", RegexOptions.IgnoreCase);
+            fragment = Regex.Replace(fragment, @"<(del|s|strike)[^>]*>([\s\S]*?)</\1>", "~~$2~~", RegexOptions.IgnoreCase);
+            fragment = Regex.Replace(fragment, @"<mark[^>]*>([\s\S]*?)</mark>", "==$1==", RegexOptions.IgnoreCase);
+
+            // 8. 完整还原 HTML 表格 <table>...</table> 为标准 Markdown 表格
+            fragment = Regex.Replace(fragment, @"<table[^>]*>([\s\S]*?)</table>", delegate(Match tm)
+            {
+                string tableHtml = tm.Groups[1].Value;
+                var rows = new List<List<string>>();
+                var trMatches = Regex.Matches(tableHtml, @"<tr[^>]*>([\s\S]*?)</tr>", RegexOptions.IgnoreCase);
+                int maxCols = 0;
+                foreach (Match tr in trMatches)
+                {
+                    var cols = new List<string>();
+                    var cellMatches = Regex.Matches(tr.Groups[1].Value, @"<(th|td)[^>]*>([\s\S]*?)</\1>", RegexOptions.IgnoreCase);
+                    foreach (Match cell in cellMatches)
+                    {
+                        string rawCell = cell.Groups[2].Value;
+                        rawCell = Regex.Replace(rawCell, @"<br\s*/?>", " ", RegexOptions.IgnoreCase);
+                        rawCell = Regex.Replace(rawCell, @"<[^>]+>", "");
+                        rawCell = System.Net.WebUtility.HtmlDecode(rawCell);
+                        rawCell = Regex.Replace(rawCell, @"[\r\n\t]+", " ").Trim();
+                        rawCell = rawCell.Replace("|", "\\|");
+                        cols.Add(rawCell);
+                    }
+                    if (cols.Count > 0)
+                    {
+                        if (cols.Count > maxCols) maxCols = cols.Count;
+                        rows.Add(cols);
+                    }
+                }
+                if (rows.Count == 0 || maxCols == 0) return "\n";
+
+                var sbTable = new StringBuilder("\n\n");
+                for (int r = 0; r < rows.Count; r++)
+                {
+                    var row = rows[r];
+                    while (row.Count < maxCols) row.Add("");
+                    sbTable.Append("| ").Append(string.Join(" | ", row.ToArray())).Append(" |\n");
+                    if (r == 0)
+                    {
+                        var sep = new string[maxCols];
+                        for (int c = 0; c < maxCols; c++) sep[c] = "---";
+                        sbTable.Append("| ").Append(string.Join(" | ", sep)).Append(" |\n");
+                    }
+                }
+                sbTable.Append("\n");
+                return sbTable.ToString();
+            }, RegexOptions.IgnoreCase);
 
             // 9. 转换引用块 <blockquote>...</blockquote>
             fragment = Regex.Replace(fragment, @"<blockquote[^>]*>([\s\S]*?)</blockquote>", delegate(Match m)
             {
-                string inner = Regex.Replace(m.Groups[1].Value, @"<[^>]+>", "").Trim();
+                string inner = Regex.Replace(m.Groups[1].Value, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
+                inner = Regex.Replace(inner, @"<[^>]+>", "").Trim();
                 return "\n\n> " + inner.Replace("\n", "\n> ") + "\n\n";
             }, RegexOptions.IgnoreCase);
 
-            // 10. 转换列表项 <li>...</li>
-            fragment = Regex.Replace(fragment, @"<li[^>]*>([\s\S]*?)</li>", "\n* $1", RegexOptions.IgnoreCase);
+            // 10. 转换任务复选框与有序/无序列表
+            fragment = Regex.Replace(fragment, @"<input[^>]*type=[""']checkbox[""'][^>]*checked[^>]*>[ \t]*", "[x] ", RegexOptions.IgnoreCase);
+            fragment = Regex.Replace(fragment, @"<input[^>]*type=[""']checkbox[""'][^>]*>[ \t]*", "[ ] ", RegexOptions.IgnoreCase);
+            fragment = Regex.Replace(fragment, @"<ol[^>]*>([\s\S]*?)</ol>", delegate(Match om)
+            {
+                int idx = 1;
+                string olInner = Regex.Replace(om.Groups[1].Value, @"<li[^>]*>([\s\S]*?)</li>", delegate(Match lm)
+                {
+                    string itemTxt = Regex.Replace(lm.Groups[1].Value, @"<[^>]+>", "").Trim();
+                    string line = "\n" + idx + ". " + itemTxt;
+                    idx++;
+                    return line;
+                }, RegexOptions.IgnoreCase);
+                return "\n" + olInner + "\n";
+            }, RegexOptions.IgnoreCase);
+            fragment = Regex.Replace(fragment, @"<li[^>]*>([\s\S]*?)</li>", delegate(Match lm)
+            {
+                string itemTxt = Regex.Replace(lm.Groups[1].Value, @"<[^>]+>", "").Trim();
+                return "\n- " + itemTxt;
+            }, RegexOptions.IgnoreCase);
 
-            // 11. 换行与段落 <br> / <p> / <div>
+            // 11. 换行与段落 <br> / <p> / <div> / <hr>
+            fragment = Regex.Replace(fragment, @"<hr\s*/?>", "\n\n---\n\n", RegexOptions.IgnoreCase);
             fragment = Regex.Replace(fragment, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
-            fragment = Regex.Replace(fragment, @"</?(p|div|tr|table|ul|ol)[^>]*>", "\n", RegexOptions.IgnoreCase);
+            fragment = Regex.Replace(fragment, @"</?(p|div|section|article|ul|ol)[^>]*>", "\n", RegexOptions.IgnoreCase);
 
             // 12. 剥离剩余全部 HTML 标签
             fragment = Regex.Replace(fragment, @"<[^>]+>", "");
@@ -797,7 +886,14 @@ namespace XiaoLv.Desktop.Core
             // 13. 解码常见 HTML 实体
             fragment = System.Net.WebUtility.HtmlDecode(fragment);
 
-            // 14. 清理冗余连续空行与首尾空白
+            // 14. 还原保留的代码块占位符
+            for (int i = 0; i < codePlaceholders.Count; i++)
+            {
+                fragment = fragment.Replace("\uE000CB_" + i + "\uE001", codePlaceholders[i]);
+            }
+
+            // 15. 清理冗余连续空行与行尾空白
+            fragment = Regex.Replace(fragment, @"[ \t]+\n", "\n");
             fragment = Regex.Replace(fragment, @"\n{3,}", "\n\n");
             return fragment.Trim();
         }

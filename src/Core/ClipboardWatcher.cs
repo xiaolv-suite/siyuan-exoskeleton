@@ -462,8 +462,8 @@ namespace XiaoLv.Desktop.Core
                 return item;
             }
 
-            // 4. 富文本 HTML 优先转换 (若包含超链接、加粗、图片等富文本元素)
-            if (!string.IsNullOrEmpty(html) && (html.Contains("<a ") || html.Contains("<strong>") || html.Contains("<b>") || html.Contains("<img ")))
+            // 4. 富文本 HTML 优先转换 (若包含超链接、表格、代码块、列表、标题、加粗、图片等语义元素)
+            if (!string.IsNullOrEmpty(html) && HasRichHtmlSemantics(html))
             {
                 string richMd = TextCleaner.ConvertHtmlToMarkdown(html);
                 if (!string.IsNullOrEmpty(richMd) && richMd.Length >= 2)
@@ -471,7 +471,9 @@ namespace XiaoLv.Desktop.Core
                     item.SniffedType = "rich-text";
                     item.EnrichedMarkdown = richMd;
                     item.Title = Truncate(TextCleaner.CleanAll(txt).Replace("\r", "").Replace("\n", " "), 30);
-                    item.Summary = string.Format("网页高保真富文本 ({0} 字，保留超链接/格式)", txt.Length);
+                    string kindNote = html.IndexOf("<table", StringComparison.OrdinalIgnoreCase) >= 0 ? "含表格"
+                        : (html.IndexOf("<pre", StringComparison.OrdinalIgnoreCase) >= 0 ? "含代码块" : "保留链接与排版");
+                    item.Summary = string.Format("网页高保真富文本 ({0} 字，{1})", txt.Length, kindNote);
                     return item;
                 }
             }
@@ -490,6 +492,18 @@ namespace XiaoLv.Desktop.Core
                 item.Summary = "普通文本 (" + txt.Length + " 字)";
             }
             return item;
+        }
+
+        private static bool HasRichHtmlSemantics(string html)
+        {
+            if (string.IsNullOrEmpty(html)) return false;
+            string low = html.ToLowerInvariant();
+            return low.Contains("<a ") || low.Contains("<table") || low.Contains("<pre") ||
+                   low.Contains("<code") || low.Contains("<strong>") || low.Contains("<b ") ||
+                   low.Contains("<b>") || low.Contains("<img ") || low.Contains("<ol") ||
+                   low.Contains("<ul") || low.Contains("<blockquote") || low.Contains("<h1") ||
+                   low.Contains("<h2") || low.Contains("<h3") || low.Contains("<del") ||
+                   low.Contains("<mark");
         }
 
         private static bool IsSingleUrl(string s)

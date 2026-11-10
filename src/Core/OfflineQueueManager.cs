@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace XiaoLv.Desktop.Core
 {
@@ -299,7 +300,22 @@ namespace XiaoLv.Desktop.Core
             var list = new List<QueuedNoteItem>();
             if (!File.Exists(QueueFilePath)) return list;
 
-            var stored = File.ReadAllText(QueueFilePath, Encoding.UTF8).TrimStart('\uFEFF');
+            string stored = null;
+            for (int r = 0; r < 5; r++)
+            {
+                try
+                {
+                    stored = File.ReadAllText(QueueFilePath, Encoding.UTF8).TrimStart('\uFEFF');
+                    break;
+                }
+                catch (IOException)
+                {
+                    if (r == 4) throw;
+                    Thread.Sleep(50);
+                }
+            }
+            if (stored == null) return list;
+
             bool migrateLegacy = !stored.StartsWith("DPAPI:", StringComparison.Ordinal);
             string json = migrateLegacy ? stored : SiYuanProfileHub.UnprotectSecretDpapi(stored);
             if (!migrateLegacy && string.IsNullOrEmpty(json))
@@ -374,9 +390,21 @@ namespace XiaoLv.Desktop.Core
             var tempPath = queuePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
             try
             {
-                File.WriteAllText(tempPath, encrypted, new UTF8Encoding(false));
-                if (File.Exists(queuePath)) File.Replace(tempPath, queuePath, null);
-                else File.Move(tempPath, queuePath);
+                for (int r = 0; r < 5; r++)
+                {
+                    try
+                    {
+                        File.WriteAllText(tempPath, encrypted, new UTF8Encoding(false));
+                        if (File.Exists(queuePath)) File.Replace(tempPath, queuePath, null);
+                        else File.Move(tempPath, queuePath);
+                        break;
+                    }
+                    catch (IOException)
+                    {
+                        if (r == 4) throw;
+                        Thread.Sleep(50);
+                    }
+                }
             }
             finally
             {

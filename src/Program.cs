@@ -247,11 +247,18 @@ namespace XiaoLv.Desktop
 		                    }
 		                }
 		            };
-		            _selectionPillWindow.OnExpandToCapsuleRequested += (txt) =>
-		            {
-		                _wpfApp.Dispatcher.Invoke(() => _capsuleWindow.ShowNearCursor(txt));
-		            };
-	            if (!IsIsolatedRun && AppSettings.Instance.DropZoneEnabled)
+			            _selectionPillWindow.OnExpandToCapsuleRequested += (txt) =>
+			            {
+			                _wpfApp.Dispatcher.Invoke(() => _capsuleWindow.ShowNearCursor(txt));
+			            };
+			            _selectionPillWindow.OnSearchNoteRequested += (txt) =>
+			            {
+			                if (!string.IsNullOrWhiteSpace(txt))
+			                {
+			                    _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel("b:" + txt.Trim()));
+			                }
+			            };
+		            if (!IsIsolatedRun && AppSettings.Instance.DropZoneEnabled)
 	            {
 	                _dropZoneWindow.Show();
 	            }

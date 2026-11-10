@@ -56,6 +56,7 @@ namespace XiaoLv.Desktop.UI
         private Border _firstBtnBorder;
         private TextBlock _secondBtnIcon;
         private Border _secondBtnBorder;
+        private Border _moreBtnBorder;
         private TextBlock _badgeText;
 
         public Action<string> OnSaveToDailyRequested { get; set; }
@@ -64,6 +65,7 @@ namespace XiaoLv.Desktop.UI
         public Action<string> OnRouteToAiRequested { get; set; }
         public Action<string> OnTranslateRequested { get; set; }
         public Action<string> OnExpandToCapsuleRequested { get; set; }
+        public Action<string> OnSearchNoteRequested { get; set; }
 
         public SelectionPillWindow()
         {
@@ -95,10 +97,15 @@ namespace XiaoLv.Desktop.UI
                 POINT pt;
                 if (GetCursorPos(out pt))
                 {
+                    double scale = WindowPositionHelper.GetDpiScaleForPoint(pt.X, pt.Y);
+                    if (scale <= 0.1) scale = 1.0;
+                    double curDipX = pt.X / scale;
+                    double curDipY = pt.Y / scale;
+
                     double cx = Left + Width / 2.0;
                     double cy = Top + Height / 2.0;
-                    double dx = pt.X - cx;
-                    double dy = pt.Y - cy;
+                    double dx = curDipX - cx;
+                    double dy = curDipY - cy;
                     double dist = Math.Sqrt(dx * dx + dy * dy);
                     if (dist > 165)
                     {
@@ -154,6 +161,21 @@ namespace XiaoLv.Desktop.UI
                 RenderTransformOrigin = new Point(0.5, 0.5)
             };
 
+            // 快捷特性：中键点击微光药丸任意处，直接在思源全库秒搜选中词 (查词/反查笔记)
+            _rootBorder.MouseDown += (s, e) =>
+            {
+                if (e.ChangedButton == MouseButton.Middle)
+                {
+                    string text = _capturedText;
+                    Hide();
+                    if (!string.IsNullOrWhiteSpace(text) && OnSearchNoteRequested != null)
+                    {
+                        OnSearchNoteRequested(text);
+                    }
+                    e.Handled = true;
+                }
+            };
+
             var sp = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -197,7 +219,7 @@ namespace XiaoLv.Desktop.UI
                 }
             }, out _secondBtnIcon);
 
-            var btnMore = CreatePillButton("⋯", "展开完整随身划笔胶囊 (1~8 盲打分发与双链雷达)", "#94a3b8", () =>
+            _moreBtnBorder = CreatePillButton("⋯", "展开完整随身划笔胶囊 (1~8 盲打分发与双链雷达 · 中键秒搜库内笔记)", "#94a3b8", () =>
             {
                 string text = _capturedText;
                 Hide();
@@ -219,7 +241,7 @@ namespace XiaoLv.Desktop.UI
             sp.Children.Add(CreateDivider());
             sp.Children.Add(_secondBtnBorder);
             sp.Children.Add(CreateDivider());
-            sp.Children.Add(btnMore);
+            sp.Children.Add(_moreBtnBorder);
             sp.Children.Add(_badgeText);
 
             _rootBorder.Child = sp;
@@ -352,19 +374,53 @@ namespace XiaoLv.Desktop.UI
             POINT pt;
             if (!GetCursorPos(out pt)) return;
 
-            // 定位在光标右上角偏移 10px，避免遮挡选区与鼠标手势
-            var workArea = SystemParameters.WorkArea;
-            double targetX = pt.X + 12;
-            double targetY = pt.Y - Height - 10;
+            // 基于多显示器与 Per-Monitor DPI 精确换算，彻底杜绝高分屏/副屏坐标错乱
+            try
+            {
+                var screen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point(pt.X, pt.Y));
+                var workArea = screen.WorkingArea;
 
-            // 边缘防越界自动翻转
-            if (targetX + Width > workArea.Right) targetX = pt.X - Width - 10;
-            if (targetX < workArea.Left) targetX = workArea.Left + 8;
-            if (targetY < workArea.Top) targetY = pt.Y + 20;
-            if (targetY + Height > workArea.Bottom) targetY = workArea.Bottom - Height - 8;
+                double scale = WindowPositionHelper.GetDpiScaleForPoint(pt.X, pt.Y);
+                if (scale <= 0.1) scale = 1.0;
 
-            Left = targetX;
-            Top = targetY;
+                double dipWorkLeft = workArea.Left / scale;
+                double dipWorkTop = workArea.Top / scale;
+                double dipWorkWidth = workArea.Width / scale;
+                double dipWorkHeight = workArea.Height / scale;
+
+                double curDipX = pt.X / scale;
+                double curDipY = pt.Y / scale;
+
+                // 默认定位在光标右上角 (curDipX + 12, curDipY - Height - 8)
+                double targetX = curDipX + 12;
+                double targetY = curDipY - Height - 8;
+
+                // 1. 顶边防截断智能翻转：若光标上方空间不足，平滑翻转至光标正下方
+                if (targetY < dipWorkTop + 6)
+                {
+                    targetY = curDipY + 18;
+                }
+
+                // 2. 右侧防截断翻转：若右侧空间不足，翻转至光标左侧
+                if (targetX + Width > dipWorkLeft + dipWorkWidth - 6)
+                {
+                    targetX = curDipX - Width - 10;
+                }
+
+                // 3. 安全夹紧在当前屏幕工作区可见范围内
+                if (targetX < dipWorkLeft + 6) targetX = dipWorkLeft + 6;
+                if (targetY < dipWorkTop + 6) targetY = dipWorkTop + 6;
+                if (targetX + Width > dipWorkLeft + dipWorkWidth - 6) targetX = dipWorkLeft + dipWorkWidth - Width - 6;
+                if (targetY + Height > dipWorkTop + dipWorkHeight - 6) targetY = dipWorkTop + dipWorkHeight - Height - 6;
+
+                Left = targetX;
+                Top = targetY;
+            }
+            catch
+            {
+                Left = pt.X + 12;
+                Top = pt.Y - Height - 10;
+            }
 
             // 柔和微缩放淡入动效 (从 0.94 平滑长出)
             BeginAnimation(OpacityProperty, null);
@@ -394,11 +450,22 @@ namespace XiaoLv.Desktop.UI
         public void DismissIfOutside(int screenX, int screenY)
         {
             if (!IsVisible) return;
-            if (screenX >= Left && screenX <= Left + ActualWidth &&
-                screenY >= Top && screenY <= Top + ActualHeight)
+            try
             {
-                return;
+                double scale = WindowPositionHelper.GetDpiScaleForPoint(screenX, screenY);
+                if (scale <= 0.1) scale = 1.0;
+                double dipX = screenX / scale;
+                double dipY = screenY / scale;
+
+                double w = ActualWidth > 0 ? ActualWidth : Width;
+                double h = ActualHeight > 0 ? ActualHeight : Height;
+                if (dipX >= Left && dipX <= Left + w &&
+                    dipY >= Top && dipY <= Top + h)
+                {
+                    return;
+                }
             }
+            catch { }
             Hide();
         }
 

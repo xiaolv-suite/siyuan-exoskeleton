@@ -11243,6 +11243,7 @@
           <div class="search-row-actions" onclick="event.stopPropagation()">
             <button type="button" class="search-row-btn primary" onclick="event.stopPropagation(); executeItem(filteredItems[${idx}])" title="写入思源今日日记 (Enter)">📥 入日记</button>
             <button type="button" class="search-row-btn" onclick="event.stopPropagation(); pasteAtCursor(filteredItems[${idx}].templateContent || (filteredItems[${idx}].clipData && filteredItems[${idx}].clipData.markdown) || '')" title="直接粘贴到当前外部窗口光标处 (Shift+Enter)">⚡ 贴光标</button>
+            <button type="button" class="search-row-btn" onclick="event.stopPropagation(); copyClipAsCleanMd(${idx})" title="复制纯净标准 Markdown（已剥离内联样式、保留表格/代码语言/列表/链接）到剪贴板">📝 复MD</button>
             ${clipRaw ? `<button type="button" class="search-row-btn" style="${clipPinned ? "background: rgba(245,158,11,0.16); border-color: var(--tech-amber); color: var(--tech-amber);" : ""}" onclick="event.stopPropagation(); toggleClipPinFromRow('${clipRaw}')" title="${clipPinned ? "取消置顶（恢复随历史容量滚动淘汰）" : "置顶此条（容量滚动不清除、重启保留，Ditto 标准）"}">${clipPinned ? "📌 取消置顶" : "📌 置顶"}</button>` : ""}
             <button type="button" class="search-row-btn" onclick="event.stopPropagation(); pasteClipAsPlainText(${idx})" title="剥离 Markdown/HTML 格式后以纯文本粘贴到光标处">🧹 纯文本</button>
           </div>
@@ -16236,6 +16237,17 @@
       }
       pasteAtCursor(clipToPlainText(md));
       showToast("🧹 已剥离格式，以纯文本粘贴到光标处");
+    };
+    function copyClipAsCleanMd(idx) {
+      const it = filteredItems[idx];
+      if (!it) return;
+      let md = (it.clipData && it.clipData.markdown) || it.templateContent || "";
+      if (!md) {
+        showToast("⚠️ 该条目没有可复制的 Markdown 内容");
+        return;
+      }
+      md = md.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+      copyToClipboard(md, "📝 已复制纯净标准 Markdown 到剪贴板（保留表格/代码/链接）");
     };
 
     // ==================== P2-2 AI 路由器：把输入交给国内 AI 客户端 (不自建聊天 UI，剪贴板交接零猜测) ====================

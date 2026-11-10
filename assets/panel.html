@@ -722,6 +722,24 @@
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: 14px;
     }
+    .view-focus-hero {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 16px !important;
+      padding-top: 6px;
+    }
+    .view-focus-hero .card-item {
+      padding: 18px 22px;
+      min-height: 126px;
+    }
+    .view-focus-hero .card-title {
+      font-size: 15px;
+      font-weight: 800;
+    }
+    .view-focus-hero .card-desc {
+      font-size: 12px;
+      -webkit-line-clamp: 3;
+      line-height: 1.6;
+    }
     .card-item {
       background: var(--bg-card);
       border: 1px solid var(--border-card, var(--border-hairline));
@@ -6822,6 +6840,7 @@
 
     function getColCount() {
       if (layoutMode === "list") return 1;
+      if (currentCategory === "focus") return 2;
       const container = document.getElementById("view-container");
       if (!container) return 3;
       const w = container.clientWidth;
@@ -8303,7 +8322,7 @@
         } else if (currentCategory === "focus") {
           catMatch = FOCUS_SCENARIO_CARD_IDS.includes(it.id);
         } else if (currentCategory === "minimal") {
-          catMatch = ["sys", "syf", "sytodo", "syg", "syocr", "clip_history"].includes(it.id);
+          catMatch = ["sys", "syf", "sytask", "syg", "syimg", "sypen"].includes(it.id);
         } else if (currentCategory === "consolidated") {
           catMatch = CONSOLIDATED_CARD_IDS.includes(it.id);
         } else if (currentCategory === "favorites") {
@@ -8756,10 +8775,13 @@
         return;
       }
 
-      container.className = `view-container view-${layoutMode}`;
-
       const usageStats = getUsageStats();
       const queryVal = document.getElementById("search-input") ? document.getElementById("search-input").value.trim() : "";
+      if (currentCategory === "focus" && !queryVal && !editMode && layoutMode === "grid") {
+        container.className = "view-container view-grid view-focus-hero";
+      } else {
+        container.className = `view-container view-${layoutMode}`;
+      }
       let itemsToRender = [...filteredItems];
 
       // 仅当 "all" 或 "consolidated" 分类且无搜索词时，先在首屏顶部渲染「三大核心操作与最近文档直达舱」，再按分组聚类排序

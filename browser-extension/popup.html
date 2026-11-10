@@ -15,6 +15,16 @@
 <body>
   <h3>🌐 存入思源</h3>
   <div id="title">读取当前网页…</div>
+
+  <div id="highlight-section" style="display: none; background: #1e293b; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; padding: 10px; margin-bottom: 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; color: #38bdf8;">
+      <span id="hl-count">🖍️ 当前页已收集 0 段高亮</span>
+      <button id="clear-hl" style="width: auto; padding: 2px 6px; font-size: 11px; margin: 0;" class="secondary">清空</button>
+    </div>
+    <div id="hl-list" style="font-size: 11px; color: #cbd5e1; max-height: 90px; overflow-y: auto; margin: 6px 0; line-height: 1.45;"></div>
+    <button id="flush-hl" style="margin-top: 4px; background: rgba(56, 189, 248, 0.2); color: #38bdf8; border-color: #38bdf8;">📥 汇编当前全部高亮入日记</button>
+  </div>
+
   <textarea id="note" placeholder="可写一句批注（可选），随网页一起入日记"></textarea>
   <button id="save">📑 整页收藏到今日日记</button>
   <button id="copy" class="secondary">📋 仅复制 Markdown 链接</button>

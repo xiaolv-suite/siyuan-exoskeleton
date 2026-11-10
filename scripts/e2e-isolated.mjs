@@ -5031,6 +5031,25 @@ async function main() {
                                panelHtml265.includes('container.className = "view-container view-grid view-focus-hero";');
   logStep("Step 7.265: 场景聚焦 2x2 黄金四宫格大卡排版 (无残缺对称) 与 极简6大金刚卡片ID精准映射+键盘导航2列自适应 断言", hasFocusHeroContract, `四宫格大卡排版契约: ${hasFocusHeroContract}`);
 
+  // Step 7.266: Test Browser Companion Extension Multi-Highlight Collector Mode (Obsidian Clipper / Readwise parity)
+  const extManifest266 = JSON.parse(fs.readFileSync(path.join(ROOT, 'browser-extension', 'manifest.json'), 'utf8'));
+  const extContent266 = fs.readFileSync(path.join(ROOT, 'browser-extension', 'content.js'), 'utf8');
+  const extBg266 = fs.readFileSync(path.join(ROOT, 'browser-extension', 'background.js'), 'utf8');
+  const extPopupHtml266 = fs.readFileSync(path.join(ROOT, 'browser-extension', 'popup.html'), 'utf8');
+  const extPopupJs266 = fs.readFileSync(path.join(ROOT, 'browser-extension', 'popup.js'), 'utf8');
+  const hasHighlighterModeContract = Array.isArray(extManifest266.content_scripts) &&
+                                     extManifest266.content_scripts.some(cs => cs.js && cs.js.includes('content.js')) &&
+                                     extContent266.includes('ADD_PAGE_HIGHLIGHT') &&
+                                     extContent266.includes('FLUSH_HIGHLIGHTS') &&
+                                     extContent266.includes('xlv-highlighter-float-dock') &&
+                                     extBg266.includes('xlv-collect-highlight') &&
+                                     extBg266.includes('xlv-flush-highlights') &&
+                                     extBg266.includes('flushHighlightsToDaily') &&
+                                     extPopupHtml266.includes('id="highlight-section"') &&
+                                     extPopupHtml266.includes('id="flush-hl"') &&
+                                     extPopupJs266.includes('GET_PAGE_HIGHLIGHTS');
+  logStep("Step 7.266: 浏览器伴侣扩展多段高亮剪藏收集器 (content.js注入+划词高亮栈+一键大纲汇编入日记，对标Obsidian Clipper) 断言", hasHighlighterModeContract, `扩展高亮收集模式契约: ${hasHighlighterModeContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

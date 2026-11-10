@@ -199,7 +199,9 @@ namespace XiaoLv.Desktop.Core
                             JsonHelper.GetString(args, "action", ""),
                             data,
                             null);
-                        return result == "OK" ? "OK: 已写入思源 (" + data.Trim().Replace("\r", " ").Replace("\n", " ") + ")" : "错误: " + result;
+                        if (result != "OK" && !result.StartsWith("OK|", StringComparison.Ordinal)) return "错误: " + result;
+                        string writtenBlockId = result.StartsWith("OK|", StringComparison.Ordinal) ? result.Substring(3) : "";
+                        return "OK: 已写入思源" + (writtenBlockId.Length > 0 ? (" · 跳转: siyuan://blocks/" + writtenBlockId) : "") + " (" + data.Trim().Replace("\r", " ").Replace("\n", " ") + ")";
                     }
                     case "siyuan_search_blocks":
                     {

@@ -134,7 +134,7 @@
 
 ### P1 · 能力补位（社区有 issue 背书、集市空白的 4+1 个空白）
 
-1. ✅ **参数化写入深链**（ParameterizedWriteBridge）：`siyuan-exoskeleton://write` + REST `/api/write` 双入口，复用 SYS 分流管线（>>小节/>@直投/task/flash），动作广场可复制模板
+1. ✅ **参数化写入深链**（ParameterizedWriteBridge）：`siyuan-exoskeleton://write` + REST `/api/write` 双入口，复用 SYS 分流管线（>>小节/>@直投/task/flash），动作广场可复制模板；**回执已闭环**：六分支写库点回传块 ID，/api/write 响应 blockId+jumpUrl(siyuan://blocks/{id})、MCP siyuan_write 同步带跳转、E2E 按 ID 真查块验证
 2. ✅ **系统级提醒守护**（ReminderGuardian）：10 分钟轮询到期闪卡(getRiffDueCards) + 📅/due: 截止日任务 → 托盘系统气泡（思源不在前台也能收）→ 点击智能跳转（fsrs→三秒微刷卡 / tasks→t: 待办视界）；数量指纹防轰炸、每日每状态一次、隔离靶场禁启
 3. ✅ **OCR 写回闭环**：胶囊图文入日记时把识别文字挂为块 IAL 属性 `custom-ocr-text`（正文本身即可编辑，补 #13714 编辑诉求）；新增 `ocr: 关键词` 秒搜域（BentoWindow searchOcr op 经 attributes.block_id JOIN 结构化检索，E2E 真机验证）；动作广场收录 ocr: 前缀
 4. ✅ **剪藏模板路由**：域名路由已落地（AppSettings.ClipDomainRules 每行「域名 => /目标目录/」，SmartCaptureMain.ResolveClipDomainFolder 精确+子域匹配覆盖研读专页目录，偏好 UI 可编辑，反射真机验证）；模板引擎此前已有（callout/yaml/minimal/custom 四预设 + {{smartTag}} 变量）；片段/批注模式已有（g:）；图片防盗链本地化已有（CacheAndUploadRemoteImage）；新增「3 天未读回顾」托盘气泡（ReminderGuardian 第三检查 → d:读库）
@@ -157,7 +157,7 @@
 
 ### 工程护栏（持续）
 
-单文件零依赖（csc 直编）· E2E 隔离靶场扩容至 300+ 断言 · 安全四件套（127.0.0.1 绑定 + token 固定时间比较 + 参数白名单 + 深链 payload 净化，记取 GHSA-6gx2-8gcr-x83f 教训）· 每发版跑 3.8.x 兼容回归 · 待机内存 ≤ 22 MB、0.0% 空闲 CPU 不回退。
+单文件零依赖（csc 直编）· E2E 隔离靶场扩容至 300+ 断言 · 安全四件套（127.0.0.1 绑定 + token 固定时间比较 + 参数白名单 + 深链 payload 净化，记取 GHSA-6gx2-8gcr-x83f 教训）· 每发版跑 3.8.x 兼容回归 · 待机内存 ≤ 22 MB、0.0% 空闲 CPU 不回退（2026-11-10 复测：WorkingSet 12.1MB · 空闲 CPU 0.0% · 45 线程/894 句柄——新增提醒/剪贴板/MCP 三轮询后仍达标）。
 
 ---
 

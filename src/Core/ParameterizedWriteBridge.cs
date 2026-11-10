@@ -45,7 +45,12 @@ namespace XiaoLv.Desktop.Core
                 SmartCaptureMain.Exec(ctx);
                 bool ok = SafeContext.GetBool(ctx, "是否成功", true);
                 string feedback = SafeContext.GetString(ctx, "通知反馈", "");
-                if (ok) return "OK";
+                if (ok)
+                {
+                    // P1-1 收尾：回传写入块 ID，REST/深链/MCP 三通道都能给出 siyuan:// 跳转
+                    string writtenBlockId = SafeContext.GetString(ctx, "写入块ID", "");
+                    return string.IsNullOrEmpty(writtenBlockId) ? "OK" : ("OK|" + writtenBlockId);
+                }
                 return string.IsNullOrEmpty(feedback) ? "分流管线未成功 (未写库)" : "失败: " + feedback;
             }
             catch (Exception ex)

@@ -749,13 +749,15 @@ namespace XiaoLv.Desktop.Core
                     return;
                 }
 
-                string composedPreview = data.Trim();
                 string result = ParameterizedWriteBridge.ExecuteFromParams(target, heading, doc, action, data, (t, m) => Program.SafeNotify(t, m));
+                string writtenBlockId = result != null && result.StartsWith("OK|", StringComparison.Ordinal) ? result.Substring(3) : "";
 
                 WriteJsonResponse(resp, 200, new
                 {
-                    code = result == "OK" ? 0 : 1,
-                    msg = result == "OK" ? "参数化写入已分流执行" : result,
+                    code = (result == "OK" || result.StartsWith("OK|", StringComparison.Ordinal)) ? 0 : 1,
+                    msg = (result == "OK" || result.StartsWith("OK|", StringComparison.Ordinal)) ? "参数化写入已分流执行" : result,
+                    blockId = writtenBlockId,
+                    jumpUrl = string.IsNullOrEmpty(writtenBlockId) ? "" : ("siyuan://blocks/" + writtenBlockId),
                     target = string.IsNullOrEmpty(doc) ? "daily" : "doc",
                     action = string.IsNullOrEmpty(action) ? "note" : action
                 });

@@ -343,6 +343,7 @@ public static class SmartCaptureMain
                 string noteMd = "- " + timeStr + " " + text + (!string.IsNullOrEmpty(docSourceCitation) && docSourceCitation != "桌面应用" ? " *(来自 " + docSourceCitation + ")*" : "");
                 var appendBody = "{\"parentID\":\"" + targetDocId + "\",\"dataType\":\"markdown\",\"data\":\"" + SafeContext.EscapeJson(noteMd) + "\"}";
                 var appRes = SyKernelRequest.DoRequest(syUrl, token, "/api/block/appendBlock", appendBody);
+                if (appRes.Success) SafeContext.Set(context, "写入块ID", ExtractCreatedBlockId(appRes.Text));
                 if (appRes.Success) SoundPlayerHelper.PlayFeedback();
 
                 SafeContext.Set(context, "是否成功", appRes.Success);
@@ -377,6 +378,7 @@ public static class SmartCaptureMain
                     SoundPlayerHelper.PlayFeedback();
                     SafeContext.Set(context, "是否成功", true);
                     SafeContext.Set(context, "需要通知", true);
+                    SafeContext.Set(context, "写入块ID", ExtractCreatedBlockId(appRes.Text));
                     SafeContext.Set(context, "通知反馈", "✓ 已将群聊记录自动清洗为对话流并萃取 " + chatSummary.ActionTodos.Count + " 条待办！");
                     return;
                 }
@@ -421,6 +423,7 @@ public static class SmartCaptureMain
                 var fallbackBody = "{\"notebook\":\"" + diaryNotebookId + "\",\"dataType\":\"markdown\",\"data\":\"" + SafeContext.EscapeJson(fallbackDailyMd) + "\"}";
                 var rFallback = SyKernelRequest.DoRequest(syUrl, token, "/api/block/appendDailyNoteBlock", fallbackBody);
 
+                if (rFallback.Success) SafeContext.Set(context, "写入块ID", ExtractCreatedBlockId(rFallback.Text));
                 SafeContext.Set(context, "是否成功", rFallback.Success);
                 SafeContext.Set(context, "需要通知", true);
                 SafeContext.Set(context, "通知反馈", rFallback.Success 
@@ -486,6 +489,7 @@ public static class SmartCaptureMain
 
                 SafeContext.Set(context, "是否成功", true);
                 SafeContext.Set(context, "需要通知", true);
+                SafeContext.Set(context, "写入块ID", ExtractCreatedBlockId(r.Text));
                 SafeContext.Set(context, "通知反馈", "✓ 已加入今日日记待办清单！");
                 return;
             }
@@ -539,6 +543,7 @@ public static class SmartCaptureMain
 
             SafeContext.Set(context, "是否成功", r.Success);
             SafeContext.Set(context, "需要通知", true);
+            if (r.Success) SafeContext.Set(context, "写入块ID", ExtractCreatedBlockId(r.Text));
             SafeContext.Set(context, "通知反馈", r.Success ? "✓ 已生成原生 FSRS 问答闪卡并推入思源复习库！" : "❌ 闪卡入库失败: " + r.Error);
             return;
         }
@@ -813,6 +818,7 @@ public static class SmartCaptureMain
         {
             _lastContinuationBlockId = createdId;
             _lastContinuationContent = dailyMd;
+            SafeContext.Set(context, "写入块ID", createdId);
             _lastContinuationSource = sourceCitation;
             _lastContinuationTick = Environment.TickCount;
 

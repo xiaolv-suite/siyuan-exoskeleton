@@ -4620,6 +4620,28 @@ async function main() {
                           readmeSync.includes('siyuan-exoskeleton://write?...');
   logStep("Step 7.251: 划笔胶囊 A 键 AI 路由 (复制提问→打开默认目标→收胶囊) 与 README 能力账本同步 (64~66 章节 + 前缀表 ocr:/ai:/深链) 断言", hasCapsuleAiRoute && hasReadmeLedger, `胶囊路由: ${hasCapsuleAiRoute} · README 同步: ${hasReadmeLedger}`);
 
+  // Step 7.252: Test Write Receipt with Block ID + siyuan:// Jump Link (Advanced-URI final piece)
+  const dlRes = await webhookFetch(WEBHOOK_BASE + "/api/write", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "task", data: "深链回执验证DL252" })
+  });
+  const dlJson = await dlRes.json();
+  await sleep(1500);
+  try { await api("/api/sqlite/flushTransaction"); } catch {}
+  const dlBlockOk = dlJson.code === 0 && !!dlJson.blockId && dlJson.jumpUrl === ("siyuan://blocks/" + dlJson.blockId);
+  const dlRow = dlBlockOk ? await pollSql(`SELECT id, content FROM blocks WHERE id='${dlJson.blockId}' AND content LIKE '%深链回执验证DL252%' LIMIT 1`, 15) : null;
+  const bridgeRc = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'ParameterizedWriteBridge.cs'), 'utf8');
+  const mcpRc = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'McpServerHost.cs'), 'utf8');
+  const smRc = fs.readFileSync(path.join(ROOT, 'src', 'Engine', 'Modules', 'SmartCaptureMain.cs'), 'utf8');
+  const apiRc = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'ExternalApiBridge.cs'), 'utf8');
+  const hasDlContract = (smRc.match(/"写入块ID"/g) || []).length >= 6 &&
+                        bridgeRc.includes('("OK|" + writtenBlockId)') &&
+                        bridgeRc.includes('"写入块ID"') &&
+                        apiRc.includes('jumpUrl = string.IsNullOrEmpty(writtenBlockId)') &&
+                        mcpRc.includes('跳转: siyuan://blocks/');
+  logStep("Step 7.252: 写入回执块 ID + siyuan:// 跳转深链 (/api/write 返回 blockId/jumpUrl 且真实可查 · 六分支回传 · MCP 同步) 断言", dlBlockOk && !!dlRow && hasDlContract, `回执: ${dlBlockOk} · 按ID查块: ${!!dlRow} · 契约: ${hasDlContract} · blockId: ${dlJson.blockId || "无"}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

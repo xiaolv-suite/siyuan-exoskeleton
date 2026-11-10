@@ -250,9 +250,12 @@ namespace XiaoLv.Desktop.UI
                             {
                                 string url = targets[0].Item2;
                                 if (url.Contains("{query}")) url = url.Replace("{query}", Uri.EscapeDataString(routeText));
-                                if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                                url = url.Trim().Replace("\r", "").Replace("\n", "");
+                                Uri safeUri;
+                                if (Uri.TryCreate(url, UriKind.Absolute, out safeUri) && safeUri != null &&
+                                    (safeUri.Scheme == Uri.UriSchemeHttp || safeUri.Scheme == Uri.UriSchemeHttps))
                                 {
-                                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+                                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(safeUri.AbsoluteUri) { UseShellExecute = true });
                                     targetName = targets[0].Item1;
                                     launched = true;
                                 }

@@ -65,6 +65,12 @@
 - build-desktop.mjs：`Framework64/v4.0.30319/csc.exe` + `/target:winexe /platform:x64 /optimize+`，嵌入 WebView2 DLL 与 assets.zip，bin 侧保留松散资源目录供热更新；零 XAML、零 NuGet。
 - e2e-isolated.mjs：隔离内核 3.8.9 冷启动 → 253→260 断言扩容中 → 沙箱销毁/生产实例自动还原。
 
+### 1.8 体验与健壮性深化审计（2026-11-10 完成，E2E 276 封板）
+- **安全加固 (Uri.TryCreate 强校验)**：BentoWindow 与 CapsuleWindow 的 `aiRouteLaunch` / `routeAiExternal` 全面升级为 `Uri.TryCreate` 绝对白名单校验，去除换行符与控制字符，杜绝外部传入畸形协议注入；
+- **思源匹配升级 (真实日记历史反推)**：`SafeContext.GetDiaryNotebookId` 升级为「AppSettings.DailyNoteTargetNotebook 显式配置 -> SQL 历史反推 (按 `/daily note/` 或 `/%日记%/` 嗅探最近写过日记的真实 box) -> 启发式名称」三级探测，彻底解决笔记本改名后日记串流或误落第一本的痛点；
+- **用户控制权 (系统级提醒守护开关)**：`AppSettings.ReminderGuardianEnabled` 偏好设置持久化 + UI 勾选联动 + 后台动态启停 (`Stop` / `Restart`)，满足静默免打扰诉求；
+- **操作指引强化**：顶栏 `? 快捷指南` 强化为包含「快捷指南 · 动作广场 · 新手上路」，与速查表深度贯通。
+
 ### 1.7 并行开发现状（已收口，2026-11-10）
 
 并行会话遗留的 26 文件改动（+2,236/-887：离线队列可靠性回执、SiYuanProfileHub 配置预设中枢 +626、panel UX 迭代 +522、Program.cs +205、E2E 253→258+ 扩容、托盘/截屏/构建脚本打磨）已由本会话验证并提交；其中 Step 7.67 暴露的「离线补录 Flush 后未强制提交内核事务」缺陷已双向修复（OfflineQueueManager.FlushQueueInternal 补 `/api/sqlite/flushTransaction` + E2E 轮询前 flush、窗口 1.5s→4.5s），E2E 全量 258/258 通过。第 0.2 步 rowID→itemID 审计结论：无需迁移（见 0.2 行）。

@@ -4233,7 +4233,7 @@
         <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.15"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
         <span class="badge-dot" id="notice-badge-dot" style="display: none; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--rose-agent);"></span>
       </button>
-      <button class="theme-toggle-btn" id="help-btn" onclick="toggleCheatsheet()" title="快捷心流与语法罗盘 (?)">
+      <button class="theme-toggle-btn" id="help-btn" onclick="toggleCheatsheet()" title="快捷指南 · 动作广场 · 新手上路 (?)">
         <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
       </button>
       <button class="theme-toggle-btn" id="customize-btn" onclick="togglePreferencesModal()" title="设置中枢 (⚙)">
@@ -4594,6 +4594,11 @@
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 11.5px; color: var(--text-secondary);">📓 目标日记笔记本 (可选)：</span>
+            <input type="text" id="pref-desktop-targetnotebook" class="search-input" style="height: 28px; width: 100%; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px;" placeholder="笔记本名称或ID (留空则自动按思源历史/日记名探测)" />
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4px;">
             <span style="font-size: 11.5px; color: var(--text-secondary);">📄 专属收集箱文档 (可选)：</span>
             <div style="display: flex; gap: 6px;">
               <input type="text" id="pref-desktop-targetdoc" class="search-input" style="height: 28px; flex: 1; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 6px;" placeholder="文档标题或ID (留空则默认今日日记)" />
@@ -4621,6 +4626,10 @@
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
               <input type="checkbox" id="pref-desktop-lifelog" style="accent-color: var(--indigo-primary);" checked />
               <span>🌟 Lifelog 智能分流 (账目/专注/打卡)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+              <input type="checkbox" id="pref-desktop-reminder-guardian" style="accent-color: var(--indigo-primary);" checked />
+              <span>🧠 智能提醒守护 (到期闪卡与今日待办气泡通知)</span>
             </label>
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
               <input type="checkbox" id="pref-desktop-webhook" style="accent-color: var(--indigo-primary);" />
@@ -16486,6 +16495,10 @@
         if (cEl) cEl.value = s.quickNoteContinuationSec != null ? s.quickNoteContinuationSec : 30;
         const dEl = document.getElementById("pref-desktop-targetdoc");
         if (dEl) dEl.value = s.quickNoteTargetDoc || "";
+        const nbEl = document.getElementById("pref-desktop-targetnotebook");
+        if (nbEl) nbEl.value = s.dailyNoteTargetNotebook || "";
+        const rgEl = document.getElementById("pref-desktop-reminder-guardian");
+        if (rgEl) rgEl.checked = s.reminderGuardianEnabled != null ? !!s.reminderGuardianEnabled : true;
         const cmEl = document.getElementById("pref-desktop-clipmode");
         if (cmEl && s.webClipDefaultMode) cmEl.value = s.webClipDefaultMode;
         const cfEl = document.getElementById("pref-desktop-clipfolder");
@@ -16664,6 +16677,8 @@
       const hVal = (document.getElementById("pref-desktop-heading")?.value || "").trim();
       const cVal = parseInt(document.getElementById("pref-desktop-continuation")?.value || "30", 10);
       const dVal = (document.getElementById("pref-desktop-targetdoc")?.value || "").trim();
+      const nbVal = (document.getElementById("pref-desktop-targetnotebook")?.value || "").trim();
+      const rgVal = !!document.getElementById("pref-desktop-reminder-guardian")?.checked;
       const cmVal = (document.getElementById("pref-desktop-clipmode")?.value || "card").trim();
       const cfVal = (document.getElementById("pref-desktop-clipfolder")?.value || "/读库/").trim();
       const cdrVal = (document.getElementById("pref-desktop-clipdomainrules")?.value || "").trim();
@@ -16708,6 +16723,8 @@
             dailyNoteTargetHeading: hVal,
             quickNoteContinuationSec: isNaN(cVal) ? 30 : cVal,
             quickNoteTargetDoc: dVal,
+            dailyNoteTargetNotebook: nbVal,
+            reminderGuardianEnabled: rgVal,
             webClipDefaultMode: cmVal,
             webClipTargetFolder: cfVal,
             clipDomainRules: cdrVal,

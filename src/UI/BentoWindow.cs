@@ -3015,16 +3015,18 @@ namespace XiaoLv.Desktop.UI
                     return;
                 }
 
-                // 19.4 P2-2 AI 路由: 系统默认浏览器/协议处理器打开 AI 客户端目标 (仅 http/https 白名单)
+                // 19.4 P2-2 AI 路由: 系统默认浏览器/协议处理器打开 AI 客户端目标 (严格 Uri.TryCreate + http/https 白名单)
                 if (op.Equals("aiRouteLaunch", StringComparison.OrdinalIgnoreCase))
                 {
-                    string targetUrl = JsonHelper.GetString(msg, "url", "").Trim();
+                    string targetUrl = JsonHelper.GetString(msg, "url", "").Trim().Replace("\r", "").Replace("\n", "");
                     bool routeOk = false;
-                    if (targetUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || targetUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    Uri safeUri;
+                    if (Uri.TryCreate(targetUrl, UriKind.Absolute, out safeUri) && safeUri != null &&
+                        (safeUri.Scheme == Uri.UriSchemeHttp || safeUri.Scheme == Uri.UriSchemeHttps))
                     {
                         try
                         {
-                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(targetUrl) { UseShellExecute = true });
+                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(safeUri.AbsoluteUri) { UseShellExecute = true });
                             routeOk = true;
                         }
                         catch { }

@@ -36,6 +36,12 @@ namespace XiaoLv.Desktop.Core
         public string PreferredSnippingTool { get; set; }
         public string PreferredSearchEngine { get; set; }
         public string DailyNoteTargetHeading { get; set; }
+
+        /// <summary>指定日记笔记本 ID 或名称 (留空则自动按思源历史/日记名探测)</summary>
+        public string DailyNoteTargetNotebook { get; set; }
+
+        /// <summary>系统级提醒守护总开关 (到期闪卡与今日待办气泡通知)</summary>
+        public bool ReminderGuardianEnabled { get; set; }
         public int QuickNoteContinuationSec { get; set; }
         public string QuickNoteTargetDoc { get; set; }
         public bool AutoFloatEnabled { get; set; }
@@ -79,6 +85,8 @@ namespace XiaoLv.Desktop.Core
             PreferredSnippingTool = "auto";
             PreferredSearchEngine = "auto";
             DailyNoteTargetHeading = "";
+            DailyNoteTargetNotebook = "";
+            ReminderGuardianEnabled = true;
             QuickNoteContinuationSec = 30;
             QuickNoteTargetDoc = "";
             AutoFloatEnabled = false;
@@ -134,8 +142,10 @@ namespace XiaoLv.Desktop.Core
                     s.ClipHotKey = JsonHelper.GetString(dict, "clipHotKey", s.ClipHotKey);
                     s.PreferredSnippingTool = JsonHelper.GetString(dict, "preferredSnippingTool", s.PreferredSnippingTool);
                     s.PreferredSearchEngine = JsonHelper.GetString(dict, "preferredSearchEngine", s.PreferredSearchEngine);
-                    s.DailyNoteTargetHeading = JsonHelper.GetString(dict, "dailyNoteTargetHeading", s.DailyNoteTargetHeading);
-                    s.QuickNoteContinuationSec = JsonHelper.GetInt(dict, "quickNoteContinuationSec", s.QuickNoteContinuationSec);
+	                    s.DailyNoteTargetHeading = JsonHelper.GetString(dict, "dailyNoteTargetHeading", s.DailyNoteTargetHeading);
+	                    s.DailyNoteTargetNotebook = JsonHelper.GetString(dict, "dailyNoteTargetNotebook", s.DailyNoteTargetNotebook);
+	                    s.ReminderGuardianEnabled = JsonHelper.GetBool(dict, "reminderGuardianEnabled", s.ReminderGuardianEnabled);
+	                    s.QuickNoteContinuationSec = JsonHelper.GetInt(dict, "quickNoteContinuationSec", s.QuickNoteContinuationSec);
                     s.QuickNoteTargetDoc = JsonHelper.GetString(dict, "quickNoteTargetDoc", s.QuickNoteTargetDoc);
                     s.DefaultTheme = JsonHelper.GetString(dict, "defaultTheme", s.DefaultTheme);
                     s.AutoFloatEnabled = JsonHelper.GetBool(dict, "autoFloatEnabled", s.AutoFloatEnabled);

@@ -4560,7 +4560,7 @@ async function main() {
   const hasAiRouteContract = appSettingsAi.includes('AiRouteTargetsJson') &&
                              appSettingsAi.includes('"aiRouteTargetsJson"') &&
                              bentoAi.includes('op.Equals("aiRouteLaunch"') &&
-                             bentoAi.includes('StartsWith("https://", StringComparison.OrdinalIgnoreCase)') &&
+                             bentoAi.includes('Uri.TryCreate(targetUrl, UriKind.Absolute, out safeUri)') &&
                              panelContent.includes('function getAiRouteTargets') &&
                              panelContent.includes('function launchAiRouteTarget') &&
                              panelContent.includes('function launchPrimaryAiRoute') &&
@@ -4706,6 +4706,39 @@ async function main() {
                            panelAudit.includes('browser-extension/') &&
                            panelAudit.includes('docs/QUICKER-README.md');
   logStep("Step 7.253: 审计轮修复 (Pin 上限12条运行时验证 · MCP 缺参韧性不崩溃 · 广场MCP/OpenAPI行+速查表新手上路+偏好扩展指引发现性) 断言", /^True\|12/.test(pinCapRes.trim()) && hasMcpResilience && hasAuditContract, `Pin上限: ${pinCapRes.trim()} · MCP缺参: ${hasMcpResilience} · 契约: ${hasAuditContract}`);
+
+  // Step 7.254: Experience & Robustness Pass (Uri.TryCreate whitelist, Diary Notebook 3-tier probe, ReminderGuardian toggle & UI)
+  const guardianToggleScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $rg = $asm.GetType('XiaoLv.Desktop.Core.ReminderGuardian');
+    $mStop = $rg.GetMethod('Stop', [System.Reflection.BindingFlags]'Public,Static');
+    $mRestart = $rg.GetMethod('Restart', [System.Reflection.BindingFlags]'Public,Static');
+    $pRunning = $rg.GetProperty('IsRunning', [System.Reflection.BindingFlags]'Public,Static');
+    $hasStop = ($mStop -ne $null) -and ($mRestart -ne $null) -and ($pRunning -ne $null);
+    Write-Output ($hasStop.ToString());
+  `;
+  const guardianToggleRes = runPs(guardianToggleScript);
+  const hasGuardianToggleRuntime = guardianToggleRes.includes("True");
+  const appSettingsExp = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'AppSettings.cs'), 'utf8');
+  const safeContextExp = fs.readFileSync(path.join(ROOT, 'src', 'Engine', 'Bridge', 'SafeContext.cs'), 'utf8');
+  const bentoExp = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'BentoWindow.cs'), 'utf8');
+  const capsuleExp = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'CapsuleWindow.cs'), 'utf8');
+  const programExp = fs.readFileSync(path.join(ROOT, 'src', 'Program.cs'), 'utf8');
+  const hasExpContract = appSettingsExp.includes('DailyNoteTargetNotebook') &&
+                         appSettingsExp.includes('ReminderGuardianEnabled') &&
+                         safeContextExp.includes('SELECT box FROM blocks WHERE (hpath LIKE') &&
+                         safeContextExp.includes('AppSettings.Instance.DailyNoteTargetNotebook') &&
+                         bentoExp.includes('Uri.TryCreate(targetUrl, UriKind.Absolute, out safeUri)') &&
+                         capsuleExp.includes('Uri.TryCreate(url, UriKind.Absolute, out safeUri)') &&
+                         programExp.includes('s.ReminderGuardianEnabled') &&
+                         programExp.includes('ReminderGuardian.Stop()') &&
+                         panelContent.includes('id="pref-desktop-targetnotebook"') &&
+                         panelContent.includes('id="pref-desktop-reminder-guardian"') &&
+                         panelContent.includes('dailyNoteTargetNotebook: nbVal') &&
+                         panelContent.includes('reminderGuardianEnabled: rgVal') &&
+                         panelContent.includes('快捷指南 · 动作广场 · 新手上路 (?)');
+  logStep("Step 7.254: 体验与健壮性升级 (Uri.TryCreate绝对协议安全 · 真实日记历史反推+显式配置三级探测 · 提醒守护偏好开关+启停联动) 断言", hasGuardianToggleRuntime && hasExpContract, `提醒开关运行时: ${hasGuardianToggleRuntime} · 契约加固: ${hasExpContract}`);
 
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");

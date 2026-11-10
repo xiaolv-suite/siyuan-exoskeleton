@@ -186,6 +186,8 @@ public static class SafeContext
                 var nbList = JsonHelper.GetList(data, "notebooks");
                 if (nbList != null)
                 {
+                    var openBoxes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    var nbMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase); // name -> id
                     string firstOpen = "", firstAny = "";
                     foreach (var item in nbList)
                     {
@@ -197,15 +199,63 @@ public static class SafeContext
                         if (string.IsNullOrEmpty(id)) continue;
                         if (string.IsNullOrEmpty(firstAny)) firstAny = id;
                         if (!closed && string.IsNullOrEmpty(firstOpen)) firstOpen = id;
-                        if (closed) continue;
-
-                        var lowerName = name.ToLowerInvariant();
-                        if (string.IsNullOrEmpty(found) && !string.IsNullOrEmpty(name) &&
-                            (name.Contains("日记") || lowerName.Contains("dailynote") || lowerName.Contains("daily") || lowerName.Contains("diary") || lowerName.Contains("journal")))
+                        if (!closed)
                         {
-                            found = id;
+                            openBoxes.Add(id);
+                            if (!string.IsNullOrEmpty(name)) nbMap[name] = id;
                         }
                     }
+
+                    // 1. 显式配置优先 (AppSettings.DailyNoteTargetNotebook)
+                    string cfgNb = (XiaoLv.Desktop.Core.AppSettings.Instance.DailyNoteTargetNotebook ?? "").Trim();
+                    if (!string.IsNullOrEmpty(cfgNb))
+                    {
+                        if (openBoxes.Contains(cfgNb)) found = cfgNb;
+                        else if (nbMap.ContainsKey(cfgNb)) found = nbMap[cfgNb];
+                    }
+
+                    // 2. 真实思源日记历史反推优先 (通过 SQL 嗅探最近写过日记的有效 notebook box)
+                    if (string.IsNullOrEmpty(found))
+                    {
+                        try
+                        {
+                            string sqlProbe = "SELECT box FROM blocks WHERE (hpath LIKE '%daily note%' OR hpath LIKE '%/日记%' OR hpath LIKE '%日记/%') AND box != '' ORDER BY updated DESC LIMIT 1";
+                            var sqlRes = SyKernelRequest.DoRequest(syUrl, token, "/api/query/sql", "{\"stmt\":\"" + EscapeJson(sqlProbe) + "\"}");
+                            if (sqlRes.Success && !string.IsNullOrEmpty(sqlRes.Text))
+                            {
+                                var sqlDict = JsonHelper.ParseDict(sqlRes.Text);
+                                var sqlData = JsonHelper.GetList(sqlDict, "data");
+                                if (sqlData != null && sqlData.Count > 0)
+                                {
+                                    var fRow = sqlData[0] as Dictionary<string, object>;
+                                    string probedBox = fRow != null ? JsonHelper.GetString(fRow, "box") : "";
+                                    if (!string.IsNullOrEmpty(probedBox) && openBoxes.Contains(probedBox))
+                                    {
+                                        found = probedBox;
+                                    }
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+
+                    // 3. 启发式名称兜底匹配 (日记 / daily / diary / journal)
+                    if (string.IsNullOrEmpty(found))
+                    {
+                        foreach (var item in nbList)
+                        {
+                            var nb = item as Dictionary<string, object>;
+                            if (nb == null || JsonHelper.GetBool(nb, "closed", false)) continue;
+                            string id = JsonHelper.GetString(nb, "id");
+                            string name = (JsonHelper.GetString(nb, "name") ?? "").ToLowerInvariant();
+                            if (name.Contains("日记") || name.Contains("dailynote") || name.Contains("daily") || name.Contains("diary") || name.Contains("journal"))
+                            {
+                                found = id;
+                                break;
+                            }
+                        }
+                    }
+
                     if (string.IsNullOrEmpty(found)) found = string.IsNullOrEmpty(firstOpen) ? firstAny : firstOpen;
                 }
             }

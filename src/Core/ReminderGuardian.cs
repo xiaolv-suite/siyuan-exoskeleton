@@ -18,6 +18,7 @@ namespace XiaoLv.Desktop.Core
 
         /// <summary>最近一次守护通知的跳转意图 ("fsrs" | "tasks" | "")，由托盘气泡点击消费后立即清零</summary>
         public static string LastJumpKind = "";
+        public static bool IsRunning { get { return _timer != null; } }
 
         private static int _lastDueCards = -1;
         private static string _lastTaskStamp = "";
@@ -31,6 +32,21 @@ namespace XiaoLv.Desktop.Core
             _onNotify = onNotify;
             // 开机后 90 秒首次检查（避开启动高峰），之后每 10 分钟一轮
             _timer = new Timer(Check, null, 90000, 600000);
+        }
+
+        public static void Stop()
+        {
+            if (_timer != null)
+            {
+                try { _timer.Dispose(); } catch { }
+                _timer = null;
+            }
+        }
+
+        public static void Restart(Action<string, string, string> onNotify)
+        {
+            Stop();
+            Start(onNotify);
         }
 
         public static void CheckNow()

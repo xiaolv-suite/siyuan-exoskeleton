@@ -246,8 +246,10 @@ namespace XiaoLv.Desktop
 		                        s.WebhookPort = JsonHelper.GetInt(dict, "webhookPort", s.WebhookPort);
 		                        if (s.WebhookPort <= 0 || s.WebhookPort > 65535) s.WebhookPort = 43989;
 		                    }
-		                    s.DropZoneEnabled = JsonHelper.GetBool(dict, "dropZoneEnabled", s.DropZoneEnabled);
-		                    s.DoubleCtrlActivationEnabled = JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", s.DoubleCtrlActivationEnabled);
+			                    s.DropZoneEnabled = JsonHelper.GetBool(dict, "dropZoneEnabled", s.DropZoneEnabled);
+			                    s.DoubleCtrlActivationEnabled = JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", s.DoubleCtrlActivationEnabled);
+			                    s.DailyNoteTargetNotebook = JsonHelper.GetString(dict, "dailyNoteTargetNotebook", s.DailyNoteTargetNotebook);
+			                    s.ReminderGuardianEnabled = JsonHelper.GetBool(dict, "reminderGuardianEnabled", s.ReminderGuardianEnabled);
 
                     bool previousAutoStart = false;
                     bool autoStartRegistrationChanged = false;
@@ -284,11 +286,19 @@ namespace XiaoLv.Desktop
 		                    if (!IsIsolatedRun) ConfigureExternalApiBridge(s);
 				                    if (!IsIsolatedRun)
 				                    {
-				                        if (s.DropZoneEnabled) _dropZoneWindow.Show();
-				                        else _dropZoneWindow.Hide();
-				                        if (s.DoubleCtrlActivationEnabled) DoubleTapHotkeyActivator.Start();
-				                        else DoubleTapHotkeyActivator.Stop();
-				                    }
+					                        if (s.DropZoneEnabled) _dropZoneWindow.Show();
+					                        else _dropZoneWindow.Hide();
+					                        if (s.DoubleCtrlActivationEnabled) DoubleTapHotkeyActivator.Start();
+					                        else DoubleTapHotkeyActivator.Stop();
+					                        if (s.ReminderGuardianEnabled && !ReminderGuardian.IsRunning)
+					                        {
+					                            ReminderGuardian.Start((t, m, k) => _tray.ShowNotice(t, m, System.Windows.Forms.ToolTipIcon.Info));
+					                        }
+					                        else if (!s.ReminderGuardianEnabled && ReminderGuardian.IsRunning)
+					                        {
+					                            ReminderGuardian.Stop();
+					                        }
+					                    }
 	                    string webhookWarning = settingsWarning;
 		                    if (!IsIsolatedRun && webhookRequested && string.IsNullOrWhiteSpace(requestedWebhookToken))
 		                    {
@@ -462,7 +472,7 @@ namespace XiaoLv.Desktop
                 }
                 _bentoWindow.ShowPanel(jumpKind == "tasks" ? "t:" : null);
             });
-            if (!IsIsolatedRun)
+            if (!IsIsolatedRun && settings.ReminderGuardianEnabled)
             {
                 ReminderGuardian.Start((t, m, k) => _tray.ShowNotice(t, m, System.Windows.Forms.ToolTipIcon.Info));
             }

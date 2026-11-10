@@ -4963,6 +4963,20 @@ async function main() {
                             apiCs260.includes('is_v3810_ready');
   logStep("Step 7.260: 全盘三大隐患彻底化解 (极简6大卡+前缀直选免记 · 划词钩子热卸载+全屏旁路 · 内核版本感知自愈+健康契约) 断言", hasHazardRuntime && hasHazardContract, `三大隐患闭环运行时: ${hazardRes.trim()} · 契约加固: ${hasHazardContract}`);
 
+  // Step 7.261: Test Usability & Cognitive Friction Reduction (Live Action Radar, Cheat Sheet Modal, ? Auto-Prompt & Friendly Actions)
+  const panelHtml261 = fs.readFileSync(path.join(ROOT, 'assets', 'panel.html'), 'utf8');
+  const hasCognitiveReliefContract = panelHtml261.includes('id="cheat-sheet-modal"') &&
+                                     panelHtml261.includes('function toggleCheatSheetModal') &&
+                                     panelHtml261.includes('function closeCheatSheetOnBg') &&
+                                     panelHtml261.includes('💡 怎么用') &&
+                                     panelHtml261.includes('↵ Enter 📥 记日记') &&
+                                     panelHtml261.includes('⇧↵ Shift+Enter 🔍 搜全库') &&
+                                     panelHtml261.includes('⌃↵ Ctrl+Enter 📋 存待办') &&
+                                     panelHtml261.includes('Tab 🤖 问AI') &&
+                                     panelHtml261.includes('raw === "?" || raw === "？" || raw.toLowerCase() === "help"') &&
+                                     panelHtml261.includes('Enter 记日记 · Shift+Enter 搜全库');
+  logStep("Step 7.261: 认知减负与易用性跃迁 (打字动作直白分流雷达 + 输入问号/?直达速查手册 + 亲切动作指引) 断言", hasCognitiveReliefContract, `易用性契约加固: ${hasCognitiveReliefContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

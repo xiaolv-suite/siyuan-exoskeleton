@@ -4262,7 +4262,7 @@
         type="text"
         id="search-input"
         class="search-input"
-        placeholder="直接打字：无需记指令！输入后可点右侧「🔍 搜笔记」、「📥 记入日记」或「📋 存待办」..."
+        placeholder="直接打字：Enter 记日记 · Shift+Enter 搜全库 · 输入 ? 或点「💡 怎么用」速查技巧..."
         autocomplete="off"
         spellcheck="false"
         autofocus
@@ -4272,6 +4272,7 @@
         <button type="button" class="search-action-btn search-scope-btn" onclick="insertPrefix('b:')" title="在思源全库正文块与文档中搜索已输入文字，支持一键贴双链 (b:)">🔍 搜笔记</button>
         <button type="button" class="search-action-btn search-capture-btn" onclick="quickSubmitInputToDaily()" title="将输入框文字直接记入今日日记；若为空则弹出三合一速记框">📥 记入日记</button>
         <button type="button" class="search-action-btn" style="background: rgba(245, 158, 11, 0.16); border: 1px solid rgba(245, 158, 11, 0.45); color: var(--tech-amber);" onclick="quickSubmitInputAsTask()" title="将输入框文字直接存为思源未完成待办 (- [ ])；若为空则弹出新建待办">📋 存待办</button>
+        <button type="button" class="search-action-btn" style="background: rgba(56, 189, 248, 0.16); border: 1px solid rgba(56, 189, 248, 0.45); color: var(--cyber-sky);" onclick="toggleCheatSheetModal()" title="怎么用？打开常用快捷键与场景速查手册 (输入 ? 随时唤出)">💡 怎么用</button>
         <span class="key-badge">Esc 退出</span>
       </div>
     </div>
@@ -4832,6 +4833,72 @@
         </div>
         <div style="display: flex; flex-direction: column; gap: 7px;" id="onboarding-tasks-list"></div>
         <button type="button" class="fg-try-btn" onclick="dismissOnboardingTasks()" style="align-self: center;">先跳过，托盘菜单「🧭 新手上路」随时找回</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="help-modal-overlay" id="cheat-sheet-modal" onclick="closeCheatSheetOnBg(event)">
+    <div class="help-modal-box" onclick="event.stopPropagation()" style="max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="help-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">💡</span>
+          <span style="font-weight: 700; font-size: 14px;">外骨骼常见使用场景与速查手册</span>
+          <span class="brand-pill" style="font-size: 9.5px;">按 ? 随时唤出</span>
+        </div>
+        <button class="theme-toggle-btn" style="width: 26px; height: 26px; font-size: 12px;" onclick="toggleCheatSheetModal()">✕</button>
+      </div>
+      <div class="help-body" style="gap: 12px; overflow-y: auto; padding-right: 4px;">
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">不用记复杂的快捷键！根据你当下的场景，用最简单自然的方式完成记录：</div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 10px 12px;">
+            <div style="font-weight: 700; font-size: 12.5px; color: var(--emerald-mint); margin-bottom: 4px;">⚡ 1. 随手写一句话进日记</div>
+            <div style="font-size: 11.5px; color: var(--text-primary); line-height: 1.5;">
+              • 在此面板直接打字，按 <b>Enter</b> 秒存日记<br>
+              • 在外部任何软件按 <span class="key-badge">Alt+Shift+S</span> 呼出速记条<br>
+              • 想要待办？文字前加 <b>!</b> 自动变 <span class="key-badge">- [ ]</span>
+            </div>
+          </div>
+
+          <div style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 10px 12px;">
+            <div style="font-weight: 700; font-size: 12.5px; color: var(--cyber-sky); margin-bottom: 4px;">🔍 2. 查以前的笔记并贴回双链</div>
+            <div style="font-size: 11.5px; color: var(--text-primary); line-height: 1.5;">
+              • 输入文字按 <span class="key-badge">Shift+Enter</span> 搜全库正文 (b:)<br>
+              • 选中文档按 <b>Enter</b> 在思源打开<br>
+              • 按 <b>Shift+Enter</b> 把双链直接贴回外部软件光标
+            </div>
+          </div>
+
+          <div style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 10px 12px;">
+            <div style="font-weight: 700; font-size: 12.5px; color: var(--tech-amber); margin-bottom: 4px;">✏️ 3. 选中网页/文档上的文字</div>
+            <div style="font-size: 11.5px; color: var(--text-primary); line-height: 1.5;">
+              • 划选文字光标右上角浮现 <b>微光药丸</b>，点 📝 存日记<br>
+              • 选外文自动变 <b>🌐 译</b> 学术双语翻译<br>
+              • 鼠标中键点药丸直接全库查词；打字 0ms 自动消隐
+            </div>
+          </div>
+
+          <div style="background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 8px; padding: 10px 12px;">
+            <div style="font-weight: 700; font-size: 12.5px; color: var(--indigo-light); margin-bottom: 4px;">🌐 4. 网页剪藏与截屏识字</div>
+            <div style="font-size: 11.5px; color: var(--text-primary); line-height: 1.5;">
+              • 浏览器看文章按 <span class="key-badge">Alt+Shift+G</span> 一键整篇剪藏<br>
+              • 按 <span class="key-badge">Alt+Shift+C</span> 框选屏幕直接截屏识字<br>
+              • 识字内容自动打标，后续输入 <b>ocr:</b> 随手搜
+            </div>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-inset); border-radius: 6px; padding: 10px 12px; font-size: 11.5px; line-height: 1.6; color: var(--text-secondary);">
+          <b style="color: var(--text-primary);">💡 常用小彩蛋：</b><br>
+          • 搜索框输入想问的问题，按 <span class="key-badge">Tab</span> 键一键路由至豆包/千问/Kimi！<br>
+          • 输入 <span class="key-badge">c:</span> 查看剪贴板历史，复制网页表格点「📝 复MD」自动洗成干净 Markdown。<br>
+          • 屏幕右侧边缘右击 <b>灵动坞</b> 或托盘图标，随时查看最后同步状态并一键安全同步。
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px;">
+          <button type="button" class="inspector-dock-btn" onclick="toggleActionPlazaModal(); toggleCheatSheetModal();">🎯 浏览全部 31 项动作广场</button>
+          <button type="button" class="inspector-dock-btn primary" onclick="toggleCheatSheetModal()">我知道了 (Esc)</button>
+        </div>
       </div>
     </div>
   </div>
@@ -7168,20 +7235,27 @@
       } else if (q.startsWith("tab:") || q.startsWith("tab：") || q.startsWith("table:") || q.startsWith("table：") || q === "tab" || q === "table") {
         banner.style.display = "flex";
         banner.innerHTML = renderModeBanner("📊 表格透视矩阵", "全库数据表格透视，列排序、单行过滤与1键导出Excel", "↵ 打开表格矩阵视窗");
+      } else if (raw === "?" || raw === "？" || raw.toLowerCase() === "help") {
+        banner.style.display = "flex";
+        banner.innerHTML = renderModeBanner("💡 场景速查", "已识别向导指令，正在打开 5 大常见场景与快捷键速查手册", "按 Esc 退出");
+        toggleCheatSheetModal();
+        return;
       } else if (raw.length > 0) {
         banner.style.display = "flex";
         banner.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%;">
             <button type="button" class="back-home-pill-btn" onclick="clearSearchInput()" title="清空搜索词返回主页 (Esc)">⬅️ 返回主页</button>
-            <span class="intent-tag">🔍 切换检索域</span>
-            <span class="scope-switch-pill" onclick="insertPrefix('b:')">🧱 搜正文块 (b:)</span>
-            <span class="scope-switch-pill" onclick="insertPrefix('d:')">📄 搜文档 (d:)</span>
-            <span class="scope-switch-pill" onclick="insertPrefix('att:')">📎 搜PDF/附件 (att:)</span>
-            <span class="scope-switch-pill" onclick="insertPrefix('c:')">📋 搜剪贴板 (c:)</span>
-            <span class="scope-switch-pill" onclick="insertPrefix('tag:')"># 搜标签 (tag:)</span>
-            <span class="scope-switch-pill" onclick="insertPrefix('!')">! 转为待办</span>
+            <span class="intent-tag" style="background: rgba(56,189,248,0.15); color: var(--cyber-sky);">⚡ 意图直达</span>
+            <span class="scope-switch-pill" style="background: rgba(16,185,129,0.18); border-color: var(--emerald-mint); color: var(--emerald-mint); font-weight: 700;" onclick="quickSubmitInputToDaily()" title="按 Enter 键将当前文字直接存入今日日记">↵ Enter 📥 记日记</span>
+            <span class="scope-switch-pill" style="background: rgba(56,189,248,0.18); border-color: var(--cyber-sky); color: var(--cyber-sky); font-weight: 700;" onclick="insertPrefix('b:')" title="按 Shift+Enter 在全库搜正文块，回车打开，Shift+Enter贴双链">⇧↵ Shift+Enter 🔍 搜全库</span>
+            <span class="scope-switch-pill" style="background: rgba(245,158,11,0.18); border-color: var(--tech-amber); color: var(--tech-amber); font-weight: 700;" onclick="quickSubmitInputAsTask()" title="按 Ctrl+Enter 将文字作为 - [ ] 待办任务存入今日日记">⌃↵ Ctrl+Enter 📋 存待办</span>
+            <span class="scope-switch-pill" style="background: rgba(99,102,241,0.18); border-color: var(--indigo-light); color: var(--indigo-light); font-weight: 700;" onclick="askAiFromSearchInput()" title="按 Tab 键复制问题并调用通义千问/豆包/Kimi">Tab 🤖 问AI</span>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 5px;">
+              <span class="scope-switch-pill" onclick="insertPrefix('d:')" title="搜文档标题">📄 搜文档</span>
+              <span class="scope-switch-pill" onclick="insertPrefix('ocr:')" title="搜截图识别文字">📸 搜OCR</span>
+              <span class="scope-switch-pill" onclick="toggleCheatSheetModal()" title="怎么用？打开常用快捷键与场景速查手册">💡 怎么用</span>
+            </div>
           </div>
-          <span style="font-size: 10px; opacity: 0.85; white-space: nowrap;">↵ 执行当前项或记入今日日记</span>
         `;
       } else {
         banner.style.display = "none";
@@ -8385,6 +8459,16 @@
       { badge: "POST", name: "/api/notify", desc: "推送通知进外骨骼通知中心" },
       { badge: "GET", name: "/api/status", desc: "存活探针：版本 / 连接 / pid" }
     ];
+    function toggleCheatSheetModal() {
+      const modal = document.getElementById("cheat-sheet-modal");
+      if (!modal) return;
+      modal.classList.toggle("open");
+    }
+    function closeCheatSheetOnBg(e) {
+      const modal = document.getElementById("cheat-sheet-modal");
+      if (modal) modal.classList.remove("open");
+    }
+
     function toggleActionPlazaModal() {
       const modal = document.getElementById("action-plaza-modal");
       if (!modal) return;

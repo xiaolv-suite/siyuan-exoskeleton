@@ -4286,6 +4286,9 @@
       <span class="chip-group-tag">【秒搜】</span>
       <span class="intent-chip" data-prefix="b:" onclick="insertPrefix('b:')" title="点击切换【搜正文块】模式，保留已输关键词 (再次点击退出模式)"><b>b:</b> 搜正文块</span>
       <span class="intent-chip" data-prefix="d:" onclick="insertPrefix('d:')" title="点击切换【搜文档标题】模式，保留已输关键词 (再次点击退出模式)"><b>d:</b> 搜文档</span>
+      <span class="intent-chip" data-prefix="ocr:" onclick="insertPrefix('ocr:')" title="搜索已识别的图片截图 OCR 文字内容"><b>ocr:</b> 搜识字</span>
+      <span class="intent-chip" data-prefix="ai:" onclick="insertPrefix('ai:')" title="路由至国内顶级 AI 客户端 (豆包/千问/Kimi/秘塔)"><b>ai:</b> 问AI</span>
+      <span class="intent-chip" data-prefix="c:" onclick="insertPrefix('c:')" title="查看剪贴板历史胶囊，支持置顶与一键纯净洗为Markdown"><b>c:</b> 剪贴板</span>
       <span class="intent-chip" data-prefix="att:" onclick="insertPrefix('att:')" title="点击切换【搜PDF/Office附件】模式，保留已输关键词"><b>att:</b> 搜附件</span>
       <span class="chip-divider"></span>
       <span class="chip-group-tag">【工作台】</span>
@@ -4352,6 +4355,7 @@
   <!-- Controls Bar: Category Tabs & Layout Switcher -->
   <div class="controls-bar">
     <nav class="category-tabs" id="category-tabs">
+      <button class="cat-btn" id="cat-btn-minimal" onclick="setCategoryFilter('minimal')" title="极简聚焦：仅展示日常最高频的 6 大王牌功能（速记/检索/待办/剪藏/识字/剪贴板），心智负担降至最低">⚡ 极简聚焦 (6)</button>
       <button class="cat-btn active" id="cat-btn-consolidated" onclick="setCategoryFilter('consolidated')" title="默认推荐：已将同源高频功能（速记+语音+模板、网址+目录+书签、待办+番茄、净化+高亮）合并为 22 张直达卡片">✨ 精简推荐 (22)</button>
       <button class="cat-btn" id="cat-btn-all" onclick="setCategoryFilter('all')" title="展开显示全部 31 项独立功能卡片">全部 (31)</button>
       <button class="cat-btn" id="cat-btn-capture" onclick="setCategoryFilter('capture')">📝 记笔记·采集 (6)</button>
@@ -5910,6 +5914,7 @@
     };
 
     let currentCategory = "consolidated";
+    try { const savedCat = localStorage.getItem("omni_active_category"); if (savedCat) currentCategory = savedCat; } catch (e) {}
     let layoutMode = localStorage.getItem("omni_panel_layout") || "grid";
     let currentTheme = localStorage.getItem("omni_panel_theme") || (window.__DESKTOP_SETTINGS__ && window.__DESKTOP_SETTINGS__.defaultTheme) || "dark";
     let selectedIndex = 0;
@@ -6744,6 +6749,7 @@
 
     function setCategoryFilter(cat) {
       currentCategory = cat;
+      try { localStorage.setItem("omni_active_category", cat); } catch (e) {}
       document.querySelectorAll(".cat-btn").forEach(btn => {
         const oc = btn.getAttribute("onclick") || "";
         btn.classList.toggle("active", oc.includes(`'${cat}'`));
@@ -8176,6 +8182,8 @@
         let catMatch = false;
         if (currentCategory === "all") {
           catMatch = true;
+        } else if (currentCategory === "minimal") {
+          catMatch = ["sys", "syf", "sytodo", "syg", "syocr", "clip_history"].includes(it.id);
         } else if (currentCategory === "consolidated") {
           catMatch = CONSOLIDATED_CARD_IDS.includes(it.id);
         } else if (currentCategory === "favorites") {

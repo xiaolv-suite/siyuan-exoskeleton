@@ -54,6 +54,7 @@ namespace XiaoLv.Desktop.Core
         private static Point _mouseDownPos = Point.Empty;
 
         public static bool AutoFloatEnabled { get; set; }
+        public static bool IsSuspended { get; set; }
         public static bool IsInternalClipboardOperation { get; set; }
         public static event Action<string> OnAutoSelectionDetected;
         public static event Action<int, int> OnGlobalMouseDown;
@@ -154,6 +155,12 @@ namespace XiaoLv.Desktop.Core
         {
             if (nCode >= 0)
             {
+                // 软开关/挂起保护：当用户暂停划词或处于全屏独占应用(游戏/影音)时，0 开销短路放行，绝不阻滞系统输入
+                if (IsSuspended || IsFullscreenForeground())
+                {
+                    return CallNextHookEx(_hookId, nCode, wParam, lParam);
+                }
+
                 if (wParam == (IntPtr)WM_LBUTTONDOWN)
                 {
                     try

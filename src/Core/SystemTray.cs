@@ -140,11 +140,15 @@ namespace XiaoLv.Desktop.Core
                 bool oldState = SelectionHelper.AutoFloatEnabled;
                 bool oldSetting = AppSettings.Instance.AutoFloatEnabled;
                 SelectionHelper.AutoFloatEnabled = newState;
+                if (newState) SelectionHelper.StartMouseHook();
+                else SelectionHelper.StopMouseHook();
                 itemPopClip.Checked = newState;
                 AppSettings.Instance.AutoFloatEnabled = newState;
                 if (!AppSettings.Instance.Save())
                 {
                     SelectionHelper.AutoFloatEnabled = oldState;
+                    if (oldState) SelectionHelper.StartMouseHook();
+                    else SelectionHelper.StopMouseHook();
                     itemPopClip.Checked = oldState;
                     AppSettings.Instance.AutoFloatEnabled = oldSetting;
                     ShowNotice("思源外骨骼", "❌ PopClip 设置未能保存，已恢复原状态。请检查磁盘空间和权限。");

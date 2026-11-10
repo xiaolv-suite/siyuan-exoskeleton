@@ -4923,6 +4923,46 @@ async function main() {
                              watcherCs259.includes('HasRichHtmlSemantics');
   logStep("Step 7.259: 高保真剪贴板富文本转标准MD (表格/代码语言/任务/删除线/高亮) 与 药丸高分屏DPI安全翻转+实体词中键查词 断言", hasCleanMdRuntime && hasCleanMdContract, `高保真清洗与高分屏交互运行时: ${cleanMdRes.trim()} · 契约加固: ${hasCleanMdContract}`);
 
+  // Step 7.260: Test 3 Strategic Hazard Mitigations (Cognitive Reductions, Hook Isolation/Bypass & Kernel Version Self-Healing)
+  const hazardScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $shType = $asm.GetType('XiaoLv.Desktop.Core.SelectionHelper');
+    $syType = $asm.GetType('XiaoLv.Desktop.Core.SiYuanClient');
+    $pSuspended = $shType.GetProperty('IsSuspended');
+    $mProbe = $syType.GetMethod('ProbeKernelCapabilitiesAsync');
+    $pVer = $syType.GetProperty('DetectedKernelVersion');
+    $pConn = $syType.GetProperty('IsKernelConnected');
+
+    $env:SIYUAN_URL = '${BASE_URL}';
+    $env:SIYUAN_TOKEN = '${TOKEN}';
+    $probeTask = $mProbe.Invoke($null, $null);
+    $probeOk = $probeTask.GetAwaiter().GetResult();
+    $connOk = [bool]$pConn.GetValue($null, $null);
+    $verStr = [string]$pVer.GetValue($null, $null);
+
+    $okHook = ($pSuspended -ne $null);
+    $okProbe = ($probeOk -eq $true) -and ($connOk -eq $true) -and (![string]::IsNullOrEmpty($verStr));
+
+    Write-Output ($okHook.ToString() + '|' + $okProbe.ToString() + '|' + $verStr);
+  `;
+  const hazardRes = runPs(hazardScript);
+  const hasHazardRuntime = hazardRes.includes("True|True");
+  const panelHtml260 = fs.readFileSync(path.join(ROOT, 'assets', 'panel.html'), 'utf8');
+  const selCs260 = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'SelectionHelper.cs'), 'utf8');
+  const trayCs260 = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'SystemTray.cs'), 'utf8');
+  const apiCs260 = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'ExternalApiBridge.cs'), 'utf8');
+  const hasHazardContract = panelHtml260.includes('cat-btn-minimal') &&
+                            panelHtml260.includes('data-prefix="ocr:"') &&
+                            panelHtml260.includes('data-prefix="ai:"') &&
+                            panelHtml260.includes('omni_active_category') &&
+                            selCs260.includes('IsSuspended') &&
+                            selCs260.includes('IsFullscreenForeground()') &&
+                            trayCs260.includes('SelectionHelper.StopMouseHook()') &&
+                            apiCs260.includes('kernel_version') &&
+                            apiCs260.includes('is_v3810_ready');
+  logStep("Step 7.260: 全盘三大隐患彻底化解 (极简6大卡+前缀直选免记 · 划词钩子热卸载+全屏旁路 · 内核版本感知自愈+健康契约) 断言", hasHazardRuntime && hasHazardContract, `三大隐患闭环运行时: ${hazardRes.trim()} · 契约加固: ${hasHazardContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

@@ -46,6 +46,13 @@ namespace XiaoLv.Desktop.Core
         private const int CacheTtlMs = 60000;
         private static readonly object _lock = new object();
 
+        public static string DetectedKernelVersion { get; private set; }
+        public static int DetectedKernelMajor { get; private set; }
+        public static int DetectedKernelMinor { get; private set; }
+        public static int DetectedKernelPatch { get; private set; }
+        public static bool IsVersion3810OrHigher { get; private set; }
+        public static bool IsKernelConnected { get; private set; }
+
         private static string _discoveredWorkspaceDir = @"D:\SIYUAN";
         public static string DiscoveredWorkspaceDir
         {
@@ -112,6 +119,52 @@ namespace XiaoLv.Desktop.Core
             {
                 Timeout = TimeSpan.FromSeconds(5)
             };
+
+            DetectedKernelVersion = "";
+            DetectedKernelMajor = 0;
+            DetectedKernelMinor = 0;
+            DetectedKernelPatch = 0;
+            IsVersion3810OrHigher = false;
+            IsKernelConnected = false;
+        }
+
+        /// <summary>
+        /// 异步主动嗅探思源内核版本与连接健康契约 (ProbeKernelCapabilitiesAsync)
+        /// 彻底消除 3.8.9 -> 3.8.10 及未来大版本演进时的参数摩擦
+        /// </summary>
+        public static async Task<bool> ProbeKernelCapabilitiesAsync()
+        {
+            try
+            {
+                var res = await PostAsync("/api/system/version", new { });
+                if (res != null && res.Success && !string.IsNullOrEmpty(res.RawText))
+                {
+                    var m = System.Text.RegularExpressions.Regex.Match(res.RawText, @"""data""\s*:\s*""([^""]+)""");
+                    if (m.Success)
+                    {
+                        string ver = m.Groups[1].Value.Trim();
+                        DetectedKernelVersion = ver;
+                        var parts = ver.Split('.', '-');
+                        if (parts.Length >= 2)
+                        {
+                            int maj, min, patch = 0;
+                            if (int.TryParse(parts[0], out maj)) DetectedKernelMajor = maj;
+                            if (int.TryParse(parts[1], out min)) DetectedKernelMinor = min;
+                            if (parts.Length >= 3 && int.TryParse(parts[2], out patch)) DetectedKernelPatch = patch;
+
+                            if (maj > 3 || (maj == 3 && min > 8) || (maj == 3 && min == 8 && patch >= 10))
+                            {
+                                IsVersion3810OrHigher = true;
+                            }
+                        }
+                    }
+                    IsKernelConnected = true;
+                    return true;
+                }
+            }
+            catch { }
+            IsKernelConnected = false;
+            return false;
         }
 
         public static void InvalidateCache()

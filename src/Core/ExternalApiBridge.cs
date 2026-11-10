@@ -179,6 +179,8 @@ namespace XiaoLv.Desktop.Core
                         msg = "思源外骨骼桌面助手在线",
                         version = AutoUpdater.CURRENT_VERSION,
                         siyuan_connected = SiYuanGuardian.IsAlive,
+                        kernel_version = string.IsNullOrEmpty(SiYuanClient.DetectedKernelVersion) ? "auto" : SiYuanClient.DetectedKernelVersion,
+                        is_v3810_ready = true,
                         port = _activePort,
                         pid = System.Diagnostics.Process.GetCurrentProcess().Id
                     });

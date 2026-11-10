@@ -365,9 +365,11 @@ namespace XiaoLv.Desktop
 				                    {
 					                        if (s.DropZoneEnabled) _dropZoneWindow.Show();
 					                        else _dropZoneWindow.Hide();
-					                        if (s.DoubleCtrlActivationEnabled) DoubleTapHotkeyActivator.Start();
-					                        else DoubleTapHotkeyActivator.Stop();
-					                        if (s.ReminderGuardianEnabled && !ReminderGuardian.IsRunning)
+						                        if (s.DoubleCtrlActivationEnabled) DoubleTapHotkeyActivator.Start();
+						                        else DoubleTapHotkeyActivator.Stop();
+						                        if (s.AutoFloatEnabled) SelectionHelper.StartMouseHook();
+						                        else SelectionHelper.StopMouseHook();
+						                        if (s.ReminderGuardianEnabled && !ReminderGuardian.IsRunning)
 					                        {
 					                            ReminderGuardian.Start((t, m, k) => _tray.ShowNotice(t, m, System.Windows.Forms.ToolTipIcon.Info));
 					                        }
@@ -495,11 +497,14 @@ namespace XiaoLv.Desktop
 		                };
 		            }
 
-	            // 智能划选鼠标微控 (Pop-Pill 渐进划词微药丸模式)
-	            if (!IsIsolatedRun)
-	            {
-	                SelectionHelper.StartMouseHook();
-	                SelectionHelper.OnAutoSelectionDetected += (selected) =>
+		            // 智能划选鼠标微控 (Pop-Pill 渐进划词微药丸模式)
+		            if (!IsIsolatedRun)
+		            {
+		                if (settings.AutoFloatEnabled)
+		                {
+		                    SelectionHelper.StartMouseHook();
+		                }
+		                SelectionHelper.OnAutoSelectionDetected += (selected) =>
 	                {
 	                    _wpfApp.Dispatcher.Invoke(() =>
 	                    {
@@ -567,11 +572,15 @@ namespace XiaoLv.Desktop
             {
 	                ReminderGuardian.Start((t, m, k) => _tray.ShowNotice(t, m, System.Windows.Forms.ToolTipIcon.Info));
 	            }
-		            if (!IsIsolatedRun)
-		            {
-		                SafeSyncGuardian.RegisterPowerWatcher(SafeNotify);
-		                SafeSyncGuardian.StartBackgroundWarmup();
-		            }
+			            if (!IsIsolatedRun)
+			            {
+			                SafeSyncGuardian.RegisterPowerWatcher(SafeNotify);
+			                SafeSyncGuardian.StartBackgroundWarmup();
+			                ThreadPool.QueueUserWorkItem(async st =>
+			                {
+			                    try { await SiYuanClient.ProbeKernelCapabilitiesAsync(); } catch { }
+			                });
+			            }
 		            _tray.OnManualSyncClicked += () =>
 		            {
 		                SafeSyncGuardian.TriggerSafeSync(true, SafeNotify);

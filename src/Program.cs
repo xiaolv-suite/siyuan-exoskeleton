@@ -185,6 +185,22 @@ namespace XiaoLv.Desktop
 		            _dropZoneWindow.OnQuickCaptureClicked += () => PromptQuickCapture();
 		            _dropZoneWindow.OnOpenPanelWithQuery += (q) => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel(q));
 		            _dropZoneWindow.OnSnippingOcrClicked += () => StartSnippingAndOcr();
+		            _dropZoneWindow.OnOpenPreferencesRequested += () => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel("@preferences"));
+		            _dropZoneWindow.OnSyncRequested += () =>
+		            {
+		                ThreadPool.QueueUserWorkItem(async s =>
+		                {
+		                    var res = await SiYuanClient.PostAsync("/api/sync/performSync", new { });
+		                    bool ok = res != null && res.Success;
+		                    if (ok) SoundPlayerHelper.PlayFeedback();
+		                    SafeNotify("思源外骨骼 · 云同步", ok ? "✓ 思源云端增量数据同步已完成！" : "⚠️ 同步响应超时或离线");
+		                });
+		            };
+		            _dropZoneWindow.OnTrimMemoryRequested += () =>
+		            {
+		                MemoryOptimizer.PerformDeepTrim();
+		                SafeNotify("思源外骨骼", "✓ 深度内存整理完成，已释放多余工作集。");
+		            };
 		            _selectionPillWindow = new SelectionPillWindow();
 			            _selectionPillWindow.OnSaveToDailyRequested += (txt) =>
 			            {
@@ -198,14 +214,30 @@ namespace XiaoLv.Desktop
 			                ctx.OnNotificationRequested += (t, m) => SafeNotify(t, m);
 			                SmartCaptureMain.Exec(ctx);
 			            };
-			            _selectionPillWindow.OnSaveTaskRequested += (task) =>
-			            {
-			                var taskMd = task.StartsWith("- [ ]") ? task : ("- [ ] " + task.TrimStart('!', '！', ' '));
-			                var ctx = new DesktopStepContext("SYS", taskMd);
-			                ctx.OnNotificationRequested += (t, m) => SafeNotify(t, m);
-			                SmartCaptureMain.Exec(ctx);
-			            };
-			            _selectionPillWindow.OnRouteToAiRequested += (txt) =>
+				            _selectionPillWindow.OnSaveTaskRequested += (task) =>
+				            {
+				                var taskMd = task.StartsWith("- [ ]") ? task : ("- [ ] " + task.TrimStart('!', '！', ' '));
+				                var ctx = new DesktopStepContext("SYS", taskMd);
+				                ctx.OnNotificationRequested += (t, m) => SafeNotify(t, m);
+				                SmartCaptureMain.Exec(ctx);
+				            };
+				            _selectionPillWindow.OnTranslateRequested += (txt) =>
+				            {
+				                if (!string.IsNullOrEmpty(txt))
+				                {
+				                    string prompt = "请将以下学术英文翻译为地道、准确的中文学术语言，保持专业术语严谨，并附带关键术语中英对照：\n" + txt;
+				                    try { System.Windows.Clipboard.SetText(prompt); } catch { }
+				                    var tList = CapsuleWindow.ParseAiRouteTargets(AppSettings.Instance.AiRouteTargetsJson);
+				                    if (tList.Count > 0)
+				                    {
+				                        string url = tList[0].Item2;
+				                        if (url.Contains("{query}")) url = url.Replace("{query}", Uri.EscapeDataString(prompt));
+				                        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); } catch { }
+				                        SafeNotify("思源外骨骼 · 学术翻译", "🌐 翻译提问已复制，已打开 " + tList[0].Item1 + "，粘贴即出译文");
+				                    }
+				                }
+				            };
+				            _selectionPillWindow.OnRouteToAiRequested += (txt) =>
 		            {
 		                if (!string.IsNullOrEmpty(txt))
 		                {
@@ -451,8 +483,15 @@ namespace XiaoLv.Desktop
 	                        }));
 	                    }
 	                };
-	                DoubleTapHotkeyActivator.Start();
-	            }
+		                DoubleTapHotkeyActivator.Start();
+		                DoubleTapHotkeyActivator.OnAnyKeyDown += (vk) =>
+		                {
+		                    if (_wpfApp != null && _wpfApp.Dispatcher != null && _selectionPillWindow != null)
+		                    {
+		                        _wpfApp.Dispatcher.BeginInvoke(new Action(() => _selectionPillWindow.DismissIfTyping(vk)));
+		                    }
+		                };
+		            }
 
 	            // 智能划选鼠标微控 (Pop-Pill 渐进划词微药丸模式)
 	            if (!IsIsolatedRun)

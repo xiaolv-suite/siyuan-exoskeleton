@@ -33,6 +33,7 @@ namespace XiaoLv.Desktop.Core
         private static bool _isRunning = false;
 
         public static Action OnDoubleCtrlTriggered { get; set; }
+        public static event Action<int> OnAnyKeyDown;
 
         public static bool IsRunning { get { return _isRunning; } }
 
@@ -85,6 +86,10 @@ namespace XiaoLv.Desktop.Core
                     if (!isCtrlKey)
                     {
                         _isOtherKeyPressed = true;
+                    }
+                    if (OnAnyKeyDown != null)
+                    {
+                        try { OnAnyKeyDown(vkCode); } catch { }
                     }
                 }
                 else if (msg == WM_KEYUP || msg == WM_SYSKEYUP)

@@ -4811,6 +4811,43 @@ async function main() {
                                   programCs256.includes('OnSaveTaskRequested');
   logStep("Step 7.256: 边缘灵动坞防甩误触延时与高度记忆 (140ms/EdgeDockTopRatio) 与微光药丸内容感知 (URL/待办变形+距离衰减) 断言", hasContentAwareRuntime && hasContentAwareContract, `感知运行时反射: ${hasContentAwareRuntime} · 契约加固: ${hasContentAwareContract}`);
 
+  // Step 7.257: Test Edge Dock Fullscreen Evading + Context Menu & Pop-Pill Academic English Translation + Typing Dismiss
+  const advPillDockScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $dockType = $asm.GetType('XiaoLv.Desktop.UI.DropZoneWindow');
+    $pillType = $asm.GetType('XiaoLv.Desktop.UI.SelectionPillWindow');
+    $dtType = $asm.GetType('XiaoLv.Desktop.Core.DoubleTapHotkeyActivator');
+    $ePref = $dockType.GetProperty('OnOpenPreferencesRequested');
+    $eSync = $dockType.GetProperty('OnSyncRequested');
+    $eTrim = $dockType.GetProperty('OnTrimMemoryRequested');
+    $mMenu = $dockType.GetMethod('ShowDockContextMenu');
+    $eTrans = $pillType.GetProperty('OnTranslateRequested');
+    $mDismissTyping = $pillType.GetMethod('DismissIfTyping');
+    $eAnyKey = $dtType.GetEvent('OnAnyKeyDown');
+    $ok = ($ePref -ne $null) -and ($eSync -ne $null) -and ($eTrim -ne $null) -and ($mMenu -ne $null) -and
+          ($eTrans -ne $null) -and ($mDismissTyping -ne $null) -and ($eAnyKey -ne $null);
+    Write-Output ($ok.ToString());
+  `;
+  const advPillDockRes = runPs(advPillDockScript);
+  const hasAdvPillDockRuntime = advPillDockRes.includes("True");
+  const dockCs257 = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'DropZoneWindow.cs'), 'utf8');
+  const pillCs257 = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'SelectionPillWindow.cs'), 'utf8');
+  const programCs257 = fs.readFileSync(path.join(ROOT, 'src', 'Program.cs'), 'utf8');
+  const bentoCs257 = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'BentoWindow.cs'), 'utf8');
+  const hasAdvPillDockContract = dockCs257.includes('_fullscreenWatcher') &&
+                                 dockCs257.includes('ShowDockContextMenu') &&
+                                 dockCs257.includes('HighlightDragBorder') &&
+                                 pillCs257.includes('IsEnglishIntent') &&
+                                 pillCs257.includes('🌐 译') &&
+                                 pillCs257.includes('DismissIfTyping') &&
+                                 pillCs257.includes('_scaleTransform') &&
+                                 programCs257.includes('OnTranslateRequested') &&
+                                 programCs257.includes('DismissIfTyping(vk)') &&
+                                 programCs257.includes('@preferences') &&
+                                 bentoCs257.includes('initialQuery == "@preferences"');
+  logStep("Step 7.257: 灵动坞全屏自退避/右键菜单/呼吸边框 与 微药丸学术外文感知(🌐译)/打字消隐/微缩放进场 断言", hasAdvPillDockRuntime && hasAdvPillDockContract, `高级交互运行时反射: ${hasAdvPillDockRuntime} · 契约加固: ${hasAdvPillDockContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

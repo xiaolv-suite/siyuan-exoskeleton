@@ -13,13 +13,14 @@ namespace XiaoLv.Desktop.UI
 {
     /// <summary>
     /// 思源外骨骼 · 选区微光药丸 (Selection Pop-Pill · Content-Aware 智能感知版)
-    /// 1. 划选文字后，在光标右上角浮现 116x28px 极简毛玻璃微胶囊；
+    /// 1. 划选文字后，在光标右上角浮现 118x28px 极简毛玻璃微胶囊；
     /// 2. 内容智能感知变形：
     ///    - URL 链接 -> 自动变形为 [🌐 剪藏网址]；
     ///    - 待办意图 (!/todo) -> 自动变形为 [📋 存为待办]；
+    ///    - 外文学术语篇 -> 第2键自动变形为 [🌐 译] (AI学术翻译此段)；
     ///    - 普通文本 -> 保持 [📝 记入日记]，带字数徽标；
     /// 3. WS_EX_NOACTIVATE 强保护：绝不抢占宿主窗口的键盘与输入焦点；
-    /// 4. 距离衰减与外部单击退避：光标远离 >160px 自动淡出，外部单击 0ms 瞬间消隐。
+    /// 4. 距离衰减与外部单击退避：光标远离 >165px 自动淡出，外部单击 0ms 瞬间消隐，键盘打字 0ms 瞬间消隐。
     /// </summary>
     public class SelectionPillWindow : Window
     {
@@ -48,16 +49,20 @@ namespace XiaoLv.Desktop.UI
         private DispatcherTimer _autoHideTimer;
         private DispatcherTimer _proximityTimer;
         private Border _rootBorder;
+        private ScaleTransform _scaleTransform;
 
-        // 动态变形的第 1 键与字数徽标
+        // 动态变形的按钮引用
         private TextBlock _firstBtnIcon;
         private Border _firstBtnBorder;
+        private TextBlock _secondBtnIcon;
+        private Border _secondBtnBorder;
         private TextBlock _badgeText;
 
         public Action<string> OnSaveToDailyRequested { get; set; }
         public Action<string> OnSaveUrlRequested { get; set; }
         public Action<string> OnSaveTaskRequested { get; set; }
         public Action<string> OnRouteToAiRequested { get; set; }
+        public Action<string> OnTranslateRequested { get; set; }
         public Action<string> OnExpandToCapsuleRequested { get; set; }
 
         public SelectionPillWindow()
@@ -80,7 +85,7 @@ namespace XiaoLv.Desktop.UI
                 if (!IsMouseOver) FadeOutAndHide();
             };
 
-            // 距离衰减检测定时器：鼠标远离药丸中心 >160px 时自动平滑淡出退避，不遮挡阅读后文
+            // 距离衰减检测定时器：鼠标远离药丸中心 >165px 时自动平滑淡出退避，不遮挡阅读后文
             _proximityTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
             _proximityTimer.Tick += (s, e) =>
             {
@@ -135,6 +140,8 @@ namespace XiaoLv.Desktop.UI
             string bgColor = isLight ? "#f8fafcf2" : "#0f172af2";
             string borderColor = isLight ? "#0284c788" : "#38bdf888";
 
+            _scaleTransform = new ScaleTransform(1.0, 1.0);
+
             _rootBorder = new Border
             {
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(bgColor)),
@@ -142,7 +149,9 @@ namespace XiaoLv.Desktop.UI
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(14),
                 ClipToBounds = true,
-                Padding = new Thickness(4, 2, 4, 2)
+                Padding = new Thickness(4, 2, 4, 2),
+                RenderTransform = _scaleTransform,
+                RenderTransformOrigin = new Point(0.5, 0.5)
             };
 
             var sp = new StackPanel
@@ -173,12 +182,20 @@ namespace XiaoLv.Desktop.UI
                 }
             }, out _firstBtnIcon);
 
-            var btnAi = CreatePillButton("🤖", "复制选中文本并路由至 AI 客户端 (豆包/千问/Kimi)", "#38bdf8", () =>
+            // 第 2 键：AI 问答 / 翻译按钮 (智能外文感知)
+            _secondBtnBorder = CreatePillButton("🤖", "复制选中文本并路由至 AI 客户端 (豆包/千问/Kimi)", "#38bdf8", () =>
             {
                 string text = _capturedText;
                 Hide();
-                if (OnRouteToAiRequested != null) OnRouteToAiRequested(text);
-            });
+                if (IsEnglishIntent(text) && OnTranslateRequested != null)
+                {
+                    OnTranslateRequested(text);
+                }
+                else
+                {
+                    if (OnRouteToAiRequested != null) OnRouteToAiRequested(text);
+                }
+            }, out _secondBtnIcon);
 
             var btnMore = CreatePillButton("⋯", "展开完整随身划笔胶囊 (1~8 盲打分发与双链雷达)", "#94a3b8", () =>
             {
@@ -200,7 +217,7 @@ namespace XiaoLv.Desktop.UI
 
             sp.Children.Add(_firstBtnBorder);
             sp.Children.Add(CreateDivider());
-            sp.Children.Add(btnAi);
+            sp.Children.Add(_secondBtnBorder);
             sp.Children.Add(CreateDivider());
             sp.Children.Add(btnMore);
             sp.Children.Add(_badgeText);
@@ -278,12 +295,29 @@ namespace XiaoLv.Desktop.UI
                    text.StartsWith("- [ ]") || text.StartsWith("* [ ]");
         }
 
+        private static bool IsEnglishIntent(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            string t = text.Trim();
+            if (t.Length < 3 || IsUrlIntent(t) || IsTodoIntent(t)) return false;
+            int letters = 0, asciiLetters = 0;
+            foreach (char c in t)
+            {
+                if (char.IsLetter(c))
+                {
+                    letters++;
+                    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) asciiLetters++;
+                }
+            }
+            return letters >= 3 && ((double)asciiLetters / letters) >= 0.85;
+        }
+
         public void ShowNearCursor(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return;
             _capturedText = text.Trim();
 
-            // 智能内容感知变形
+            // 智能内容感知变形第 1 键
             if (IsUrlIntent(_capturedText))
             {
                 _firstBtnIcon.Text = "🌐";
@@ -303,6 +337,18 @@ namespace XiaoLv.Desktop.UI
                 _badgeText.Text = _capturedText.Length > 99 ? "99+" : (_capturedText.Length + "字");
             }
 
+            // 智能感知第 2 键 (外文语篇变形为翻译)
+            if (IsEnglishIntent(_capturedText))
+            {
+                _secondBtnIcon.Text = "🌐 译";
+                _secondBtnBorder.ToolTip = "AI 学术翻译此段 (中英双语对照)";
+            }
+            else
+            {
+                _secondBtnIcon.Text = "🤖";
+                _secondBtnBorder.ToolTip = "复制选中文本并路由至 AI 客户端 (豆包/千问/Kimi)";
+            }
+
             POINT pt;
             if (!GetCursorPos(out pt)) return;
 
@@ -320,8 +366,21 @@ namespace XiaoLv.Desktop.UI
             Left = targetX;
             Top = targetY;
 
+            // 柔和微缩放淡入动效 (从 0.94 平滑长出)
             BeginAnimation(OpacityProperty, null);
             Opacity = 1.0;
+            _scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            _scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+            _scaleTransform.ScaleX = 0.94;
+            _scaleTransform.ScaleY = 0.94;
+
+            var scaleAnim = new DoubleAnimation(0.94, 1.0, TimeSpan.FromMilliseconds(130))
+            {
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            };
+            _scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+            _scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+
             Show();
 
             _autoHideTimer.Interval = TimeSpan.FromMilliseconds(2600);
@@ -343,10 +402,21 @@ namespace XiaoLv.Desktop.UI
             Hide();
         }
 
+        public void DismissIfTyping(int vkCode)
+        {
+            if (!IsVisible) return;
+            // 过滤修饰键：Shift(0x10), Ctrl(0x11), Alt(0x12), Win(0x5B/5C), CapsLock(0x14)
+            if (vkCode == 0x10 || vkCode == 0x11 || vkCode == 0x12 || vkCode == 0x5B || vkCode == 0x5C || vkCode == 0x14)
+            {
+                return;
+            }
+            Hide();
+        }
+
         private void FadeOutAndHide()
         {
             _proximityTimer.Stop();
-            var anim = new DoubleAnimation(1.0, 0.0, TimeSpan.FromMilliseconds(200));
+            var anim = new DoubleAnimation(1.0, 0.0, TimeSpan.FromMilliseconds(180));
             anim.Completed += (s, e) =>
             {
                 BeginAnimation(OpacityProperty, null);

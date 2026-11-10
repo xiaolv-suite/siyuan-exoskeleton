@@ -13,13 +13,13 @@ using XiaoLv.Desktop.Core;
 namespace XiaoLv.Desktop.UI
 {
     /// <summary>
-    /// 思源外骨骼 · 桌面边缘灵动坞与托放中枢 (Edge Dock)
+    /// 思源外骨骼 · 桌面边缘灵动坞与托放中枢 (Edge Dock · 极致避雷与高触达升级版)
     /// 1. 极致克制贴边：平时仅 5px 极细半透明钛青发光细条，0 遮挡，不挡滚动条或右上角按钮；
     /// 2. 140ms 移入防误触延时：快速甩鼠标拖动滚动条时绝对不误弹；
     /// 3. 支持垂直拖拽调整高度并记忆位置 (EdgeDockTopRatio)；
-    /// 4. 上半部内嵌极速动作矩阵 (⚡速记 / 🔍搜块 / 📋待办 / 📸识字 / 🤖问AI)，点击即开；
-    /// 5. 下半部保留文件/超链极速拖放路由 (拾遗/管家/速递)；
-    /// 6. Win32 WS_EX_NOACTIVATE 强保护，触碰和点击绝不抢夺前台正在输入的焦点。
+    /// 4. 全屏独占应用后台自愈避雷：检测到游戏/全屏视频/放映时自动整窗隐退；
+    /// 5. 右键单击边缘即呼出极速上下文菜单 (设置/同步/内存释放/隐藏)；
+    /// 6. 上半部极速动作矩阵 + 下半部拖拽释放高亮呼吸态，WS_EX_NOACTIVATE 强保护焦点。
     /// </summary>
     public class DropZoneWindow : Window
     {
@@ -39,6 +39,7 @@ namespace XiaoLv.Desktop.UI
         private bool _isExpanded = false;
         private DispatcherTimer _collapseTimer;
         private DispatcherTimer _expandHoverTimer;
+        private DispatcherTimer _fullscreenWatcher;
 
         // 垂直位置拖动记忆状态
         private bool _isDraggingVertical = false;
@@ -49,6 +50,9 @@ namespace XiaoLv.Desktop.UI
         public Action OnQuickCaptureClicked { get; set; }
         public Action<string> OnOpenPanelWithQuery { get; set; }
         public Action OnSnippingOcrClicked { get; set; }
+        public Action OnOpenPreferencesRequested { get; set; }
+        public Action OnSyncRequested { get; set; }
+        public Action OnTrimMemoryRequested { get; set; }
 
         public DropZoneWindow()
         {
@@ -84,6 +88,23 @@ namespace XiaoLv.Desktop.UI
                 }
             };
 
+            // 全屏独占应用后台自愈检测：检测到游戏/全屏视频/PPT放映时自动整窗退避隐藏
+            _fullscreenWatcher = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1600) };
+            _fullscreenWatcher.Tick += (s, e) =>
+            {
+                if (!AppSettings.Instance.DropZoneEnabled) return;
+                bool isFs = SelectionHelper.IsFullscreenForeground();
+                if (isFs && Visibility == Visibility.Visible)
+                {
+                    Visibility = Visibility.Collapsed;
+                }
+                else if (!isFs && Visibility != Visibility.Visible)
+                {
+                    Visibility = Visibility.Visible;
+                }
+            };
+            _fullscreenWatcher.Start();
+
             MouseEnter += (s, e) =>
             {
                 _collapseTimer.Stop();
@@ -98,21 +119,31 @@ namespace XiaoLv.Desktop.UI
                 _collapseTimer.Start();
             };
 
+            // 右键单击边缘灵动坞：呼出极速上下文菜单
+            MouseRightButtonUp += (s, e) =>
+            {
+                e.Handled = true;
+                ShowDockContextMenu();
+            };
+
             DragEnter += (s, e) =>
             {
                 e.Effects = DragDropEffects.Copy;
                 Expand();
+                HighlightDragBorder(true);
                 e.Handled = true;
             };
 
             DragOver += (s, e) =>
             {
                 e.Effects = DragDropEffects.Copy;
+                HighlightDragBorder(true);
                 e.Handled = true;
             };
 
             DragLeave += (s, e) =>
             {
+                HighlightDragBorder(false);
                 var pos = e.GetPosition(this);
                 if (pos.X < 0 || pos.Y < 0 || pos.X > ActualWidth || pos.Y > ActualHeight)
                 {
@@ -122,6 +153,7 @@ namespace XiaoLv.Desktop.UI
 
             Drop += (s, e) =>
             {
+                HighlightDragBorder(false);
                 Collapse();
                 try
                 {
@@ -166,7 +198,6 @@ namespace XiaoLv.Desktop.UI
             var workArea = SystemParameters.WorkArea;
             Left = workArea.Right - Width;
 
-            // 依据 AppSettings.EdgeDockTopRatio 动态居中或复原用户拖拽偏好的高度
             double ratio = AppSettings.Instance.EdgeDockTopRatio;
             if (ratio <= 0.05 || ratio >= 0.95) ratio = 0.5;
 
@@ -195,7 +226,7 @@ namespace XiaoLv.Desktop.UI
 
             var grid = new Grid();
 
-            // 停靠把手 (折叠时展现：5px 极细微发光细条，支持按住拖动调整垂直高度)
+            // 停靠把手 (折叠时展现：5px 极细微发光细条，支持按住拖动调整垂直高度，右键呼出菜单)
             _dockHandle = new Border
             {
                 Width = 5,
@@ -203,7 +234,7 @@ namespace XiaoLv.Desktop.UI
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(handleColor)),
                 CornerRadius = new CornerRadius(3, 0, 0, 3),
                 Cursor = Cursors.SizeNS,
-                ToolTip = "按住可上下拖动调整贴边位置"
+                ToolTip = "按住可上下拖动调整贴边位置 · 右键呼出快捷菜单"
             };
             WireVerticalDrag(_dockHandle);
 
@@ -306,6 +337,66 @@ namespace XiaoLv.Desktop.UI
             Content = _rootBorder;
         }
 
+        private void HighlightDragBorder(bool highlight)
+        {
+            if (_rootBorder == null) return;
+            string colorHex = highlight ? "#10b981" : (AppSettings.Instance.DefaultTheme == "light" ? "#0284c788" : "#38bdf888");
+            _rootBorder.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorHex));
+        }
+
+        public void ShowDockContextMenu()
+        {
+            var menu = new ContextMenu
+            {
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0f172ae6")),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38bdf888")),
+                Foreground = Brushes.White,
+                FontSize = 11.5
+            };
+
+            var itPref = new MenuItem { Header = "⚙️ 偏好设置中枢" };
+            itPref.Click += (s, e) =>
+            {
+                Collapse();
+                if (OnOpenPreferencesRequested != null) OnOpenPreferencesRequested();
+            };
+
+            var itSync = new MenuItem { Header = "🔄 立即增量同步思源" };
+            itSync.Click += (s, e) =>
+            {
+                Collapse();
+                if (OnSyncRequested != null) OnSyncRequested();
+            };
+
+            var itTrim = new MenuItem { Header = "🧹 深度释放内存" };
+            itTrim.Click += (s, e) =>
+            {
+                Collapse();
+                if (OnTrimMemoryRequested != null) OnTrimMemoryRequested();
+            };
+
+            var itHide = new MenuItem { Header = "🙈 暂时关闭灵动坞" };
+            itHide.Click += (s, e) =>
+            {
+                Collapse();
+                AppSettings.Instance.DropZoneEnabled = false;
+                Hide();
+                if (OnNotificationRequested != null)
+                {
+                    OnNotificationRequested("思源外骨骼", "边缘灵动坞已隐藏，可在托盘右键或偏好设置中重新开启。");
+                }
+                ThreadPool.QueueUserWorkItem(st => AppSettings.Instance.Save());
+            };
+
+            menu.Items.Add(itPref);
+            menu.Items.Add(itSync);
+            menu.Items.Add(itTrim);
+            menu.Items.Add(new Separator());
+            menu.Items.Add(itHide);
+
+            menu.IsOpen = true;
+        }
+
         private void WireVerticalDrag(FrameworkElement element)
         {
             if (element == null) return;
@@ -340,7 +431,6 @@ namespace XiaoLv.Desktop.UI
                     _isDraggingVertical = false;
                     element.ReleaseMouseCapture();
 
-                    // 保存新的垂直停靠比例
                     var workArea = SystemParameters.WorkArea;
                     double availableHeight = workArea.Height - Height;
                     if (availableHeight > 10)
@@ -452,7 +542,6 @@ namespace XiaoLv.Desktop.UI
             Height = 220;
             Left = workArea.Right - Width;
 
-            // 保持当前高度并做防越界安全卡位
             double maxTop = workArea.Bottom - Height;
             if (Top > maxTop) Top = maxTop;
             if (Top < workArea.Top) Top = workArea.Top;

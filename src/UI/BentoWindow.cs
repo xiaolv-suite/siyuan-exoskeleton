@@ -4298,6 +4298,11 @@ namespace XiaoLv.Desktop.UI
                         // 托盘「新手上路」专用通道：打开面板并滑出 5 步上手清单
                         _webView.CoreWebView2.ExecuteScriptAsync("if(window.openOnboardingTasksModal) { window.openOnboardingTasksModal(); } else if(window.insertPrefix) { window.insertPrefix('onboard:'); }");
                     }
+                    else if (initialQuery == "@preferences")
+                    {
+                        // 灵动坞「偏好设置」专用通道：打开面板并滑出设置中枢
+                        _webView.CoreWebView2.ExecuteScriptAsync("if(window.togglePreferencesModal) { window.togglePreferencesModal(); } else if(window.insertPrefix) { window.insertPrefix('cfg:'); }");
+                    }
                     else
                     {
                         _webView.CoreWebView2.ExecuteScriptAsync("if(window.insertPrefix) window.insertPrefix(" + queryJson + ");");

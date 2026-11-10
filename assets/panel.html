@@ -4357,6 +4357,7 @@
   <!-- Controls Bar: Category Tabs & Layout Switcher -->
   <div class="controls-bar">
     <nav class="category-tabs" id="category-tabs">
+      <button class="cat-btn" id="cat-btn-focus" onclick="setCategoryFilter('focus')" title="场景聚焦：以日常最高频的四大场景大卡（速记/搜库/待办/剪藏）为核心，深浅分流">🎯 场景聚焦 (4)</button>
       <button class="cat-btn" id="cat-btn-minimal" onclick="setCategoryFilter('minimal')" title="极简聚焦：仅展示日常最高频的 6 大王牌功能（速记/检索/待办/剪藏/识字/剪贴板），心智负担降至最低">⚡ 极简聚焦 (6)</button>
       <button class="cat-btn active" id="cat-btn-consolidated" onclick="setCategoryFilter('consolidated')" title="默认推荐：已将同源高频功能（速记+语音+模板、网址+目录+书签、待办+番茄、净化+高亮）合并为 22 张直达卡片">✨ 精简推荐 (22)</button>
       <button class="cat-btn" id="cat-btn-all" onclick="setCategoryFilter('all')" title="展开显示全部 31 项独立功能卡片">全部 (31)</button>
@@ -6081,6 +6082,10 @@
       inlineActionObserver.observe(document.body, { childList: true, subtree: true });
       applyTheme(currentTheme);
       syncLayoutButtons();
+      document.querySelectorAll(".cat-btn").forEach(btn => {
+        const oc = btn.getAttribute("onclick") || "";
+        btn.classList.toggle("active", oc.includes(`'${currentCategory}'`));
+      });
       handleSearch("");
       initLiveTelemetry();
       document.addEventListener("click", closeCardContextMenu);
@@ -6372,6 +6377,30 @@
       "syx", "syprofile",
       "sytrash", "syh"
     ];
+
+    const FOCUS_SCENARIO_CARD_IDS = ["sys", "syf", "sytask", "syg"];
+    const FOCUS_CARD_OVERRIDES = {
+      sys: {
+        title: "⚡ 随手速记入日记",
+        desc: "【怎么用】直接打字回车秒入今日日记（前加 ! 变待办、? 变闪卡、¥ 记账，30秒连续记事自动合并防碎块）",
+        badge: "随手记 · 自动合并"
+      },
+      syf: {
+        title: "🔍 查全库笔记与贴双链",
+        desc: "【怎么用】毫秒检索全库正文块与文档；回车在思源中打开，按 Shift+Enter 直接把双链 ((id)) 贴回外部光标处",
+        badge: "全库秒搜 · 贴双链"
+      },
+      sytask: {
+        title: "📋 今日任务与待办看板",
+        desc: "【怎么用】四象限待办大看板；集中汇总全库未完成任务，支持打勾完成、设置截止日与番茄专注",
+        badge: "待办清单 · 四象限"
+      },
+      syg: {
+        title: "🌐 网页剪藏与截屏识字",
+        desc: "【怎么用】浏览器按 Alt+Shift+G 剪藏文章入读库；按 Alt+Shift+C 截屏离线识字，文字自动打标可搜索",
+        badge: "文章入库 · 截图识字"
+      }
+    };
 
     const CONSOLIDATED_CARD_OVERRIDES = {
       sys: {
@@ -6834,10 +6863,17 @@
     }
 
     function cycleViewCategoryMode() {
-      if (currentCategory === "minimal") setCategoryFilter("consolidated");
+      if (currentCategory === "focus") setCategoryFilter("minimal");
+      else if (currentCategory === "minimal") setCategoryFilter("consolidated");
       else if (currentCategory === "consolidated") setCategoryFilter("all");
-      else setCategoryFilter("minimal");
-      showToast("已切换至: " + (currentCategory === "minimal" ? "⚡ 极简聚焦模式 (6)" : (currentCategory === "consolidated" ? "✨ 精简推荐模式 (22)" : "全部卡片模式 (31)")));
+      else setCategoryFilter("focus");
+      const names = {
+        focus: "🎯 场景聚焦模式 (4大任务)",
+        minimal: "⚡ 极简聚焦模式 (6卡片)",
+        consolidated: "✨ 精简推荐模式 (22卡片)",
+        all: "🌐 全部功能大盘 (31全量)"
+      };
+      showToast("已切换至: " + (names[currentCategory] || currentCategory));
     }
 
     function setSearchInputValue(val) {
@@ -8264,6 +8300,8 @@
         let catMatch = false;
         if (currentCategory === "all") {
           catMatch = true;
+        } else if (currentCategory === "focus") {
+          catMatch = FOCUS_SCENARIO_CARD_IDS.includes(it.id);
         } else if (currentCategory === "minimal") {
           catMatch = ["sys", "syf", "sytodo", "syg", "syocr", "clip_history"].includes(it.id);
         } else if (currentCategory === "consolidated") {
@@ -8286,6 +8324,9 @@
 
         return idMatch || titleMatch || descMatch || hotkeyMatch || pluginHotkeyMatch || pinyinMatch || synonymMatch || checkPinyinMatch(it.title, q);
       }).map(it => {
+        if (currentCategory === "focus" && FOCUS_CARD_OVERRIDES[it.id]) {
+          return Object.assign({}, it, FOCUS_CARD_OVERRIDES[it.id]);
+        }
         if (currentCategory === "consolidated" && CONSOLIDATED_CARD_OVERRIDES[it.id]) {
           return Object.assign({}, it, CONSOLIDATED_CARD_OVERRIDES[it.id]);
         }
@@ -8985,6 +9026,15 @@
           container.appendChild(decorateEditState(tile, item));
         }
       });
+
+      if (currentCategory === "focus" && !queryVal && !editMode) {
+        const drawerEl = document.createElement("div");
+        drawerEl.className = "focus-drawer-toggle-bar";
+        drawerEl.style.cssText = "grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; margin-top: 8px; background: var(--bg-card); border: 1px dashed var(--border-hairline); border-radius: 8px; cursor: pointer; color: var(--text-muted); font-size: 12px; transition: all 0.2s ease;";
+        drawerEl.innerHTML = `<span>🗄️ 还有 27 项进阶能力（代码工作台、表格矩阵、星轨图谱、8大插件、体检修复...）</span><span style="color: var(--cyber-sky); font-weight: 700;">点击展开全部能力 ▾</span>`;
+        drawerEl.onclick = () => setCategoryFilter("all");
+        container.appendChild(drawerEl);
+      }
 
       const selectedEl = container.querySelector(".selected");
       if (selectedEl) {

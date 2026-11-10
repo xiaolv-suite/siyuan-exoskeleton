@@ -5012,6 +5012,16 @@ async function main() {
                               panelHtml263.includes('按 ↓ 键选卡 · 敲 ? 查技巧');
   logStep("Step 7.263: 灵动坞剪贴板一键入日记 (右键直选) 与 托放路由精确URL直投+键盘方向键选卡指引 断言", hasDockRuntime263 && hasDockClipContract, `灵动坞剪贴板入库运行时: ${dockRes263.trim()} · 契约加固: ${hasDockClipContract}`);
 
+  // Step 7.264: Test 4-Scenario Focus Mode & Collapsible Panoramic Drawer
+  const panelHtml264 = fs.readFileSync(path.join(ROOT, 'assets', 'panel.html'), 'utf8');
+  const hasFocusModeContract = panelHtml264.includes('id="cat-btn-focus"') &&
+                               panelHtml264.includes('const FOCUS_SCENARIO_CARD_IDS =') &&
+                               panelHtml264.includes('const FOCUS_CARD_OVERRIDES =') &&
+                               panelHtml264.includes('focus-drawer-toggle-bar') &&
+                               panelHtml264.includes('展开全部能力 ▾') &&
+                               panelHtml264.includes('currentCategory === "focus"');
+  logStep("Step 7.264: 场景聚焦四核心大卡架构 (🎯 场景聚焦4卡 + 27项进阶能力折叠抽屉 + 4档循环视图) 断言", hasFocusModeContract, `场景聚焦分层契约: ${hasFocusModeContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

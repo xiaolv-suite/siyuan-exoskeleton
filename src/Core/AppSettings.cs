@@ -72,6 +72,7 @@ namespace XiaoLv.Desktop.Core
         public int WebhookPort { get; set; }
         public string WebhookToken { get; set; }
         public bool DropZoneEnabled { get; set; }
+        public double EdgeDockTopRatio { get; set; }
         public bool DoubleCtrlActivationEnabled { get; set; }
 
         public AppSettings()
@@ -113,6 +114,7 @@ namespace XiaoLv.Desktop.Core
             WebhookPort = 43989;
             WebhookToken = "";
             DropZoneEnabled = true;
+            EdgeDockTopRatio = 0.5;
             DoubleCtrlActivationEnabled = true;
         }
 
@@ -172,8 +174,10 @@ namespace XiaoLv.Desktop.Core
                     s.WebhookPort = JsonHelper.GetInt(dict, "webhookPort", s.WebhookPort);
                     if (s.WebhookPort <= 0) s.WebhookPort = 43989;
 	                    s.WebhookToken = JsonHelper.GetString(dict, "webhookToken", s.WebhookToken);
-		                    s.DropZoneEnabled = JsonHelper.GetBool(dict, "dropZoneEnabled", s.DropZoneEnabled);
-		                    s.DoubleCtrlActivationEnabled = JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", s.DoubleCtrlActivationEnabled);
+			                    s.DropZoneEnabled = JsonHelper.GetBool(dict, "dropZoneEnabled", s.DropZoneEnabled);
+			                    s.EdgeDockTopRatio = JsonHelper.GetDouble(dict, "edgeDockTopRatio", s.EdgeDockTopRatio);
+			                    if (s.EdgeDockTopRatio <= 0.0 || s.EdgeDockTopRatio >= 1.0) s.EdgeDockTopRatio = 0.5;
+			                    s.DoubleCtrlActivationEnabled = JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", s.DoubleCtrlActivationEnabled);
                 }
                 else
                 {

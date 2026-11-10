@@ -4781,6 +4781,36 @@ async function main() {
                               panelContent.includes('Pop-Pill克制模式');
   logStep("Step 7.255: 边缘灵动坞 (Edge Dock 4px贴边/快捷动作/WS_EX_NOACTIVATE) 与选区微光药丸 (Pop-Pill 106x26px/不抢焦点/外部单击0ms消隐) 断言", hasPillDockRuntime && hasPillDockContract, `微窗运行时反射: ${hasPillDockRuntime} · 契约加固: ${hasPillDockContract}`);
 
+  // Step 7.256: Test Edge Dock Hover Delay & Selection Pop-Pill Content-Awareness + Distance Decay
+  const contentAwareScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $pillType = $asm.GetType('XiaoLv.Desktop.UI.SelectionPillWindow');
+    $dockType = $asm.GetType('XiaoLv.Desktop.UI.DropZoneWindow');
+    $stType = $asm.GetType('XiaoLv.Desktop.Core.AppSettings');
+    $pRatio = $stType.GetProperty('EdgeDockTopRatio');
+    $eUrl = $pillType.GetProperty('OnSaveUrlRequested');
+    $eTask = $pillType.GetProperty('OnSaveTaskRequested');
+    $mPos = $dockType.GetMethod('PositionAtRightEdge');
+    $ok = ($pRatio -ne $null) -and ($eUrl -ne $null) -and ($eTask -ne $null) -and ($mPos -ne $null);
+    Write-Output ($ok.ToString());
+  `;
+  const contentAwareRes = runPs(contentAwareScript);
+  const hasContentAwareRuntime = contentAwareRes.includes("True");
+  const dockCs256 = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'DropZoneWindow.cs'), 'utf8');
+  const pillCs256 = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'SelectionPillWindow.cs'), 'utf8');
+  const programCs256 = fs.readFileSync(path.join(ROOT, 'src', 'Program.cs'), 'utf8');
+  const hasContentAwareContract = dockCs256.includes('_expandHoverTimer') &&
+                                  dockCs256.includes('EdgeDockTopRatio') &&
+                                  dockCs256.includes('WireVerticalDrag') &&
+                                  pillCs256.includes('IsUrlIntent') &&
+                                  pillCs256.includes('IsTodoIntent') &&
+                                  pillCs256.includes('_proximityTimer') &&
+                                  pillCs256.includes('Content-Aware') &&
+                                  programCs256.includes('OnSaveUrlRequested') &&
+                                  programCs256.includes('OnSaveTaskRequested');
+  logStep("Step 7.256: 边缘灵动坞防甩误触延时与高度记忆 (140ms/EdgeDockTopRatio) 与微光药丸内容感知 (URL/待办变形+距离衰减) 断言", hasContentAwareRuntime && hasContentAwareContract, `感知运行时反射: ${hasContentAwareRuntime} · 契约加固: ${hasContentAwareContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

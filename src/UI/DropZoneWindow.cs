@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -14,10 +15,11 @@ namespace XiaoLv.Desktop.UI
     /// <summary>
     /// 思源外骨骼 · 桌面边缘灵动坞与托放中枢 (Edge Dock)
     /// 1. 极致克制贴边：平时仅 5px 极细半透明钛青发光细条，0 遮挡，不挡滚动条或右上角按钮；
-    /// 2. 鼠标触碰或拖入文件时平滑展开为 190px 毛玻璃微面板；
-    /// 3. 上半部内嵌极速动作矩阵 (⚡速记 / 🔍搜块 / 📋待办 / 📸识字 / 🤖问AI)，点击即开；
-    /// 4. 下半部保留文件/超链极速拖放路由 (拾遗/管家/速递)；
-    /// 5. Win32 WS_EX_NOACTIVATE 强保护，触碰和点击绝不抢夺前台正在输入的焦点。
+    /// 2. 140ms 移入防误触延时：快速甩鼠标拖动滚动条时绝对不误弹；
+    /// 3. 支持垂直拖拽调整高度并记忆位置 (EdgeDockTopRatio)；
+    /// 4. 上半部内嵌极速动作矩阵 (⚡速记 / 🔍搜块 / 📋待办 / 📸识字 / 🤖问AI)，点击即开；
+    /// 5. 下半部保留文件/超链极速拖放路由 (拾遗/管家/速递)；
+    /// 6. Win32 WS_EX_NOACTIVATE 强保护，触碰和点击绝不抢夺前台正在输入的焦点。
     /// </summary>
     public class DropZoneWindow : Window
     {
@@ -36,6 +38,12 @@ namespace XiaoLv.Desktop.UI
         private Border _dockHandle;
         private bool _isExpanded = false;
         private DispatcherTimer _collapseTimer;
+        private DispatcherTimer _expandHoverTimer;
+
+        // 垂直位置拖动记忆状态
+        private bool _isDraggingVertical = false;
+        private Point _dragStartMousePos;
+        private double _dragStartTop;
 
         public Action<string, string> OnNotificationRequested { get; set; }
         public Action OnQuickCaptureClicked { get; set; }
@@ -62,17 +70,30 @@ namespace XiaoLv.Desktop.UI
             _collapseTimer.Tick += (s, e) =>
             {
                 _collapseTimer.Stop();
-                if (!IsMouseOver) Collapse();
+                if (!IsMouseOver && !_isDraggingVertical) Collapse();
+            };
+
+            // 140ms 移入防误触延时：鼠标飞速划过右边缘（如拖动滚动条）不展开
+            _expandHoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(140) };
+            _expandHoverTimer.Tick += (s, e) =>
+            {
+                _expandHoverTimer.Stop();
+                if (IsMouseOver && !SelectionHelper.IsFullscreenForeground() && !_isDraggingVertical)
+                {
+                    Expand();
+                }
             };
 
             MouseEnter += (s, e) =>
             {
                 _collapseTimer.Stop();
-                if (!SelectionHelper.IsFullscreenForeground()) Expand();
+                _expandHoverTimer.Stop();
+                _expandHoverTimer.Start();
             };
 
             MouseLeave += (s, e) =>
             {
+                _expandHoverTimer.Stop();
                 _collapseTimer.Stop();
                 _collapseTimer.Start();
             };
@@ -140,19 +161,33 @@ namespace XiaoLv.Desktop.UI
             catch { }
         }
 
-        private void PositionAtRightEdge()
+        public void PositionAtRightEdge()
         {
             var workArea = SystemParameters.WorkArea;
             Left = workArea.Right - Width;
-            Top = workArea.Top + (workArea.Height - Height) / 2;
+
+            // 依据 AppSettings.EdgeDockTopRatio 动态居中或复原用户拖拽偏好的高度
+            double ratio = AppSettings.Instance.EdgeDockTopRatio;
+            if (ratio <= 0.05 || ratio >= 0.95) ratio = 0.5;
+
+            double maxTop = workArea.Bottom - Height;
+            double targetTop = workArea.Top + (workArea.Height - Height) * ratio;
+            if (targetTop < workArea.Top) targetTop = workArea.Top;
+            if (targetTop > maxTop) targetTop = maxTop;
+            Top = targetTop;
         }
 
         private void BuildUI()
         {
+            bool isLight = (AppSettings.Instance.DefaultTheme == "light");
+            string bgColor = isLight ? "#f8fafce6" : "#0f172ae6";
+            string borderColor = isLight ? "#0284c788" : "#38bdf888";
+            string handleColor = isLight ? "#0284c766" : "#38bdf866";
+
             _rootBorder = new Border
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0f172ae6")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38bdf888")),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(bgColor)),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(borderColor)),
                 BorderThickness = new Thickness(1.5, 1, 0, 1),
                 CornerRadius = new CornerRadius(10, 0, 0, 10),
                 ClipToBounds = true
@@ -160,14 +195,17 @@ namespace XiaoLv.Desktop.UI
 
             var grid = new Grid();
 
-            // 停靠把手 (折叠时展现：5px 极细微发光细条)
+            // 停靠把手 (折叠时展现：5px 极细微发光细条，支持按住拖动调整垂直高度)
             _dockHandle = new Border
             {
                 Width = 5,
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38bdf866")),
-                CornerRadius = new CornerRadius(3, 0, 0, 3)
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(handleColor)),
+                CornerRadius = new CornerRadius(3, 0, 0, 3),
+                Cursor = Cursors.SizeNS,
+                ToolTip = "按住可上下拖动调整贴边位置"
             };
+            WireVerticalDrag(_dockHandle);
 
             // 展开内容容器
             _expandedContent = new StackPanel
@@ -176,19 +214,21 @@ namespace XiaoLv.Desktop.UI
                 Visibility = Visibility.Collapsed
             };
 
-            // 顶部标题栏
-            var headerGrid = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+            // 顶部标题栏 (亦支持上下拖拽微调位置)
+            var headerGrid = new Grid { Margin = new Thickness(0, 0, 0, 6), Cursor = Cursors.SizeNS };
+            WireVerticalDrag(headerGrid);
+
             var headerText = new TextBlock
             {
                 Text = "⚡ 边缘灵动坞",
                 FontSize = 11.5,
                 FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38bdf8"))
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isLight ? "#0284c7" : "#38bdf8"))
             };
             var closeHint = new TextBlock
             {
-                Text = "◀ 移开收起",
-                FontSize = 9.5,
+                Text = "↕拖动 ◀移出",
+                FontSize = 9,
                 Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748b")),
                 HorizontalAlignment = HorizontalAlignment.Right
             };
@@ -264,6 +304,56 @@ namespace XiaoLv.Desktop.UI
             _rootBorder.Child = grid;
 
             Content = _rootBorder;
+        }
+
+        private void WireVerticalDrag(FrameworkElement element)
+        {
+            if (element == null) return;
+            element.MouseLeftButtonDown += (s, e) =>
+            {
+                _isDraggingVertical = true;
+                _dragStartMousePos = e.GetPosition(this);
+                _dragStartTop = Top;
+                element.CaptureMouse();
+                e.Handled = true;
+            };
+
+            element.MouseMove += (s, e) =>
+            {
+                if (_isDraggingVertical)
+                {
+                    Point currentPos = e.GetPosition(this);
+                    double deltaY = currentPos.Y - _dragStartMousePos.Y;
+                    var workArea = SystemParameters.WorkArea;
+                    double newTop = Top + deltaY;
+                    if (newTop < workArea.Top) newTop = workArea.Top;
+                    if (newTop > workArea.Bottom - Height) newTop = workArea.Bottom - Height;
+                    Top = newTop;
+                    e.Handled = true;
+                }
+            };
+
+            element.MouseLeftButtonUp += (s, e) =>
+            {
+                if (_isDraggingVertical)
+                {
+                    _isDraggingVertical = false;
+                    element.ReleaseMouseCapture();
+
+                    // 保存新的垂直停靠比例
+                    var workArea = SystemParameters.WorkArea;
+                    double availableHeight = workArea.Height - Height;
+                    if (availableHeight > 10)
+                    {
+                        double ratio = (Top - workArea.Top) / availableHeight;
+                        if (ratio < 0.05) ratio = 0.05;
+                        if (ratio > 0.95) ratio = 0.95;
+                        AppSettings.Instance.EdgeDockTopRatio = ratio;
+                        ThreadPool.QueueUserWorkItem(st => AppSettings.Instance.Save());
+                    }
+                    e.Handled = true;
+                }
+            };
         }
 
         private Border CreateActionButton(string label, string colorHex, Action onClick)
@@ -361,7 +451,11 @@ namespace XiaoLv.Desktop.UI
             Width = 190;
             Height = 220;
             Left = workArea.Right - Width;
-            Top = workArea.Top + (workArea.Height - Height) / 2;
+
+            // 保持当前高度并做防越界安全卡位
+            double maxTop = workArea.Bottom - Height;
+            if (Top > maxTop) Top = maxTop;
+            if (Top < workArea.Top) Top = workArea.Top;
         }
 
         public void Collapse()
@@ -375,7 +469,10 @@ namespace XiaoLv.Desktop.UI
             Width = 5;
             Height = 110;
             Left = workArea.Right - Width;
-            Top = workArea.Top + (workArea.Height - Height) / 2;
+
+            double maxTop = workArea.Bottom - Height;
+            if (Top > maxTop) Top = maxTop;
+            if (Top < workArea.Top) Top = workArea.Top;
         }
     }
 }

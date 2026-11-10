@@ -186,13 +186,26 @@ namespace XiaoLv.Desktop
 		            _dropZoneWindow.OnOpenPanelWithQuery += (q) => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel(q));
 		            _dropZoneWindow.OnSnippingOcrClicked += () => StartSnippingAndOcr();
 		            _selectionPillWindow = new SelectionPillWindow();
-		            _selectionPillWindow.OnSaveToDailyRequested += (txt) =>
-		            {
-		                var ctx = new DesktopStepContext("1", txt);
-		                ctx.OnNotificationRequested += (t, m) => SafeNotify(t, m);
-		                ContextPenMain.Exec(ctx);
-		            };
-		            _selectionPillWindow.OnRouteToAiRequested += (txt) =>
+			            _selectionPillWindow.OnSaveToDailyRequested += (txt) =>
+			            {
+			                var ctx = new DesktopStepContext("1", txt);
+			                ctx.OnNotificationRequested += (t, m) => SafeNotify(t, m);
+			                ContextPenMain.Exec(ctx);
+			            };
+			            _selectionPillWindow.OnSaveUrlRequested += (url) =>
+			            {
+			                var ctx = new DesktopStepContext("g", url);
+			                ctx.OnNotificationRequested += (t, m) => SafeNotify(t, m);
+			                SmartCaptureMain.Exec(ctx);
+			            };
+			            _selectionPillWindow.OnSaveTaskRequested += (task) =>
+			            {
+			                var taskMd = task.StartsWith("- [ ]") ? task : ("- [ ] " + task.TrimStart('!', '！', ' '));
+			                var ctx = new DesktopStepContext("SYS", taskMd);
+			                ctx.OnNotificationRequested += (t, m) => SafeNotify(t, m);
+			                SmartCaptureMain.Exec(ctx);
+			            };
+			            _selectionPillWindow.OnRouteToAiRequested += (txt) =>
 		            {
 		                if (!string.IsNullOrEmpty(txt))
 		                {

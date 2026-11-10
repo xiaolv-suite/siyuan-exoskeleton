@@ -154,6 +154,28 @@ namespace XiaoLv.Desktop.UI
             catch { }
         }
 
+        /// <summary>P2-2: 解析 AI 路由目标 JSON ([{name,url}])，取前 N 个有效目标</summary>
+        private static System.Collections.Generic.List<Tuple<string, string>> ParseAiRouteTargets(string json)
+        {
+            var list = new System.Collections.Generic.List<Tuple<string, string>>();
+            if (string.IsNullOrWhiteSpace(json)) return list;
+            try
+            {
+                var rows = JsonHelper.ParseList(json);
+                if (rows == null) return list;
+                foreach (var rowObj in rows)
+                {
+                    var d = rowObj as System.Collections.Generic.IDictionary<string, object>;
+                    if (d == null) continue;
+                    string n = JsonHelper.GetString(d, "name", "");
+                    string u = JsonHelper.GetString(d, "url", "");
+                    if (!string.IsNullOrEmpty(n) && !string.IsNullOrEmpty(u)) list.Add(Tuple.Create(n, u));
+                }
+            }
+            catch { }
+            return list;
+        }
+
         private void CoreWebView2_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
         {
             try
@@ -208,6 +230,51 @@ namespace XiaoLv.Desktop.UI
                     string q = JsonHelper.GetString(msg, "query");
                     Hide();
                     if (OnOpenMasterRequested != null) OnOpenMasterRequested(q);
+                    return;
+                }
+
+                // P2-2 划词场景 AI 路由：A 键把选中文本复制为提问并打开默认 AI 客户端 (豆包/千问/Kimi…)
+                if (op.Equals("routeAiExternal", StringComparison.OrdinalIgnoreCase))
+                {
+                    string routeText = JsonHelper.GetString(msg, "text", "").Trim();
+                    if (routeText.Length > 800) routeText = routeText.Substring(0, 800);
+                    bool launched = false;
+                    string targetName = "";
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(routeText))
+                        {
+                            try { System.Windows.Clipboard.SetText(routeText); } catch { }
+                            var targets = ParseAiRouteTargets(AppSettings.Instance.AiRouteTargetsJson);
+                            if (targets.Count > 0)
+                            {
+                                string url = targets[0].Item2;
+                                if (url.Contains("{query}")) url = url.Replace("{query}", Uri.EscapeDataString(routeText));
+                                if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+                                    targetName = targets[0].Item1;
+                                    launched = true;
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                    try
+                    {
+                        if (_webView != null && _webView.CoreWebView2 != null)
+                        {
+                            _webView.CoreWebView2.ExecuteScriptAsync("if(window.onRouteAiDone) window.onRouteAiDone(" + JsonHelper.ToJson(new { ok = launched, name = targetName }) + ");");
+                        }
+                    }
+                    catch { }
+                    if (launched)
+                    {
+                        if (OnNotificationRequested != null) OnNotificationRequested("思源外骨骼 · AI 路由", "🚀 提问已复制，已打开 " + targetName + "，粘贴即问");
+                        var closeTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+                        closeTimer.Tick += (s2, e2) => { closeTimer.Stop(); Hide(); };
+                        closeTimer.Start();
+                    }
                     return;
                 }
 

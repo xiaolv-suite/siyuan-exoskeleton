@@ -344,7 +344,7 @@
       <svg class="btn-svg" style="color: #06b6d4;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
       <span>贴双链</span>
     </div>
-    <div class="chiclet-btn btn-7" onclick="choose('7', event)" onmouseenter="showKeyHint('【按 7】调用大模型提炼核心要点后写入今日日记')" onmouseleave="resetKeyHint()" title="按 7 或点击：调用大模型提炼要点后记入今日日记">
+    <div class="chiclet-btn btn-7" onclick="choose('7', event)" onmouseenter="showKeyHint('【按 7】调用大模型提炼核心要点后写入今日日记；按 A 则路由到豆包/千问等 AI 客户端提问')" onmouseleave="resetKeyHint()" title="按 7 或点击：调用大模型提炼要点后记入今日日记（A 键 = 路由外部 AI 客户端）">
       <span class="kbd-cap" style="color: #38bdf8;">7</span>
       <svg class="btn-svg" style="color: #38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"></polygon></svg>
       <span>AI提炼</span>
@@ -363,6 +363,8 @@
       <span>按键盘 <b style="color: var(--text-main);">1 ~ 8</b> 直接执行</span>
       <span>•</span>
       <span><b style="color: var(--text-main);">Q</b> 进总控</span>
+      <span>•</span>
+      <span><b style="color: var(--text-main);">A</b> AI路由</span>
       <span>•</span>
       <span><b style="color: var(--text-main);">↵</b> 入日记</span>
     </div>
@@ -720,6 +722,35 @@
       }
     }
 
+    // P2-2 划词 AI 路由：把选中文本复制为提问并打开默认 AI 客户端 (复制→打开→收胶囊)
+    function routeAiExternal() {
+      const iFallback = document.getElementById("input-fallback");
+      if (iFallback && iFallback.style.display !== "none" && iFallback.value.trim()) {
+        currentText = iFallback.value.trim();
+      }
+      const text = (currentText || "").trim();
+      if (!text) {
+        showKeyHint("⚠️ 没有可路由的文字：先选中文本再唤起胶囊");
+        setTimeout(resetKeyHint, 1800);
+        return;
+      }
+      if (window.chrome && window.chrome.webview) {
+        showKeyHint("🚀 正在路由到 AI 客户端…");
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'routeAiExternal', text: text }));
+      } else {
+        window.onCapsuleActionCompleted({ cmd: 'a', text: text });
+      }
+    }
+    window.onRouteAiDone = function(res) {
+      if (res && res.ok) {
+        showKeyHint("🚀 提问已复制，" + (res.name || "AI 客户端") + " 已打开，粘贴即问");
+        setTimeout(resetKeyHint, 1500);
+      } else {
+        showKeyHint("⚠️ AI 路由失败：请检查偏好设置中的 AI 路由目标");
+        setTimeout(resetKeyHint, 2200);
+      }
+    };
+
     window.onCapsuleActionCompleted = function(res) {
       if (!res) return;
       const baseCmd = String(res.cmd || "1").split(":")[0];
@@ -766,6 +797,9 @@
       } else if ((e.key === 'q' || e.key === 'Q') && (!isInputFocused || e.altKey || e.ctrlKey)) {
         e.preventDefault();
         choose('q');
+      } else if ((e.key === 'a' || e.key === 'A') && (!isInputFocused || e.altKey || e.ctrlKey)) {
+        e.preventDefault();
+        routeAiExternal();
       } else if (e.key === "Escape") {
         e.preventDefault();
         window.chrome?.webview?.postMessage(JSON.stringify({ op: 'close' }));

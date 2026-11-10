@@ -4600,6 +4600,26 @@ async function main() {
                          quickerDoc.includes('演示 GIF 分镜');
   logStep("Step 7.250: 浏览器剪藏伴侣扩展 (MV3: 划词右键/整页收藏/批注弹窗 → 本地 /api/write X-Token 直写) 与 Quicker/AHK/uTools 上架素材断言", hasExtPackage && hasExtBehavior, `扩展包: ${hasExtPackage} · 行为与素材: ${hasExtBehavior}`);
 
+  // Step 7.251: Test Capsule A-Key AI Route (P2-2 into selection context) + README capability ledger sync
+  const capsuleCsAi = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'CapsuleWindow.cs'), 'utf8');
+  const capsuleHtmlAi = fs.readFileSync(path.join(ROOT, 'assets', 'pen-capsule.html'), 'utf8');
+  const readmeSync = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
+  const hasCapsuleAiRoute = capsuleCsAi.includes('op.Equals("routeAiExternal"') &&
+                            capsuleCsAi.includes('ParseAiRouteTargets') &&
+                            capsuleCsAi.includes('Clipboard.SetText(routeText)') &&
+                            capsuleCsAi.includes('UseShellExecute = true') &&
+                            capsuleHtmlAi.includes('function routeAiExternal') &&
+                            capsuleHtmlAi.includes('window.onRouteAiDone') &&
+                            capsuleHtmlAi.includes("e.key === 'a' || e.key === 'A'") &&
+                            capsuleHtmlAi.includes('<b style="color: var(--text-main);">A</b> AI路由');
+  const hasReadmeLedger = readmeSync.includes('### 64. ★ P0 发现性战役') &&
+                          readmeSync.includes('### 65. ★ P1 能力补位') &&
+                          readmeSync.includes('### 66. ★ P2 生态接入') &&
+                          readmeSync.includes('`ocr:关键词`') &&
+                          readmeSync.includes('`ai:问题`') &&
+                          readmeSync.includes('siyuan-exoskeleton://write?...');
+  logStep("Step 7.251: 划笔胶囊 A 键 AI 路由 (复制提问→打开默认目标→收胶囊) 与 README 能力账本同步 (64~66 章节 + 前缀表 ocr:/ai:/深链) 断言", hasCapsuleAiRoute && hasReadmeLedger, `胶囊路由: ${hasCapsuleAiRoute} · README 同步: ${hasReadmeLedger}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

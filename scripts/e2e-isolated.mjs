@@ -4642,6 +4642,71 @@ async function main() {
                         mcpRc.includes('跳转: siyuan://blocks/');
   logStep("Step 7.252: 写入回执块 ID + siyuan:// 跳转深链 (/api/write 返回 blockId/jumpUrl 且真实可查 · 六分支回传 · MCP 同步) 断言", dlBlockOk && !!dlRow && hasDlContract, `回执: ${dlBlockOk} · 按ID查块: ${!!dlRow} · 契约: ${hasDlContract} · blockId: ${dlJson.blockId || "无"}`);
 
+  // Step 7.253: Audit-Round Fixes (pin cap 12 / MCP missing-args resilience / in-app discoverability)
+  const capTmpDir = path.join(process.env.TEMP || "C:\\Windows\\Temp", "xiaolv-pincap-" + Date.now());
+  fs.mkdirSync(capTmpDir, { recursive: true });
+  const pinCapScript = `
+    $env:XIAOLV_DATA_DIR = '${capTmpDir}';
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $wt = $asm.GetType('XiaoLv.Desktop.Core.ClipboardWatcher');
+    $itT = $asm.GetType('XiaoLv.Desktop.Core.ClipboardItem');
+    $items = $wt.GetField('RecentItems').GetValue($null);
+    foreach ($n in 1..13) { $i = [Activator]::CreateInstance($itT); $i.RawText = 'cap-test-' + $n; $i.ClipKey = 'ck' + $n; $items.Add($i); }
+    $mPin = $wt.GetMethod('TogglePin');
+    $allTrue = $true; $last = $true;
+    foreach ($n in 1..13) { $r = $mPin.Invoke($null, @('ck' + $n)); if ($n -le 12 -and -not $r) { $allTrue = $false }; if ($n -eq 13) { $last = $r } }
+    $pinnedCount = 0; foreach ($x in $items) { if ($x.IsPinned) { $pinnedCount++ } }
+    $ok = $allTrue -and (-not $last) -and ($pinnedCount -eq 12);
+    Write-Output ($ok.ToString() + '|' + $pinnedCount);
+  `;
+  const pinCapRes = runPs(pinCapScript);
+  try { fs.rmSync(capTmpDir, { recursive: true, force: true }); } catch {}
+  const mcpNoArgs = await new Promise((resolve) => {
+    const mcp = spawn(EXE, ["--mcp"], {
+      windowsHide: true,
+      env: { ...process.env, SIYUAN_URL: BASE_URL, SIYUAN_TOKEN: TOKEN, XIAOLV_DATA_DIR: DATA_DIR }
+    });
+    let buf = "";
+    const pending = new Map();
+    mcp.stdout.on("data", (d) => {
+      buf += d.toString("utf8");
+      let idx;
+      while ((idx = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, idx).trim();
+        buf = buf.slice(idx + 1);
+        if (!line) continue;
+        try {
+          const msg = JSON.parse(line);
+          if (msg.id != null && pending.has(msg.id)) { pending.get(msg.id)(msg); pending.delete(msg.id); }
+        } catch {}
+      }
+    });
+    mcp.on("error", () => resolve({ text: "spawn-error" }));
+    const send = (msg) => new Promise((res) => {
+      const timer = setTimeout(() => { pending.delete(msg.id); res({ timeout: true }); }, 15000);
+      pending.set(msg.id, (m) => { clearTimeout(timer); res(m); });
+      try { mcp.stdin.write(JSON.stringify(msg) + "\n"); } catch (e) { res({ stdinError: true }); }
+    });
+    (async () => {
+      const r = await send({ jsonrpc: "2.0", id: 9, method: "tools/call", params: { name: "siyuan_write" } });
+      resolve({ text: (r?.result?.content?.[0]?.text) || "" });
+      try { mcp.kill(); } catch {}
+    })();
+  });
+  const hasMcpResilience = mcpNoArgs.text.includes("缺少 data 参数");
+  const hubAudit = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'SiYuanProfileHub.cs'), 'utf8');
+  const panelAudit = fs.readFileSync(path.join(ROOT, 'assets', 'panel.html'), 'utf8');
+  const hasAuditContract = hubAudit.includes('连续快速重复保存同名预设时') &&
+                           hubAudit.includes('/api/sqlite/flushTransaction') &&
+                           panelAudit.includes('思源外骨骼.exe --mcp') &&
+                           panelAudit.includes('/api/openapi') &&
+                           panelAudit.includes('mcpServers') &&
+                           panelAudit.includes('🧭 新手上路</button>') &&
+                           panelAudit.includes('browser-extension/') &&
+                           panelAudit.includes('docs/QUICKER-README.md');
+  logStep("Step 7.253: 审计轮修复 (Pin 上限12条运行时验证 · MCP 缺参韧性不崩溃 · 广场MCP/OpenAPI行+速查表新手上路+偏好扩展指引发现性) 断言", /^True\|12/.test(pinCapRes.trim()) && hasMcpResilience && hasAuditContract, `Pin上限: ${pinCapRes.trim()} · MCP缺参: ${hasMcpResilience} · 契约: ${hasAuditContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

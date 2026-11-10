@@ -241,7 +241,8 @@ namespace XiaoLv.Desktop.Core
         }
 
         /// <summary>
-        /// P1-5: 切换指定剪贴板条目的置顶状态，并同步 DPAPI 加密落盘 (重启不丢)
+        /// P1-5: 切换指定剪贴板条目的置顶状态，并同步 DPAPI 加密落盘 (重启不丢)。
+        /// 置顶上限 12 条——防止置顶堆满容量后 TrimRecentToCapacity 失效、历史无限膨胀。
         /// </summary>
         public static bool TogglePin(string clipKey)
         {
@@ -252,6 +253,12 @@ namespace XiaoLv.Desktop.Core
                 foreach (var it in RecentItems)
                 {
                     if (it.ClipKey == clipKey) { target = it; break; }
+                }
+                if (target != null && !target.IsPinned)
+                {
+                    int pinnedCount = 0;
+                    foreach (var it in RecentItems) { if (it.IsPinned) pinnedCount++; }
+                    if (pinnedCount >= 12) return false;
                 }
                 if (target != null) target.IsPinned = !target.IsPinned;
             }

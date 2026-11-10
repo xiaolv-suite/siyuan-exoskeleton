@@ -319,7 +319,13 @@ namespace XiaoLv.Desktop.Core
                         dataType = "markdown",
                         data = markdown
                     }).ConfigureAwait(false);
-                    if (response != null && response.Success) entry.BlockId = GetInsertedBlockId(response);
+                    if (response != null && response.Success)
+                    {
+                        entry.BlockId = GetInsertedBlockId(response);
+                        // 立即提交内核事务：连续快速重复保存同名预设时，下一次按名检索必须能看到刚写入的块，
+                        // 否则会误判不存在而重复建档（E2E 7.121.1 偶发根因，与离线补录 7.67 同类）
+                        try { await SiYuanClient.PostAsync("/api/sqlite/flushTransaction", new { }).ConfigureAwait(false); } catch { }
+                    }
                 }
                 if (response == null || !response.Success) return true;
                 entry.IsLocalOnly = false;

@@ -56,6 +56,7 @@ namespace XiaoLv.Desktop.Core
         public static bool AutoFloatEnabled { get; set; }
         public static bool IsInternalClipboardOperation { get; set; }
         public static event Action<string> OnAutoSelectionDetected;
+        public static event Action<int, int> OnGlobalMouseDown;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct POINT
@@ -159,6 +160,10 @@ namespace XiaoLv.Desktop.Core
                     {
                         var info = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
                         _mouseDownPos = new Point(info.pt.X, info.pt.Y);
+                        if (OnGlobalMouseDown != null)
+                        {
+                            OnGlobalMouseDown(info.pt.X, info.pt.Y);
+                        }
                     }
                     catch { }
                 }

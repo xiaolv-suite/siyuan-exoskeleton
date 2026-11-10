@@ -28,6 +28,7 @@ namespace XiaoLv.Desktop
 
         private static BentoWindow _bentoWindow;
         private static CapsuleWindow _capsuleWindow;
+        private static SelectionPillWindow _selectionPillWindow;
         private static DialogWindow _dialogWindow;
         private static DropZoneWindow _dropZoneWindow;
         private static System.Windows.Application _wpfApp;
@@ -179,9 +180,38 @@ namespace XiaoLv.Desktop
 	            _bentoWindow = new BentoWindow();
 	            _capsuleWindow = new CapsuleWindow();
 	            _dialogWindow = new DialogWindow();
-	            _dropZoneWindow = new DropZoneWindow();
-	            _dropZoneWindow.OnNotificationRequested += (t, m) => SafeNotify(t, m);
-            if (!IsIsolatedRun && AppSettings.Instance.DropZoneEnabled)
+		            _dropZoneWindow = new DropZoneWindow();
+		            _dropZoneWindow.OnNotificationRequested += (t, m) => SafeNotify(t, m);
+		            _dropZoneWindow.OnQuickCaptureClicked += () => PromptQuickCapture();
+		            _dropZoneWindow.OnOpenPanelWithQuery += (q) => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel(q));
+		            _dropZoneWindow.OnSnippingOcrClicked += () => StartSnippingAndOcr();
+		            _selectionPillWindow = new SelectionPillWindow();
+		            _selectionPillWindow.OnSaveToDailyRequested += (txt) =>
+		            {
+		                var ctx = new DesktopStepContext("1", txt);
+		                ctx.OnNotificationRequested += (t, m) => SafeNotify(t, m);
+		                ContextPenMain.Exec(ctx);
+		            };
+		            _selectionPillWindow.OnRouteToAiRequested += (txt) =>
+		            {
+		                if (!string.IsNullOrEmpty(txt))
+		                {
+		                    try { System.Windows.Clipboard.SetText(txt); } catch { }
+		                    var tList = CapsuleWindow.ParseAiRouteTargets(AppSettings.Instance.AiRouteTargetsJson);
+		                    if (tList.Count > 0)
+		                    {
+		                        string url = tList[0].Item2;
+		                        if (url.Contains("{query}")) url = url.Replace("{query}", Uri.EscapeDataString(txt));
+		                        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); } catch { }
+		                        SafeNotify("思源外骨骼 · AI 路由", "🚀 提问已复制，已打开 " + tList[0].Item1 + "，粘贴即问");
+		                    }
+		                }
+		            };
+		            _selectionPillWindow.OnExpandToCapsuleRequested += (txt) =>
+		            {
+		                _wpfApp.Dispatcher.Invoke(() => _capsuleWindow.ShowNearCursor(txt));
+		            };
+	            if (!IsIsolatedRun && AppSettings.Instance.DropZoneEnabled)
 	            {
 	                _dropZoneWindow.Show();
 	            }
@@ -411,18 +441,25 @@ namespace XiaoLv.Desktop
 	                DoubleTapHotkeyActivator.Start();
 	            }
 
-            // 智能划选鼠标微控 (PopClip 模式支持)
-            if (!IsIsolatedRun)
-            {
-                SelectionHelper.StartMouseHook();
-                SelectionHelper.OnAutoSelectionDetected += (selected) =>
-                {
-                    _wpfApp.Dispatcher.Invoke(() =>
-                    {
-                        _capsuleWindow.ShowNearCursor(selected);
-                    });
-                };
-            }
+	            // 智能划选鼠标微控 (Pop-Pill 渐进划词微药丸模式)
+	            if (!IsIsolatedRun)
+	            {
+	                SelectionHelper.StartMouseHook();
+	                SelectionHelper.OnAutoSelectionDetected += (selected) =>
+	                {
+	                    _wpfApp.Dispatcher.Invoke(() =>
+	                    {
+	                        _selectionPillWindow.ShowNearCursor(selected);
+	                    });
+	                };
+	                SelectionHelper.OnGlobalMouseDown += (x, y) =>
+	                {
+	                    _wpfApp.Dispatcher.Invoke(() =>
+	                    {
+	                        _selectionPillWindow.DismissIfOutside(x, y);
+	                    });
+	                };
+	            }
 
 	            // Office 本地文档联动热重载监听
 	            OfficeFileWatcher.NotificationHandler = (title, text) => SafeNotify(title, text);

@@ -155,7 +155,7 @@ namespace XiaoLv.Desktop.UI
         }
 
         /// <summary>P2-2: 解析 AI 路由目标 JSON ([{name,url}])，取前 N 个有效目标</summary>
-        private static System.Collections.Generic.List<Tuple<string, string>> ParseAiRouteTargets(string json)
+        public static System.Collections.Generic.List<Tuple<string, string>> ParseAiRouteTargets(string json)
         {
             var list = new System.Collections.Generic.List<Tuple<string, string>>();
             if (string.IsNullOrWhiteSpace(json)) return list;

@@ -4740,6 +4740,47 @@ async function main() {
                          panelContent.includes('快捷指南 · 动作广场 · 新手上路 (?)');
   logStep("Step 7.254: 体验与健壮性升级 (Uri.TryCreate绝对协议安全 · 真实日记历史反推+显式配置三级探测 · 提醒守护偏好开关+启停联动) 断言", hasGuardianToggleRuntime && hasExpContract, `提醒开关运行时: ${hasGuardianToggleRuntime} · 契约加固: ${hasExpContract}`);
 
+  // Step 7.255: Test Edge Dock & Selection Pop-Pill (Unintrusive Global Floating & Progressive Selection Flow)
+  const pillDockScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $pillType = $asm.GetType('XiaoLv.Desktop.UI.SelectionPillWindow');
+    $dockType = $asm.GetType('XiaoLv.Desktop.UI.DropZoneWindow');
+    $mPillShow = $pillType.GetMethod('ShowNearCursor');
+    $mPillDismiss = $pillType.GetMethod('DismissIfOutside');
+    $eSave = $pillType.GetProperty('OnSaveToDailyRequested');
+    $eAi = $pillType.GetProperty('OnRouteToAiRequested');
+    $eCapsule = $pillType.GetProperty('OnExpandToCapsuleRequested');
+    $mDockExpand = $dockType.GetMethod('Expand');
+    $mDockCollapse = $dockType.GetMethod('Collapse');
+    $eQuick = $dockType.GetProperty('OnQuickCaptureClicked');
+    $ePanel = $dockType.GetProperty('OnOpenPanelWithQuery');
+    $eSnip = $dockType.GetProperty('OnSnippingOcrClicked');
+    $ok = ($mPillShow -ne $null) -and ($mPillDismiss -ne $null) -and ($eSave -ne $null) -and ($eAi -ne $null) -and ($eCapsule -ne $null) -and
+          ($mDockExpand -ne $null) -and ($mDockCollapse -ne $null) -and ($eQuick -ne $null) -and ($ePanel -ne $null) -and ($eSnip -ne $null);
+    Write-Output ($ok.ToString());
+  `;
+  const pillDockRes = runPs(pillDockScript);
+  const hasPillDockRuntime = pillDockRes.includes("True");
+  const dockCs = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'DropZoneWindow.cs'), 'utf8');
+  const pillCs = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'SelectionPillWindow.cs'), 'utf8');
+  const helperCs = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'SelectionHelper.cs'), 'utf8');
+  const programCs255 = fs.readFileSync(path.join(ROOT, 'src', 'Program.cs'), 'utf8');
+  const hasPillDockContract = dockCs.includes('WS_EX_NOACTIVATE') &&
+                              dockCs.includes('⚡ 边缘灵动坞') &&
+                              dockCs.includes('CreateActionButton') &&
+                              pillCs.includes('WS_EX_NOACTIVATE') &&
+                              pillCs.includes('Selection Pop-Pill') &&
+                              pillCs.includes('FadeOutAndHide') &&
+                              helperCs.includes('OnGlobalMouseDown') &&
+                              programCs255.includes('_selectionPillWindow.ShowNearCursor') &&
+                              programCs255.includes('_selectionPillWindow.DismissIfOutside') &&
+                              programCs255.includes('_dropZoneWindow.OnQuickCaptureClicked') &&
+                              panelContent.includes('id="pref-desktop-dropzone"') &&
+                              panelContent.includes('pref-desktop-autofloat') &&
+                              panelContent.includes('Pop-Pill克制模式');
+  logStep("Step 7.255: 边缘灵动坞 (Edge Dock 4px贴边/快捷动作/WS_EX_NOACTIVATE) 与选区微光药丸 (Pop-Pill 106x26px/不抢焦点/外部单击0ms消隐) 断言", hasPillDockRuntime && hasPillDockContract, `微窗运行时反射: ${hasPillDockRuntime} · 契约加固: ${hasPillDockContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

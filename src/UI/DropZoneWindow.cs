@@ -1,28 +1,46 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using XiaoLv.Desktop.Core;
 
 namespace XiaoLv.Desktop.UI
 {
     /// <summary>
-    /// 思源外骨骼 · 桌面边缘微停靠托放中枢视窗 (DropZoneWindow)
-    /// 1. 极窄边缘停靠 (屏幕右缘平时仅 10px 细长微徽章，0 遮挡)
-    /// 2. 拖入任意文件或网页链接时平滑展开为 180px 磨砂玻璃抽屉
-    /// 3. 与 DropZoneRouter 联动，自动路由文章/拾遗、票据/管家、文件/速递
+    /// 思源外骨骼 · 桌面边缘灵动坞与托放中枢 (Edge Dock)
+    /// 1. 极致克制贴边：平时仅 5px 极细半透明钛青发光细条，0 遮挡，不挡滚动条或右上角按钮；
+    /// 2. 鼠标触碰或拖入文件时平滑展开为 190px 毛玻璃微面板；
+    /// 3. 上半部内嵌极速动作矩阵 (⚡速记 / 🔍搜块 / 📋待办 / 📸识字 / 🤖问AI)，点击即开；
+    /// 4. 下半部保留文件/超链极速拖放路由 (拾遗/管家/速递)；
+    /// 5. Win32 WS_EX_NOACTIVATE 强保护，触碰和点击绝不抢夺前台正在输入的焦点。
     /// </summary>
     public class DropZoneWindow : Window
     {
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
+        private const int WS_EX_NOACTIVATE = 0x08000000;
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
         private Border _rootBorder;
         private StackPanel _expandedContent;
         private Border _dockHandle;
         private bool _isExpanded = false;
+        private DispatcherTimer _collapseTimer;
 
         public Action<string, string> OnNotificationRequested { get; set; }
+        public Action OnQuickCaptureClicked { get; set; }
+        public Action<string> OnOpenPanelWithQuery { get; set; }
+        public Action OnSnippingOcrClicked { get; set; }
 
         public DropZoneWindow()
         {
@@ -33,15 +51,31 @@ namespace XiaoLv.Desktop.UI
             ShowInTaskbar = false;
             AllowDrop = true;
 
-            Width = 10;
-            Height = 180;
+            Width = 5;
+            Height = 110;
 
             PositionAtRightEdge();
 
             BuildUI();
 
-            MouseEnter += (s, e) => Expand();
-            MouseLeave += (s, e) => Collapse();
+            _collapseTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(280) };
+            _collapseTimer.Tick += (s, e) =>
+            {
+                _collapseTimer.Stop();
+                if (!IsMouseOver) Collapse();
+            };
+
+            MouseEnter += (s, e) =>
+            {
+                _collapseTimer.Stop();
+                if (!SelectionHelper.IsFullscreenForeground()) Expand();
+            };
+
+            MouseLeave += (s, e) =>
+            {
+                _collapseTimer.Stop();
+                _collapseTimer.Start();
+            };
 
             DragEnter += (s, e) =>
             {
@@ -94,6 +128,18 @@ namespace XiaoLv.Desktop.UI
             };
         }
 
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            try
+            {
+                var hwnd = new WindowInteropHelper(this).Handle;
+                int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+                SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
+            }
+            catch { }
+        }
+
         private void PositionAtRightEdge()
         {
             var workArea = SystemParameters.WorkArea;
@@ -105,44 +151,113 @@ namespace XiaoLv.Desktop.UI
         {
             _rootBorder = new Border
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1e293be6")),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0f172ae6")),
                 BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38bdf888")),
                 BorderThickness = new Thickness(1.5, 1, 0, 1),
-                CornerRadius = new CornerRadius(8, 0, 0, 8),
+                CornerRadius = new CornerRadius(10, 0, 0, 10),
                 ClipToBounds = true
             };
 
             var grid = new Grid();
 
-            // 停靠把手 (折叠时展现)
+            // 停靠把手 (折叠时展现：5px 极细微发光细条)
             _dockHandle = new Border
             {
-                Width = 10,
+                Width = 5,
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38bdf844")),
-                CornerRadius = new CornerRadius(4, 0, 0, 4)
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38bdf866")),
+                CornerRadius = new CornerRadius(3, 0, 0, 3)
             };
 
-            // 展开内容卡片
+            // 展开内容容器
             _expandedContent = new StackPanel
             {
-                Margin = new Thickness(14, 10, 8, 10),
+                Margin = new Thickness(10, 8, 8, 8),
                 Visibility = Visibility.Collapsed
             };
 
-            var header = new TextBlock
+            // 顶部标题栏
+            var headerGrid = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+            var headerText = new TextBlock
             {
-                Text = "⚡ 桌面托放中枢",
+                Text = "⚡ 边缘灵动坞",
                 FontSize = 11.5,
                 FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38bdf8")),
-                Margin = new Thickness(0, 0, 0, 8)
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38bdf8"))
             };
-            _expandedContent.Children.Add(header);
+            var closeHint = new TextBlock
+            {
+                Text = "◀ 移开收起",
+                FontSize = 9.5,
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748b")),
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+            headerGrid.Children.Add(headerText);
+            headerGrid.Children.Add(closeHint);
+            _expandedContent.Children.Add(headerGrid);
 
-            _expandedContent.Children.Add(CreateDropCard("📥", "小驴拾遗", "拖入网页超链/文章自动读库分拣"));
-            _expandedContent.Children.Add(CreateDropCard("💰", "小驴管家", "拖入发票/报销/账目记入Lifelog"));
-            _expandedContent.Children.Add(CreateDropCard("📁", "本地速递", "拖入Office/PDF/源码结构化入库"));
+            // 极速动作矩阵 (点击即开)
+            var actionGrid = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+            actionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            actionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            actionGrid.RowDefinitions.Add(new RowDefinition());
+            actionGrid.RowDefinitions.Add(new RowDefinition());
+            actionGrid.RowDefinitions.Add(new RowDefinition());
+
+            var btnQuick = CreateActionButton("⚡ 速记灵感", "#10b981", () =>
+            {
+                Collapse();
+                if (OnQuickCaptureClicked != null) OnQuickCaptureClicked();
+            });
+            Grid.SetRow(btnQuick, 0); Grid.SetColumn(btnQuick, 0);
+
+            var btnSearch = CreateActionButton("🔍 搜全库", "#38bdf8", () =>
+            {
+                Collapse();
+                if (OnOpenPanelWithQuery != null) OnOpenPanelWithQuery("b:");
+            });
+            Grid.SetRow(btnSearch, 0); Grid.SetColumn(btnSearch, 1);
+
+            var btnTask = CreateActionButton("📋 待办看板", "#f59e0b", () =>
+            {
+                Collapse();
+                if (OnOpenPanelWithQuery != null) OnOpenPanelWithQuery("t:");
+            });
+            Grid.SetRow(btnTask, 1); Grid.SetColumn(btnTask, 0);
+
+            var btnSnip = CreateActionButton("📸 截屏OCR", "#a855f7", () =>
+            {
+                Collapse();
+                if (OnSnippingOcrClicked != null) OnSnippingOcrClicked();
+            });
+            Grid.SetRow(btnSnip, 1); Grid.SetColumn(btnSnip, 1);
+
+            var btnAi = CreateActionButton("🤖 问 AI", "#6366f1", () =>
+            {
+                Collapse();
+                if (OnOpenPanelWithQuery != null) OnOpenPanelWithQuery("ai:");
+            });
+            Grid.SetRow(btnAi, 2); Grid.SetColumn(btnAi, 0);
+            Grid.SetColumnSpan(btnAi, 2);
+
+            actionGrid.Children.Add(btnQuick);
+            actionGrid.Children.Add(btnSearch);
+            actionGrid.Children.Add(btnTask);
+            actionGrid.Children.Add(btnSnip);
+            actionGrid.Children.Add(btnAi);
+            _expandedContent.Children.Add(actionGrid);
+
+            // 下半部：拖放指引微卡片
+            var dropHeader = new TextBlock
+            {
+                Text = "📥 拖入文件/链接即入思源：",
+                FontSize = 9.5,
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748b")),
+                Margin = new Thickness(0, 2, 0, 4)
+            };
+            _expandedContent.Children.Add(dropHeader);
+            _expandedContent.Children.Add(CreateDropCard("🌐", "网页剪藏", "拖入URL自动提取并读库分拣"));
+            _expandedContent.Children.Add(CreateDropCard("📁", "本地文件", "拖入Office/PDF/源码直接归档"));
 
             grid.Children.Add(_dockHandle);
             grid.Children.Add(_expandedContent);
@@ -151,41 +266,80 @@ namespace XiaoLv.Desktop.UI
             Content = _rootBorder;
         }
 
+        private Border CreateActionButton(string label, string colorHex, Action onClick)
+        {
+            var b = new Border
+            {
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1e293b88")),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155")),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(5),
+                Padding = new Thickness(4, 3, 4, 3),
+                Margin = new Thickness(2),
+                Cursor = Cursors.Hand
+            };
+            var tb = new TextBlock
+            {
+                Text = label,
+                FontSize = 10.5,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorHex)),
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            b.Child = tb;
+            b.MouseEnter += (s, e) =>
+            {
+                b.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
+                b.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorHex));
+            };
+            b.MouseLeave += (s, e) =>
+            {
+                b.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1e293b88"));
+                b.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155"));
+            };
+            b.MouseLeftButtonUp += (s, e) =>
+            {
+                e.Handled = true;
+                if (onClick != null) onClick();
+            };
+            return b;
+        }
+
         private Border CreateDropCard(string icon, string title, string desc)
         {
             var b = new Border
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0f172a88")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155")),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0f172a66")),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1e293b")),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(6),
-                Padding = new Thickness(6, 4, 6, 4),
-                Margin = new Thickness(0, 0, 0, 5)
+                CornerRadius = new CornerRadius(5),
+                Padding = new Thickness(5, 3, 5, 3),
+                Margin = new Thickness(0, 0, 0, 3)
             };
 
             var sp = new StackPanel { Orientation = Orientation.Horizontal };
             var iconBlock = new TextBlock
             {
                 Text = icon,
-                FontSize = 13,
+                FontSize = 11,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 6, 0)
+                Margin = new Thickness(0, 0, 5, 0)
             };
             var textSp = new StackPanel();
             var titleBlock = new TextBlock
             {
                 Text = title,
-                FontSize = 11,
+                FontSize = 10,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White
             };
             var descBlock = new TextBlock
             {
                 Text = desc,
-                FontSize = 9.5,
+                FontSize = 8.5,
                 Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#94a3b8")),
-                TextWrapping = TextWrapping.Wrap,
-                Width = 115
+                TextWrapping = TextWrapping.NoWrap,
+                Width = 145
             };
             textSp.Children.Add(titleBlock);
             textSp.Children.Add(descBlock);
@@ -204,8 +358,10 @@ namespace XiaoLv.Desktop.UI
             _dockHandle.Visibility = Visibility.Collapsed;
 
             var workArea = SystemParameters.WorkArea;
-            Width = 180;
+            Width = 190;
+            Height = 220;
             Left = workArea.Right - Width;
+            Top = workArea.Top + (workArea.Height - Height) / 2;
         }
 
         public void Collapse()
@@ -216,8 +372,10 @@ namespace XiaoLv.Desktop.UI
             _dockHandle.Visibility = Visibility.Visible;
 
             var workArea = SystemParameters.WorkArea;
-            Width = 10;
+            Width = 5;
+            Height = 110;
             Left = workArea.Right - Width;
+            Top = workArea.Top + (workArea.Height - Height) / 2;
         }
     }
 }

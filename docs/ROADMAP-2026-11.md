@@ -65,6 +65,10 @@
 - build-desktop.mjs：`Framework64/v4.0.30319/csc.exe` + `/target:winexe /platform:x64 /optimize+`，嵌入 WebView2 DLL 与 assets.zip，bin 侧保留松散资源目录供热更新；零 XAML、零 NuGet。
 - e2e-isolated.mjs：隔离内核 3.8.9 冷启动 → 253→260 断言扩容中 → 沙箱销毁/生产实例自动还原。
 
+### 1.9 桌面边缘灵动坞 (Edge Dock) 与选区微光药丸 (Pop-Pill) 封板（E2E 277 验收）
+- **桌面最上层常驻调用**：升级 `DropZoneWindow` 为屏幕边缘灵动坞（Edge Dock），平时 5px 极细半透明发光细条贴边隐藏，触碰展开 `[⚡速记|🔍搜块|📋待办|📸识字|🤖问AI]` 动作矩阵与拖放合一，`WS_EX_NOACTIVATE` 绝对不抢焦点；
+- **全局划词进一步显示**：摒弃直接弹大窗的重度打扰模式，新建 `SelectionPillWindow` 原生微光药丸（106×28px，📝日记 / 🤖问AI / ⋯展开大盘），不抢焦点、外部单击 0ms 消隐、2.5s 自动淡出。
+
 ### 1.8 体验与健壮性深化审计（2026-11-10 完成，E2E 276 封板）
 - **安全加固 (Uri.TryCreate 强校验)**：BentoWindow 与 CapsuleWindow 的 `aiRouteLaunch` / `routeAiExternal` 全面升级为 `Uri.TryCreate` 绝对白名单校验，去除换行符与控制字符，杜绝外部传入畸形协议注入；
 - **思源匹配升级 (真实日记历史反推)**：`SafeContext.GetDiaryNotebookId` 升级为「AppSettings.DailyNoteTargetNotebook 显式配置 -> SQL 历史反推 (按 `/daily note/` 或 `/%日记%/` 嗅探最近写过日记的真实 box) -> 启发式名称」三级探测，彻底解决笔记本改名后日记串流或误落第一本的痛点；

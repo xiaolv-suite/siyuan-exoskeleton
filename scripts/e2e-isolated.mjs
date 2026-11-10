@@ -4977,6 +4977,19 @@ async function main() {
                                      panelHtml261.includes('Enter 记日记 · Shift+Enter 搜全库');
   logStep("Step 7.261: 认知减负与易用性跃迁 (打字动作直白分流雷达 + 输入问号/?直达速查手册 + 亲切动作指引) 断言", hasCognitiveReliefContract, `易用性契约加固: ${hasCognitiveReliefContract}`);
 
+  // Step 7.262: Test Natural Action Verbs (Synonyms Expansion) & 80ms Pop-Pill Tooltip & Footer Mode Cycling
+  const panelHtml262 = fs.readFileSync(path.join(ROOT, 'assets', 'panel.html'), 'utf8');
+  const pillCs262 = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'SelectionPillWindow.cs'), 'utf8');
+  const hasNaturalActionContract = panelHtml262.includes('"写日记"') &&
+                                   panelHtml262.includes('"记一笔"') &&
+                                   panelHtml262.includes('"划词"') &&
+                                   panelHtml262.includes('"保存文章"') &&
+                                   panelHtml262.includes('"图片转文字"') &&
+                                   panelHtml262.includes('function cycleViewCategoryMode') &&
+                                   pillCs262.includes('ToolTipService.SetInitialShowDelay(b, 80)') &&
+                                   pillCs262.includes('ToolTipService.SetBetweenShowDelay(b, 50)');
+  logStep("Step 7.262: 自然口语动词全图谱 (写日记/划词/保存文章/图片转文字) 与 80ms 毫秒微药丸悬停提示+底栏一键切模式 断言", hasNaturalActionContract, `自然动词契约加固: ${hasNaturalActionContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

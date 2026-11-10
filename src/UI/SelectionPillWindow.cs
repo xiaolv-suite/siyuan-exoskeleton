@@ -264,6 +264,9 @@ namespace XiaoLv.Desktop.UI
                 Cursor = Cursors.Hand,
                 ToolTip = tooltip
             };
+            ToolTipService.SetInitialShowDelay(b, 80);
+            ToolTipService.SetBetweenShowDelay(b, 50);
+            ToolTipService.SetShowDuration(b, 10000);
             var tb = new TextBlock
             {
                 Text = icon,

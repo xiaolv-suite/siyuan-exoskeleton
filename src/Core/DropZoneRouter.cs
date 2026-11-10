@@ -81,7 +81,7 @@ namespace XiaoLv.Desktop.Core
                 res.TargetModule = "siyuan-glean";
                 res.Summary = "网页文章剪藏";
 
-                SmartCaptureMain.ExecuteWebClip(notify, "", "card");
+                SmartCaptureMain.ExecuteWebClip(notify, "", "card", "", text, "", false, "常用", null);
                 if (notify != null) notify("托放中枢 · 小驴拾遗", "✓ 网页已自动推送入读库未读分拣流！");
                 return res;
             }

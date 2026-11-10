@@ -55,6 +55,7 @@ namespace XiaoLv.Desktop.UI
         public Action OnSnippingOcrClicked { get; set; }
         public Action OnOpenPreferencesRequested { get; set; }
         public Action OnSyncRequested { get; set; }
+        public Action OnSaveClipboardToDailyRequested { get; set; }
         public Action OnTrimMemoryRequested { get; set; }
 
         public DropZoneWindow()
@@ -411,6 +412,13 @@ namespace XiaoLv.Desktop.UI
                 if (OnOpenPreferencesRequested != null) OnOpenPreferencesRequested();
             };
 
+            var itClipDaily = new MenuItem { Header = "📋 剪贴板内容存入今日日记" };
+            itClipDaily.Click += (s, e) =>
+            {
+                Collapse();
+                if (OnSaveClipboardToDailyRequested != null) OnSaveClipboardToDailyRequested();
+            };
+
             string syncSubtitle = "";
             try
             {
@@ -450,6 +458,7 @@ namespace XiaoLv.Desktop.UI
             };
 
             menu.Items.Add(itPref);
+            menu.Items.Add(itClipDaily);
             menu.Items.Add(itSync);
             menu.Items.Add(itTrim);
             menu.Items.Add(new Separator());

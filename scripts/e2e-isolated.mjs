@@ -4990,6 +4990,28 @@ async function main() {
                                    pillCs262.includes('ToolTipService.SetBetweenShowDelay(b, 50)');
   logStep("Step 7.262: 自然口语动词全图谱 (写日记/划词/保存文章/图片转文字) 与 80ms 毫秒微药丸悬停提示+底栏一键切模式 断言", hasNaturalActionContract, `自然动词契约加固: ${hasNaturalActionContract}`);
 
+  // Step 7.263: Test Edge Dock Direct Clipboard Ingestion & Parameterized DropZoneRouter
+  const dockScript263 = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $dockType = $asm.GetType('XiaoLv.Desktop.UI.DropZoneWindow');
+    $eClipDaily = $dockType.GetProperty('OnSaveClipboardToDailyRequested');
+    $ok = ($eClipDaily -ne $null);
+    Write-Output ($ok.ToString());
+  `;
+  const dockRes263 = runPs(dockScript263);
+  const hasDockRuntime263 = dockRes263.includes("True");
+  const dockCs263 = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'DropZoneWindow.cs'), 'utf8');
+  const programCs263 = fs.readFileSync(path.join(ROOT, 'src', 'Program.cs'), 'utf8');
+  const routerCs263 = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'DropZoneRouter.cs'), 'utf8');
+  const panelHtml263 = fs.readFileSync(path.join(ROOT, 'assets', 'panel.html'), 'utf8');
+  const hasDockClipContract = dockCs263.includes('OnSaveClipboardToDailyRequested') &&
+                              dockCs263.includes('itClipDaily') &&
+                              programCs263.includes('OnSaveClipboardToDailyRequested') &&
+                              routerCs263.includes('SmartCaptureMain.ExecuteWebClip(notify, "", "card", "", text') &&
+                              panelHtml263.includes('按 ↓ 键选卡 · 敲 ? 查技巧');
+  logStep("Step 7.263: 灵动坞剪贴板一键入日记 (右键直选) 与 托放路由精确URL直投+键盘方向键选卡指引 断言", hasDockRuntime263 && hasDockClipContract, `灵动坞剪贴板入库运行时: ${dockRes263.trim()} · 契约加固: ${hasDockClipContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

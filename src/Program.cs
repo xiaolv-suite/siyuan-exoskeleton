@@ -187,11 +187,35 @@ namespace XiaoLv.Desktop
 		            _dropZoneWindow.OnOpenPanelWithQuery += (q) => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel(q));
 		            _dropZoneWindow.OnSnippingOcrClicked += () => StartSnippingAndOcr();
 			            _dropZoneWindow.OnOpenPreferencesRequested += () => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel("@preferences"));
-			            _dropZoneWindow.OnSyncRequested += () =>
-			            {
-			                SafeSyncGuardian.TriggerSafeSync(true, SafeNotify);
-			            };
-			            _dropZoneWindow.OnTrimMemoryRequested += () =>
+				            _dropZoneWindow.OnSyncRequested += () =>
+				            {
+				                SafeSyncGuardian.TriggerSafeSync(true, SafeNotify);
+				            };
+				            _dropZoneWindow.OnSaveClipboardToDailyRequested += () =>
+				            {
+				                _wpfApp.Dispatcher.Invoke(() =>
+				                {
+				                    try
+				                    {
+				                        if (System.Windows.Clipboard.ContainsText())
+				                        {
+				                            string clipText = System.Windows.Clipboard.GetText();
+				                            if (!string.IsNullOrWhiteSpace(clipText))
+				                            {
+				                                var ctx = new DesktopStepContext("SYS", clipText.Trim());
+				                                ctx.OnNotificationRequested += (t, m) => SafeNotify(t, m);
+				                                SmartCaptureMain.Exec(ctx);
+				                                try { SoundPlayerHelper.PlayFeedback(); } catch { }
+				                                SafeNotify("思源外骨骼 · 剪贴板入库", "✓ 剪贴板内容已安全存入今日日记！");
+				                                return;
+				                            }
+				                        }
+				                        SafeNotify("思源外骨骼", "ℹ️ 当前剪贴板暂无有效文本内容");
+				                    }
+				                    catch { }
+				                });
+				            };
+				            _dropZoneWindow.OnTrimMemoryRequested += () =>
 		            {
 		                MemoryOptimizer.PerformDeepTrim();
 		                SafeNotify("思源外骨骼", "✓ 深度内存整理完成，已释放多余工作集。");

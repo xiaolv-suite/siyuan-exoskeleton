@@ -361,7 +361,18 @@ namespace XiaoLv.Desktop.UI
                 if (OnOpenPreferencesRequested != null) OnOpenPreferencesRequested();
             };
 
-            var itSync = new MenuItem { Header = "🔄 立即增量同步思源" };
+            string syncSubtitle = "";
+            try
+            {
+                var rel = SafeSyncGuardian.LastKnownRelativeTime;
+                if (!string.IsNullOrEmpty(rel) && rel != "未同步")
+                {
+                    syncSubtitle = " (上次: " + rel + ")";
+                }
+            }
+            catch { }
+
+            var itSync = new MenuItem { Header = "🔄 立即增量同步思源" + syncSubtitle };
             itSync.Click += (s, e) =>
             {
                 Collapse();

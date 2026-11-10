@@ -4848,6 +4848,41 @@ async function main() {
                                  bentoCs257.includes('initialQuery == "@preferences"');
   logStep("Step 7.257: 灵动坞全屏自退避/右键菜单/呼吸边框 与 微药丸学术外文感知(🌐译)/打字消隐/微缩放进场 断言", hasAdvPillDockRuntime && hasAdvPillDockContract, `高级交互运行时反射: ${hasAdvPillDockRuntime} · 契约加固: ${hasAdvPillDockContract}`);
 
+  // Step 7.258: Test SafeSyncGuardian (Safe Sync Guard: Read-Only Perception, Mutex Gate, Sleep-Wake 8s Delay & Relative Time)
+  const syncGuardianScript = `
+    $bytes = [System.IO.File]::ReadAllBytes('${exePath}');
+    $asm = [System.Reflection.Assembly]::Load($bytes);
+    $guardType = $asm.GetType('XiaoLv.Desktop.Core.SafeSyncGuardian');
+    $mTrigger = $guardType.GetMethod('TriggerSafeSync');
+    $mRefresh = $guardType.GetMethod('RefreshStatusAsync');
+    $mFormat = $guardType.GetMethod('FormatRelativeTime');
+    $mPower = $guardType.GetMethod('RegisterPowerWatcher');
+    $mWarmup = $guardType.GetMethod('StartBackgroundWarmup');
+
+    $res0 = $mFormat.Invoke($null, @([long]0));
+    $nowMs = [long]([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds());
+    $resJustNow = $mFormat.Invoke($null, @($nowMs - 10000));
+    $res2Min = $mFormat.Invoke($null, @($nowMs - 120000));
+
+    $okMethods = ($mTrigger -ne $null) -and ($mRefresh -ne $null) -and ($mFormat -ne $null) -and ($mPower -ne $null) -and ($mWarmup -ne $null);
+    $okFormatting = ($res0 -eq '未同步') -and ($resJustNow -eq '刚刚') -and ($res2Min -eq '2分钟前');
+    Write-Output ($okMethods.ToString() + '|' + $okFormatting.ToString());
+  `;
+  const syncGuardianRes = runPs(syncGuardianScript);
+  const hasSyncGuardianRuntime = syncGuardianRes.includes("True|True");
+  const guardianCs258 = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'SafeSyncGuardian.cs'), 'utf8');
+  const dockCs258 = fs.readFileSync(path.join(ROOT, 'src', 'UI', 'DropZoneWindow.cs'), 'utf8');
+  const programCs258 = fs.readFileSync(path.join(ROOT, 'src', 'Program.cs'), 'utf8');
+  const hasSyncGuardianContract = guardianCs258.includes('GetIsNetworkAvailable') &&
+                                  guardianCs258.includes('_syncingFlag') &&
+                                  guardianCs258.includes('PowerModes.Resume') &&
+                                  guardianCs258.includes('8000') &&
+                                  guardianCs258.includes('DebounceMs') &&
+                                  dockCs258.includes('SafeSyncGuardian.LastKnownRelativeTime') &&
+                                  programCs258.includes('SafeSyncGuardian.RegisterPowerWatcher') &&
+                                  programCs258.includes('SafeSyncGuardian.TriggerSafeSync');
+  logStep("Step 7.258: 轻量同步安全守护 (SafeSyncGuardian: 纯只读感知+网络防御+并发互斥门禁+休眠唤醒8秒静默+右键相对时间微感知) 断言", hasSyncGuardianRuntime && hasSyncGuardianContract, `安全门禁运行时反射: ${syncGuardianRes.trim()} · 契约加固: ${hasSyncGuardianContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

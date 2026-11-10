@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 using XiaoLv.Desktop.Core;
@@ -185,18 +186,12 @@ namespace XiaoLv.Desktop
 		            _dropZoneWindow.OnQuickCaptureClicked += () => PromptQuickCapture();
 		            _dropZoneWindow.OnOpenPanelWithQuery += (q) => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel(q));
 		            _dropZoneWindow.OnSnippingOcrClicked += () => StartSnippingAndOcr();
-		            _dropZoneWindow.OnOpenPreferencesRequested += () => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel("@preferences"));
-		            _dropZoneWindow.OnSyncRequested += () =>
-		            {
-		                ThreadPool.QueueUserWorkItem(async s =>
-		                {
-		                    var res = await SiYuanClient.PostAsync("/api/sync/performSync", new { });
-		                    bool ok = res != null && res.Success;
-		                    if (ok) SoundPlayerHelper.PlayFeedback();
-		                    SafeNotify("思源外骨骼 · 云同步", ok ? "✓ 思源云端增量数据同步已完成！" : "⚠️ 同步响应超时或离线");
-		                });
-		            };
-		            _dropZoneWindow.OnTrimMemoryRequested += () =>
+			            _dropZoneWindow.OnOpenPreferencesRequested += () => _wpfApp.Dispatcher.Invoke(() => _bentoWindow.ShowPanel("@preferences"));
+			            _dropZoneWindow.OnSyncRequested += () =>
+			            {
+			                SafeSyncGuardian.TriggerSafeSync(true, SafeNotify);
+			            };
+			            _dropZoneWindow.OnTrimMemoryRequested += () =>
 		            {
 		                MemoryOptimizer.PerformDeepTrim();
 		                SafeNotify("思源外骨骼", "✓ 深度内存整理完成，已释放多余工作集。");
@@ -563,19 +558,18 @@ namespace XiaoLv.Desktop
             });
             if (!IsIsolatedRun && settings.ReminderGuardianEnabled)
             {
-                ReminderGuardian.Start((t, m, k) => _tray.ShowNotice(t, m, System.Windows.Forms.ToolTipIcon.Info));
-            }
-            _tray.OnManualSyncClicked += () =>
-            {
-                ThreadPool.QueueUserWorkItem(async s =>
-                {
-                    var res = await SiYuanClient.PostAsync("/api/sync/performSync", new { });
-                    bool ok = res != null && res.Success;
-                    if (ok) SoundPlayerHelper.PlayFeedback();
-                    SafeNotify("思源外骨骼 · 云同步", ok ? "✓ 思源云端增量数据同步已完成！" : "⚠️ 同步响应超时或离线");
-                });
-            };
-            _tray.OnInteractiveToastClicked += () => ShowInteractiveToast();
+	                ReminderGuardian.Start((t, m, k) => _tray.ShowNotice(t, m, System.Windows.Forms.ToolTipIcon.Info));
+	            }
+		            if (!IsIsolatedRun)
+		            {
+		                SafeSyncGuardian.RegisterPowerWatcher(SafeNotify);
+		                SafeSyncGuardian.StartBackgroundWarmup();
+		            }
+		            _tray.OnManualSyncClicked += () =>
+		            {
+		                SafeSyncGuardian.TriggerSafeSync(true, SafeNotify);
+		            };
+	            _tray.OnInteractiveToastClicked += () => ShowInteractiveToast();
             _tray.OnCheckConnectionClicked += () => CheckSiYuanConnection();
             _tray.OnCheckUpdateClicked += () => PerformCheckUpdate(true);
             _tray.OnExitClicked += () => ExitApplication();

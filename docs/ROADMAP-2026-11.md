@@ -153,6 +153,7 @@
 3. ✅ **OCR 写回闭环**：胶囊图文入日记时把识别文字挂为块 IAL 属性 `custom-ocr-text`（正文本身即可编辑，补 #13714 编辑诉求）；新增 `ocr: 关键词` 秒搜域（BentoWindow searchOcr op 经 attributes.block_id JOIN 结构化检索，E2E 真机验证）；动作广场收录 ocr: 前缀
 4. ✅ **剪藏模板路由**：域名路由已落地（AppSettings.ClipDomainRules 每行「域名 => /目标目录/」，SmartCaptureMain.ResolveClipDomainFolder 精确+子域匹配覆盖研读专页目录，偏好 UI 可编辑，反射真机验证）；模板引擎此前已有（callout/yaml/minimal/custom 四预设 + {{smartTag}} 变量）；片段/批注模式已有（g:）；图片防盗链本地化已有（CacheAndUploadRemoteImage）；新增「3 天未读回顾」托盘气泡（ReminderGuardian 第三检查 → d:读库）
 5. ✅ **剪贴板胶囊多格式**：Pin 置顶已落地（ClipboardItem.IsPinned/ClipKey、TrimRecentToCapacity 置顶清除保护、DPAPI 加密 pinned_clips.json 重启还原、重复复制继承置顶态、c: 列表行内一键 📌）+ 🧹 纯文本直贴（clipToPlainText 剥离 MD/HTML）；历史搜索（c: + 6 类筛选）与多条合并（拼版工作台）此前已有
+6. ✅ **轻量同步安全守护**（SafeSyncGuardian）：深度审计 `muhanstudio/siyuan-sync-aware` 缺陷避坑落地；严守「纯辅助、零破坏、极度克制」三原则，坚决不篡改官方设置、不走第三方公网服务器、不替用户强行覆盖；实现 4 级安全门禁：断网离线防御（NetworkInterface.GetIsNetworkAvailable 静默跳过）、进程级互斥重入锁（Interlocked 互斥）、内核任务探针（getSyncCheckout task 空闲就绪才允许调用）、10 秒防抖保护；Win32 休眠唤醒保护（PowerModes.Resume 8 秒静默延迟等待网卡就绪）；灵动坞与托盘右键动态呈现人性化相对时间微感知（`🔄 立即增量同步思源 (上次: 刚刚 / 5分钟前)`）消除盲点，E2E 280/280 验证通过
 
 ### P2 · 生态与 AI 接入
 

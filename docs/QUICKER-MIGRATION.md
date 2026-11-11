@@ -28,71 +28,121 @@
 在 Quicker 中新建动作或编辑旧动作，添加一个**「运行脚本 (C#)」**步骤（或直接发 HTTP/启动进程），粘贴如下纯净代码：
 
 ```csharp
-// 思源小驴 · 超级全局面板智能引信 (v3.0 终身免维护版)
+// 思源小驴 · 超级全局面板智能引信 (v3.0 终身免维护实测版)
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
+using System.Net;
 using System.Text;
-using System.Windows;
+using System.Windows.Forms;
+using Microsoft.Win32;
+using Quicker.Public;
 
-public class ActionEntryPoint
+public class EntryPoint
 {
-    public static void Exec(Quicker.Public.IStepContext context)
+    public static void Exec(IStepContext context)
     {
-        string pipeName = "XiaoLvDesktop_IPC_Pipe";
-        string command = "bento";
+        context.SetVarValue("跳过UI", true);
 
-        // 1. 优先尝试命名管道 0ms 瞬间唤起已运行的外骨骼
-        try
+        string inParam = context.GetVarValue("quicker_in_param") as string ?? "";
+        string selected = context.GetVarValue("选中文本") as string ?? "";
+        string command = "open_panel";
+
+        if (!string.IsNullOrWhiteSpace(inParam))
         {
-            using (var client = new NamedPipeClientStream(".", pipeName, PipeDirection.Out))
-            {
-                client.Connect(150); // 150ms 快速探测
-                using (var writer = new StreamWriter(client, Encoding.UTF8))
-                {
-                    writer.WriteLine(command);
-                    writer.Flush();
-                }
-                return; // 唤醒成功，无感返回
-            }
+            command = inParam.Trim();
         }
-        catch { }
+        else if (!string.IsNullOrWhiteSpace(selected))
+        {
+            command = "{\"cmd\":\"open_panel\",\"text\":\"" + EscapeJson(selected.Trim()) + "\"}";
+        }
 
-        // 2. 管道未连接，探测本机外骨骼安装路径并启动
+        // 1. 优先通过命名管道 0ms 瞬间唤起后台外骨骼
+        if (TrySendPipe(command)) return;
+
+        // 2. 管道未连接，探测本机外骨骼安装路径并静默拉起
         string exePath = FindExoskeletonExe();
         if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
         {
-            Process.Start(new ProcessStartInfo
+            try
             {
-                FileName = exePath,
-                Arguments = command,
-                WorkingDirectory = Path.GetDirectoryName(exePath)
-            });
-            return;
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = exePath,
+                    Arguments = string.IsNullOrWhiteSpace(inParam) ? "" : inParam.Trim(),
+                    WorkingDirectory = Path.GetDirectoryName(exePath)
+                });
+                return;
+            }
+            catch { }
         }
 
-        // 3. 本机未安装时，提供国内免翻一键极速下载安装
-        var res = MessageBox.Show(
-            "思源外骨骼已进化为 3.8MB 独立桌面工作台（0ms 响应、支持网页多段高亮剪藏与划词浮窗）。\n\n检测到本机尚未安装，是否立即极速下载启动？",
+        // 3. 本机尚未安装时，提示并提供国内高速 CDN 一键极速下载安装
+        DialogResult res = MessageBox.Show(
+            "思源小驴已全面进化为 3.8MB 原生独立桌面外骨骼（0ms 响应、支持网页多段高亮剪藏与划词浮窗）。\n\n检测到本机尚未安装，是否立即极速下载启动？",
             "思源小驴 · 极速引信",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Information
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Information
         );
 
-        if (res == MessageBoxResult.Yes)
+        if (res == DialogResult.Yes)
         {
             InstallExoskeletonFromCdn();
         }
     }
 
+    private static string EscapeJson(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return "";
+        return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "").Replace("\n", "\\n").Replace("\t", "\\t");
+    }
+
+    private static bool TrySendPipe(string message)
+    {
+        try
+        {
+            using (var client = new NamedPipeClientStream(".", "XiaoLvDesktop_IPC_Pipe", PipeDirection.Out))
+            {
+                client.Connect(180);
+                using (var writer = new StreamWriter(client, Encoding.UTF8))
+                {
+                    writer.WriteLine(message);
+                    writer.Flush();
+                }
+                return true;
+            }
+        }
+        catch { return false; }
+    }
+
     private static string FindExoskeletonExe()
     {
+        try
+        {
+            using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Classes\siyuan-exoskeleton\shell\open\command", false))
+            {
+                if (key != null)
+                {
+                    string val = key.GetValue("") as string;
+                    if (!string.IsNullOrEmpty(val))
+                    {
+                        int firstQuote = val.IndexOf('"');
+                        int secondQuote = firstQuote >= 0 ? val.IndexOf('"', firstQuote + 1) : -1;
+                        if (firstQuote >= 0 && secondQuote > firstQuote)
+                        {
+                            string regPath = val.Substring(firstQuote + 1, secondQuote - firstQuote - 1);
+                            if (File.Exists(regPath)) return regPath;
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+
         string[] candidates = new string[]
         {
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XiaoLvDesktop", "思源外骨骼.exe"),
-            @"D:\思源插件\思源小驴桌面助手\bin\Release\思源外骨骼.exe",
-            @"D:\思源插件\思源小驴桌面助手\思源外骨骼.exe"
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XiaoLvDesktop", "思源外骨骼.exe")
         };
         foreach (var p in candidates) if (File.Exists(p)) return p;
         return null;
@@ -100,17 +150,25 @@ public class ActionEntryPoint
 
     private static void InstallExoskeletonFromCdn()
     {
-        string targetDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XiaoLvDesktop");
-        if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
-        string targetExe = Path.Combine(targetDir, "思源外骨骼.exe");
-
-        string downloadUrl = "https://ghfast.top/https://github.com/xiaolv-suite/siyuan-exoskeleton/releases/download/v3.0.0/siyuan-exoskeleton.exe";
-        using (var wc = new System.Net.WebClient())
+        try
         {
-            wc.Headers.Add("User-Agent", "Quicker-Fuse");
-            wc.DownloadFile(downloadUrl, targetExe);
+            string targetDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XiaoLvDesktop");
+            if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
+            string targetExe = Path.Combine(targetDir, "思源外骨骼.exe");
+
+            string downloadUrl = "https://ghfast.top/https://github.com/xiaolv-suite/siyuan-exoskeleton/releases/download/v3.0.0/siyuan-exoskeleton.exe";
+            using (var wc = new WebClient())
+            {
+                wc.Headers.Add("User-Agent", "Quicker-Fuse");
+                wc.DownloadFile(downloadUrl, targetExe);
+            }
+            Process.Start(targetExe);
         }
-        Process.Start(targetExe);
+        catch (Exception ex)
+        {
+            MessageBox.Show("下载失败，请前往发布页手动下载：\n" + ex.Message);
+            try { Process.Start("https://github.com/xiaolv-suite/siyuan-exoskeleton/releases"); } catch { }
+        }
     }
 }
 ```
@@ -122,39 +180,93 @@ public class ActionEntryPoint
 选中文本时，在 Quicker 动作中执行：
 
 ```csharp
-// 思源小驴 · 随身划词笔极简引信 (带选中文本穿透)
+// 思源小驴 · 随身划词笔极简引信 (v3.0 终身免维护实测版)
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Text;
+using Microsoft.Win32;
+using Quicker.Public;
 
-public class ActionEntryPoint
+public class EntryPoint
 {
-    public static void Exec(Quicker.Public.IStepContext context)
+    public static void Exec(IStepContext context)
     {
-        // 获取当前 Quicker 捕获到的选中文本
-        string selectedText = context.GetVarValue("selectedText") as string ?? "";
-        string command = string.IsNullOrWhiteSpace(selectedText) ? "pen" : "pen:" + selectedText;
+        string command = "open_pen";
 
+        // 1. 优先通过命名管道 0ms 瞬间唤起后台外骨骼随身划笔胶囊
+        if (TrySendPipe(command)) return;
+
+        // 2. 管道未连接，探测本机外骨骼安装路径并启动
+        string exePath = FindExoskeletonExe();
+        if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = exePath,
+                    Arguments = "open_pen",
+                    WorkingDirectory = Path.GetDirectoryName(exePath)
+                });
+                return;
+            }
+            catch { }
+        }
+
+        // 3. 兜底协议唤醒
+        try { Process.Start("siyuan-exoskeleton://show?panel=capsule"); } catch { }
+    }
+
+    private static bool TrySendPipe(string message)
+    {
         try
         {
             using (var client = new NamedPipeClientStream(".", "XiaoLvDesktop_IPC_Pipe", PipeDirection.Out))
             {
-                client.Connect(200);
+                client.Connect(180);
                 using (var writer = new StreamWriter(client, Encoding.UTF8))
                 {
-                    writer.WriteLine(command);
+                    writer.WriteLine(message);
                     writer.Flush();
                 }
-                return;
+                return true;
             }
         }
-        catch
+        catch { return false; }
+    }
+
+    private static string FindExoskeletonExe()
+    {
+        try
         {
-            // 兜底通过私有协议或进程唤起
-            try { Process.Start("siyuan-exoskeleton://show?panel=capsule"); } catch { }
+            using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Classes\siyuan-exoskeleton\shell\open\command", false))
+            {
+                if (key != null)
+                {
+                    string val = key.GetValue("") as string;
+                    if (!string.IsNullOrEmpty(val))
+                    {
+                        int firstQuote = val.IndexOf('"');
+                        int secondQuote = firstQuote >= 0 ? val.IndexOf('"', firstQuote + 1) : -1;
+                        if (firstQuote >= 0 && secondQuote > firstQuote)
+                        {
+                            string regPath = val.Substring(firstQuote + 1, secondQuote - firstQuote - 1);
+                            if (File.Exists(regPath)) return regPath;
+                        }
+                    }
+                }
+            }
         }
+        catch { }
+
+        string[] candidates = new string[]
+        {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XiaoLvDesktop", "思源外骨骼.exe")
+        };
+        foreach (var p in candidates) if (File.Exists(p)) return p;
+        return null;
     }
 }
 ```

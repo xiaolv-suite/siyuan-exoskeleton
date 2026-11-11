@@ -1,0 +1,28 @@
+name: Mirror to Gitee & Domestic Platforms
+
+on:
+  schedule:
+    - cron: '0 2,8,14,20 * * *'
+  push:
+    branches:
+      - main
+      - release-main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  mirror-org:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror xiaolv-suite Organization to Gitee
+        uses: Yikun/hub-mirror-action@master
+        with:
+          src: github/xiaolv-suite
+          dst: gitee/xiaolv-suite
+          dst_key: ${{ secrets.GITEE_SSH_PRIVATE_KEY }}
+          dst_token: ${{ secrets.GITEE_TOKEN }}
+          account_type: org
+          force_update: true
+          clone_style: https
+          static_list: "siyuan-exoskeleton,siyuan-speed-switch,xiaolv-common,siyuan-checkin,siyuan-home,siyuan-glean,siyuan-lv-cards,siyuan-exam,siyuan-contacts"

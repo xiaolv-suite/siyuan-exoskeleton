@@ -115,7 +115,7 @@ namespace XiaoLv.Desktop.Core
             WebhookToken = "";
             DropZoneEnabled = true;
             EdgeDockTopRatio = 0.5;
-            DoubleCtrlActivationEnabled = true;
+            DoubleCtrlActivationEnabled = false;
         }
 
         private static string SettingsFilePath
@@ -177,7 +177,7 @@ namespace XiaoLv.Desktop.Core
 			                    s.DropZoneEnabled = JsonHelper.GetBool(dict, "dropZoneEnabled", s.DropZoneEnabled);
 			                    s.EdgeDockTopRatio = JsonHelper.GetDouble(dict, "edgeDockTopRatio", s.EdgeDockTopRatio);
 			                    if (s.EdgeDockTopRatio <= 0.0 || s.EdgeDockTopRatio >= 1.0) s.EdgeDockTopRatio = 0.5;
-			                    s.DoubleCtrlActivationEnabled = JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", s.DoubleCtrlActivationEnabled);
+				                    s.DoubleCtrlActivationEnabled = JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", false);
                 }
                 else
                 {

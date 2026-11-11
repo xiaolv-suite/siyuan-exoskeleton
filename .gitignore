@@ -3,3 +3,4 @@ obj/
 backup/
 *.WebView2/
 *.log
+*.exe

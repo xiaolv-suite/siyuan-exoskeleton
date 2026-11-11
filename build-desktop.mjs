@@ -97,6 +97,7 @@ try {
   console.log(`Executable size: ${stat.size} bytes (${(stat.size / 1024 / 1024).toFixed(2)} MB)`);
   // 兼容别名拷贝，确保旧快捷方式与 Quicker 动作无缝衔接
   fs.copyFileSync(targetExe, path.join(outDir, '思源小驴.exe'));
+  fs.copyFileSync(targetExe, path.join(ROOT, '思源外骨骼.exe'));
 } catch (err) {
   console.error('Build failed:\n', err.stdout ? err.stdout.toString() : err.message);
   process.exit(1);

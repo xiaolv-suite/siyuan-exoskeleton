@@ -4640,6 +4640,10 @@
               <input type="checkbox" id="pref-desktop-autofloat" style="accent-color: var(--indigo-primary);" />
               <span>✨ 划选微光药丸 (Pop-Pill克制模式：选中文本轻量呼出，绝不抢焦点)</span>
             </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;" title="连续快速按两次 Ctrl 键呼出主面板。默认关闭以避免日常输入、连按复制保存或游戏时被误触发打断。">
+              <input type="checkbox" id="pref-desktop-doublectrl" style="accent-color: var(--indigo-primary);" />
+              <span>⌨️ 双击 Ctrl 极速呼出面板 (易误触，默认关闭)</span>
+            </label>
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
               <input type="checkbox" id="pref-desktop-autostart" style="accent-color: var(--indigo-primary);" />
               <span>⚙️ 开机自动启动</span>
@@ -16663,6 +16667,8 @@
         if (dzEl) dzEl.checked = s.dropZoneEnabled != null ? !!s.dropZoneEnabled : true;
         const fEl = document.getElementById("pref-desktop-autofloat");
         if (fEl) fEl.checked = !!s.autoFloatEnabled;
+        const dcEl = document.getElementById("pref-desktop-doublectrl");
+        if (dcEl) dcEl.checked = !!s.doubleCtrlActivationEnabled;
         const aEl = document.getElementById("pref-desktop-autostart");
         if (aEl) aEl.checked = !!s.autoStart;
         const sndEl = document.getElementById("pref-desktop-sound");
@@ -16876,6 +16882,7 @@
       const ctplVal = (document.getElementById("pref-desktop-cliptemplate")?.value || "").trim();
       const dzVal = !!document.getElementById("pref-desktop-dropzone")?.checked;
       const fVal = !!document.getElementById("pref-desktop-autofloat")?.checked;
+      const dcVal = !!document.getElementById("pref-desktop-doublectrl")?.checked;
       const aVal = !!document.getElementById("pref-desktop-autostart")?.checked;
       const sndVal = !!document.getElementById("pref-desktop-sound")?.checked;
       const smVal = !!document.getElementById("pref-desktop-shellmenu")?.checked;
@@ -16921,9 +16928,10 @@
             clipDomainRules: cdrVal,
             aiRouteTargetsJson: arVal,
             webClipCustomTemplate: ctplVal,
-            dropZoneEnabled: dzVal,
-            autoFloatEnabled: fVal,
-            autoStart: aVal,
+	            dropZoneEnabled: dzVal,
+	            autoFloatEnabled: fVal,
+	            doubleCtrlActivationEnabled: dcVal,
+	            autoStart: aVal,
             soundFeedbackEnabled: sndVal,
             shellContextMenuEnabled: smVal,
             webhookEnabled: whVal,

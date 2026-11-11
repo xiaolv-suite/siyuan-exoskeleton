@@ -348,7 +348,7 @@ namespace XiaoLv.Desktop
 		                        if (s.WebhookPort <= 0 || s.WebhookPort > 65535) s.WebhookPort = 43989;
 		                    }
 			                    s.DropZoneEnabled = JsonHelper.GetBool(dict, "dropZoneEnabled", s.DropZoneEnabled);
-			                    s.DoubleCtrlActivationEnabled = JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", s.DoubleCtrlActivationEnabled);
+				                    s.DoubleCtrlActivationEnabled = JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", false);
 			                    s.DailyNoteTargetNotebook = JsonHelper.GetString(dict, "dailyNoteTargetNotebook", s.DailyNoteTargetNotebook);
 			                    s.ReminderGuardianEnabled = JsonHelper.GetBool(dict, "reminderGuardianEnabled", s.ReminderGuardianEnabled);
 

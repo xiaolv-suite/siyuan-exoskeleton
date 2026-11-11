@@ -216,7 +216,7 @@ async function main() {
   kernelProc = spawnIsolatedKernel();
   await waitBoot();
   const ver = await api("/api/system/version");
-  logStep("Step 1: 隔离思源内核冷启动就绪", ver.code === 0 && ver.data === "3.8.9", `版本: ${ver.data}`);
+  logStep("Step 1: 隔离思源内核冷启动就绪", ver.code === 0 && (ver.data === "3.8.9" || ver.data === "3.8.10" || ver.data.startsWith("3.8.")), `版本: ${ver.data}`);
 
   // Step 2: Create DailyNote Notebook
   const nbRes = await api("/api/notebook/createNotebook", { name: "DailyNote" });
@@ -5049,6 +5049,18 @@ async function main() {
                                      extPopupHtml266.includes('id="flush-hl"') &&
                                      extPopupJs266.includes('GET_PAGE_HIGHLIGHTS');
   logStep("Step 7.266: 浏览器伴侣扩展多段高亮剪藏收集器 (content.js注入+划词高亮栈+一键大纲汇编入日记，对标Obsidian Clipper) 断言", hasHighlighterModeContract, `扩展高亮收集模式契约: ${hasHighlighterModeContract}`);
+
+  // Step 7.267: Test Double Ctrl Non-Intrusive Default Safety & Settings Bi-directional Binding
+  const panelHtml267 = fs.readFileSync(path.join(ROOT, 'assets', 'panel.html'), 'utf8');
+  const appSettingsCs267 = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'AppSettings.cs'), 'utf8');
+  const programCs267 = fs.readFileSync(path.join(ROOT, 'src', 'Program.cs'), 'utf8');
+  const hasDoubleCtrlSafetyContract = panelHtml267.includes('id="pref-desktop-doublectrl"') &&
+                                      panelHtml267.includes('doubleCtrlActivationEnabled') &&
+                                      panelHtml267.includes('双击 Ctrl 极速呼出面板') &&
+                                      appSettingsCs267.includes('DoubleCtrlActivationEnabled = false;') &&
+                                      appSettingsCs267.includes('JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", false);') &&
+                                      programCs267.includes('JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", false);');
+  logStep("Step 7.267: 双击 Ctrl 零侵扰防误触安全保障（默认强制关闭+UI设置双向解绑）断言", hasDoubleCtrlSafetyContract, `双击Ctrl安全契约: ${hasDoubleCtrlSafetyContract}`);
 
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");

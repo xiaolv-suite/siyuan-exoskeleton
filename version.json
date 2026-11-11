@@ -1,0 +1,14 @@
+{
+  "version": "3.0.0",
+  "publishedAt": "2026-11-11",
+  "changelog": "1. 增加 SafeSyncGuardian 云同步4级安全门禁与休眠唤醒8秒静默，杜绝冲突；\n2. 增加屏幕边缘灵动坞 Edge Dock 微控制台与状态条；\n3. 增加选区微光药丸 Pop-Pill（Per-Monitor DPI精准换算、顶边防截断翻转）；\n4. 场景聚焦 2x2 黄金四宫格大卡排版与27项进阶能力抽屉；\n5. 浏览器伴侣扩展多段高亮大纲剪藏收集器；\n6. 彻底解绑并关闭全局底层键盘钩子，杜绝误触打扰；\n7. 升级国内多源极速无感热更新引擎与零维护 Quicker 引信。",
+  "sha256": "8D44AFFF8009E57FCDCDCA7D96D843028CEBE109692BEE1FDB796E998FA2DE7B",
+  "releaseUrl": "https://github.com/xiaolv-suite/siyuan-exoskeleton/releases/tag/v3.0.0",
+  "downloadUrl": "https://github.com/xiaolv-suite/siyuan-exoskeleton/releases/download/v3.0.0/siyuan-exoskeleton.exe",
+  "mirrors": [
+    "https://ghfast.top/",
+    "https://ghproxy.net/",
+    "https://github.moeyy.xyz/",
+    "https://gh.ddlc.top/"
+  ]
+}

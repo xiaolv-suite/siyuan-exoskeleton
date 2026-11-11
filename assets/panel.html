@@ -4499,6 +4499,7 @@
               <button class="pref-btn" onclick="locateInSearchTool('')">🔍 唤起本地检索工具 (Everything / Listary)</button>
               <button class="pref-btn" onclick="triggerTrimMemory()" style="color: var(--indigo-light); border-color: rgba(99,102,241,0.35);">⚡ 深度压缩常驻内存</button>
               <button class="pref-btn" onclick="cleanOrphanTestKernels()" style="background: rgba(244, 63, 94, 0.12); border-color: rgba(244, 63, 94, 0.35); color: var(--rose-agent);">🧹 清扫遗留靶场内核</button>
+              <button class="pref-btn" onclick="triggerCheckUpdate()" style="color: var(--emerald-mint); border-color: rgba(16,185,129,0.35); font-weight: 600;">🔄 检查更新 (国内高速自更新)</button>
             </div>
             <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 12px; background: var(--bg-inset); border-radius: 6px; border: 1px solid var(--border-hairline);">
               <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
@@ -17243,6 +17244,15 @@
       if (memText) memText.innerText = "压缩中...";
       if (window.chrome && window.chrome.webview) {
         window.chrome.webview.postMessage(JSON.stringify({ op: 'trimMemory' }));
+      }
+    }
+
+    function triggerCheckUpdate() {
+      if (window.chrome && window.chrome.webview) {
+        showToast("正在连接国内高速 Anycast 节点检查更新...");
+        window.chrome.webview.postMessage(JSON.stringify({ op: 'checkUpdate' }));
+      } else {
+        showToast("浏览器预览态：当前已是最新版本 (v3.0.0)");
       }
     }
 

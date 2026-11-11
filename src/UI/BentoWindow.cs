@@ -64,6 +64,7 @@ namespace XiaoLv.Desktop.UI
         public event Action<string, string> OnSubActionRequested;
         public event Action<string> OnSaveSettingsRequested;
         public event Action<string, string> OnNotificationRequested;
+        public event Action OnCheckUpdateRequested;
 
         public void NotifyDesktopSettingsSaved(bool success, string error = null, bool? webhookEnabled = null, string warning = null)
         {
@@ -3969,6 +3970,16 @@ namespace XiaoLv.Desktop.UI
                             }
                         }));
                     });
+                    return;
+                }
+
+                // 24.5 检查并一键更新指令 (AutoUpdater Check & Update)
+                if (op.Equals("checkUpdate", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (OnCheckUpdateRequested != null)
+                    {
+                        OnCheckUpdateRequested();
+                    }
                     return;
                 }
 

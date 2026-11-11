@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -74,9 +75,10 @@ namespace XiaoLv.Desktop
         {
             try
             {
-                // 0. 初始化内嵌程序集与原生资源自释放解析器 (零外部松散依赖，单 EXE 自包含)
-                EmbeddedResourceManager.InitializeAssemblyResolver();
-                EmbeddedResourceManager.EnsureRuntimeAssets();
+	                // 0. 初始化内嵌程序集与原生资源自释放解析器 (零外部松散依赖，单 EXE 自包含)
+	                EmbeddedResourceManager.InitializeAssemblyResolver();
+	                EmbeddedResourceManager.EnsureRuntimeAssets();
+	                AutoUpdater.CleanOldBackupAsync();
 
                 // 0.5 P2-1 MCP 无头服务模式: 思源外骨骼.exe --mcp → stdio NDJSON JSON-RPC
                 // (供 Claude Desktop / ChatBox / Cursor / 豆包 Agent 以 MCP 协议自动调用思源能力；零 UI 零互斥，stdin EOF 退出)
@@ -301,8 +303,9 @@ namespace XiaoLv.Desktop
             {
                 DispatchInternal(code, text);
             };
-            _bentoWindow.OnNotificationRequested += (t, m) => SafeNotify(t, m);
-            _capsuleWindow.OnNotificationRequested += (t, m) => SafeNotify(t, m);
+	            _bentoWindow.OnNotificationRequested += (t, m) => SafeNotify(t, m);
+	            _bentoWindow.OnCheckUpdateRequested += () => PerformCheckUpdate(true);
+	            _capsuleWindow.OnNotificationRequested += (t, m) => SafeNotify(t, m);
 
             _bentoWindow.OnSaveSettingsRequested += (json) =>
             {
@@ -1202,23 +1205,53 @@ namespace XiaoLv.Desktop
         {
             new Thread(() =>
             {
+                if (showTipIfNone)
+                {
+                    SafeNotify("思源外骨骼 · 自动更新", "正在连接国内高速 Anycast 节点检查更新...");
+                }
                 var info = AutoUpdater.CheckForUpdate();
                 if (info.HasUpdate)
                 {
+                    string prompt = string.Format(
+                        "发现新版本 v{0}！\n\n更新说明：\n{1}\n\n【国内极速无感热更新通道】\n点击「是」立即启动自动下载并在后台原地热更重启；\n点击「否」暂不更新。",
+                        info.LatestVersion,
+                        info.Changelog);
+
                     var res = MessageBox.Show(
-                        "发现新版本 v" + info.LatestVersion + "！\n\n更新内容：\n" + info.Changelog + "\n\n是否立即前往下载？",
+                        prompt,
                         "思源外骨骼 · 自动更新",
                         MessageBoxButton.YesNo,
                         MessageBoxImage.Information
                     );
-                    if (res == MessageBoxResult.Yes && !string.IsNullOrEmpty(info.DownloadUrl))
+                    if (res == MessageBoxResult.Yes)
                     {
-                        try { System.Diagnostics.Process.Start(info.DownloadUrl); } catch { }
+                        SafeNotify("思源外骨骼 · 自动更新", "正在通过国内加速节点下载新版 (3.87MB)...");
+                        bool ok = AutoUpdater.DownloadAndApplyUpdate(info, (percent, msg) =>
+                        {
+                            if (percent == 100)
+                            {
+                                SafeNotify("思源外骨骼 · 自动更新", msg);
+                            }
+                        });
+
+                        if (!ok)
+                        {
+                            var failRes = MessageBox.Show(
+                                "自动热更新节点下载或校验超时，是否打开浏览器前往 Release 发布页手动下载？",
+                                "思源外骨骼 · 自动更新",
+                                MessageBoxButton.YesNo,
+                                MessageBoxImage.Warning
+                            );
+                            if (failRes == MessageBoxResult.Yes && !string.IsNullOrEmpty(info.ReleaseUrl))
+                            {
+                                try { Process.Start(info.ReleaseUrl); } catch { }
+                            }
+                        }
                     }
                 }
                 else if (showTipIfNone)
                 {
-                    SafeNotify("思源外骨骼", "当前已是最新版本 (v" + AutoUpdater.CURRENT_VERSION + ")！");
+                    SafeNotify("思源外骨骼", "当前已是最新版本 (v" + AutoUpdater.CURRENT_VERSION + ")！已接入国内高速更新网络。");
                 }
             })
             { IsBackground = true }.Start();

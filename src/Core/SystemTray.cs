@@ -240,7 +240,7 @@ namespace XiaoLv.Desktop.Core
                 ShowNotice("思源外骨骼", newState ? "已开启开机自启！" : "已关闭开机自启。");
             };
 
-            var itemUpdate = new ToolStripMenuItem("🔄 检查版本更新 (Gitee 源)");
+            var itemUpdate = new ToolStripMenuItem("🔄 检查版本更新 (国内高速自更新)");
             itemUpdate.Click += (s, e) => { if (OnCheckUpdateClicked != null) OnCheckUpdateClicked(); };
 
             var sep2 = new ToolStripSeparator();

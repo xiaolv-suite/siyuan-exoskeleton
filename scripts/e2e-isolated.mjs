@@ -5062,6 +5062,21 @@ async function main() {
                                       programCs267.includes('JsonHelper.GetBool(dict, "doubleCtrlActivationEnabled", false);');
   logStep("Step 7.267: 双击 Ctrl 零侵扰防误触安全保障（默认强制关闭+UI设置双向解绑）断言", hasDoubleCtrlSafetyContract, `双击Ctrl安全契约: ${hasDoubleCtrlSafetyContract}`);
 
+  // Step 7.268: Test AutoUpdater Domestic Multi-Source Racing & In-Place Swap & Quicker Fuse Contract
+  const autoUpdaterCs268 = fs.readFileSync(path.join(ROOT, 'src', 'Core', 'AutoUpdater.cs'), 'utf8');
+  const versionJson268 = JSON.parse(fs.readFileSync(path.join(ROOT, 'version.json'), 'utf8'));
+  const quickerMigrate268 = fs.readFileSync(path.join(ROOT, 'docs', 'QUICKER-MIGRATION.md'), 'utf8');
+  const hasUpdaterAndQuickerContract = autoUpdaterCs268.includes('VersionProbeEndpoints') &&
+                                       autoUpdaterCs268.includes('DefaultDownloadMirrors') &&
+                                       autoUpdaterCs268.includes('ApplyInPlaceSwap') &&
+                                       autoUpdaterCs268.includes('ComputeSha256') &&
+                                       versionJson268.version === '3.0.0' &&
+                                       versionJson268.sha256.length === 64 &&
+                                       Array.isArray(versionJson268.mirrors) &&
+                                       quickerMigrate268.includes('XiaoLvDesktop_IPC_Pipe') &&
+                                       quickerMigrate268.includes('InstallExoskeletonFromCdn');
+  logStep("Step 7.268: 国内高可用多源竞速自更新引擎 (Anycast CDN/动态镜像池/原位热更) 与 Quicker 极简智能引信断言", hasUpdaterAndQuickerContract, `更新与引信契约: ${hasUpdaterAndQuickerContract}`);
+
   // Step 8: Test Offline Queue Buffering & Recovery
   console.log("\n[Step 8 测试开始] 模拟思源内核离线，验证离岸队列缓冲与守护进程自动回写...");
   try { await api("/api/system/exit", { force: true }); } catch {}

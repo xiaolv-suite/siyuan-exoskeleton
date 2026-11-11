@@ -497,8 +497,9 @@ namespace XiaoLv.Desktop
                 _hotkeys.RegisterConfiguredHotKeys(settings.MasterHotKey, settings.PenHotKey, settings.OcrHotKey, settings.QuickHotKey, settings.FsrsHotKey, settings.ClipHotKey);
             }
 
-	            // 双击 Ctrl 极速呼出微控激活器 (对标 Listary / Raycast)
-            if (!IsIsolatedRun && settings.DoubleCtrlActivationEnabled)
+		            // 双击 Ctrl 极速呼出微控激活器 (默认彻底关闭，杜绝按键冲突打扰)
+		            DoubleTapHotkeyActivator.Stop();
+	            if (!IsIsolatedRun && settings.DoubleCtrlActivationEnabled)
 	            {
 	                DoubleTapHotkeyActivator.OnDoubleCtrlTriggered += () =>
 	                {

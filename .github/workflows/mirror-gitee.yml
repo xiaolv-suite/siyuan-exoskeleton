@@ -19,10 +19,10 @@ jobs:
         uses: Yikun/hub-mirror-action@master
         with:
           src: github/xiaolv-suite
-          dst: gitee/xiaolv-suite
+          dst: gitee/ai68298100
           dst_key: ${{ secrets.GITEE_SSH_PRIVATE_KEY }}
           dst_token: ${{ secrets.GITEE_TOKEN }}
-          account_type: org
+          account_type: user
           force_update: true
           clone_style: https
           static_list: "siyuan-exoskeleton,siyuan-speed-switch,xiaolv-common,siyuan-checkin,siyuan-home,siyuan-glean,siyuan-lv-cards,siyuan-exam,siyuan-contacts"
